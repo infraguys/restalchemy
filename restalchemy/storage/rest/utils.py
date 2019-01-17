@@ -16,17 +16,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-class BaseException(Exception):
-
-    def __init__(self, code, message):
-        super(BaseException, self).__init__(message)
-        self._code = code
-
-    @property
-    def code(self):
-        return self._code
+from six.moves.urllib import parse as urllib
 
 
-class Conflict(BaseException):
-    pass
+def force_last_slash(path):
+    return path if path[-1] == '/' else path + '/'
+
+
+def build_collection_uri(endpoint, uri):
+    return urllib.urljoin(endpoint, force_last_slash(uri))
+
+
+def build_resource_uri(endpoint, uri):
+    return urllib.urljoin(endpoint, uri)
