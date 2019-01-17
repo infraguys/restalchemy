@@ -202,6 +202,8 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     @classmethod
     def to_simple_type(cls, value):
+        if value is None:
+            return None
         for prop in value.properties.values():
             if prop.is_id_property():
                 return prop.property_type.to_simple_type(value.get_id())
@@ -210,6 +212,8 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     @classmethod
     def from_simple_type(cls, value):
+        if value is None:
+            return None
         for name, prop in cls.properties.items():
             if prop.is_id_property():
                 value = (cls.properties.properties[name].get_property_type()
