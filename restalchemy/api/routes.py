@@ -200,8 +200,13 @@ class Route(BaseRoute):
                 # FIXME(Eugene Frolov): Header must be string. Not unicode.
                 return str(posixpath.join('/', path))
 
-            def get_resource(self, request, uri):
+            def get_resource(self, request, uri, parent_resource=None):
                 uuid = posixpath.basename(uri)
+                if parent_resource:
+                    return (self._controller(request=request)
+                            .get_resource_by_uuid(
+                                uuid=uuid,
+                                parent_resource=parent_resource))
                 return self._controller(request=request).get_resource_by_uuid(
                     uuid)
 
