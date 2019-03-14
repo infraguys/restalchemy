@@ -185,7 +185,7 @@ class RESTStorableMixin(base.AbstractStorableMixin):
 
     def _get_prepared_data(self, context, properties=None):
         res = {}
-        props = properties or self.properties
+        props = properties if properties is not None else self.properties
         for name, prop in props.items():
             if isinstance(prop, relationships.Relationship):
                 res[name] = prop.property_type.to_simple_type(context,
