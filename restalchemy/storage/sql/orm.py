@@ -153,7 +153,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
             model_format[name] = (cls.properties.properties[name]
                                   .get_property_type()
                                   .from_simple_type(value))
-        obj = cls(**model_format)
+        obj = cls.restore(**model_format)
         obj._saved = True
         return obj
 
