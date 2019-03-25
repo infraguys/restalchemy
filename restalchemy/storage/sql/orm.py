@@ -111,11 +111,11 @@ class ObjectCollection(base.AbstractObjectCollection):
         with sessions.session_manager(self._engine, session)as s:
             result = self._table.select(engine=self._engine, filters=filters,
                                         session=s)
-            for params in result.fetchall():
-                yield self.model_cls.restore_from_storage(**params)
+            return [self.model_cls.restore_from_storage(**params)
+                    for params in result.fetchall()]
 
     def get_one(self, filters=None, session=None):
-        result = list(self.get_all(filters=filters, session=session))
+        result = self.get_all(filters=filters, session=session)
         result_len = len(result)
         if result_len == 1:
             return result[0]
