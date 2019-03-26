@@ -25,7 +25,6 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import filters as flt
-from restalchemy.storage.sql import sessions
 from restalchemy.storage.sql import utils
 
 
@@ -108,7 +107,7 @@ class ObjectCollection(base.AbstractObjectCollection):
     def get_all(self, filters=None, session=None):
         # TODO(efrolov): Add limit and offset parameters
         filters = self._filters_to_storage_view(filters or {})
-        with sessions.session_manager(self._engine, session)as s:
+        with self._engine.session_manager(session=session) as s:
             result = self._table.select(engine=self._engine, filters=filters,
                                         session=s)
             return [self.model_cls.restore_from_storage(**params)
@@ -159,7 +158,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     def insert(self, session=None):
         # TODO(efrolov): Add filters arameters.
-        with sessions.session_manager(self._engine, session) as s:
+        with self._engine.session_manager(session=session) as s:
             try:
                 self._table.insert(engine=self._engine,
                                    data=self._get_prepared_data(),
@@ -176,7 +175,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def update(self, session=None, force=False):
         # TODO(efrolov): Add filters arameters.
         if self.is_dirty() or force:
-            with sessions.session_manager(self._engine, session) as s:
+            with self._engine.session_manager(session=session) as s:
                 try:
                     result = self._table.update(
                         engine=self._engine,
@@ -196,7 +195,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     def delete(self, session=None):
         # TODO(efrolov): Add filters arameters.
-        with sessions.session_manager(self._engine, session) as s:
+        with self._engine.session_manager(session=session) as s:
             result = self._table.delete(
                 engine=self._engine,
                 ids=self._get_prepared_data(self.get_id_properties()),
