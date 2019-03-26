@@ -26,9 +26,9 @@ from six.moves.urllib import parse
 from restalchemy.common import utils
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
+from restalchemy.tests.functional import consts
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
-from restalchemy.tests.functional.restapi.ra_based.microservice import consts
 from restalchemy.tests.functional.restapi.ra_based.microservice import service
 from restalchemy.tests.unit import base
 

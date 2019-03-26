@@ -173,22 +173,26 @@ class SQLStorableMixin(base.AbstractStorableMixin):
         # TODO(efrolov): Add filters arameters.
         self.update(session) if self._saved else self.insert(session)
 
-    def update(self, session=None):
+    def update(self, session=None, force=False):
         # TODO(efrolov): Add filters arameters.
-        with sessions.session_manager(self._engine, session) as s:
-            try:
-                result = self._table.update(
-                    engine=self._engine,
-                    ids=self._get_prepared_data(self.get_id_properties()),
-                    data=self._get_prepared_data(self.get_data_properties()),
-                    session=s)
-            except exc.Conflict as e:
-                raise exceptions.ConflictRecords(model=self, msg=e.message)
-            if result.get_count() == 0:
-                raise exceptions.RecordNotFound(model=self, filters=None)
-            if result.get_count() > 1:
-                raise exceptions.MultipleUpdatesDetected(model=self,
-                                                         filters={})
+        if self.is_dirty() or force:
+            with sessions.session_manager(self._engine, session) as s:
+                try:
+                    result = self._table.update(
+                        engine=self._engine,
+                        ids=self._get_prepared_data(self.get_id_properties()),
+                        data=self._get_prepared_data(
+                            self.get_data_properties()),
+                        session=s)
+                except exc.Conflict as e:
+                    raise exceptions.ConflictRecords(model=self, msg=e.message)
+                if result.get_count() == 0:
+                    filters = {name: prop.value for name, prop in
+                               self.get_id_properties().items()}
+                    type(self).objects.get_one(filters=filters)
+                if result.get_count() > 1:
+                    raise exceptions.MultipleUpdatesDetected(model=self,
+                                                             filters={})
 
     def delete(self, session=None):
         # TODO(efrolov): Add filters arameters.
