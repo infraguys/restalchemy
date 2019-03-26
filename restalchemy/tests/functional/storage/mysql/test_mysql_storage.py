@@ -1,6 +1,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2019 Eugene Frolov
 #
 # All Rights Reserved.
 #
@@ -28,6 +29,7 @@ from restalchemy.dm import types
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
 from restalchemy.storage.sql import sessions
+from restalchemy.tests.functional import consts
 
 
 FAKE_STR1 = "Fake1"
@@ -170,3 +172,41 @@ class InsertCase(unittest.TestCase):
         self.assertFalse(session_mock.commit.called)
         self.assertFalse(session_mock.rollback.called)
         self.assertFalse(session_mock.close.called)
+
+
+class TestUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
+    __tablename__ = "test_update"
+
+    field1 = properties.property(types.String(), required=True)
+    field2 = properties.property(types.String(), required=True)
+
+
+class UpdateTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(UpdateTestCase, self).setUp()
+        engines.engine_factory.configure_factory(consts.DATABASE_URI)
+        engine = engines.engine_factory.get_engine()
+        self.session = engine.get_session()
+        self.session.execute("""CREATE TABLE IF NOT EXISTS test_update (
+            uuid CHAR(36) NOT NULL,
+            field1 VARCHAR(255) NOT NULL,
+            field2 VARCHAR(255) NOT NULL,
+            PRIMARY KEY (uuid)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""", None)
+
+    def tearDown(self):
+        super(UpdateTestCase, self).tearDown()
+        self.session.execute("DROP TABLE IF EXISTS test_update;", None)
+
+    def test_update_not_changed_model(self):
+        test_model = TestUpdateModel(field1=FAKE_STR1, field2=FAKE_STR2)
+        test_model.save()
+
+        self.assertIsNone(test_model.update())
+
+    def test_force_update_not_changed_model(self):
+        test_model = TestUpdateModel(field1=FAKE_STR1, field2=FAKE_STR2)
+        test_model.save()
+
+        self.assertIsNone(test_model.update(force=True))
