@@ -18,13 +18,14 @@
 
 import contextlib
 import logging
+import threading
 
 
 class MySQLSession(object):
 
     def __init__(self, conn):
         self._conn = conn
-        self._cursor = conn.cursor(dictionary=True)
+        self._cursor = conn.cursor(dictionary=True, buffered=True)
         self._log = logging.getLogger(__name__)
 
     def execute(self, statement, values):
@@ -57,3 +58,42 @@ def session_manager(engine, session=None):
             session.close()
     else:
         yield session
+
+
+class SessionConflict(Exception):
+    pass
+
+
+class SessionNotFound(Exception):
+    pass
+
+
+class SessionThreadStorage(object):
+
+    def __init__(self):
+        super(SessionThreadStorage, self).__init__()
+        self._storage = threading.local()
+
+    def get_session(self):
+        thread_session = getattr(self._storage, 'session', None)
+        if thread_session is None:
+            raise SessionNotFound('A session is not exists for this thread')
+        return thread_session
+
+    def pop_session(self):
+        try:
+            return self.get_session()
+        finally:
+            self.remove_session()
+
+    def remove_session(self):
+        self._storage.session = None
+
+    def store_session(self, session):
+        try:
+            thread_session = self.get_session()
+            raise SessionConflict("Another session %r is already stored!",
+                                  thread_session)
+        except SessionNotFound:
+            self._storage.session = session
+            return self._storage.session

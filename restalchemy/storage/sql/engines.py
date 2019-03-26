@@ -17,6 +17,7 @@
 #    under the License.
 
 import abc
+import contextlib
 
 from mysql.connector import pooling
 import six
@@ -71,6 +72,7 @@ class MySQLEngine(AbstractEngine):
         })
         self._pool = pooling.MySQLConnectionPool(**config)
         self._dialect = mysql.MySQLDialect()
+        self._session_storage = sessions.SessionThreadStorage()
 
     @property
     def dialect(self):
@@ -101,6 +103,31 @@ class MySQLEngine(AbstractEngine):
 
     def get_session(self):
         return sessions.MySQLSession(self.get_connection())
+
+    def _get_session_from_storage(self):
+        try:
+            return self.get_session_storage().get_session()
+        except sessions.SessionNotFound:
+            return None
+
+    @contextlib.contextmanager
+    def session_manager(self, session=None):
+        session = session or self._get_session_from_storage()
+        if session is None:
+            session = self.get_session()
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+            finally:
+                session.close()
+        else:
+            yield session
+
+    def get_session_storage(self):
+        return self._session_storage
 
 
 class EngineFactory(singletons.InheritSingleton):
