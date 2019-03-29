@@ -156,7 +156,7 @@ class Model(collections.Mapping):
 
 
 class ModelWithUUID(Model):
-    uuid = properties.property(types.UUID, read_only=True, id_property=True,
+    uuid = properties.property(types.UUID(), read_only=True, id_property=True,
                                default=lambda: uuid.uuid4())
 
     def get_id(self):

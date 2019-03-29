@@ -23,6 +23,7 @@ import inspect
 
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
+from restalchemy.dm import types
 
 import six
 from six.moves import builtins
@@ -52,8 +53,10 @@ class Property(BaseProperty):
 
     def __init__(self, property_type, default=None, required=False,
                  read_only=False, value=None):
-        self._type = (property_type() if inspect.isclass(property_type)
-                      else property_type)
+        if not isinstance(property_type, types.BaseType):
+            raise TypeError("Property type must be instance of %s" %
+                            types.BaseType)
+        self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
         default = default() if callable(default) else default

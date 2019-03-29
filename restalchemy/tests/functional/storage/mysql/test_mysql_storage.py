@@ -59,16 +59,16 @@ class TestModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
     __tablename__ = FAKE_TABLE_NAME1
 
-    test_str_field1 = properties.property(types.String, default=FAKE_STR1)
+    test_str_field1 = properties.property(types.String(), default=FAKE_STR1)
     test_str_field2 = properties.property(types.String(), default=FAKE_STR2)
 
-    test_int_field1 = properties.property(types.Integer, default=FAKE_INT1)
+    test_int_field1 = properties.property(types.Integer(), default=FAKE_INT1)
     test_int_field2 = properties.property(types.Integer(), default=FAKE_INT2)
 
-    test_uri_field1 = properties.property(types.Uri, default=FAKE_URI1)
+    test_uri_field1 = properties.property(types.Uri(), default=FAKE_URI1)
     test_uri_field2 = properties.property(types.Uri(), default=FAKE_URI2)
 
-    test_mac_field1 = properties.property(types.Mac, default=FAKE_MAC1)
+    test_mac_field1 = properties.property(types.Mac(), default=FAKE_MAC1)
     test_mac_field2 = properties.property(types.Mac(), default=FAKE_MAC2)
 
     test_parent_relationship = relationships.relationship(TestParentModel)

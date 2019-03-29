@@ -31,5 +31,5 @@ class VM(models.ModelWithUUID):
 
 class Port(models.ModelWithUUID):
 
-    mac = properties.property(types.Mac, default='00:00:00:00:00:00')
+    mac = properties.property(types.Mac(), default='00:00:00:00:00:00')
     vm = relationships.relationship(VM, required=True)

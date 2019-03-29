@@ -53,11 +53,9 @@ class BasePythonType(BaseType):
     def validate(self, value):
         return isinstance(value, self._python_type)
 
-    @classmethod
     def to_simple_type(cls, value):
         return value
 
-    @classmethod
     def from_simple_type(cls, value):
         return value
 
@@ -67,7 +65,6 @@ class Boolean(BasePythonType):
     def __init__(self):
         super(Boolean, self).__init__(bool)
 
-    @classmethod
     def from_simple_type(cls, value):
         return bool(value)
 
@@ -114,11 +111,9 @@ class Float(BasePythonType):
 
 class UUID(BaseType):
 
-    @classmethod
     def to_simple_type(cls, value):
         return str(value)
 
-    @classmethod
     def from_simple_type(cls, value):
         return uuid.UUID(value)
 
@@ -161,11 +156,9 @@ class BaseRegExpType(BaseType):
         except TypeError:
             return False
 
-    @classmethod
     def to_simple_type(cls, value):
         return value
 
-    @classmethod
     def from_simple_type(cls, value):
         return value
 

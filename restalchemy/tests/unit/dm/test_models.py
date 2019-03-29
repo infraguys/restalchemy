@@ -112,14 +112,14 @@ class Model3(models.ModelWithUUID):
 
 class BaseModel(models.Model):
 
-    property1 = properties.property(types.Integer)
-    property2 = properties.property(types.Integer)
+    property1 = properties.property(types.Integer())
+    property2 = properties.property(types.Integer())
     property3 = relationships.relationship(Model1)
     property4 = relationships.relationship(Model2)
 
 
 class TestModel(BaseModel):
-    property1 = properties.property(types.String)
+    property1 = properties.property(types.String())
     property3 = relationships.relationship(Model3)
 
 
@@ -128,16 +128,16 @@ class InheritModelTestCase(base.BaseTestCase):
     def test_correct_type_in_base_model(self):
         props = BaseModel.properties.properties
 
-        self.assertEqual(props['property1']._property_type, types.Integer)
-        self.assertEqual(props['property2']._property_type, types.Integer)
+        self.assertIsInstance(props['property1']._property_type, types.Integer)
+        self.assertIsInstance(props['property2']._property_type, types.Integer)
         self.assertEqual(props['property3']._property_type, Model1)
         self.assertEqual(props['property4']._property_type, Model2)
 
     def test_correct_type_in_inherit_model(self):
         props = TestModel.properties.properties
 
-        self.assertEqual(props['property1']._property_type, types.String)
-        self.assertEqual(props['property2']._property_type, types.Integer)
+        self.assertIsInstance(props['property1']._property_type, types.String)
+        self.assertIsInstance(props['property2']._property_type, types.Integer)
         self.assertEqual(props['property3']._property_type, Model3)
         self.assertEqual(props['property4']._property_type, Model2)
 

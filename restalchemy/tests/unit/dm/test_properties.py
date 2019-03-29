@@ -20,6 +20,7 @@ import mock
 
 from restalchemy.common import exceptions
 from restalchemy.dm import properties
+from restalchemy.dm import types
 from restalchemy.tests.unit import base
 
 FAKE_VALUE = 'FAKE_VALUE'
@@ -32,9 +33,11 @@ class PropertyTestCase(base.BaseTestCase):
     def setUp(self):
         super(PropertyTestCase, self).setUp()
         self.positive_fake_property_type = mock.MagicMock(
-            **{'validate': mock.MagicMock(return_value=True)})
+            **{'validate': mock.MagicMock(return_value=True),
+               'spec': types.BaseType})
         self.negative_fake_property_type = mock.MagicMock(
-            **{'validate': mock.MagicMock(return_value=False)})
+            **{'validate': mock.MagicMock(return_value=False),
+               'spec': types.BaseType})
 
     def _set_property_value(self, obj, value):
         obj.value = value

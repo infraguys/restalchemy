@@ -35,8 +35,8 @@ from restalchemy.storage.sql import orm
 # ENGINE = InnoDB;
 class FooModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = "foos"
-    foo_field1 = properties.property(types.Integer, required=True)
-    foo_field2 = properties.property(types.String, default="foo_str")
+    foo_field1 = properties.property(types.Integer(), required=True)
+    foo_field2 = properties.property(types.String(), default="foo_str")
 
 
 # CREATE TABLE `test`.`bars` (
