@@ -21,6 +21,7 @@ import logging
 import six
 import webob
 
+from restalchemy.api import filters
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
@@ -79,15 +80,48 @@ class Controller(object):
             kwargs['parent_resource'] = parent_resource
         return kwargs
 
+    def _prepare_value(self, field_name, value):
+        resource_fields = {}
+        if self.model is not None:
+            resource_fields = {
+                self.__resource__.get_resource_field_name(name): prop
+                for name, prop in self.__resource__.get_fields()
+            }
+        if field_name not in resource_fields:
+            raise ValueError("Unknown filter '%s' with value %r for "
+                             "resource %r" % (field_name,
+                                              value,
+                                              self.__resource__))
+        value = resource_fields[field_name].parse_value_from_unicode(
+            self._req, value)
+        field_name = resource_fields[field_name].name
+        field_type = resource_fields[field_name]
+
+        return field_name, field_type, value
+
+    def _prepare_filters(self, params):
+        if not (self.__resource__ and self.__resource__.is_process_filters()):
+            return params
+        result = {}
+        for param, value in params.items():
+            field_name, field_value = self._prepare_value(param, value)
+            if field_name not in result:
+                result[field_name] = filters.EQ(field_value)
+            else:
+                values = ([result[field_name].value]
+                          if not isinstance(result[field_name], filters.In)
+                          else result[field_name].value)
+                values.append(field_value)
+                result[field_name] = filters.In(values)
+
+        return result
+
     def do_collection(self, parent_resource=None):
         method = self._req.method
 
         if method == 'GET':
-            # TODO(Eugene Frolov): Method returns NestedMultiDict which it
-            #   includes multiple identical keys. It is problem. One must
-            #   writes a correct translation NestedMultiDict to a type of dict.
-            kwargs = self._make_kwargs(parent_resource,
-                                       **dict(self._req.params))
+            filters = self._prepare_filters(params=self._req.params)
+            kwargs = self._make_kwargs(parent_resource, filters=filters)
             return self.process_result(self.filter(**kwargs))
         elif method == 'POST':
             content_type = packers.get_content_type(self._req.headers)
@@ -138,7 +172,7 @@ class Controller(object):
     def get(self, uuid):
         raise exc.NotImplementedError()
 
-    def filter(self, **kwargs):
+    def filter(self, filters):
         raise exc.NotImplementedError()
 
     def delete(self, uuid):

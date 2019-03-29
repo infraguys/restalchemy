@@ -64,7 +64,7 @@ class VMController(controllers.Controller):
         session.commit()
         return vm
 
-    def filter(self):
+    def filter(self, filters):
         session = self._get_session()
         vms = session.query(self.model).all()
         return vms
@@ -86,11 +86,11 @@ class VMController(controllers.Controller):
 
 class V1Controller(controllers.Controller):
 
-    def filter(self):
+    def filter(self, filters):
         return ["vms"]
 
 
 class RootController(controllers.Controller):
 
-    def filter(self):
+    def filter(self, filters):
         return ["v1"]

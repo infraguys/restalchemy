@@ -50,7 +50,7 @@ class PortController(BaseController):
         session.commit()
         return port
 
-    def filter(self, parent_resource):
+    def filter(self, parent_resource, filters):
         session = self._get_session()
         ports = self.model.objects.get_all(filters={'vm': parent_resource},
                                            session=session)
@@ -111,7 +111,7 @@ class VMController(BaseController):
         session.commit()
         return vm
 
-    def filter(self):
+    def filter(self, filters):
         session = self._get_session()
         vms = self.model.objects.get_all(session=session)
         return vms
@@ -135,11 +135,11 @@ class VMController(BaseController):
 
 class V1Controller(controllers.Controller):
 
-    def filter(self):
+    def filter(self, filters):
         return ["vms"]
 
 
 class RootController(controllers.Controller):
 
-    def filter(self):
+    def filter(self, filters):
         return ["v1"]

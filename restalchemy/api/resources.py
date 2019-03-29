@@ -105,8 +105,16 @@ class AbstractResourceProperty(object):
         return self._resource.get_resource_field_name(
             self._model_property_name)
 
+    @property
+    def name(self):
+        return self._model_property_name
+
     @abc.abstractmethod
     def parse_value(self, req, value):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def parse_value_from_unicode(self, req, value):
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -121,6 +129,9 @@ class ResourceProperty(AbstractResourceProperty):
 class ResourceSAProperty(ResourceProperty):
 
     def parse_value(self, req, value):
+        return value
+
+    def parse_value_from_unicode(self, req, value):
         return value
 
     def dump_value(self, value):
@@ -140,6 +151,9 @@ class ResourceRAProperty(ResourceProperty):
     def parse_value(self, req, value):
         return self._prop_type.from_simple_type(value)
 
+    def parse_value_from_unicode(self, req, value):
+        return self._prop_type.from_unicode(value)
+
     def dump_value(self, value):
         return self._prop_type.to_simple_type(value)
 
@@ -149,6 +163,9 @@ class ResourceRelationship(AbstractResourceProperty):
     def parse_value(self, req, value):
         return ResourceMap.get_resource(req, value)
 
+    def parse_value_from_unicode(self, req, value):
+        return self.parse_value(req, value)
+
     def dump_value(self, value):
         return ResourceMap.get_location(value)
 
@@ -157,13 +174,17 @@ class ResourceRelationship(AbstractResourceProperty):
 class AbstractResource(object):
 
     def __init__(self, model_class, name_map=None, hidden_fields=None,
-                 convert_underscore=True):
+                 convert_underscore=True, process_filters=False):
         super(AbstractResource, self).__init__()
         self._model_class = model_class
         self._name_map = name_map or {}
         self._hidden_fields = hidden_fields or []
         self._convert_underscore = convert_underscore
+        self._process_filters = process_filters
         ResourceMap.add_model_to_resource_mapping(model_class, self)
+
+    def is_process_filters(self):
+        return self._process_filters
 
     @abc.abstractmethod
     def get_fields(self):
@@ -187,11 +208,21 @@ class AbstractResource(object):
         return name.replace('_', '-') if self._convert_underscore else name
 
     def is_public_field(self, model_field_name):
-        return not (model_field_name.startswith('_')
-                    or model_field_name in self._hidden_model_fields)
+        return not (model_field_name.startswith('_') or
+                    model_field_name in self._hidden_model_fields)
 
     def get_model(self):
         return self._model_class
+
+    def __repr__(self):
+        return ("<%s[model=%r], name_map=%r, convert_underscore=%s, "
+                "process_filters=%s, fields=%r>" % (
+                    self.__class__.__name__,
+                    self._model_class,
+                    self._name_map,
+                    self._convert_underscore,
+                    self._process_filters,
+                    self._model_class.properties.properties.keys()))
 
 
 class ResourceByRAModel(AbstractResource):

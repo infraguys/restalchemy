@@ -147,8 +147,6 @@ class MySQLSelect(AbstractDialectCommand):
     def construct_where(self):
         where_list = []
         for name, value in sorted(self._filters.items()):
-            if not isinstance(value, filters.AbstractExpression):
-                value = filters.EQ(value)
             where_list.append(value.construct_expression(name))
         return " AND ".join(where_list)
 

@@ -17,16 +17,26 @@
 #    under the License.
 
 import abc
+import logging
 
 import six
+
+from restalchemy.api import filters
+from restalchemy.dm import types
+
+
+LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
 class AbstractExpression(object):
 
-    def __init__(self, value):
+    def __init__(self, value_type, value):
         super(AbstractExpression, self).__init__()
-        self._value = value
+        self._value = self._convert_value(value_type, value)
+
+    def _convert_value(self, value_type, value):
+        return value_type.to_simple_type(value)
 
     @property
     def value(self):
@@ -83,3 +93,54 @@ class IsNot(AbstractExpression):
 
     def construct_expression(self, name):
         return ("`%s` IS NOT " % name) + "%s"
+
+
+class In(AbstractExpression):
+
+    def _convert_value(self, value_type, value):
+        return [value_type.to_simple_type(item) for item in value]
+
+    def construct_expression(self, name):
+        return ("`%s` IN " % name) + "%s"
+
+
+def convert_filter(api_filter, filter_type=None):
+    FILTER_MAPPING = {
+        filters.EQ: EQ,
+        filters.NE: NE,
+        filters.GT: GT,
+        filters.GE: GE,
+        filters.LE: LE,
+        filters.LT: LT,
+        filters.Is: Is,
+        filters.IsNot: IsNot,
+        filters.In: In
+    }
+
+    class AsIsType(types.BaseType):
+
+        def validate(self, value):
+            return True
+
+        def to_simple_type(self, value):
+            return value
+
+        def from_simple_type(self, value):
+            return value
+
+        def from_unicode(self, value):
+            return value
+
+    filter_type = filter_type or AsIsType()
+    # Make API compatible with previous versions.
+    if not isinstance(api_filter, filters.AbstractExpression):
+        LOG.warning("DEPRICATED: pleases use %s wrapper for filter value" %
+                    filters.EQ)
+        return EQ(filter_type, api_filter)
+
+    filter_type = api_filter.type_value or filter_type
+    if type(api_filter) not in FILTER_MAPPING:
+        raise ValueError("Can't convert API filter to SQL storage filter. "
+                         "Unknown filter %s" % api_filter)
+
+    return FILTER_MAPPING[type(api_filter)](api_filter.value)
