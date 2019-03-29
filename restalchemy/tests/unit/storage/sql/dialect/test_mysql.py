@@ -19,6 +19,7 @@
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql import filters
 from restalchemy.tests.unit import base
+from restalchemy.tests.unit.storage.sql import common
 
 
 class FakeTable(object):
@@ -90,20 +91,9 @@ class MySQLSelectTestCase(base.BaseTestCase):
     def setUp(self):
         self._TABLE = FakeTable()
 
-    def test_statement(self):
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_VALUES)))
-
-        result = target.get_statement()
-
-        self.assertEqual(
-            result,
-            "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` = %s AND "
-            "`field_int` = %s AND `field_str` = %s AND `pk` = %s")
-
     def test_statement_EQ(self):
-        FAKE_EQ_VALUES = [filters.EQ(v) for v in FAKE_VALUES]
+        FAKE_EQ_VALUES = [
+            filters.EQ(common.AsIsType(), v) for v in FAKE_VALUES]
         target = mysql.MySQLSelect(self._TABLE, dict(zip(
             self._TABLE.get_column_names(), FAKE_EQ_VALUES)))
 
@@ -116,7 +106,8 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "`field_int` = %s AND `field_str` = %s AND `pk` = %s")
 
     def test_statement_NE(self):
-        FAKE_NE_VALUES = [filters.NE(v) for v in FAKE_VALUES]
+        FAKE_NE_VALUES = [
+            filters.NE(common.AsIsType(), v) for v in FAKE_VALUES]
         target = mysql.MySQLSelect(self._TABLE, dict(zip(
             self._TABLE.get_column_names(), FAKE_NE_VALUES)))
 
@@ -129,7 +120,8 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "`field_int` <> %s AND `field_str` <> %s AND `pk` <> %s")
 
     def test_statement_GT(self):
-        FAKE_GT_VALUES = [filters.GT(v) for v in FAKE_VALUES]
+        FAKE_GT_VALUES = [
+            filters.GT(common.AsIsType(), v) for v in FAKE_VALUES]
         target = mysql.MySQLSelect(self._TABLE, dict(zip(
             self._TABLE.get_column_names(), FAKE_GT_VALUES)))
 
@@ -142,7 +134,8 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "`field_int` > %s AND `field_str` > %s AND `pk` > %s")
 
     def test_statement_GE(self):
-        FAKE_GE_VALUES = [filters.GE(v) for v in FAKE_VALUES]
+        FAKE_GE_VALUES = [
+            filters.GE(common.AsIsType(), v) for v in FAKE_VALUES]
         target = mysql.MySQLSelect(self._TABLE, dict(zip(
             self._TABLE.get_column_names(), FAKE_GE_VALUES)))
 
@@ -155,7 +148,8 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "`field_int` >= %s AND `field_str` >= %s AND `pk` >= %s")
 
     def test_statement_LT(self):
-        FAKE_LT_VALUES = [filters.LT(v) for v in FAKE_VALUES]
+        FAKE_LT_VALUES = [
+            filters.LT(common.AsIsType(), v) for v in FAKE_VALUES]
         target = mysql.MySQLSelect(self._TABLE, dict(zip(
             self._TABLE.get_column_names(), FAKE_LT_VALUES)))
 
@@ -168,7 +162,8 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "`field_int` < %s AND `field_str` < %s AND `pk` < %s")
 
     def test_statement_LE(self):
-        FAKE_LE_VALUES = [filters.LE(v) for v in FAKE_VALUES]
+        FAKE_LE_VALUES = [
+            filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
         target = mysql.MySQLSelect(self._TABLE, dict(zip(
             self._TABLE.get_column_names(), FAKE_LE_VALUES)))
 

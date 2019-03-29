@@ -67,9 +67,9 @@ class V1Controller(controllers.Controller):
 
 
 class FooController(controllers.Controller):
-    """Handle http://127.0.0.1:8000/foo/."""
+    """Handle http://127.0.0.1:8000/foos/."""
 
-    __resource__ = resources.ResourceByRAModel(FooModel)
+    __resource__ = resources.ResourceByRAModel(FooModel, process_filters=True)
 
     def create(self, foo_field1, foo_field2):
         foo = self.model(foo_field1=foo_field1, foo_field2=foo_field2)
@@ -79,11 +79,11 @@ class FooController(controllers.Controller):
     def get(self, uuid):
         return foo_storage[uuid]
 
-    def filter(self):
+    def filter(self, filters):
         return foo_storage.values()
 
 
-bar_resource = resources.ResourceByRAModel(BarModel)
+bar_resource = resources.ResourceByRAModel(BarModel, process_filters=True)
 
 
 class BarController1(controllers.Controller):
@@ -151,6 +151,7 @@ def main():
         server.serve_forever()
     except KeyboardInterrupt:
         six.print_('Bye')
+
 
 if __name__ == '__main__':
     main()

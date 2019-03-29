@@ -18,6 +18,7 @@
 
 from restalchemy.storage.sql import filters
 from restalchemy.tests.unit import base
+from restalchemy.tests.unit.storage.sql import common
 
 
 TEST_NAME = 'FAKE_NAME'
@@ -27,7 +28,8 @@ TEST_VALUE = 'FAKE_VALUE'
 class EQTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.EQ(value=TEST_VALUE)
+        self._expr = filters.EQ(value_type=common.AsIsType(),
+                                value=TEST_VALUE)
 
     def test_construct_expression(self):
 
@@ -42,7 +44,8 @@ class EQTestCase(base.BaseTestCase):
 class NETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.NE(value=TEST_VALUE)
+        self._expr = filters.NE(value_type=common.AsIsType(),
+                                value=TEST_VALUE)
 
     def test_construct_expression(self):
 
@@ -57,7 +60,8 @@ class NETestCase(base.BaseTestCase):
 class GTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GT(value=TEST_VALUE)
+        self._expr = filters.GT(value_type=common.AsIsType(),
+                                value=TEST_VALUE)
 
     def test_construct_expression(self):
 
@@ -72,7 +76,8 @@ class GTTestCase(base.BaseTestCase):
 class GETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GE(value=TEST_VALUE)
+        self._expr = filters.GE(value_type=common.AsIsType(),
+                                value=TEST_VALUE)
 
     def test_construct_expression(self):
 
@@ -87,7 +92,8 @@ class GETestCase(base.BaseTestCase):
 class LTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LT(value=TEST_VALUE)
+        self._expr = filters.LT(value_type=common.AsIsType(),
+                                value=TEST_VALUE)
 
     def test_construct_expression(self):
 
@@ -102,7 +108,8 @@ class LTTestCase(base.BaseTestCase):
 class LETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LE(value=TEST_VALUE)
+        self._expr = filters.LE(value_type=common.AsIsType(),
+                                value=TEST_VALUE)
 
     def test_construct_expression(self):
 
@@ -117,7 +124,8 @@ class LETestCase(base.BaseTestCase):
 class IsTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.Is(value=TEST_VALUE)
+        self._expr = filters.Is(value_type=common.AsIsType(),
+                                value=TEST_VALUE)
 
     def test_construct_expression(self):
 
@@ -132,7 +140,8 @@ class IsTestCase(base.BaseTestCase):
 class IsNotTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.IsNot(value=TEST_VALUE)
+        self._expr = filters.IsNot(value_type=common.AsIsType(),
+                                   value=TEST_VALUE)
 
     def test_construct_expression(self):
 

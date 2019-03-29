@@ -95,13 +95,11 @@ class ObjectCollection(base.AbstractObjectCollection):
         return engines.engine_factory.get_engine()
 
     def _filters_to_storage_view(self, filters):
-        # TODO(efrolov): Move this code from class to utils or another
-        #                location.
         result = {}
         for name, value in filters.items():
-            result[name] = (value if isinstance(value, flt.AbstractExpression)
-                            else (self.model_cls.properties.properties[name]
-                                  .get_property_type().to_simple_type(value)))
+            value_type = (self.model_cls.properties.properties[name]
+                          .get_property_type())
+            result[name] = flt.convert_filter(value, value_type)
         return result
 
     def get_all(self, filters=None, session=None):
