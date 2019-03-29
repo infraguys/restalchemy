@@ -45,8 +45,8 @@ bar_storage = {}
 # BarModel 1--->n FooModel
 
 class FooModel(models.ModelWithUUID):
-    foo_field1 = properties.property(types.Integer, required=True)
-    foo_field2 = properties.property(types.String, default="foo_str")
+    foo_field1 = properties.property(types.Integer(), required=True)
+    foo_field2 = properties.property(types.String(), default="foo_str")
 
 
 class BarModel(models.ModelWithUUID):
