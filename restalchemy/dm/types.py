@@ -18,6 +18,7 @@
 
 import abc
 import copy
+import json
 import re
 import uuid
 
@@ -43,6 +44,10 @@ class BaseType(object):
     def from_simple_type(self, value):
         pass
 
+    @abc.abstractmethod
+    def from_unicode(self, value):
+        pass
+
 
 class BasePythonType(BaseType):
 
@@ -59,6 +64,9 @@ class BasePythonType(BaseType):
     def from_simple_type(cls, value):
         return value
 
+    def from_unicode(self, value):
+        return self._python_type(value)
+
 
 class Boolean(BasePythonType):
 
@@ -67,6 +75,9 @@ class Boolean(BasePythonType):
 
     def from_simple_type(cls, value):
         return bool(value)
+
+    def from_unicode(self, value):
+        return value.lower() in ['yes', 'true', '1']
 
 
 class String(BasePythonType):
@@ -81,6 +92,9 @@ class String(BasePythonType):
         l = len(str(value))
         return result and l >= self.min_length and l <= self.max_length
 
+    def from_unicode(self, value):
+        return six.text_type(value)
+
 
 class Integer(BasePythonType):
 
@@ -93,6 +107,9 @@ class Integer(BasePythonType):
     def validate(self, value):
         result = super(Integer, self).validate(value)
         return result and value >= self.min_value and value <= self.max_value
+
+    def from_unicode(self, value):
+        return int(value)
 
 
 class Float(BasePythonType):
@@ -120,12 +137,25 @@ class UUID(BaseType):
     def validate(self, value):
         return isinstance(value, uuid.UUID)
 
+    def from_unicode(self, value):
+        return uuid.UUID(value)
+
 
 # TODO(efrolov): Make converters to convert Dict type to storable type
 class Dict(BasePythonType):
 
     def __init__(self):
         super(Dict, self).__init__(dict)
+
+    def from_unicode(self, value):
+        result = None
+        try:
+            result = json.loads(value)
+        except (TypeError, ValueError):
+            pass
+        if not isinstance(result, dict):
+            raise TypeError("Can't convert '%s' to dict" % value)
+        return result
 
 
 class Enum(BaseType):
@@ -142,6 +172,13 @@ class Enum(BaseType):
 
     def from_simple_type(self, value):
         return value
+
+    def from_unicode(self, value):
+        for enum_value in self._enums_values:
+            if value == six.text_type(enum_value):
+                return enum_value
+        raise TypeError("Can't convert '%s' to enum type. Allow values is %s"
+                        % (value, self._enums_values))
 
 
 class BaseRegExpType(BaseType):
@@ -160,6 +197,9 @@ class BaseRegExpType(BaseType):
         return value
 
     def from_simple_type(cls, value):
+        return value
+
+    def from_unicode(self, value):
         return value
 
 
