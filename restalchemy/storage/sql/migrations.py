@@ -59,7 +59,8 @@ class AbstarctMigrationStep(object):
 class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = RA_MIGRATION_TABLE_NAME
 
-    applied = properties.property(types.Boolean, required=True, default=False)
+    applied = properties.property(types.Boolean(), required=True,
+                                  default=False)
 
 
 class MigrationStepController(object):
