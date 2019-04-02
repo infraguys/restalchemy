@@ -82,7 +82,7 @@ class VMController(BaseController):
     Handle GET http://127.0.0.1:8000/v1/vms/<uuid>/actions/poweroff/invoke
     """
 
-    __resource__ = resources.ResourceByRAModel(models.VM)
+    __resource__ = resources.ResourceByRAModel(models.VM, process_filters=True)
 
     def create(self, name):
         session = self._get_session()
@@ -113,7 +113,7 @@ class VMController(BaseController):
 
     def filter(self, filters):
         session = self._get_session()
-        vms = self.model.objects.get_all(session=session)
+        vms = self.model.objects.get_all(session=session, filters=filters)
         return vms
 
     @actions.post

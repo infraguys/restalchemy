@@ -21,9 +21,8 @@ import logging
 
 import six
 
-from restalchemy.api import filters
+from restalchemy.dm import filters
 from restalchemy.dm import types
-
 
 LOG = logging.getLogger(__name__)
 
@@ -104,7 +103,7 @@ class In(AbstractExpression):
         return ("`%s` IN " % name) + "%s"
 
 
-def convert_filter(api_filter, filter_type=None):
+def convert_filter(api_filter, value_type=None):
     FILTER_MAPPING = {
         filters.EQ: EQ,
         filters.NE: NE,
@@ -131,16 +130,15 @@ def convert_filter(api_filter, filter_type=None):
         def from_unicode(self, value):
             return value
 
-    filter_type = filter_type or AsIsType()
+    value_type = value_type or AsIsType()
     # Make API compatible with previous versions.
     if not isinstance(api_filter, filters.AbstractExpression):
         LOG.warning("DEPRICATED: pleases use %s wrapper for filter value" %
                     filters.EQ)
-        return EQ(filter_type, api_filter)
+        return EQ(value_type, api_filter)
 
-    filter_type = api_filter.type_value or filter_type
     if type(api_filter) not in FILTER_MAPPING:
         raise ValueError("Can't convert API filter to SQL storage filter. "
                          "Unknown filter %s" % api_filter)
 
-    return FILTER_MAPPING[type(api_filter)](api_filter.value)
+    return FILTER_MAPPING[type(api_filter)](value_type, api_filter.value)

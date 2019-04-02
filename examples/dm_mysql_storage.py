@@ -18,12 +18,12 @@
 
 import six
 
+from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
 from restalchemy.storage.sql import engines
-from restalchemy.storage.sql import filters
 from restalchemy.storage.sql import orm
 
 
@@ -98,6 +98,10 @@ for num in range(10):
 
 six.print_(list(FooModel.objects.get_all(filters={
     'foo_field1': filters.GT(5)})))
+
+six.print_("foo_field1 in equal 5 or 6")
+six.print_(FooModel.objects.get_all(filters={
+    'foo_field1': filters.In([5, 6])}))
 
 for model in FooModel.objects.get_all():
     model.delete()

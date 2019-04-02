@@ -24,6 +24,7 @@ import six
 from six.moves.urllib import parse
 
 from restalchemy.common import singletons
+from restalchemy.storage.sql.dialect import adapters
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql import sessions
 
@@ -68,7 +69,8 @@ class MySQLEngine(AbstractEngine):
             'password': self.db_password,
             'database': self.db_name,
             'host': self.db_host,
-            'port': self.db_port
+            'port': self.db_port,
+            'converter_class': adapters.MySQLConverter
         })
         self._pool = pooling.MySQLConnectionPool(**config)
         self._dialect = mysql.MySQLDialect()

@@ -21,10 +21,10 @@ import logging
 import six
 import webob
 
-from restalchemy.api import filters
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
+from restalchemy.dm import filters
 
 
 LOG = logging.getLogger(__name__)
@@ -80,39 +80,38 @@ class Controller(object):
             kwargs['parent_resource'] = parent_resource
         return kwargs
 
-    def _prepare_value(self, field_name, value):
+    def _prepare_filter(self, param_name, value):
         resource_fields = {}
         if self.model is not None:
             resource_fields = {
                 self.__resource__.get_resource_field_name(name): prop
                 for name, prop in self.__resource__.get_fields()
             }
-        if field_name not in resource_fields:
+        if param_name not in resource_fields:
             raise ValueError("Unknown filter '%s' with value %r for "
-                             "resource %r" % (field_name,
+                             "resource %r" % (param_name,
                                               value,
                                               self.__resource__))
-        value = resource_fields[field_name].parse_value_from_unicode(
+        value = resource_fields[param_name].parse_value_from_unicode(
             self._req, value)
-        field_name = resource_fields[field_name].name
-        field_type = resource_fields[field_name]
+        param_name = resource_fields[param_name].name
 
-        return field_name, field_type, value
+        return param_name, value
 
     def _prepare_filters(self, params):
         if not (self.__resource__ and self.__resource__.is_process_filters()):
             return params
         result = {}
         for param, value in params.items():
-            field_name, field_value = self._prepare_value(param, value)
-            if field_name not in result:
-                result[field_name] = filters.EQ(field_value)
+            filter_name, filter_value = self._prepare_filter(param, value)
+            if filter_name not in result:
+                result[filter_name] = filters.EQ(filter_value)
             else:
-                values = ([result[field_name].value]
-                          if not isinstance(result[field_name], filters.In)
-                          else result[field_name].value)
-                values.append(field_value)
-                result[field_name] = filters.In(values)
+                values = ([result[filter_name].value]
+                          if not isinstance(result[filter_name], filters.In)
+                          else result[filter_name].value)
+                values.append(filter_value)
+                result[filter_name] = filters.In(values)
 
         return result
 
