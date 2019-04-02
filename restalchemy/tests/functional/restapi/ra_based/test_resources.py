@@ -217,6 +217,49 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
 
+    def test_get_collection_vms_with_filter_by_uuid(self):
+        RESOURCE_ID1 = pyuuid.UUID("00000000-0000-0000-0000-000000000001")
+        RESOURCE_ID2 = pyuuid.UUID("00000000-0000-0000-0000-000000000002")
+        RESOURCE_ID3 = pyuuid.UUID("00000000-0000-0000-0000-000000000003")
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="off")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID2),
+            "name": "test2",
+            "state": "on"
+        }]
+
+        response = requests.get(self.get_endpoint("%s?uuid=%s" % (
+            TEMPL_VMS_COLLECTION_ENDPOINT, str(RESOURCE_ID2))))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+
+    def test_get_collection_vms_with_filter_by_two_uuid(self):
+        RESOURCE_ID1 = pyuuid.UUID("00000000-0000-0000-0000-000000000001")
+        RESOURCE_ID2 = pyuuid.UUID("00000000-0000-0000-0000-000000000002")
+        RESOURCE_ID3 = pyuuid.UUID("00000000-0000-0000-0000-000000000003")
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="off")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID1),
+            "name": "test1",
+            "state": "off"
+        }, {
+            "uuid": str(RESOURCE_ID3),
+            "name": "test3",
+            "state": "off"
+        }]
+
+        response = requests.get(self.get_endpoint("%s?uuid=%s&uuid=%s" % (
+            TEMPL_VMS_COLLECTION_ENDPOINT, str(RESOURCE_ID1),
+            str(RESOURCE_ID3))))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+
 
 class TestNestedResourceTestCase(BaseResourceTestCase):
 

@@ -24,23 +24,16 @@ import six
 @six.add_metaclass(abc.ABCMeta)
 class AbstractExpression(object):
 
-    def __init__(self, value, type_value=None):
+    def __init__(self, value):
         super(AbstractExpression, self).__init__()
         self._value = value
-        self._type_value = type_value
 
     @property
     def value(self):
         return self._value
 
-    @property
-    def type_value(self):
-        return self._type_value
-
     def __repr__(self):
-        return "<%s (%r: %r)>" % (type(self).__name__,
-                                  self.value,
-                                  self._type_value)
+        return "<%s (%r)>" % (type(self).__name__, self.value)
 
 
 class EQ(AbstractExpression):
