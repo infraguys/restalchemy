@@ -109,7 +109,7 @@ class ObjectCollection(base.AbstractObjectCollection):
             result = self._table.select(engine=self._engine, filters=filters,
                                         session=s)
             return [self.model_cls.restore_from_storage(**params)
-                    for params in result.fetchall()]
+                    for params in list(result.fetchall())]
 
     def get_one(self, filters=None, session=None):
         result = self.get_all(filters=filters, session=session)
