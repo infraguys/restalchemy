@@ -133,7 +133,7 @@ def convert_filter(api_filter, value_type=None):
     value_type = value_type or AsIsType()
     # Make API compatible with previous versions.
     if not isinstance(api_filter, filters.AbstractExpression):
-        LOG.warning("DEPRICATED: pleases use %s wrapper for filter value" %
+        LOG.warning("DEPRECATED: pleases use %s wrapper for filter value" %
                     filters.EQ)
         return EQ(value_type, api_filter)
 
