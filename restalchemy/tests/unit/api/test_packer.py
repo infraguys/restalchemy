@@ -16,23 +16,35 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-pass
-
 # TODO(Eugene Frolov): Rewrite tests
 
-# import mock
+import mock
 
-# from restalchemy.api import packers
-# from restalchemy.api import routes
-# from restalchemy.dm import models
-# from restalchemy.tests.unit import base
+from restalchemy.api import packers
+from restalchemy.api import resources
+from restalchemy.dm import models
+from restalchemy.dm import properties
+from restalchemy.dm import types
+from restalchemy.tests.unit import base
 
 
-# class BasePackerTestCase(base.BaseTestCase):
+class FakeModel(models.ModelWithUUID):
+    field1 = properties.property(types.Integer(), required=False)
 
-#     def setUp(self):
-#         super(BasePackerTestCase, self).setUp()
-#         self.test_instance = packers.BasePacker()
+
+class BasePackerTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(BasePackerTestCase, self).setUp()
+        self._test_instance = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(FakeModel), mock.Mock())
+
+    def test_none_field_value(self):
+        TEST_OBJ = {'field1': None}
+
+        result = self._test_instance.unpack(TEST_OBJ)
+
+        self.assertDictEqual(result, TEST_OBJ)
 
 #     def test_prepare_resource_dict_type(self):
 #         test_value = {'test': 'test', 'test2': 12345}
