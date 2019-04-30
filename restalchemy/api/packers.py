@@ -24,6 +24,7 @@ import six
 
 
 DEFAULT_CONTENT_TYPE = 'application/json'
+DEFAULT_VALUE = object()
 
 
 def get_content_type(headers):
@@ -62,8 +63,8 @@ class BaseResourcePacker(object):
         result = {}
         for name, prop in self._rt.get_fields():
             api_name = prop.api_name
-            value = obj.pop(api_name, None)
-            if value is not None:
+            value = obj.pop(api_name, DEFAULT_VALUE)
+            if value is not DEFAULT_VALUE:
                 if not prop.is_public():
                     raise ValueError("Property %s is private" % api_name)
                 result[name] = prop.parse_value(self._req, value)
