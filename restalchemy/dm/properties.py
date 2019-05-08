@@ -84,6 +84,10 @@ class Property(BaseProperty):
     def is_id_property(cls):
         return False
 
+    @property
+    def old_value(self):
+        return self.__first_value
+
     @builtins.property
     def value(self):
         return self._value
