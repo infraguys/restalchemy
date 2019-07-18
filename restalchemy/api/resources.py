@@ -174,14 +174,18 @@ class ResourceRelationship(AbstractResourceProperty):
 class AbstractResource(object):
 
     def __init__(self, model_class, name_map=None, hidden_fields=None,
-                 convert_underscore=True, process_filters=False):
+                 convert_underscore=True, process_filters=False,
+                 model_subclasses=None):
         super(AbstractResource, self).__init__()
         self._model_class = model_class
         self._name_map = name_map or {}
         self._hidden_fields = hidden_fields or []
         self._convert_underscore = convert_underscore
         self._process_filters = process_filters
+        self._model_subclasses = model_subclasses or []
         ResourceMap.add_model_to_resource_mapping(model_class, self)
+        for model_subclass in self._model_subclasses:
+            ResourceMap.add_model_to_resource_mapping(model_subclass, self)
 
     def is_process_filters(self):
         return self._process_filters
