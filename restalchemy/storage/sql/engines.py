@@ -57,7 +57,7 @@ class MySQLEngine(AbstractEngine):
 
     URL_SCHEMA = 'mysql'
 
-    def __init__(self, db_url, config=None):
+    def __init__(self, db_url, config=None, query_cache=False):
         super(MySQLEngine, self).__init__(db_url)
         if self._db_url.scheme != self.URL_SCHEMA:
             raise ValueError("Database url should be starts with mysql://. "
@@ -75,6 +75,11 @@ class MySQLEngine(AbstractEngine):
         self._pool = pooling.MySQLConnectionPool(**config)
         self._dialect = mysql.MySQLDialect()
         self._session_storage = sessions.SessionThreadStorage()
+        self._query_cache = query_cache
+
+    @property
+    def query_cache(self):
+        return self._query_cache
 
     @property
     def dialect(self):
@@ -141,14 +146,18 @@ class EngineFactory(singletons.InheritSingleton):
             MySQLEngine.URL_SCHEMA: MySQLEngine
         }
 
-    def configure_factory(self, db_url, config=None):
+    def configure_factory(self, db_url, config=None, query_cache=False):
         """Configure_factory
 
         @property db_url: str. For example driver://user:passwd@host:port/db
         """
         schema = db_url.split(':')[0]
         try:
-            self._engine = self._engines_map[schema.lower()](db_url, config)
+            self._engine = self._engines_map[schema.lower()](
+                db_url=db_url,
+                config=config,
+                query_cache=query_cache
+            )
         except KeyError:
             raise ValueError("Can not find driver for schema %s" % schema)
 
