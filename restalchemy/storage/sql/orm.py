@@ -20,6 +20,7 @@ import abc
 
 import six
 
+from restalchemy.common import utils as common_utils
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -102,17 +103,28 @@ class ObjectCollection(base.AbstractObjectCollection):
             result[name] = flt.convert_filter(value, value_type)
         return result
 
-    def get_all(self, filters=None, session=None):
+    def get_all(self, filters=None, session=None, cache=False):
         # TODO(efrolov): Add limit and offset parameters
         filters = self._filters_to_storage_view(filters or {})
         with self._engine.session_manager(session=session) as s:
-            result = self._table.select(engine=self._engine, filters=filters,
-                                        session=s)
-            return [self.model_cls.restore_from_storage(**params)
-                    for params in list(result.fetchall())]
+            if cache is True:
+                return s.cache.get_all(
+                    engine=self._engine,
+                    table=self._table,
+                    filters=filters,
+                    fallback=self._get_all
+                )
 
-    def get_one(self, filters=None, session=None):
-        result = self.get_all(filters=filters, session=session)
+            return self._get_all(filters=filters, session=s)
+
+    def _get_all(self, filters, session):
+        result = self._table.select(engine=self._engine, filters=filters,
+                                    session=session)
+        return [self.model_cls.restore_from_storage(**params)
+                for params in list(result.fetchall())]
+
+    def get_one(self, filters=None, session=None, cache=False):
+        result = self.get_all(filters=filters, session=session, cache=cache)
         result_len = len(result)
         if result_len == 1:
             return result[0]
@@ -131,7 +143,8 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     _ObjectCollection = ObjectCollection
 
-    @abc.abstractproperty
+    @common_utils.classproperty
+    @abc.abstractmethod
     def __tablename__(self):
         raise NotImplementedError()
 
@@ -219,4 +232,6 @@ class SQLStorableMixin(base.AbstractStorableMixin):
             if prop.is_id_property():
                 value = (cls.properties.properties[name].get_property_type()
                          .from_simple_type(value))
-                return cls.objects.get_one(filters={name: value})
+                engine = engines.engine_factory.get_engine()
+                return cls.objects.get_one(filters={name: value},
+                                           cache=engine.query_cache)

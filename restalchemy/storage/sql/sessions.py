@@ -21,12 +21,35 @@ import logging
 import threading
 
 
+class SessionQueryCache(object):
+
+    def __init__(self, session):
+        super(SessionQueryCache, self).__init__()
+        self._session = session
+        self.__query_cache = {}
+
+    @staticmethod
+    def _get_hash(engine, table, filters):
+        query = engine.dialect.select(table, filters)
+        values = query.get_values()
+        statement = query.get_statement()
+        return hash(tuple([statement] + values))
+
+    def get_all(self, engine, table, filters, fallback):
+        query_hash = self._get_hash(engine, table, filters)
+        if query_hash not in self.__query_cache:
+            self.__query_cache[query_hash] = fallback(filters=filters,
+                                                      session=self._session)
+        return self.__query_cache[query_hash]
+
+
 class MySQLSession(object):
 
     def __init__(self, conn):
         self._conn = conn
         self._cursor = conn.cursor(dictionary=True, buffered=True)
         self._log = logging.getLogger(__name__)
+        self.cache = SessionQueryCache(session=self)
 
     def execute(self, statement, values):
         self._log.debug("Execute statement %s with values %s",
