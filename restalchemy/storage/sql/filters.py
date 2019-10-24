@@ -97,7 +97,9 @@ class IsNot(AbstractExpression):
 class In(AbstractExpression):
 
     def _convert_value(self, value_type, value):
-        return [value_type.to_simple_type(item) for item in value]
+        # Note(efrolov): Replace empty list with [Null]. Some SQL servers
+        #                forbid empty lists in "in" operator.
+        return [value_type.to_simple_type(item) for item in value] or [None]
 
     def construct_expression(self, name):
         return ("`%s` IN " % name) + "%s"

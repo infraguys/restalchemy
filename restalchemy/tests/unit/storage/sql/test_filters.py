@@ -121,6 +121,40 @@ class LETestCase(base.BaseTestCase):
         self.assertEqual(self._expr.value, TEST_VALUE)
 
 
+class InTestCase(base.BaseTestCase):
+
+    TEST_LIST_VALUES = [1, 2, 3]
+
+    def setUp(self):
+        self._expr = filters.In(value_type=common.AsIsType(),
+                                value=self.TEST_LIST_VALUES)
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression(name=TEST_NAME)
+
+        self.assertEqual(result, '`' + TEST_NAME + '` IN %s')
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
+
+
+class InEmptyListTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._expr = filters.In(value_type=common.AsIsType(),
+                                value=[])
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression(name=TEST_NAME)
+
+        self.assertEqual(result, '`' + TEST_NAME + '` IN %s')
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, [None])
+
+
 class IsTestCase(base.BaseTestCase):
 
     def setUp(self):
