@@ -37,3 +37,7 @@ class VM(Base):
         super(VM, self).__init__()
         self.name = name
         self.state = state
+
+    @classmethod
+    def get_model_type(cls):
+        return cls

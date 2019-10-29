@@ -32,7 +32,7 @@ from restalchemy.dm import relationships as ra_relationsips
 class ResourceMap(object):
 
     resource_map = {}
-    model_to_resource = {}
+    model_type_to_resource = {}
 
     @classmethod
     def get_location(cls, model):
@@ -71,18 +71,18 @@ class ResourceMap(object):
         cls.resource_map = resource_map
 
     @classmethod
-    def add_model_to_resource_mapping(self, model_class, resource):
-        if model_class in self.model_to_resource:
+    def add_model_to_resource_mapping(cls, model_class, resource):
+        if model_class in cls.model_type_to_resource:
             raise ValueError(
                 "model (%s) for resource (%s) already added. %s" % (
-                    model_class, resource, self.model_to_resource))
-        self.model_to_resource[model_class] = resource
+                    model_class, resource, cls.model_type_to_resource))
+        cls.model_type_to_resource[model_class] = resource
 
     @classmethod
-    def get_resource_by_model(self, model):
-        model_class = model if inspect.isclass(model) else type(model)
+    def get_resource_by_model(cls, model):
+        model_type = model.get_model_type()
         try:
-            return self.model_to_resource[model_class]
+            return cls.model_type_to_resource[model_type]
         except KeyError:
             raise exc.CanNotFindResourceByModel(model=model)
 
