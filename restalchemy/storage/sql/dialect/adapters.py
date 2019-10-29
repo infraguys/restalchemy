@@ -19,7 +19,6 @@
 from __future__ import absolute_import  # noqa
 
 from mysql.connector import conversion
-import types
 
 
 class MySQLConverter(conversion.MySQLConverter):
@@ -39,7 +38,7 @@ class MySQLConverter(conversion.MySQLConverter):
         As found in MySQL source mysys/charset.c
         Returns the value if not a string, or the escaped string.
         """
-        if isinstance(value, types.ListType):
+        if isinstance(value, list):
             return [self.escape(item) for item in value]
         return super(MySQLConverter, self).escape(value)
 
@@ -52,7 +51,7 @@ class MySQLConverter(conversion.MySQLConverter):
           o Everything else is single quoted '<buf>'
         Returns a bytearray object.
         """
-        if isinstance(buf, types.ListType):
+        if isinstance(buf, list):
             tmp_list_buf = [str(self.quote(item)) for item in buf]
             tmp_str_buf = '(%s)' % (', '.join(tmp_list_buf))
             return bytearray(tmp_str_buf)

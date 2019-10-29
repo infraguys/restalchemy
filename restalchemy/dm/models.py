@@ -134,6 +134,10 @@ class Model(collections.Mapping):
                 return True
         return False
 
+    @classmethod
+    def get_model_type(cls):
+        return cls
+
     def __getitem__(self, name):
         return self.properties[name].value
 

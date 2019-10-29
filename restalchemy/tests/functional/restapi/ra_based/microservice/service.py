@@ -17,9 +17,11 @@
 #    under the License.
 
 import threading
-from wsgiref.simple_server import make_server, WSGIServer
+from wsgiref.simple_server import WSGIServer, make_server
 
 from restalchemy.api import applications
+from restalchemy.storage.sql import engines
+from restalchemy.tests.functional import consts
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     middlewares)
 from restalchemy.tests.functional.restapi.ra_based.microservice import routes
@@ -51,5 +53,7 @@ def main():
     except KeyboardInterrupt:
         pass
 
+
 if __name__ == "__main__":
+    engines.engine_factory.configure_factory(consts.DATABASE_URI)
     main()
