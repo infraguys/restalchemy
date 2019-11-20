@@ -22,8 +22,6 @@ import json
 import six
 
 from restalchemy.common import exceptions as common_exc
-from restalchemy.dm import filters
-from restalchemy.dm import properties
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -273,7 +271,6 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     @classmethod
     def from_simple_type(cls, value):
-        # TODO(efrolov): Add session here!
         if value is None:
             return None
         for name, prop in cls.properties.items():
@@ -281,11 +278,8 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                 value = (cls.properties.properties[name].get_property_type()
                          .from_simple_type(value))
                 engine = engines.engine_factory.get_engine()
-                return LazyModelWrapper(
-                    model_class=cls,
-                    get_one_filters={name: filters.EQ(value)},
-                    use_cache=engine.query_cache
-                )
+                return cls.objects.get_one(filters={name: value},
+                                           cache=engine.query_cache)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -311,39 +305,3 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin):
         for field in self.__jsonfields__:
             result[field] = json.dumps(result[field])
         return result
-
-
-class LazyModelWrapper(object):
-
-    def __init__(self, model_class, get_one_filters, use_cache=False):
-        super(LazyModelWrapper, self).__init__()
-        self.__model_class = model_class
-        self.__filters = get_one_filters
-        self.__use_cache = use_cache
-        self.__model_object = None
-
-    def get_model_type(self):
-        return self.__model_class.get_model_type()
-
-    def get_id(self):
-        id_properties = []
-        for name, prop in self.__model_class.properties.properties.items():
-            if issubclass(prop.get_property_class(), properties.IDProperty):
-                id_properties.append(name)
-
-        if len(id_properties) == 1:
-            return self.__filters[id_properties[0]].value
-        return self.__model.get_id()
-
-    @property
-    def __model(self):
-        if self.__model_object is None:
-            self.__model_object = self.__model_class.objects.get_one(
-                filters=self.__filters, cache=self.__use_cache
-            )
-        return self.__model_object
-
-    def __getattr__(self, name):
-        if name in self.__filters:
-            return self.__filters[name].value
-        return getattr(self.model, name)
