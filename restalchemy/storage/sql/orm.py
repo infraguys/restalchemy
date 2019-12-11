@@ -85,6 +85,15 @@ class SQLTable(object):
         cmd = engine.dialect.select(table=self, filters=filters)
         return cmd.execute(session=session)
 
+    def custom_select(self, engine, where_conditions, where_values,
+                      session):
+        cmd = engine.dialect.custom_select(
+            table=self,
+            where_conditions=where_conditions,
+            where_values=where_values,
+        )
+        return cmd.execute(session=session)
+
 
 class ObjectCollection(base.AbstractObjectCollection):
 
@@ -136,6 +145,37 @@ class ObjectCollection(base.AbstractObjectCollection):
         else:
             raise exceptions.HasManyRecords(model=self.model_cls,
                                             filters=filters)
+
+    def _query(self, where_conditions, where_values, session):
+        result = self._table.custom_select(
+            engine=self._engine,
+            where_conditions=where_conditions,
+            where_values=where_values,
+            session=session,
+        )
+        return [self.model_cls.restore_from_storage(**params)
+                for params in list(result.fetchall())]
+
+    def query(self, where_conditions, where_values, session=None,
+              cache=False):
+        """
+
+        :param where_conditions: "NOT (bala < %s)"
+        :param where_values: (5, 10,)
+        """
+        with self._engine.session_manager(session=session) as s:
+            if cache is True:
+                return s.cache.query(
+                    engine=self._engine,
+                    table=self._table,
+                    where_conditions=where_conditions,
+                    where_values=where_values,
+                    fallback=self._query
+                )
+
+            return self._query(where_conditions=where_conditions,
+                               where_values=where_values,
+                               session=s)
 
 
 @six.add_metaclass(abc.ABCMeta)
