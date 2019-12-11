@@ -159,6 +159,27 @@ class MySQLSelect(AbstractDialectCommand):
         return sql + " WHERE %s" % filt if filt else sql
 
 
+class MySQLCustomSelect(AbstractDialectCommand):
+
+    def __init__(self, table, where_conditions, where_values):
+        super(MySQLCustomSelect, self).__init__(table=table, data={})
+        self._where_conditions = where_conditions
+        self._where_values = where_values
+
+    def get_values(self):
+        return self._where_values
+
+    def construct_where(self):
+        return self._where_conditions
+
+    def get_statement(self):
+        sql = "SELECT %s FROM `%s`" % (
+            ", ".join(self._table.get_escaped_column_names()),
+            self._table.name
+        )
+        return "%s WHERE %s" % (sql, self.construct_where())
+
+
 class MySQLDialect(base.AbstractDialect):
 
     def insert(self, table, data):
@@ -172,3 +193,6 @@ class MySQLDialect(base.AbstractDialect):
 
     def select(self, table, filters):
         return MySQLSelect(table, filters)
+
+    def custom_select(self, table, where_conditions, where_values):
+        return MySQLCustomSelect(table, where_conditions, where_values)
