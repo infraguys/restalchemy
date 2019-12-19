@@ -18,6 +18,8 @@
 
 import abc
 import copy
+import datetime
+import itertools
 import json
 import re
 import uuid
@@ -25,8 +27,9 @@ import uuid
 import six
 
 
-INFINITI = float("inf")
-UUID_RE_TEMPLATE = "[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
+INFINITY = float("inf")
+INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
+UUID_RE_TEMPLATE = r"[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -58,10 +61,10 @@ class BasePythonType(BaseType):
     def validate(self, value):
         return isinstance(value, self._python_type)
 
-    def to_simple_type(cls, value):
+    def to_simple_type(self, value):
         return value
 
-    def from_simple_type(cls, value):
+    def from_simple_type(self, value):
         return value
 
     def from_unicode(self, value):
@@ -73,7 +76,7 @@ class Boolean(BasePythonType):
     def __init__(self):
         super(Boolean, self).__init__(bool)
 
-    def from_simple_type(cls, value):
+    def from_simple_type(self, value):
         return bool(value)
 
     def from_unicode(self, value):
@@ -89,8 +92,7 @@ class String(BasePythonType):
 
     def validate(self, value):
         result = super(String, self).validate(value)
-        l = len(str(value))
-        return result and l >= self.min_length and l <= self.max_length
+        return result and self.min_length <= len(str(value)) <= self.max_length
 
     def from_unicode(self, value):
         return six.text_type(value)
@@ -98,15 +100,15 @@ class String(BasePythonType):
 
 class Integer(BasePythonType):
 
-    def __init__(self, min_value=-INFINITI, max_value=INFINITI):
+    def __init__(self, min_value=-INFINITY, max_value=INFINITY):
         super(Integer, self).__init__(six.integer_types)
         self.min_value = (
-            min_value if min_value == -INFINITI else int(min_value))
-        self.max_value = max_value if max_value == INFINITI else int(max_value)
+            min_value if min_value == -INFINITY else int(min_value))
+        self.max_value = max_value if max_value == INFINITY else int(max_value)
 
     def validate(self, value):
         result = super(Integer, self).validate(value)
-        return result and value >= self.min_value and value <= self.max_value
+        return result and self.min_value <= value <= self.max_value
 
     def from_unicode(self, value):
         return int(value)
@@ -114,24 +116,24 @@ class Integer(BasePythonType):
 
 class Float(BasePythonType):
 
-    def __init__(self, min_value=-INFINITI, max_value=INFINITI):
+    def __init__(self, min_value=-INFINITY, max_value=INFINITY):
         super(Float, self).__init__(float)
         self.min_value = (
-            min_value if min_value == -INFINITI else float(min_value))
-        self.max_value = max_value if max_value == INFINITI else float(
+            min_value if min_value == -INFINITY else float(min_value))
+        self.max_value = max_value if max_value == INFINITY else float(
             max_value)
 
     def validate(self, value):
         result = super(Float, self).validate(value)
-        return result and value >= self.min_value and value <= self.max_value
+        return result and self.min_value <= value <= self.max_value
 
 
 class UUID(BaseType):
 
-    def to_simple_type(cls, value):
+    def to_simple_type(self, value):
         return str(value)
 
-    def from_simple_type(cls, value):
+    def from_simple_type(self, value):
         return uuid.UUID(value)
 
     def validate(self, value):
@@ -139,6 +141,32 @@ class UUID(BaseType):
 
     def from_unicode(self, value):
         return uuid.UUID(value)
+
+
+class List(BasePythonType):
+
+    def __init__(self, nested_type=None):
+        super(List, self).__init__(list)
+        self._nested_type = nested_type
+
+    def validate(self, value):
+        result = super(List, self).validate(value)
+        if self._nested_type is not None:
+            for element in itertools.takewhile(lambda _: result, value):
+                result &= self._nested_type.validate(element)
+        return result
+
+    def to_simple_type(self, value):
+        if self._nested_type is None:
+            return super(List, self).to_simple_type(value)
+        else:
+            return [self._nested_type.to_simple_type(e) for e in value]
+
+    def from_simple_type(self, value):
+        if self._nested_type is None:
+            return super(List, self).from_simple_type(value)
+        else:
+            return [self._nested_type.from_simple_type(e) for e in value]
 
 
 # TODO(efrolov): Make converters to convert Dict type to storable type
@@ -156,6 +184,26 @@ class Dict(BasePythonType):
         if not isinstance(result, dict):
             raise TypeError("Can't convert '%s' to dict" % value)
         return result
+
+
+class UTCDateTime(BasePythonType):
+
+    def __init__(self):
+        super(UTCDateTime, self).__init__(python_type=datetime.datetime)
+
+    def validate(self, value):
+        return isinstance(value, datetime.datetime) and value.tzinfo is None
+
+    def to_simple_type(self, value):
+        return str(value)
+
+    def from_simple_type(self, value):
+        if isinstance(value, datetime.datetime):
+            return value
+        return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
+
+    def from_unicode(self, value):
+        return self.from_simple_type(value)
 
 
 class Enum(BaseType):
@@ -193,10 +241,10 @@ class BaseRegExpType(BaseType):
         except TypeError:
             return False
 
-    def to_simple_type(cls, value):
+    def to_simple_type(self, value):
         return value
 
-    def from_simple_type(cls, value):
+    def from_simple_type(self, value):
         return value
 
     def from_unicode(self, value):
@@ -206,7 +254,7 @@ class BaseRegExpType(BaseType):
 class Uri(BaseRegExpType):
 
     def __init__(self):
-        super(Uri, self).__init__(pattern="^(/[A-Za-z0-9\-_]*)*/%s$" %
+        super(Uri, self).__init__(pattern=r"^(/[A-Za-z0-9\-_]*)*/%s$" %
                                   UUID_RE_TEMPLATE)
 
 
@@ -214,3 +262,29 @@ class Mac(BaseRegExpType):
 
     def __init__(self):
         super(Mac, self).__init__("^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
+
+
+class AllowNone(BaseType):
+
+    def __init__(self, nested_type):
+        super(AllowNone, self).__init__()
+        self._nested_type = nested_type
+
+    @property
+    def nested_type(self):
+        return self._nested_type
+
+    def validate(self, value):
+        return value is None or self._nested_type.validate(value)
+
+    def to_simple_type(self, value):
+        return None if value is None else self._nested_type.to_simple_type(
+            value)
+
+    def from_simple_type(self, value):
+        return None if value is None else self._nested_type.from_simple_type(
+            value)
+
+    def from_unicode(self, value):
+        return None if value is None else self._nested_type.from_unicode(
+            value)

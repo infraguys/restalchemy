@@ -55,6 +55,18 @@ class AbstarctMigrationStep(object):
     def downgrade(self, session):
         raise NotImplementedError()
 
+    @staticmethod
+    def _delete_table_if_exists(session, table_name):
+        session.execute("DROP TABLE IF EXISTS `%s`;" % table_name, None)
+
+    @staticmethod
+    def _delete_trigger_if_exists(session, trigger_name):
+        session.execute("DROP TRIGGER IF EXISTS `%s`;" % trigger_name, None)
+
+    @staticmethod
+    def _delete_view_if_exists(session, view_name):
+        session.execute("DROP VIEW IF EXISTS `%s`;" % view_name, None)
+
 
 class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = RA_MIGRATION_TABLE_NAME

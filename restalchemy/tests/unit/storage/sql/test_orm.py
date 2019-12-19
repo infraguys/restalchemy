@@ -16,6 +16,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -26,6 +27,11 @@ from restalchemy.tests.unit import base
 
 FAKE_VALUE_A = 'FAKE_A'
 FAKE_VALUE_B = 'FAKE_B'
+
+FAKE_DICT = {'key': 'value', 'list': [1, 2, 3], 'dict': {'a': 'A'}}
+FAKE_DICT_JSON = json.dumps(FAKE_DICT)
+FAKE_LIST = [1, 'a', None]
+FAKE_LIST_JSON = json.dumps(FAKE_LIST)
 
 
 class TestRestoreModel(models.Model, orm.SQLStorableMixin):
@@ -48,3 +54,47 @@ class TestRestoreModelTestCase(base.BaseTestCase):
 
         self.assertEqual(model.a, FAKE_VALUE_A)
         self.assertEqual(model.b, FAKE_VALUE_B)
+
+    def test_tablename_should_be_defined(self):
+        model = type('TestIncompleteRestoreModel',
+                     (models.Model, orm.SQLStorableMixin),
+                     {})()
+
+        with self.assertRaises(orm.UndefinedAttribute):
+            model._table
+
+
+class TestRestoreWithJSONModel(models.Model,
+                               orm.SQLStorableWithJSONFieldsMixin):
+    __tablename__ = 'fake_table'
+    __jsonfields__ = ['a', 'b']
+
+    a = properties.property(types.Dict())
+    b = properties.property(types.List())
+
+
+class TestRestoreWithJSONModelTestCase(base.BaseTestCase):
+
+    def test_json_parsed(self):
+        model = TestRestoreWithJSONModel.restore_from_storage(a=FAKE_DICT_JSON,
+                                                              b=FAKE_LIST_JSON)
+
+        self.assertEqual(model.a, FAKE_DICT)
+        self.assertEqual(model.b, FAKE_LIST)
+
+    def test_json_dumped(self):
+        model = TestRestoreWithJSONModel(a=FAKE_DICT, b=FAKE_LIST)
+        prepared_data = model._get_prepared_data(model.get_id_properties())
+
+        self.assertEqual(prepared_data['a'], FAKE_DICT_JSON)
+        self.assertEqual(prepared_data['b'], FAKE_LIST_JSON)
+
+    def test_tablename_should_be_defined(self):
+        model = type('TestIncompleteRestoreWithJSONModel',
+                     (models.Model, orm.SQLStorableWithJSONFieldsMixin),
+                     {})()
+
+        with self.assertRaises(orm.UndefinedAttribute):
+            model.restore_from_storage()
+        with self.assertRaises(orm.UndefinedAttribute):
+            model._get_prepared_data()
