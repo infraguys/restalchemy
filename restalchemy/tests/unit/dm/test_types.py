@@ -16,6 +16,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import re
 import uuid
 
@@ -288,6 +289,34 @@ class BasePythonTypeTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
 
 
+class ListTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(ListTestCase, self).setUp()
+
+        self.test_instance = types.List(nested_type=None)
+
+    def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate(list()))
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
+
+
+class ListNestedTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(ListNestedTestCase, self).setUp()
+
+        self.test_instance = types.List(nested_type=types.Integer())
+
+    def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate([1, 2, 3]))
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate([1, 2, '3', 4]))
+
+
 class DictTestCase(base.BaseTestCase):
 
     def setUp(self):
@@ -302,6 +331,26 @@ class DictTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
 
 
+class UTCDateTimeTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(UTCDateTimeTestCase, self).setUp()
+
+        self.test_instance = types.UTCDateTime()
+
+    def test_validate_correct_value(self):
+        self.assertTrue(
+            self.test_instance.validate(datetime.datetime.utcnow()))
+
+    def test_validate_incorrect_value_type(self):
+        self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
+
+    def test_validate_incorrect_value_tzinfo(self):
+        self.assertFalse(
+            self.test_instance.validate(
+                datetime.datetime.utcnow().replace(tzinfo=datetime.tzinfo())))
+
+
 class EnumTestCase(base.BaseTestCase):
 
     def setUp(self):
@@ -311,6 +360,21 @@ class EnumTestCase(base.BaseTestCase):
 
     def test_validate_correct_value(self):
         self.assertTrue(self.test_instance.validate(1))
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate(4))
+
+
+class AllowNoneTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(AllowNoneTestCase, self).setUp()
+
+        self.test_instance = types.AllowNone(types.String())
+
+    def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate(None))
+        self.assertTrue(self.test_instance.validate('string'))
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(4))
