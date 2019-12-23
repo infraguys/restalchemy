@@ -294,7 +294,7 @@ class ListTestCase(base.BaseTestCase):
     def setUp(self):
         super(ListTestCase, self).setUp()
 
-        self.test_instance = types.List(nested_type=None)
+        self.test_instance = types.List()
 
     def test_validate_correct_value(self):
         self.assertTrue(self.test_instance.validate(list()))
@@ -303,18 +303,22 @@ class ListTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
 
 
-class ListNestedTestCase(base.BaseTestCase):
+class TypedListTestCase(base.BaseTestCase):
 
     def setUp(self):
-        super(ListNestedTestCase, self).setUp()
+        super(TypedListTestCase, self).setUp()
 
-        self.test_instance = types.List(nested_type=types.Integer())
+        self.test_instance = types.TypedList(nested_type=types.Integer())
 
     def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate([]))
         self.assertTrue(self.test_instance.validate([1, 2, 3]))
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate([1, 2, '3', 4]))
+
+    def test_incorrect_nested_type(self):
+        self.assertRaises(TypeError, types.TypedList, int)
 
 
 class DictTestCase(base.BaseTestCase):
@@ -329,6 +333,152 @@ class DictTestCase(base.BaseTestCase):
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
+
+
+class TypedDictTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(TypedDictTestCase, self).setUp()
+
+        self.scheme_simple_types = {
+            'int': types.Integer(),
+            'str': types.String(),
+        }
+        self.scheme_lists = {
+            'list': types.List(),
+            'typed_list': types.TypedList(types.Integer()),
+        }
+        self.scheme_dicts = {
+            'dict': types.Dict(),
+            'typed_dict': types.TypedDict({
+                'sub_str': types.String(),
+                'sub_int': types.Integer(),
+            }),
+        }
+        self.scheme_dict_sublist = {
+            'typed_dict_with_typed_list': types.TypedDict(
+                {'sub_list_typed': types.TypedList(types.String())}),
+        }
+        self.scheme_dict_subdict = {
+            'typed_dict_with_typed_dict': types.TypedDict(
+                {'sub_dict_typed': types.TypedDict(
+                    {
+                        'sub_str': types.String(),
+                        'sub_int': types.Integer(),
+                    })}),
+        }
+
+    def test_schema_keys_not_string(self):
+        self.assertRaises(ValueError, types.TypedDict, {1: types.Integer()})
+
+    def test_schema_values_not_types(self):
+        self.assertRaises(ValueError, types.TypedDict, {'1': int})
+
+    def test_validate_simple_schema(self):
+        dict_type = types.TypedDict(scheme=self.scheme_simple_types)
+
+        self.assertTrue(dict_type.validate({'int': 1, 'str': 'string'}))
+
+    def test_validate_simple_schema_missing_item(self):
+        dict_type = types.TypedDict(scheme=self.scheme_simple_types)
+
+        self.assertFalse(dict_type.validate({'int': 1}))
+        self.assertFalse(dict_type.validate({'str': 'string'}))
+
+    def test_validate_simple_schema_extra_item(self):
+        dict_type = types.TypedDict(scheme={'int': types.Integer()})
+
+        self.assertFalse(dict_type.validate({'int': 1, 'str': 'string'}))
+
+    def test_validate_simple_schema_invalid_value(self):
+        dict_type_1 = types.TypedDict(scheme={'int': types.Integer()})
+        dict_type_2 = types.TypedDict(scheme={'str': types.String()})
+
+        self.assertFalse(dict_type_1.validate({'int': '1'}))
+        self.assertFalse(dict_type_2.validate({'str': None}))
+
+    def test_validate_schema_with_lists(self):
+        schema = {'mixed_list': types.List()}
+        schema.update(self.scheme_simple_types)
+        schema.update(self.scheme_lists)
+
+        dict_type = types.TypedDict(scheme=schema)
+
+        self.assertTrue(
+            dict_type.validate({'int': 1,
+                                'str': 'string',
+                                'list': [1, 2, 3],
+                                'mixed_list': [1, 'a', None],
+                                'typed_list': [1, 2, 3]}))
+
+    def test_validate_schema_incorrect_typed_list_value(self):
+        schema = {'typed_list': types.TypedList(types.Integer())}
+
+        dict_type = types.TypedDict(scheme=schema)
+
+        self.assertFalse(dict_type.validate({'typed_list': [1, '2', 3]}))
+        self.assertFalse(dict_type.validate({'typed_list': [None, 2, 3]}))
+        self.assertFalse(dict_type.validate({'typed_list': [1, 2, {}]}))
+
+    def test_validate_schema_with_dicts(self):
+        schema = {}
+        schema.update(self.scheme_simple_types)
+        schema.update(self.scheme_dicts)
+
+        dict_type = types.TypedDict(scheme=schema)
+
+        self.assertTrue(
+            dict_type.validate({'int': 1,
+                                'str': 'string',
+                                'dict': {1: 1, 2: 'a', 'z': 3},
+                                'typed_dict': {
+                                    'sub_str': 'string',
+                                    'sub_int': 42,
+                                }}))
+
+    def test_validate_schema_subdict_missing_item(self):
+        schema = {}
+        schema.update(self.scheme_simple_types)
+        schema.update(self.scheme_dicts)
+
+        dict_type = types.TypedDict(scheme=schema)
+
+        self.assertFalse(
+            dict_type.validate({'int': 1,
+                                'str': 'string',
+                                'dict': {1: 1, 2: 'a', 'z': 3},
+                                'typed_dict': {
+                                    'sub_str': 'string',
+                                }}))
+
+    def test_validate_complex_schema(self):
+        schema = {}
+        schema.update(self.scheme_simple_types)
+        schema.update(self.scheme_lists)
+        schema.update(self.scheme_dicts)
+        schema.update(self.scheme_dict_sublist)
+        schema.update(self.scheme_dict_subdict)
+
+        dict_type = types.TypedDict(scheme=schema)
+
+        self.assertTrue(
+            dict_type.validate({'int': 1,
+                                'str': 'string',
+                                'list': ['a'],
+                                'typed_list': [],
+                                'dict': {},
+                                'typed_dict': {
+                                    'sub_str': 'string',
+                                    'sub_int': 42},
+                                'typed_dict_with_typed_list': {
+                                    'sub_list_typed': ['s']
+                                },
+                                'typed_dict_with_typed_dict': {
+                                    'sub_dict_typed': {
+                                        'sub_str': 'string_2',
+                                        'sub_int': -5}
+                                },
+                                }))
 
 
 class UTCDateTimeTestCase(base.BaseTestCase):
