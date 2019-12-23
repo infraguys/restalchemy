@@ -19,7 +19,6 @@
 import abc
 import copy
 import datetime
-import itertools
 import json
 import re
 import uuid
@@ -143,37 +142,17 @@ class UUID(BaseType):
         return uuid.UUID(value)
 
 
-class List(BasePythonType):
+class ComplexPythonType(BasePythonType):
 
-    def __init__(self, nested_type=None):
-        super(List, self).__init__(list)
-        self._nested_type = nested_type
+    _TYPE_ERROR_MSG = "Can't convert '%s' to %s"
 
-    def validate(self, value):
-        result = super(List, self).validate(value)
-        if self._nested_type is not None:
-            for element in itertools.takewhile(lambda _: result, value):
-                result &= self._nested_type.validate(element)
-        return result
-
-    def to_simple_type(self, value):
-        if self._nested_type is None:
-            return super(List, self).to_simple_type(value)
-        else:
-            return [self._nested_type.to_simple_type(e) for e in value]
+    def _raise_on_invalid_type(self, value):
+        if not isinstance(value, self._python_type):
+            raise TypeError(self._TYPE_ERROR_MSG % (value, self._python_type))
 
     def from_simple_type(self, value):
-        if self._nested_type is None:
-            return super(List, self).from_simple_type(value)
-        else:
-            return [self._nested_type.from_simple_type(e) for e in value]
-
-
-# TODO(efrolov): Make converters to convert Dict type to storable type
-class Dict(BasePythonType):
-
-    def __init__(self):
-        super(Dict, self).__init__(dict)
+        self._raise_on_invalid_type(value)
+        return value
 
     def from_unicode(self, value):
         result = None
@@ -181,9 +160,80 @@ class Dict(BasePythonType):
             result = json.loads(value)
         except (TypeError, ValueError):
             pass
-        if not isinstance(result, dict):
-            raise TypeError("Can't convert '%s' to dict" % value)
+        self._raise_on_invalid_type(value)
+        return self.from_simple_type(result)
+
+
+class List(ComplexPythonType):
+
+    def __init__(self):
+        super(List, self).__init__(list)
+
+
+class TypedList(ComplexPythonType):
+
+    def __init__(self, nested_type):
+        super(TypedList, self).__init__(list)
+        if not isinstance(nested_type, BaseType):
+            raise TypeError("Nested type '%s' is not inherited from %s"
+                            % (nested_type, BaseType))
+        self._nested_type = nested_type
+
+    def validate(self, value):
+        result = super(TypedList, self).validate(value)
+        for element in value:
+            if result:
+                result &= self._nested_type.validate(element)
+            else:
+                break
         return result
+
+    def to_simple_type(self, value):
+        return [self._nested_type.to_simple_type(e) for e in value]
+
+    def from_simple_type(self, value):
+        return [self._nested_type.from_simple_type(e) for e in value]
+
+
+class Dict(ComplexPythonType):
+
+    def __init__(self):
+        super(Dict, self).__init__(dict)
+
+
+class TypedDict(ComplexPythonType):
+
+    def __init__(self, scheme):
+        super(TypedDict, self).__init__(dict)
+        non_string_keys = [key for key in scheme.keys()
+                           if not isinstance(key, six.string_types)]
+        if non_string_keys:
+            raise ValueError("Keys '%s' are not strings" % non_string_keys)
+        invalid_types = [value for value in scheme.values()
+                         if not isinstance(value, BaseType)]
+        if invalid_types:
+            raise ValueError("Values '%s' are not %s"
+                             % (non_string_keys, BaseType))
+        self._scheme = scheme
+
+    def validate(self, value):
+        result = super(TypedDict, self).validate(value)
+        result &= (set(value.keys()) == set(self._scheme.keys()))
+        for key, scheme in six.iteritems(self._scheme):
+            if result:
+                result &= scheme.validate(value[key])
+            else:
+                break
+        return result
+
+    def to_simple_type(self, value):
+        return {value[key]: scheme.to_simple_type(value[key])
+                for key, scheme in self._scheme.items()}
+
+    def from_simple_type(self, value):
+        value = super(TypedDict, self).from_simple_type(value)
+        return {k: self._scheme[k].from_simple_type(v)
+                for k, v in value.items()}
 
 
 class UTCDateTime(BasePythonType):
@@ -225,7 +275,8 @@ class Enum(BaseType):
         for enum_value in self._enums_values:
             if value == six.text_type(enum_value):
                 return enum_value
-        raise TypeError("Can't convert '%s' to enum type. Allow values is %s"
+        raise TypeError("Can't convert '%s' to enum type."
+                        " Allowed values are %s"
                         % (value, self._enums_values))
 
 
