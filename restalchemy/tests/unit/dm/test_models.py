@@ -16,9 +16,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import uuid
+
 import mock
 import six
 
+from restalchemy.common import exceptions
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
@@ -202,3 +205,33 @@ class ModelWithIDsTestCase(base.BaseTestCase):
         self.assertEqual(TestModelWithID.get_id_property_name(), 'uuid')
         with self.assertRaises(TypeError):
             TestModelWithSeveralIDs.get_id_property_name()
+
+
+class ModelWithRequiredUUIDTestCase(base.BaseTestCase):
+
+    def test_uuid_provided(self):
+        model_uuid = uuid.uuid4()
+
+        model = models.ModelWithRequiredUUID(uuid=model_uuid)
+
+        self.assertEqual(model_uuid, model.uuid)
+
+    def test_uuid_not_provided(self):
+        self.assertRaises(exceptions.PropertyRequired,
+                          models.ModelWithRequiredUUID)
+
+    def test_uuid_is_readonly(self):
+        uuid_1 = uuid.uuid4()
+        uuid_2 = uuid.uuid4()
+
+        model = models.ModelWithRequiredUUID(uuid=uuid_1)
+
+        with self.assertRaises(exceptions.ReadOnlyProperty):
+            model.uuid = uuid_2
+
+    def test_get_model_id(self):
+        uuid_1 = uuid.uuid4()
+
+        model = models.ModelWithRequiredUUID(uuid=uuid_1)
+
+        self.assertEqual(model.get_id(), uuid_1)

@@ -198,3 +198,9 @@ class ModelWithUUID(Model):
 
     def __hash__(self):
         return hash(str(self.get_id()))
+
+
+class ModelWithRequiredUUID(ModelWithUUID):
+
+    uuid = properties.property(types.UUID(), read_only=True, id_property=True,
+                               required=True)
