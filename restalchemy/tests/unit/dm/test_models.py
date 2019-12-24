@@ -175,3 +175,30 @@ class DirtyModelTestCase(base.BaseTestCase):
         self._model.property3 = Model3(uuid=self._model.property3.uuid)
 
         self.assertFalse(self._model.is_dirty())
+
+
+class TestModelWithID(BaseModel):
+    uuid = properties.property(types.UUID(), id_property=True)
+    property3 = relationships.relationship(Model3)
+
+
+class TestModelWithSeveralIDs(BaseModel):
+    uuid = properties.property(types.UUID(), id_property=True)
+    uuid2 = properties.property(types.UUID(), id_property=True)
+    property3 = relationships.relationship(Model3)
+
+
+class ModelWithIDsTestCase(base.BaseTestCase):
+
+    def test_get_id_property(self):
+        props = TestModelWithID.properties
+
+        self.assertEqual(TestModelWithID.get_id_property(),
+                         {'uuid': props['uuid']})
+        with self.assertRaises(TypeError):
+            TestModelWithSeveralIDs.get_id_property()
+
+    def test_get_id_property_name(self):
+        self.assertEqual(TestModelWithID.get_id_property_name(), 'uuid')
+        with self.assertRaises(TypeError):
+            TestModelWithSeveralIDs.get_id_property_name()
