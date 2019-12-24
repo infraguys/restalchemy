@@ -114,6 +114,23 @@ class Model(collections.Mapping):
         for name, value in values.iteritems():
             setattr(self, name, value)
 
+    @classmethod
+    def get_id_property(cls):
+        result = {}
+        for name, prop in cls.properties.items():
+            if prop.is_id_property():
+                result[name] = prop
+        if len(result) == 1:
+            return result
+        raise TypeError("Model %s has many properties which marked as "
+                        "id_property. Please implement get_id_prop "
+                        "method on your model." % type(cls))
+
+    @classmethod
+    def get_id_property_name(cls):
+        for key in cls.get_id_property():
+            return key
+
     def get_id_properties(self):
         result = {}
         for name, prop in self.properties.items():
