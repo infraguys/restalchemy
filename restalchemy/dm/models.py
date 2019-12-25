@@ -176,17 +176,10 @@ class Model(collections.Mapping):
         return '<%s {%s}>' % (self.__class__.__name__, result)
 
 
-class ModelWithUUID(Model):
-    uuid = properties.property(types.UUID(), read_only=True, id_property=True,
-                               default=lambda: uuid.uuid4())
+class ModelWithID(Model):
 
     def get_id(self):
-        properties = self.get_id_properties()
-        if len(properties) == 1:
-            return self.uuid
-        raise TypeError("Model %s has many properties which marked as "
-                        "id_property. Please implement get_id and __hash__ "
-                        "method on your model." % type(self))
+        return getattr(self, self.get_id_property_name())
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -198,6 +191,12 @@ class ModelWithUUID(Model):
 
     def __hash__(self):
         return hash(str(self.get_id()))
+
+
+class ModelWithUUID(ModelWithID):
+
+    uuid = properties.property(types.UUID(), read_only=True, id_property=True,
+                               default=lambda: uuid.uuid4())
 
 
 class ModelWithRequiredUUID(ModelWithUUID):
