@@ -16,8 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid as pyuuid
-
 from restalchemy.api import actions
 from restalchemy.api import controllers
 from restalchemy.api import resources
@@ -59,7 +57,7 @@ class PortController(BaseController):
     def get(self, parent_resource, uuid):
         session = self._get_session()
         port = self.model.objects.get_one(filters={'vm': parent_resource,
-                                                   'uuid': pyuuid.UUID(uuid)},
+                                                   'uuid': uuid},
                                           session=session)
         return port
 
@@ -93,7 +91,7 @@ class VMController(BaseController):
 
     def get(self, uuid):
         session = self._get_session()
-        vm = self.model.objects.get_one(filters={'uuid': pyuuid.UUID(uuid)},
+        vm = self.model.objects.get_one(filters={'uuid': uuid},
                                         session=session)
         return vm
 

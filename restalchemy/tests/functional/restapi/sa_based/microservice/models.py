@@ -21,6 +21,7 @@ import uuid
 import sqlalchemy as sa
 from sqlalchemy.ext import declarative
 
+from restalchemy.dm import types
 
 Base = declarative.declarative_base()
 
@@ -41,3 +42,7 @@ class VM(Base):
     @classmethod
     def get_model_type(cls):
         return cls
+
+    @classmethod
+    def get_id_property(cls):
+        return {'uuid': types.String(min_length=32, max_length=32)}
