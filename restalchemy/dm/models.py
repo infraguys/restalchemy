@@ -119,12 +119,13 @@ class Model(collections.Mapping):
         result = {}
         for name, prop in cls.properties.items():
             if prop.is_id_property():
-                result[name] = prop
+                result[name] = cls.properties.properties[name]
         if len(result) == 1:
             return result
-        raise TypeError("Model %s has many properties which marked as "
+        raise TypeError("Model %s has %s properties which marked as "
                         "id_property. Please implement get_id_prop "
-                        "method on your model." % type(cls))
+                        "method on your model."
+                        % (type(cls), 'many' if result else 'no'))
 
     @classmethod
     def get_id_property_name(cls):

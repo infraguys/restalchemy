@@ -105,6 +105,9 @@ class Property(BaseProperty):
     def property_type(self):
         return self._type
 
+    def get_property_type(self):
+        return self._type
+
 
 class IDProperty(Property):
 

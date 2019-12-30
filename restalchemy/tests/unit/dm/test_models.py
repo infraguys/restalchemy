@@ -194,7 +194,7 @@ class TestModelWithSeveralIDs(BaseModel):
 class ModelWithIDsTestCase(base.BaseTestCase):
 
     def test_get_id_property(self):
-        props = TestModelWithID.properties
+        props = TestModelWithID.properties.properties
 
         self.assertEqual(TestModelWithID.get_id_property(),
                          {'uuid': props['uuid']})

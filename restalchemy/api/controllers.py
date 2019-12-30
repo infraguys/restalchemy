@@ -31,7 +31,7 @@ LOG = logging.getLogger(__name__)
 
 
 class Controller(object):
-    __resource__ = None
+    __resource__ = None  # type: resources.ResourceByRAModel
 
     def __init__(self, request):
         super(Controller, self).__init__()
@@ -42,10 +42,12 @@ class Controller(object):
         rt = resource_type or self.get_resource()
         return packer(rt, request=self._req)
 
-    def process_result(self, result, status_code=200, headers={},
+    def process_result(self, result, status_code=200, headers=None,
                        add_location=False):
+        headers = headers or {}
 
-        def correct(body, c=status_code, h={}, *args):
+        def correct(body, c=status_code, h=None, *args):
+            h = h or {}
             if add_location:
                 try:
                     headers['Location'] = resources.ResourceMap.get_location(
@@ -144,15 +146,18 @@ class Controller(object):
         method = self._req.method
         kwargs = self._make_kwargs(parent_resource)
 
+        parsed_id = (self.get_resource().get_id_type().from_unicode(uuid)
+                     if self.__resource__ else uuid)
+
         if method == 'GET':
-            return self.process_result(self.get(uuid=uuid, **kwargs))
+            return self.process_result(self.get(uuid=parsed_id, **kwargs))
         elif method == 'PUT':
             content_type = packers.get_content_type(self._req.headers)
             packer = self.get_packer(content_type)
             kwargs.update(packer.unpack(self._req.body))
-            return self.process_result(self.update(uuid=uuid, **kwargs))
+            return self.process_result(self.update(uuid=parsed_id, **kwargs))
         elif method == 'DELETE':
-            result = self.delete(uuid=uuid, **kwargs)
+            result = self.delete(uuid=parsed_id, **kwargs)
             return self.process_result(result, 200 if result else 204)
         else:
             raise exc.UnsupportedHttpMethod(method=method)

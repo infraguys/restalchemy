@@ -258,6 +258,17 @@ class ResourceByRAModel(AbstractResource):
                              "get_id method in your model (%s)" % (
                                  model, self._model_class))
 
+    def get_id_type(self):
+        id_property = self._model_class.get_id_property()
+        if len(id_property) != 1:
+            raise TypeError("Model %s returns %s properties which marked as "
+                            "id_property. Please implement get_id_type "
+                            "method on your resource %r."
+                            % (self._model_class,
+                               'many' if id_property else 'no',
+                               type(self)))
+        return id_property.popitem()[-1].get_property_type()
+
 
 class ResourceBySAModel(AbstractResource):
 
@@ -296,3 +307,14 @@ class ResourceBySAModel(AbstractResource):
         raise ValueError("Can't find resource ID for %s. Please implement "
                          "get_id method in your model (%s)" % (
                              model, self._model_class))
+
+    def get_id_type(self):
+        id_property = self._model_class.get_id_property()
+        if len(id_property) != 1:
+            raise TypeError("Model %s returns %s properties which marked as "
+                            "id_property. Please implement get_id_type "
+                            "method on your resource %r."
+                            % (self._model_class,
+                               'many' if id_property else 'no',
+                               type(self)))
+        return id_property.popitem()[-1]
