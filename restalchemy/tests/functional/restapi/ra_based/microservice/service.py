@@ -17,7 +17,8 @@
 #    under the License.
 
 import threading
-from wsgiref.simple_server import WSGIServer, make_server
+from wsgiref.simple_server import make_server
+from wsgiref.simple_server import WSGIServer
 
 from restalchemy.api import applications
 from restalchemy.storage.sql import engines

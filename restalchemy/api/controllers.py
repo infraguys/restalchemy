@@ -190,3 +190,98 @@ class Controller(object):
             return self._req.context
         except AttributeError:
             return None
+
+
+class BaseResourceController(Controller):
+
+    def create(self, **kwargs):
+        dm = self.model(**kwargs)
+        dm.insert()
+        return dm
+
+    def get(self, uuid, **kwargs):
+        # TODO(d.burmistrov): replace this hack with normal argument passing
+        kwargs[self.model.get_id_property_name()] = uuid
+        return self.model.objects.get_one(filters=kwargs)
+
+    def _split_filters(self, filters):
+        if hasattr(self.model, 'get_custom_properties'):
+            custom_filters = {}
+            storage_filters = {}
+            custom_properties = dict(self.model.get_custom_properties())
+            for name, value in filters.items():
+                if name in custom_properties:
+                    custom_filters[name] = value
+                    continue
+                storage_filters[name] = value
+
+            return custom_filters, storage_filters
+
+        return {}, filters
+
+    def filter(self, filters):
+        custom_filters, storage_filters = self._split_filters(filters)
+
+        result = self.model.objects.get_all(filters=storage_filters)
+
+        for item in result[:]:
+            for field_name, filter_value in custom_filters.items():
+                if not result:
+                    break
+                elif item not in result:
+                    continue
+                elif isinstance(filter_value, filters.In):
+                    if getattr(item, field_name) not in filter_value.value:
+                        result.remove(item)
+                        continue
+                elif isinstance(filter_value, filters.EQ):
+                    if getattr(item, field_name) != filter_value.value:
+                        result.remove(item)
+                        continue
+                else:
+                    raise ValueError("Unknown filter %s<%s>" % (field_name,
+                                                                filter_value))
+        return result
+
+    def delete(self, uuid):
+        self.get(uuid=uuid).delete()
+
+    def update(self, uuid, **kwargs):
+        dm = self.get(uuid=uuid)
+        dm.update_dm(values=kwargs)
+        dm.update()
+        return dm
+
+
+class BaseNestedResourceController(BaseResourceController):
+
+    __pr_name__ = "parent_resource"
+
+    def _prepare_kwargs(self, parent_resource, **kwargs):
+        kw_params = kwargs.copy()
+        kw_params[self.__pr_name__] = parent_resource
+        return kw_params
+
+    def create(self, **kwargs):
+        return super(BaseNestedResourceController, self).create(
+            **self._prepare_kwargs(**kwargs))
+
+    def get(self, **kwargs):
+        return super(BaseNestedResourceController, self).get(
+            **self._prepare_kwargs(**kwargs))
+
+    def filter(self, parent_resource, filters):
+        filters = filters.copy()
+        filters[self.__pr_name__] = filters.EQ(parent_resource)
+        return super(BaseNestedResourceController, self).filter(
+            filters=filters)
+
+    def delete(self, parent_resource, uuid):
+        dm = self.get(parent_resource=parent_resource, uuid=uuid)
+        dm.delete()
+
+    def update(self, parent_resource, uuid, **kwargs):
+        dm = self.get(parent_resource=parent_resource, uuid=uuid)
+        dm.update_dm(values=kwargs)
+        dm.update()
+        return dm

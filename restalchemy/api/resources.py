@@ -212,8 +212,8 @@ class AbstractResource(object):
         return name.replace('_', '-') if self._convert_underscore else name
 
     def is_public_field(self, model_field_name):
-        return not (model_field_name.startswith('_') or
-                    model_field_name in self._hidden_model_fields)
+        return not (model_field_name.startswith('_')
+                    or model_field_name in self._hidden_model_fields)
 
     def get_model(self):
         return self._model_class
@@ -318,3 +318,20 @@ class ResourceBySAModel(AbstractResource):
                                'many' if id_property else 'no',
                                type(self)))
         return id_property.popitem()[-1]
+
+
+class ResourceByModelWithCustomProps(ResourceByRAModel):
+
+    def get_fields(self):
+        for name, prop in super(
+                ResourceByModelWithCustomProps, self).get_fields():
+            yield name, prop
+        for name, prop_type in self._model_class.get_custom_properties():
+            yield name, ResourceRAProperty(
+                resource=self,
+                prop_type=prop_type,
+                model_property_name=name,
+                public=self.is_public_field(name))
+
+    def get_resource_id(self, model):
+        return str(model.get_id())

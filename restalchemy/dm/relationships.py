@@ -27,6 +27,16 @@ def relationship(property_type, *args, **kwargs):
     return properties.property(property_type=property_type, *args, **kwargs)
 
 
+def required_relationship(property_type, *args, **kwargs):
+    kwargs['required'] = True
+    return relationship(property_type, *args, **kwargs)
+
+
+def readonly_relationship(property_type, *args, **kwargs):
+    kwargs['read_only'] = True
+    return required_relationship(property_type, *args, **kwargs)
+
+
 class BaseRelationship(properties.AbstractProperty):
     pass
 

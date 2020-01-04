@@ -289,7 +289,7 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin):
 
     @classmethod
     def restore_from_storage(cls, **kwargs):
-        if cls.__tablename__ is None:
+        if cls.__jsonfields__ is None:
             raise UndefinedAttribute(attr_name='__jsonfields__')
         kwargs = kwargs.copy()
         for field in cls.__jsonfields__:
@@ -298,10 +298,15 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin):
                      ).restore_from_storage(**kwargs)
 
     def _get_prepared_data(self, properties=None):
-        if self.__tablename__ is None:
+        if self.__jsonfields__ is None:
             raise UndefinedAttribute(attr_name='__jsonfields__')
         result = super(SQLStorableWithJSONFieldsMixin, self
                        )._get_prepared_data(properties)
-        for field in self.__jsonfields__:
+        if properties is None:
+            json_properties = self.__jsonfields__
+        else:
+            json_properties = set(self.__jsonfields__).intersection(
+                set(properties.keys()))
+        for field in json_properties:
             result[field] = json.dumps(result[field])
         return result

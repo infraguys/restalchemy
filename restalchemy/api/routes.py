@@ -143,7 +143,6 @@ class Route(BaseRoute):
                 result.append((resource, controller, route_path_stack))
 
             for name in route.get_routes():
-                name = name.replace('_', '-')
                 new_route = route.get_route(name)
                 new_path = (build_path(resource, path_stack) if
                             new_route.is_resource_route() else path_stack[:])
@@ -162,8 +161,8 @@ class Route(BaseRoute):
                 uri_pieces = uri.split('/')[1:]
                 if len(uri_pieces) == len(self.path_stack):
                     for piece1, piece2 in zip(uri_pieces, self.path_stack):
-                        if ((isinstance(piece2, six.string_types) and
-                                piece1 == piece2) or (
+                        if ((isinstance(piece2, six.string_types)
+                                and piece1 == piece2) or (
                                 not isinstance(piece2, six.string_types))):
                             continue
                         return False
@@ -314,8 +313,8 @@ class Action(BaseRoute):
                                         object_name=action_name)
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
-        if ((method in [GET, POST, PUT] and self.is_invoke() and invoke) or
-                (method == GET and not self.is_invoke() and not invoke)):
+        if ((method in [GET, POST, PUT] and self.is_invoke() and invoke)
+                or (method == GET and not self.is_invoke() and not invoke)):
             action_method = getattr(action, 'do_%s' % method.lower())
             return action_method(controller=controller, resource=resource,
                                  **kwargs)

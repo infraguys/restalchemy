@@ -222,8 +222,8 @@ def property(property_type, *args, **kwargs):
     id_property = kwargs.pop('id_property', False)
     property_class = kwargs.pop('property_class',
                                 IDProperty if id_property else Property)
-    if (inspect.isclass(property_class) and
-            issubclass(property_class, AbstractProperty)):
+    if (inspect.isclass(property_class)
+            and issubclass(property_class, AbstractProperty)):
         return PropertyCreator(prop_class=property_class,
                                prop_type=property_type,
                                args=args,
@@ -241,3 +241,13 @@ def container(**kwargs):
             raise Exception("Only property, relationship "
                             "and container are allowed.")
     return PropertyCollection(**kwargs)
+
+
+def required_property(property_type, *args, **kwargs):
+    kwargs['required'] = True
+    return property(property_type, *args, **kwargs)
+
+
+def readonly_property(property_type, *args, **kwargs):
+    kwargs['read_only'] = True
+    return required_property(property_type, *args, **kwargs)

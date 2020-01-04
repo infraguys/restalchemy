@@ -19,6 +19,7 @@
 from __future__ import absolute_import  # noqa
 
 from mysql.connector import conversion
+import six
 
 
 class MySQLConverter(conversion.MySQLConverter):
@@ -52,7 +53,7 @@ class MySQLConverter(conversion.MySQLConverter):
         Returns a bytearray object.
         """
         if isinstance(buf, list):
-            tmp_list_buf = [str(self.quote(item)) for item in buf]
-            tmp_str_buf = '(%s)' % (', '.join(tmp_list_buf))
+            tmp_list_buf = [six.binary_type(self.quote(item)) for item in buf]
+            tmp_str_buf = b'(%s)' % (b', '.join(tmp_list_buf))
             return bytearray(tmp_str_buf)
         return super(MySQLConverter, self).quote(buf)

@@ -17,7 +17,8 @@
 #    under the License.
 
 import threading
-from wsgiref.simple_server import make_server, WSGIServer
+from wsgiref.simple_server import make_server
+from wsgiref.simple_server import WSGIServer
 
 from restalchemy.api import applications
 from restalchemy.tests.functional.restapi.sa_based.microservice import (
@@ -55,6 +56,7 @@ def main():
         rest_service.run()
     except KeyboardInterrupt:
         pass
+
 
 if __name__ == "__main__":
     main()

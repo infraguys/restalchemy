@@ -170,23 +170,18 @@ class List(ComplexPythonType):
         super(List, self).__init__(list)
 
 
-class TypedList(ComplexPythonType):
+class TypedList(List):
 
     def __init__(self, nested_type):
-        super(TypedList, self).__init__(list)
+        super(TypedList, self).__init__()
         if not isinstance(nested_type, BaseType):
             raise TypeError("Nested type '%s' is not inherited from %s"
                             % (nested_type, BaseType))
         self._nested_type = nested_type
 
     def validate(self, value):
-        result = super(TypedList, self).validate(value)
-        for element in value:
-            if result:
-                result &= self._nested_type.validate(element)
-            else:
-                break
-        return result
+        return (super(TypedList, self).validate(value)
+                and all(self._nested_type.validate(item) for item in value))
 
     def to_simple_type(self, value):
         return [self._nested_type.to_simple_type(e) for e in value]
@@ -200,40 +195,92 @@ class Dict(ComplexPythonType):
     def __init__(self):
         super(Dict, self).__init__(dict)
 
+    def validate(self, value):
+        return (super(Dict, self).validate(value)
+                and all(isinstance(k, six.string_types) for k in value))
 
-class TypedDict(ComplexPythonType):
+
+def _validate_scheme(scheme):
+    non_string_keys = [key for key in scheme.keys()
+                       if not isinstance(key, six.string_types)]
+    if non_string_keys:
+        raise ValueError("Keys '%s' are not strings" % non_string_keys)
+
+    invalid_types = [value for value in scheme.values()
+                     if not isinstance(value, BaseType)]
+    if invalid_types:
+        raise ValueError("Values '%s' are not %s"
+                         % (non_string_keys, BaseType))
+
+
+class SoftSchemeDict(Dict):
 
     def __init__(self, scheme):
-        super(TypedDict, self).__init__(dict)
-        non_string_keys = [key for key in scheme.keys()
-                           if not isinstance(key, six.string_types)]
-        if non_string_keys:
-            raise ValueError("Keys '%s' are not strings" % non_string_keys)
-        invalid_types = [value for value in scheme.values()
-                         if not isinstance(value, BaseType)]
-        if invalid_types:
-            raise ValueError("Values '%s' are not %s"
-                             % (non_string_keys, BaseType))
+        super(SoftSchemeDict, self).__init__()
+        _validate_scheme(scheme)
         self._scheme = scheme
 
     def validate(self, value):
-        result = super(TypedDict, self).validate(value)
-        result &= (set(value.keys()) == set(self._scheme.keys()))
-        for key, scheme in six.iteritems(self._scheme):
-            if result:
-                result &= scheme.validate(value[key])
-            else:
-                break
-        return result
+        return (super(SoftSchemeDict, self).validate(value)
+                and set(value.keys()).issubset(set(self._scheme.keys()))
+                and all(self._scheme[k].validate(v)
+                        for k, v in six.iteritems(value)))
+
+    def to_simple_type(self, value):
+        return {k: self._scheme[k].to_simple_type(v)
+                for k, v in six.iteritems(value)}
+
+    def from_simple_type(self, value):
+        value = super(SoftSchemeDict, self).from_simple_type(value)
+        return {k: self._scheme[k].from_simple_type(v)
+                for k, v in six.iteritems(value)}
+
+
+class SchemeDict(Dict):
+
+    def __init__(self, scheme):
+        super(SchemeDict, self).__init__()
+        _validate_scheme(scheme)
+        self._scheme = scheme
+
+    def validate(self, value):
+        return (super(SchemeDict, self).validate(value)
+                and set(value.keys()) == set(self._scheme.keys())
+                and all(scheme.validate(value[key])
+                        for key, scheme in six.iteritems(self._scheme)))
 
     def to_simple_type(self, value):
         return {value[key]: scheme.to_simple_type(value[key])
                 for key, scheme in self._scheme.items()}
 
     def from_simple_type(self, value):
+        value = super(SchemeDict, self).from_simple_type(value)
+        return {key: scheme.from_simple_type(value[key])
+                for key, scheme in six.iteritems(self._scheme)}
+
+
+class TypedDict(Dict):
+
+    def __init__(self, nested_type):
+        super(TypedDict, self).__init__()
+        if not isinstance(nested_type, BaseType):
+            raise TypeError("Nested type '%s' is not inherited from %s"
+                            % (nested_type, BaseType))
+        self._nested_type = nested_type
+
+    def validate(self, value):
+        return (super(TypedDict, self).validate(value)
+                and all(self._nested_type.validate(element)
+                        for element in six.itervalues(value)))
+
+    def to_simple_type(self, value):
+        return {k: self._nested_type.to_simple_type(v)
+                for k, v in six.iteritems(value)}
+
+    def from_simple_type(self, value):
         value = super(TypedDict, self).from_simple_type(value)
-        return {k: self._scheme[k].from_simple_type(v)
-                for k, v in value.items()}
+        return {k: self._nested_type.from_simple_type(v)
+                for k, v in six.iteritems(value)}
 
 
 class UTCDateTime(BasePythonType):
