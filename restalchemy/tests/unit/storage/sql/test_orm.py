@@ -84,7 +84,7 @@ class TestRestoreWithJSONModelTestCase(base.BaseTestCase):
 
     def test_json_dumped(self):
         model = TestRestoreWithJSONModel(a=FAKE_DICT, b=FAKE_LIST)
-        prepared_data = model._get_prepared_data(model.get_id_properties())
+        prepared_data = model._get_prepared_data()
 
         self.assertEqual(prepared_data['a'], FAKE_DICT_JSON)
         self.assertEqual(prepared_data['b'], FAKE_LIST_JSON)

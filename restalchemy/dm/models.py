@@ -20,11 +20,11 @@ import abc
 import collections
 import uuid
 
+import six
+
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
 from restalchemy.dm import types
-
-import six
 
 
 class MetaModel(abc.ABCMeta):
@@ -42,8 +42,8 @@ class MetaModel(abc.ABCMeta):
             if isinstance(base_properties, properties.PropertyCollection):
                 all_base_properties += base_properties
         attrs['properties'] = (
-            attrs.pop('properties', properties.PropertyCollection()) +
-            all_base_properties + properties.PropertyCollection(**props))
+            attrs.pop('properties', properties.PropertyCollection())
+            + all_base_properties + properties.PropertyCollection(**props))
         return super(MetaModel, cls).__new__(cls, name, bases, attrs)
 
     def __getattr__(cls, name):
@@ -79,7 +79,7 @@ class Model(collections.Mapping):
                 value=value,
                 model=self,
                 property_type=e.get_property_type())
-        except exc.ReadOnlyProperty as e:
+        except exc.ReadOnlyProperty:
             raise exc.ReadOnlyProperty(
                 name=name,
                 model=type(self)
@@ -111,7 +111,7 @@ class Model(collections.Mapping):
         pass
 
     def update_dm(self, values):
-        for name, value in values.iteritems():
+        for name, value in six.iteritems(values):
             setattr(self, name, value)
 
     @classmethod
@@ -204,3 +204,22 @@ class ModelWithRequiredUUID(ModelWithUUID):
 
     uuid = properties.property(types.UUID(), read_only=True, id_property=True,
                                required=True)
+
+
+class CustomPropertiesMixin(object):
+
+    __custom_properties__ = {}
+
+    @classmethod
+    def get_custom_properties(cls):
+        for name, prop_type in six.iteritems(cls.__custom_properties__):
+            yield name, prop_type
+
+    def _check_custom_property_value(self, name, value, static=False,
+                                     should_be=None):
+        prop_type = self.__custom_properties__[name]
+        prop_type.validate(value)
+        if static and should_be != value:
+            raise ValueError(("The value for property `%s` should be `%s` "
+                              "but actual value is `%s`") % (
+                name, should_be, value))

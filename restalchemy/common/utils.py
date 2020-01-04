@@ -73,7 +73,7 @@ class classproperty(property):
     """
 
     def __get__(self, obj, cls):
-            # Calls property function
+        # Calls property function
         return self.fget(cls)
 
 
