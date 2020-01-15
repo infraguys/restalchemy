@@ -21,6 +21,7 @@ import abc
 import six
 
 from restalchemy.common import utils
+from restalchemy.storage import exceptions
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -31,12 +32,18 @@ class AbstractObjectCollection(object):
         self.model_cls = model_cls
 
     @abc.abstractmethod
-    def get_all(self, filter=None):
+    def get_all(self, filters=None):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_one(self, filter=None):
+    def get_one(self, filters=None):
         raise NotImplementedError()
+
+    def get_one_or_none(self, filters=None):
+        try:
+            return self.get_one(filters=filters)
+        except exceptions.RecordNotFound:
+            return None
 
 
 @six.add_metaclass(abc.ABCMeta)
