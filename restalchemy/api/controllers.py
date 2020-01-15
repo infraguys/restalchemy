@@ -24,7 +24,7 @@ import webob
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
-from restalchemy.dm import filters
+from restalchemy.dm import filters as dm_filters
 
 
 LOG = logging.getLogger(__name__)
@@ -107,13 +107,13 @@ class Controller(object):
         for param, value in params.items():
             filter_name, filter_value = self._prepare_filter(param, value)
             if filter_name not in result:
-                result[filter_name] = filters.EQ(filter_value)
+                result[filter_name] = dm_filters.EQ(filter_value)
             else:
                 values = ([result[filter_name].value]
-                          if not isinstance(result[filter_name], filters.In)
+                          if not isinstance(result[filter_name], dm_filters.In)
                           else result[filter_name].value)
                 values.append(filter_value)
-                result[filter_name] = filters.In(values)
+                result[filter_name] = dm_filters.In(values)
 
         return result
 
@@ -230,11 +230,11 @@ class BaseResourceController(Controller):
                     break
                 elif item not in result:
                     continue
-                elif isinstance(filter_value, filters.In):
+                elif isinstance(filter_value, dm_filters.In):
                     if getattr(item, field_name) not in filter_value.value:
                         result.remove(item)
                         continue
-                elif isinstance(filter_value, filters.EQ):
+                elif isinstance(filter_value, dm_filters.EQ):
                     if getattr(item, field_name) != filter_value.value:
                         result.remove(item)
                         continue
@@ -272,7 +272,7 @@ class BaseNestedResourceController(BaseResourceController):
 
     def filter(self, parent_resource, filters):
         filters = filters.copy()
-        filters[self.__pr_name__] = filters.EQ(parent_resource)
+        filters[self.__pr_name__] = dm_filters.EQ(parent_resource)
         return super(BaseNestedResourceController, self).filter(
             filters=filters)
 
