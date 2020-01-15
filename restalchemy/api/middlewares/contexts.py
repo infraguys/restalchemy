@@ -1,6 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
-# Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2019 Eugene Frolov
 #
 # All Rights Reserved.
 #
@@ -17,5 +17,15 @@
 #    under the License.
 
 
-class Context(object):
-    pass
+from restalchemy.api import middlewares
+
+from restalchemy.common import contexts
+
+
+class ContextMiddleware(middlewares.Middleware):
+
+    def process_request(self, req):
+        ctx = contexts.Context()
+        req.context = ctx
+        with ctx.session_manager():
+            return req.get_response(self.application)
