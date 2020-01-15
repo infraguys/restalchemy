@@ -16,11 +16,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from restalchemy.common import context
+from restalchemy.common import contexts
 from restalchemy.tests.functional.restapi.sa_based.microservice import db
 
 
-class Context(context.Context):
+class Context(contexts.Context):
 
     _Session = None
     _session = None

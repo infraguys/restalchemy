@@ -1,4 +1,5 @@
 # Copyright 2011 OpenStack Foundation.
+# Copyright 2020 Eugene Frolov
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,11 +13,28 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-"""Base class(es) for WSGI Middleware."""
 
 from webob import dec
 
-from restalchemy.common import context
+from restalchemy.common import contexts
+
+
+SUCCESS_HTTP_METRIC_NAME = 'http.all.success'
+ERROR_HTTP_METRIC_NAME = 'http.all.errors'
+
+
+def attach_middlewares(app, middlewares_list):
+    for middleware in middlewares_list:
+        app = middleware(application=app)
+    return app
+
+
+def configure_middleware(middleware_class, *args, **kwargs):
+
+    def build_middleware(application):
+        return middleware_class(application=application, *args, **kwargs)
+
+    return build_middleware
 
 
 class Middleware(object):
@@ -55,4 +73,4 @@ class Middleware(object):
 class ContextMiddleware(Middleware):
 
     def process_request(self, req):
-        req.context = context.Context()
+        req.context = contexts.Context()
