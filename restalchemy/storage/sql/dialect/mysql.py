@@ -123,10 +123,11 @@ class MySQLDelete(AbstractDialectCommand):
 
 class MySQLSelect(AbstractDialectCommand):
 
-    def __init__(self, table, filters):
+    def __init__(self, table, filters, limit=None):
         super(MySQLSelect, self).__init__(table=table, data={})
         self._check_filters(filters)
         self._filters = filters
+        self._limit = limit
 
     def _check_filters(self, filters):
         result = set(filters.keys()) - set(self._table.get_column_names())
@@ -150,21 +151,29 @@ class MySQLSelect(AbstractDialectCommand):
             where_list.append(value.construct_expression(name))
         return " AND ".join(where_list)
 
+    def construct_limit(self):
+        if self._limit:
+            return " LIMIT " + str(self._limit)
+        return ""
+
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
             ", ".join(self._table.get_escaped_column_names()),
             self._table.name
         )
         filt = self.construct_where()
-        return sql + " WHERE %s" % filt if filt else sql
+        if filt:
+            return sql + " WHERE %s" % filt + self.construct_limit()
+        return sql + self.construct_limit()
 
 
 class MySQLCustomSelect(AbstractDialectCommand):
 
-    def __init__(self, table, where_conditions, where_values):
+    def __init__(self, table, where_conditions, where_values, limit=None):
         super(MySQLCustomSelect, self).__init__(table=table, data={})
         self._where_conditions = where_conditions
         self._where_values = where_values
+        self._limit = limit
 
     def get_values(self):
         return self._where_values
@@ -172,12 +181,18 @@ class MySQLCustomSelect(AbstractDialectCommand):
     def construct_where(self):
         return self._where_conditions
 
+    def construct_limit(self):
+        if self._limit:
+            return " LIMIT " + str(self._limit)
+        return ""
+
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
             ", ".join(self._table.get_escaped_column_names()),
             self._table.name
         )
-        return "%s WHERE %s" % (sql, self.construct_where())
+        return sql + " WHERE " + self.construct_where() \
+            + self.construct_limit()
 
 
 class MySQLDialect(base.AbstractDialect):
@@ -191,8 +206,8 @@ class MySQLDialect(base.AbstractDialect):
     def delete(self, table, ids):
         return MySQLDelete(table, ids)
 
-    def select(self, table, filters):
-        return MySQLSelect(table, filters)
+    def select(self, table, filters, limit=None):
+        return MySQLSelect(table, filters, limit)
 
-    def custom_select(self, table, where_conditions, where_values):
-        return MySQLCustomSelect(table, where_conditions, where_values)
+    def custom_select(self, table, where_conditions, where_values, limit=None):
+        return MySQLCustomSelect(table, where_conditions, where_values, limit)

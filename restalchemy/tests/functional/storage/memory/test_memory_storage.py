@@ -78,6 +78,10 @@ class TestMemoryStorage(unittest.TestCase):
         self.assertEqual([self.model1, self.model2, self.model3],
                          TestModel1.objects.get_all())
 
+    def test_get_all_with_limit(self):
+        self.assertEqual([self.model1, self.model2],
+                         TestModel1.objects.get_all(limit=2))
+
     def test_get_all_with_filters(self):
         self.assertEqual([self.model1, self.model2, self.model3],
                          TestModel1.objects.get_all(

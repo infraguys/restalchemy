@@ -32,7 +32,7 @@ class AbstractObjectCollection(object):
         self.model_cls = model_cls
 
     @abc.abstractmethod
-    def get_all(self, filters=None):
+    def get_all(self, filters=None, limit=None):
         raise NotImplementedError()
 
     @abc.abstractmethod

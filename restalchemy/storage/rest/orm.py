@@ -109,13 +109,15 @@ class ObjectCollection(base.AbstractObjectCollection):
                 .get_property_type()
                 .to_simple_type(prop_value))
 
-    def get_all(self, context, filters=None):
+    def get_all(self, context, filters=None, limit=None):
         models_uri = self.model_cls.get_path_ctrl().get_collection_uri(
             model_cls=self.model_cls, obj=filters)
         resp = self._engine.list(uri=models_uri,
                                  params=self._filters_to_storage_view(context,
                                                                       filters),
                                  context=context)
+        if limit:
+            resp = resp[:limit]
         for result in resp:
             yield self.model_cls.restore_from_storage(context, **result)
 

@@ -175,6 +175,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "FROM `FAKE_TABLE` WHERE `field_bool` <= %s AND "
             "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s")
 
+    def test_statement_limit_with_where_clause(self):
+        FAKE_LE_VALUES = [
+            filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
+        target = mysql.MySQLSelect(self._TABLE, dict(zip(
+            self._TABLE.get_column_names(), FAKE_LE_VALUES)), limit=2)
+
+        result = target.get_statement()
+
+        self.assertEqual(
+            result,
+            "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
+            "FROM `FAKE_TABLE` WHERE `field_bool` <= %s AND "
+            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s LIMIT 2")
+
 
 class MySQLCustomSelectTestCase(base.BaseTestCase):
 
@@ -194,3 +208,17 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE "
             "NOT (`field_int` => %s AND `field_str` = %s)")
+
+    def test_custom_where_condition_with_limit(self):
+        FAKE_WHERE_CONDITION = "NOT (`field_int` => %s AND `field_str` = %s)"
+        FAKE_WHERE_VALUES = [1, "2"]
+        target = mysql.MySQLCustomSelect(
+            self._TABLE, FAKE_WHERE_CONDITION, FAKE_WHERE_VALUES, limit=2)
+
+        result = target.get_statement()
+
+        self.assertEqual(
+            result,
+            "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
+            "FROM `FAKE_TABLE` WHERE "
+            "NOT (`field_int` => %s AND `field_str` = %s) LIMIT 2")

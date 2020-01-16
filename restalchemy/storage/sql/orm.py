@@ -80,16 +80,17 @@ class SQLTable(object):
         cmd = engine.dialect.delete(table=self, ids=ids)
         return cmd.execute(session=session)
 
-    def select(self, engine, filters, session):
-        cmd = engine.dialect.select(table=self, filters=filters)
+    def select(self, engine, filters, session, limit=None):
+        cmd = engine.dialect.select(table=self, filters=filters, limit=limit)
         return cmd.execute(session=session)
 
     def custom_select(self, engine, where_conditions, where_values,
-                      session):
+                      session, limit=None):
         cmd = engine.dialect.custom_select(
             table=self,
             where_conditions=where_conditions,
             where_values=where_values,
+            limit=limit
         )
         return cmd.execute(session=session)
 
@@ -113,7 +114,7 @@ class ObjectCollection(base.AbstractObjectCollection):
             result[name] = flt.convert_filter(value, value_type)
         return result
 
-    def get_all(self, filters=None, session=None, cache=False):
+    def get_all(self, filters=None, session=None, cache=False, limit=None):
         # TODO(efrolov): Add limit and offset parameters
         filters = self._filters_to_storage_view(filters or {})
         with self._engine.session_manager(session=session) as s:
@@ -122,19 +123,21 @@ class ObjectCollection(base.AbstractObjectCollection):
                     engine=self._engine,
                     table=self._table,
                     filters=filters,
-                    fallback=self._get_all
+                    fallback=self._get_all,
+                    limit=limit
                 )
 
-            return self._get_all(filters=filters, session=s)
+            return self._get_all(filters=filters, session=s, limit=limit)
 
-    def _get_all(self, filters, session):
+    def _get_all(self, filters, session, limit):
         result = self._table.select(engine=self._engine, filters=filters,
-                                    session=session)
+                                    limit=limit, session=session)
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
     def get_one(self, filters=None, session=None, cache=False):
-        result = self.get_all(filters=filters, session=session, cache=cache)
+        result = self.get_all(
+            filters=filters, session=session, cache=cache, limit=2)
         result_len = len(result)
         if result_len == 1:
             return result[0]
@@ -145,18 +148,19 @@ class ObjectCollection(base.AbstractObjectCollection):
             raise exceptions.HasManyRecords(model=self.model_cls,
                                             filters=filters)
 
-    def _query(self, where_conditions, where_values, session):
+    def _query(self, where_conditions, where_values, session, limit):
         result = self._table.custom_select(
             engine=self._engine,
             where_conditions=where_conditions,
             where_values=where_values,
             session=session,
+            limit=limit
         )
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
     def query(self, where_conditions, where_values, session=None,
-              cache=False):
+              cache=False, limit=None):
         """
 
         :param where_conditions: "NOT (bala < %s)"
@@ -169,12 +173,14 @@ class ObjectCollection(base.AbstractObjectCollection):
                     table=self._table,
                     where_conditions=where_conditions,
                     where_values=where_values,
-                    fallback=self._query
+                    fallback=self._query,
+                    limit=limit
                 )
 
             return self._query(where_conditions=where_conditions,
                                where_values=where_values,
-                               session=s)
+                               session=s,
+                               limit=limit)
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):

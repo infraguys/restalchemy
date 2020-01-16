@@ -69,5 +69,5 @@ class AbstractDialect(object):
         raise NotImplementedError()
 
     @abc.abstractproperty
-    def select(self, table, filters):
+    def select(self, table, filters, limit=None):
         raise NotImplementedError()
