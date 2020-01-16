@@ -46,14 +46,16 @@ class Collection(object):
             raise exceptions.RecordNotFound(model=model, filters=None)
         self._models.remove(model)
 
-    def get_all(self, filters=None):
+    def get_all(self, filters=None, limit=None):
         filters = filters or {}
         if not filters:
-            return copy.copy(self._models)
+            return copy.copy(self._models[:limit] if limit else self._models)
         result = self._models
         for name, value in filters.items():
             result = [model for model in result
                       if getattr(model, name) == value]
+        if limit:
+            return result[:limit]
         return result
 
 
@@ -80,9 +82,9 @@ class MemoryEngine(object):
         collection = self._get_collection(type(model))
         collection.delete(model)
 
-    def get_all(self, cls, filters=None):
+    def get_all(self, cls, filters=None, limit=None):
         collection = self._get_collection(cls)
-        return collection.get_all(filters=filters)
+        return collection.get_all(filters=filters, limit=limit)
 
     def reset(self):
         self._collections = {}

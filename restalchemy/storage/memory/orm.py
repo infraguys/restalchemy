@@ -31,11 +31,14 @@ class ObjectCollection(base.AbstractObjectCollection):
     def _engine(self):
         return engines.engine_factory.get_engine()
 
-    def get_all(self, filters=None):
-        return self._engine.get_all(cls=self.model_cls, filters=filters)
+    def get_all(self, filters=None, limit=None):
+        return self._engine.get_all(
+            cls=self.model_cls, filters=filters, limit=limit)
 
     def get_one(self, filters=None):
-        result = self._engine.get_all(cls=self.model_cls, filters=filters)
+        # get with limit=2 to raise error if there are more than 1 record
+        result = self._engine.get_all(
+            cls=self.model_cls, filters=filters, limit=2)
         result_len = len(result)
         if result_len == 1:
             return result[0]
