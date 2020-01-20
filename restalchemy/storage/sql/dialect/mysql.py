@@ -23,6 +23,7 @@ from mysql.connector import errors
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import filters
+from restalchemy.storage.sql import utils
 
 
 class MySQLProcessResult(base.AbstractProcessResult):
@@ -121,13 +122,36 @@ class MySQLDelete(AbstractDialectCommand):
         )
 
 
-class MySQLSelect(AbstractDialectCommand):
+class MySQLBasicSelect(AbstractDialectCommand):
+    def __init__(self, table, limit=None, order_by=None):
+        super(MySQLBasicSelect, self).__init__(table=table, data={})
+        self._limit = limit
+        self._order_by = order_by
 
-    def __init__(self, table, filters, limit=None):
-        super(MySQLSelect, self).__init__(table=table, data={})
+    def construct_limit(self):
+        if self._limit:
+            return " LIMIT " + str(self._limit)
+        return ""
+
+    def construct_order_by(self):
+        if self._order_by:
+            res = []
+            for name, sorttype in self._order_by.items():
+                sorttype = sorttype.upper()
+                if sorttype not in ['ASC', 'DESC', '', None]:
+                    raise ValueError("Unknown order: %s." % sorttype)
+                res.append('%s %s' % (utils.escape(name), sorttype or 'ASC'))
+            return " ORDER BY " + ", ".join(res)
+        return ""
+
+
+class MySQLSelect(MySQLBasicSelect):
+
+    def __init__(self, table, filters, limit=None, order_by=None):
+        super(MySQLSelect, self).__init__(
+            table=table, limit=limit, order_by=order_by)
         self._check_filters(filters)
         self._filters = filters
-        self._limit = limit
 
     def _check_filters(self, filters):
         result = set(filters.keys()) - set(self._table.get_column_names())
@@ -151,11 +175,6 @@ class MySQLSelect(AbstractDialectCommand):
             where_list.append(value.construct_expression(name))
         return " AND ".join(where_list)
 
-    def construct_limit(self):
-        if self._limit:
-            return " LIMIT " + str(self._limit)
-        return ""
-
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
             ", ".join(self._table.get_escaped_column_names()),
@@ -163,17 +182,20 @@ class MySQLSelect(AbstractDialectCommand):
         )
         filt = self.construct_where()
         if filt:
-            return sql + " WHERE %s" % filt + self.construct_limit()
+            return sql + " WHERE %s" % filt + self.construct_order_by() \
+                + self.construct_limit()
+
         return sql + self.construct_limit()
 
 
-class MySQLCustomSelect(AbstractDialectCommand):
+class MySQLCustomSelect(MySQLBasicSelect):
 
-    def __init__(self, table, where_conditions, where_values, limit=None):
-        super(MySQLCustomSelect, self).__init__(table=table, data={})
+    def __init__(self, table, where_conditions, where_values, limit=None,
+                 order_by=None):
+        super(MySQLCustomSelect, self).__init__(
+            table=table, limit=limit, order_by=order_by)
         self._where_conditions = where_conditions
         self._where_values = where_values
-        self._limit = limit
 
     def get_values(self):
         return self._where_values
@@ -181,18 +203,13 @@ class MySQLCustomSelect(AbstractDialectCommand):
     def construct_where(self):
         return self._where_conditions
 
-    def construct_limit(self):
-        if self._limit:
-            return " LIMIT " + str(self._limit)
-        return ""
-
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
             ", ".join(self._table.get_escaped_column_names()),
             self._table.name
         )
         return sql + " WHERE " + self.construct_where() \
-            + self.construct_limit()
+            + self.construct_order_by() + self.construct_limit()
 
 
 class MySQLDialect(base.AbstractDialect):
@@ -206,8 +223,10 @@ class MySQLDialect(base.AbstractDialect):
     def delete(self, table, ids):
         return MySQLDelete(table, ids)
 
-    def select(self, table, filters, limit=None):
-        return MySQLSelect(table, filters, limit)
+    def select(self, table, filters, limit=None, order_by=None):
+        return MySQLSelect(table, filters, limit, order_by)
 
-    def custom_select(self, table, where_conditions, where_values, limit=None):
-        return MySQLCustomSelect(table, where_conditions, where_values, limit)
+    def custom_select(self, table, where_conditions, where_values, limit=None,
+                      order_by=None):
+        return MySQLCustomSelect(table, where_conditions, where_values, limit,
+                                 order_by)

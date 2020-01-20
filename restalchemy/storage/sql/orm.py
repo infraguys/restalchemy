@@ -80,21 +80,24 @@ class SQLTable(object):
         cmd = engine.dialect.delete(table=self, ids=ids)
         return cmd.execute(session=session)
 
-    def select(self, engine, filters, session, limit=None):
+    def select(self, engine, filters, session, limit=None, order_by=None):
         '''
 
-        Warning: query with and w/o `limit` won't flush each other if cached!
+        Warning: query with and w/o (limit or group_by) won't flush each other
+        if cached!
         '''
-        cmd = engine.dialect.select(table=self, filters=filters, limit=limit)
+        cmd = engine.dialect.select(table=self, filters=filters, limit=limit,
+                                    order_by=order_by)
         return cmd.execute(session=session)
 
     def custom_select(self, engine, where_conditions, where_values,
-                      session, limit=None):
+                      session, limit=None, order_by=None):
         cmd = engine.dialect.custom_select(
             table=self,
             where_conditions=where_conditions,
             where_values=where_values,
-            limit=limit
+            limit=limit,
+            order_by=order_by,
         )
         return cmd.execute(session=session)
 
@@ -118,7 +121,8 @@ class ObjectCollection(base.AbstractObjectCollection):
             result[name] = flt.convert_filter(value, value_type)
         return result
 
-    def get_all(self, filters=None, session=None, cache=False, limit=None):
+    def get_all(self, filters=None, session=None, cache=False, limit=None,
+                order_by=None):
         # TODO(efrolov): Add limit and offset parameters
         filters = self._filters_to_storage_view(filters or {})
         with self._engine.session_manager(session=session) as s:
@@ -128,14 +132,17 @@ class ObjectCollection(base.AbstractObjectCollection):
                     table=self._table,
                     filters=filters,
                     fallback=self._get_all,
-                    limit=limit
+                    limit=limit,
+                    order_by=order_by,
                 )
 
-            return self._get_all(filters=filters, session=s, limit=limit)
+            return self._get_all(filters=filters, session=s, limit=limit,
+                                 order_by=None)
 
-    def _get_all(self, filters, session, limit):
-        result = self._table.select(engine=self._engine, filters=filters,
-                                    limit=limit, session=session)
+    def _get_all(self, filters, session, limit, order_by=None):
+        result = self._table.select(
+            engine=self._engine, filters=filters, limit=limit,
+            order_by=order_by, session=session)
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
@@ -152,19 +159,20 @@ class ObjectCollection(base.AbstractObjectCollection):
             raise exceptions.HasManyRecords(model=self.model_cls,
                                             filters=filters)
 
-    def _query(self, where_conditions, where_values, session, limit):
+    def _query(self, where_conditions, where_values, session, limit, order_by):
         result = self._table.custom_select(
             engine=self._engine,
             where_conditions=where_conditions,
             where_values=where_values,
             session=session,
-            limit=limit
+            limit=limit,
+            order_by=order_by
         )
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
     def query(self, where_conditions, where_values, session=None,
-              cache=False, limit=None):
+              cache=False, limit=None, order_by=None):
         """
 
         :param where_conditions: "NOT (bala < %s)"
@@ -178,13 +186,15 @@ class ObjectCollection(base.AbstractObjectCollection):
                     where_conditions=where_conditions,
                     where_values=where_values,
                     fallback=self._query,
-                    limit=limit
+                    limit=limit,
+                    order_by=order_by,
                 )
 
             return self._query(where_conditions=where_conditions,
                                where_values=where_values,
                                session=s,
-                               limit=limit)
+                               limit=limit,
+                               order_by=order_by)
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):
