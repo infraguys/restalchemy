@@ -81,6 +81,10 @@ class SQLTable(object):
         return cmd.execute(session=session)
 
     def select(self, engine, filters, session, limit=None):
+        '''
+
+        Warning: query with and w/o `limit` won't flush each other if cached!
+        '''
         cmd = engine.dialect.select(table=self, filters=filters, limit=limit)
         return cmd.execute(session=session)
 
