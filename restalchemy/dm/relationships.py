@@ -45,6 +45,9 @@ class Relationship(BaseRelationship):
 
     def __init__(self, property_type, default=None, required=False,
                  read_only=False, value=None):
+        if value and not isinstance(value, property_type):
+            raise TypeError("Expected '%s' type; value: %r"
+                            % (property_type, value))
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)

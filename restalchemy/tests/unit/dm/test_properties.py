@@ -42,7 +42,7 @@ class PropertyTestCase(base.BaseTestCase):
     def _set_property_value(self, obj, value):
         obj.value = value
 
-    def test_init_with_corect_value(self):
+    def test_init_with_correct_value(self):
         property_obj = properties.Property(
             self.positive_fake_property_type, value=FAKE_VALUE)
 
@@ -50,7 +50,7 @@ class PropertyTestCase(base.BaseTestCase):
         self.positive_fake_property_type.validate.assert_called_with(
             FAKE_VALUE)
 
-    def test_init_incorect_value(self):
+    def test_init_incorrect_value(self):
         self.assertRaises(exceptions.TypeError, properties.Property,
                           self.negative_fake_property_type, value=FAKE_VALUE)
 
