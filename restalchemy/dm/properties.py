@@ -84,7 +84,7 @@ class Property(BaseProperty):
     def is_id_property(cls):
         return False
 
-    @property
+    @builtins.property
     def old_value(self):
         return self.__first_value
 
@@ -101,7 +101,7 @@ class Property(BaseProperty):
     def set_value_force(self, value):
         self._value = self._safe_value(value)
 
-    @property
+    @builtins.property
     def property_type(self):
         return self._type
 
