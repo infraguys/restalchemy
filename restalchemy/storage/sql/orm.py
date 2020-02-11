@@ -137,7 +137,7 @@ class ObjectCollection(base.AbstractObjectCollection):
                 )
 
             return self._get_all(filters=filters, session=s, limit=limit,
-                                 order_by=None)
+                                 order_by=order_by)
 
     def _get_all(self, filters, session, limit, order_by=None):
         result = self._table.select(
