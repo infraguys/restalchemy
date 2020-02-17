@@ -80,24 +80,26 @@ class SQLTable(object):
         cmd = engine.dialect.delete(table=self, ids=ids)
         return cmd.execute(session=session)
 
-    def select(self, engine, filters, session, limit=None, order_by=None):
+    def select(self, engine, filters, session,
+               limit=None, order_by=None, locked=False):
         '''
 
         Warning: query with and w/o (limit or group_by) won't flush each other
         if cached!
         '''
         cmd = engine.dialect.select(table=self, filters=filters, limit=limit,
-                                    order_by=order_by)
+                                    order_by=order_by, locked=locked)
         return cmd.execute(session=session)
 
     def custom_select(self, engine, where_conditions, where_values,
-                      session, limit=None, order_by=None):
+                      session, limit=None, order_by=None, locked=False):
         cmd = engine.dialect.custom_select(
             table=self,
             where_conditions=where_conditions,
             where_values=where_values,
             limit=limit,
             order_by=order_by,
+            locked=locked,
         )
         return cmd.execute(session=session)
 
@@ -122,7 +124,7 @@ class ObjectCollection(base.AbstractObjectCollection):
         return result
 
     def get_all(self, filters=None, session=None, cache=False, limit=None,
-                order_by=None):
+                order_by=None, locked=False):
         # TODO(efrolov): Add limit and offset parameters
         filters = self._filters_to_storage_view(filters or {})
         with self._engine.session_manager(session=session) as s:
@@ -134,21 +136,27 @@ class ObjectCollection(base.AbstractObjectCollection):
                     fallback=self._get_all,
                     limit=limit,
                     order_by=order_by,
+                    locked=locked,
                 )
 
             return self._get_all(filters=filters, session=s, limit=limit,
-                                 order_by=order_by)
+                                 order_by=order_by, locked=locked)
 
-    def _get_all(self, filters, session, limit, order_by=None):
+    def _get_all(self, filters, session, limit, order_by=None, locked=False):
         result = self._table.select(
             engine=self._engine, filters=filters, limit=limit,
-            order_by=order_by, session=session)
+            order_by=order_by, session=session, locked=locked)
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
-    def get_one(self, filters=None, session=None, cache=False):
+    def get_one(self, filters=None, session=None, cache=False, locked=False):
         result = self.get_all(
-            filters=filters, session=session, cache=cache, limit=2)
+            filters=filters,
+            session=session,
+            cache=cache,
+            limit=2,
+            locked=locked,
+        )
         result_len = len(result)
         if result_len == 1:
             return result[0]
@@ -159,20 +167,22 @@ class ObjectCollection(base.AbstractObjectCollection):
             raise exceptions.HasManyRecords(model=self.model_cls,
                                             filters=filters)
 
-    def _query(self, where_conditions, where_values, session, limit, order_by):
+    def _query(self, where_conditions, where_values,
+               session, limit, order_by, locked):
         result = self._table.custom_select(
             engine=self._engine,
             where_conditions=where_conditions,
             where_values=where_values,
             session=session,
             limit=limit,
-            order_by=order_by
+            order_by=order_by,
+            locked=locked,
         )
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
     def query(self, where_conditions, where_values, session=None,
-              cache=False, limit=None, order_by=None):
+              cache=False, limit=None, order_by=None, locked=False):
         """
 
         :param where_conditions: "NOT (bala < %s)"
@@ -188,13 +198,15 @@ class ObjectCollection(base.AbstractObjectCollection):
                     fallback=self._query,
                     limit=limit,
                     order_by=order_by,
+                    locked=locked,
                 )
 
             return self._query(where_conditions=where_conditions,
                                where_values=where_values,
                                session=s,
                                limit=limit,
-                               order_by=order_by)
+                               order_by=order_by,
+                               locked=locked)
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):
