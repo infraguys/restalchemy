@@ -29,8 +29,9 @@ class SessionQueryCache(object):
         self.__query_cache = {}
 
     @staticmethod
-    def _get_hash(engine, table, filters, limit=None, order_by=None):
-        query = engine.dialect.select(table, filters, limit, order_by)
+    def _get_hash(engine, table, filters, limit=None,
+                  order_by=None, locked=False):
+        query = engine.dialect.select(table, filters, limit, order_by, locked)
         values = query.get_values()
         statement = query.get_statement()
         return hash(tuple([statement] + values))
@@ -38,38 +39,43 @@ class SessionQueryCache(object):
     @staticmethod
     def _get_hash_by_query(
             engine, table, where_conditions, where_values, limit=None,
-            order_by=None):
+            order_by=None, locked=False):
         query = engine.dialect.custom_select(
             table=table,
             where_conditions=where_conditions,
             where_values=where_values,
             limit=limit,
-            order_by=order_by)
+            order_by=order_by,
+            locked=locked,
+        )
         values = query.get_values()
         statement = query.get_statement()
         return hash(tuple([statement] + values))
 
     def get_all(self, engine, table, filters, fallback, limit=None,
-                order_by=None):
-        query_hash = self._get_hash(engine, table, filters, limit)
+                order_by=None, locked=False):
+        query_hash = self._get_hash(engine, table, filters, limit, locked)
         if query_hash not in self.__query_cache:
             self.__query_cache[query_hash] = fallback(filters=filters,
                                                       session=self._session,
                                                       limit=limit,
-                                                      order_by=order_by)
+                                                      order_by=order_by,
+                                                      locked=locked)
         return self.__query_cache[query_hash]
 
     def query(self, engine, table, where_conditions, where_values, fallback,
-              limit=None, order_by=None):
+              limit=None, order_by=None, locked=False):
         query_hash = self._get_hash_by_query(
-            engine, table, where_conditions, where_values, limit)
+            engine, table, where_conditions, where_values, limit, locked)
         if query_hash not in self.__query_cache:
             self.__query_cache[query_hash] = fallback(
                 where_conditions=where_conditions,
                 where_values=where_values,
                 session=self._session,
                 limit=limit,
-                order_by=order_by)
+                order_by=order_by,
+                locked=locked,
+            )
         return self.__query_cache[query_hash]
 
 

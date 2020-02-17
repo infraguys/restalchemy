@@ -123,14 +123,20 @@ class MySQLDelete(AbstractDialectCommand):
 
 
 class MySQLBasicSelect(AbstractDialectCommand):
-    def __init__(self, table, limit=None, order_by=None):
+    def __init__(self, table, limit=None, order_by=None, locked=False):
         super(MySQLBasicSelect, self).__init__(table=table, data={})
         self._limit = limit
         self._order_by = order_by
+        self._locked = locked
 
     def construct_limit(self):
         if self._limit:
             return " LIMIT " + str(self._limit)
+        return ""
+
+    def construct_locked(self):
+        if self._locked:
+            return " FOR UPDATE"
         return ""
 
     def construct_order_by(self):
@@ -147,9 +153,10 @@ class MySQLBasicSelect(AbstractDialectCommand):
 
 class MySQLSelect(MySQLBasicSelect):
 
-    def __init__(self, table, filters, limit=None, order_by=None):
+    def __init__(self, table, filters, limit=None,
+                 order_by=None, locked=False):
         super(MySQLSelect, self).__init__(
-            table=table, limit=limit, order_by=order_by)
+            table=table, limit=limit, order_by=order_by, locked=locked)
         self._check_filters(filters)
         self._filters = filters
 
@@ -183,17 +190,17 @@ class MySQLSelect(MySQLBasicSelect):
         filt = self.construct_where()
         if filt:
             return sql + " WHERE %s" % filt + self.construct_order_by() \
-                + self.construct_limit()
+                + self.construct_limit() + self.construct_locked()
 
-        return sql + self.construct_limit()
+        return sql + self.construct_limit() + self.construct_locked()
 
 
 class MySQLCustomSelect(MySQLBasicSelect):
 
     def __init__(self, table, where_conditions, where_values, limit=None,
-                 order_by=None):
+                 order_by=None, locked=False):
         super(MySQLCustomSelect, self).__init__(
-            table=table, limit=limit, order_by=order_by)
+            table=table, limit=limit, order_by=order_by, locked=locked)
         self._where_conditions = where_conditions
         self._where_values = where_values
 
@@ -209,7 +216,8 @@ class MySQLCustomSelect(MySQLBasicSelect):
             self._table.name
         )
         return sql + " WHERE " + self.construct_where() \
-            + self.construct_order_by() + self.construct_limit()
+            + self.construct_order_by() + self.construct_limit() \
+            + self.construct_locked()
 
 
 class MySQLDialect(base.AbstractDialect):
@@ -223,10 +231,10 @@ class MySQLDialect(base.AbstractDialect):
     def delete(self, table, ids):
         return MySQLDelete(table, ids)
 
-    def select(self, table, filters, limit=None, order_by=None):
-        return MySQLSelect(table, filters, limit, order_by)
+    def select(self, table, filters, limit=None, order_by=None, locked=False):
+        return MySQLSelect(table, filters, limit, order_by, locked)
 
     def custom_select(self, table, where_conditions, where_values, limit=None,
-                      order_by=None):
+                      order_by=None, locked=False):
         return MySQLCustomSelect(table, where_conditions, where_values, limit,
-                                 order_by)
+                                 order_by, locked)
