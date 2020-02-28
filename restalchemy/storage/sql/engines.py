@@ -77,6 +77,9 @@ class MySQLEngine(AbstractEngine):
         self._session_storage = sessions.SessionThreadStorage()
         self._query_cache = query_cache
 
+    def __del__(self):
+        self._pool._remove_connections()
+
     @property
     def query_cache(self):
         return self._query_cache
@@ -166,6 +169,9 @@ class EngineFactory(singletons.InheritSingleton):
             return self._engine
         raise ValueError("Can not return engine. Please configure "
                          "EngineFactory")
+
+    def destroy_engine(self):
+        self._engine = None
 
 
 engine_factory = EngineFactory()
