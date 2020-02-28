@@ -276,7 +276,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                 if result.get_count() == 0:
                     filters = {name: prop.value for name, prop in
                                self.get_id_properties().items()}
-                    type(self).objects.get_one(filters=filters)
+                    type(self).objects.get_one(filters=filters, session=s)
                 if result.get_count() > 1:
                     raise exceptions.MultipleUpdatesDetected(model=self,
                                                              filters={})
