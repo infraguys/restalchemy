@@ -20,9 +20,6 @@ import abc
 import inspect
 
 import six
-from sqlalchemy.orm import attributes
-from sqlalchemy.orm import properties
-from sqlalchemy.orm import relationships
 
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties as ra_properties
@@ -124,18 +121,6 @@ class AbstractResourceProperty(object):
 
 class ResourceProperty(AbstractResourceProperty):
     pass
-
-
-class ResourceSAProperty(ResourceProperty):
-
-    def parse_value(self, req, value):
-        return value
-
-    def parse_value_from_unicode(self, req, value):
-        return value
-
-    def dump_value(self, value):
-        return value
 
 
 class ResourceRAProperty(ResourceProperty):
@@ -268,56 +253,6 @@ class ResourceByRAModel(AbstractResource):
                                'many' if id_property else 'no',
                                type(self)))
         return id_property.popitem()[-1].get_property_type()
-
-
-class ResourceBySAModel(AbstractResource):
-
-    def get_fields(self):
-        for name in dir(self._model_class):
-            attr = getattr(self._model_class, name)
-            if isinstance(attr, attributes.InstrumentedAttribute):
-                if isinstance(
-                        attr.comparator,
-                        properties.ColumnProperty.Comparator):
-                    prop = ResourceSAProperty(
-                        self, model_property_name=name,
-                        public=self.is_public_field(name))
-                elif isinstance(
-                        attr.comparator,
-                        relationships.RelationshipProperty.Comparator):
-                    prop = ResourceRelationship(
-                        self, model_property_name=name,
-                        public=self.is_public_field(name))
-                else:
-                    raise TypeError("Unknown property type %s" % type(attr))
-                yield name, prop
-
-    def get_resource_id(self, model):
-        if not isinstance(model, self._model_class):
-            raise TypeError('Model instance must be %s (not %s)' % (
-                self._model_class, type(model)))
-        if hasattr(model, "get_id"):
-            return model.get_id()
-        primary_keys = []
-        for name, column in self._model_class.__table__.columns.items():
-            if column.primary_key == True:
-                primary_keys.append(name)
-        if len(primary_keys) == 1:
-            return getattr(model, primary_keys[0])
-        raise ValueError("Can't find resource ID for %s. Please implement "
-                         "get_id method in your model (%s)" % (
-                             model, self._model_class))
-
-    def get_id_type(self):
-        id_property = self._model_class.get_id_property()
-        if len(id_property) != 1:
-            raise TypeError("Model %s returns %s properties which marked as "
-                            "id_property. Please implement get_id_type "
-                            "method on your resource %r."
-                            % (self._model_class,
-                               'many' if id_property else 'no',
-                               type(self)))
-        return id_property.popitem()[-1]
 
 
 class ResourceByModelWithCustomProps(ResourceByRAModel):
