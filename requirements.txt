@@ -1,7 +1,6 @@
 pbr==1.8.1
 webob==1.6.1
 six==1.10.0
-SQLAlchemy==1.0.11
-requests==2.6.0
+requests==2.11.1
 mysql-connector-python==8.0.15
 oslo.config==3.22.0
