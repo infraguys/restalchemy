@@ -500,6 +500,15 @@ class UTCDateTimeTestCase(base.BaseTestCase):
             self.test_instance.validate(
                 datetime.datetime.utcnow().replace(tzinfo=datetime.tzinfo())))
 
+    def test_zero_microseconds(self):
+        dt = datetime.datetime(2020, 3, 13, 11, 3, 25)
+        expected = '2020-03-13 11:03:25.000000'
+        dt_type = types.UTCDateTime()
+
+        result = dt_type.to_simple_type(dt)
+
+        self.assertEqual(result, expected)
+
 
 class EnumTestCase(base.BaseTestCase):
 

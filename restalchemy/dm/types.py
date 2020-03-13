@@ -285,6 +285,8 @@ class TypedDict(Dict):
 
 class UTCDateTime(BasePythonType):
 
+    _FORMAT = '%Y-%m-%d %H:%M:%S.%f'
+
     def __init__(self):
         super(UTCDateTime, self).__init__(python_type=datetime.datetime)
 
@@ -292,12 +294,12 @@ class UTCDateTime(BasePythonType):
         return isinstance(value, datetime.datetime) and value.tzinfo is None
 
     def to_simple_type(self, value):
-        return str(value)
+        return value.strftime(self._FORMAT)
 
     def from_simple_type(self, value):
         if isinstance(value, datetime.datetime):
             return value
-        return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
+        return datetime.datetime.strptime(value, self._FORMAT)
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
