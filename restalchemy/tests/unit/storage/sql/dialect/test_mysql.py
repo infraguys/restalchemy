@@ -226,6 +226,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s "
             "ORDER BY `field_str` ASC, `field_bool` DESC")
 
+    def test_statement_order_by_without_where_clause(self):
+        orders = collections.OrderedDict()
+        orders['field_str'] = ''
+        orders['field_bool'] = 'desc'
+        target = mysql.MySQLSelect(self._TABLE, filters={}, order_by=orders)
+
+        result = target.get_statement()
+
+        self.assertEqual(
+            result,
+            "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
+            "FROM `FAKE_TABLE` "
+            "ORDER BY `field_str` ASC, `field_bool` DESC")
+
     def test_statement_order_by_false_order(self):
         FAKE_LE_VALUES = [
             filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
