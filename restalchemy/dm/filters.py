@@ -32,6 +32,9 @@ class AbstractExpression(object):
     def value(self):
         return self._value
 
+    def __eq__(self, other):
+        return isinstance(other, type(self)) and self.value == other.value
+
     def __repr__(self):
         return "<%s (%r)>" % (type(self).__name__, self.value)
 
