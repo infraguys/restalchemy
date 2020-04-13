@@ -78,7 +78,9 @@ class MySQLEngine(AbstractEngine):
         self._query_cache = query_cache
 
     def __del__(self):
-        self._pool._remove_connections()
+        pool = getattr(self, '_pool', None)
+        if pool is not None:
+            self._pool._remove_connections()
 
     @property
     def query_cache(self):
