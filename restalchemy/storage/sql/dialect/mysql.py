@@ -188,11 +188,11 @@ class MySQLSelect(MySQLBasicSelect):
             self._table.name
         )
         filt = self.construct_where()
-        if filt:
-            return sql + " WHERE %s" % filt + self.construct_order_by() \
-                + self.construct_limit() + self.construct_locked()
 
-        return sql + self.construct_limit() + self.construct_locked()
+        return (sql + (" WHERE %s" % filt if filt else "")
+                + self.construct_order_by()
+                + self.construct_limit()
+                + self.construct_locked())
 
 
 class MySQLCustomSelect(MySQLBasicSelect):
