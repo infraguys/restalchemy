@@ -17,8 +17,11 @@
 #    under the License.
 
 import contextlib
+import logging
 
 from restalchemy.storage.sql import engines
+
+LOG = logging.getLogger(__name__)
 
 
 class Context(object):
@@ -26,11 +29,13 @@ class Context(object):
     def __init__(self):
         super(Context, self).__init__()
 
-    def start_new_session(self):
+    @staticmethod
+    def start_new_session():
         engine = engines.engine_factory.get_engine()
         storage = engine.get_session_storage()
         session = engine.get_session()
         storage.store_session(session)
+        LOG.debug("New session %r has been started", session)
         return session
 
     @contextlib.contextmanager
@@ -38,26 +43,32 @@ class Context(object):
         session = self.start_new_session()
         try:
             yield session
-            self.session_commit()
+            session.commit()
+            LOG.debug("Session %r has been committed", session)
         except Exception:
-            self.session_rollback()
+            session.rollback()
+            LOG.exception("Session %r has been rolled back by reason:",
+                          session)
             raise
+        finally:
+            self.session_close()
+
+    @staticmethod
+    def _get_storage():
+        engine = engines.engine_factory.get_engine()
+        return engine.get_session_storage()
 
     def get_session(self):
-        engine = engines.engine_factory.get_engine()
-        storage = engine.get_session_storage()
-        return storage.get_session()
+        return self._get_storage().get_session()
 
-    def session_commit(self):
-        self.get_session().commit()
-        self._close()
-
-    def session_rollback(self):
-        self.get_session().rollback()
-        self._close()
-
-    def _close(self):
-        engine = engines.engine_factory.get_engine()
-        storage = engine.get_session_storage()
-        storage.get_session().close()
-        storage.remove_session()
+    def session_close(self):
+        session = self.get_session()
+        try:
+            session.close()
+            LOG.debug("Session %r has been closed", session)
+        except Exception:
+            LOG.exception("Can't close session by reason:")
+        finally:
+            self._get_storage().remove_session()
+            LOG.debug("Session %r has been removed from thread storage",
+                      session)
