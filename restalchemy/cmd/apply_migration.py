@@ -21,6 +21,7 @@ import sys
 from oslo_config import cfg
 
 from restalchemy.common import config
+from restalchemy.common import log as ra_log
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import migrations
 
@@ -44,6 +45,7 @@ CONF.register_cli_opts(cmd_db_opts, 'db')
 
 def main():
     config.parse(sys.argv[1:])
+    ra_log.configure()
     engines.engine_factory.configure_factory(db_url=CONF.db.connection)
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
     engine.apply_migration(migration_name=CONF.migration)

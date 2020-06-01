@@ -21,6 +21,9 @@ import logging
 import threading
 
 
+LOG = logging.getLogger(__name__)
+
+
 class SessionQueryCache(object):
 
     def __init__(self, session):
@@ -84,7 +87,7 @@ class MySQLSession(object):
     def __init__(self, conn):
         self._conn = conn
         self._cursor = conn.cursor(dictionary=True, buffered=True)
-        self._log = logging.getLogger(__name__)
+        self._log = LOG
         self.cache = SessionQueryCache(session=self)
 
     def execute(self, statement, values):
