@@ -39,3 +39,15 @@ class HasManyRecords(exceptions.RestAlchemyException):
 
 class ConflictRecords(exceptions.RestAlchemyException):
     message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
+
+
+class UnknownStorageException(exceptions.RestAlchemyException):
+    message = "Unknown storage exception: %(caused)r"
+
+    def __init__(self, caused, **kwargs):
+        self._caused = caused
+        super(UnknownStorageException, self).__init__(caused=caused, **kwargs)
+
+    @property
+    def caused(self):
+        return self._caused

@@ -123,6 +123,7 @@ class ObjectCollection(base.AbstractObjectCollection):
             result[name] = flt.convert_filter(value, value_type)
         return result
 
+    @base.error_catcher
     def get_all(self, filters=None, session=None, cache=False, limit=None,
                 order_by=None, locked=False):
         # TODO(efrolov): Add limit and offset parameters
@@ -149,6 +150,7 @@ class ObjectCollection(base.AbstractObjectCollection):
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
+    @base.error_catcher
     def get_one(self, filters=None, session=None, cache=False, locked=False):
         result = self.get_all(
             filters=filters,
@@ -181,6 +183,7 @@ class ObjectCollection(base.AbstractObjectCollection):
         return [self.model_cls.restore_from_storage(**params)
                 for params in list(result.fetchall())]
 
+    @base.error_catcher
     def query(self, where_conditions, where_values, session=None,
               cache=False, limit=None, order_by=None, locked=False):
         """
@@ -244,6 +247,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
         obj._saved = True
         return obj
 
+    @base.error_catcher
     def insert(self, session=None):
         # TODO(efrolov): Add filters parameters.
         with self._engine.session_manager(session=session) as s:
@@ -260,6 +264,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
         # TODO(efrolov): Add filters parameters.
         self.update(session) if self._saved else self.insert(session)
 
+    @base.error_catcher
     def update(self, session=None, force=False):
         # TODO(efrolov): Add filters parameters.
         if self.is_dirty() or force:
@@ -281,6 +286,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                     raise exceptions.MultipleUpdatesDetected(model=self,
                                                              filters={})
 
+    @base.error_catcher
     def delete(self, session=None):
         # TODO(efrolov): Add filters parameters.
         with self._engine.session_manager(session=session) as s:

@@ -26,6 +26,7 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
+from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
 from restalchemy.storage.sql import sessions
@@ -136,7 +137,8 @@ class InsertCase(unittest.TestCase):
 
         session_mock().execute.side_effect = CustomException
 
-        self.assertRaises(CustomException, self.target_model.insert)
+        self.assertRaises(exceptions.UnknownStorageException,
+                          self.target_model.insert)
 
         self.assertFalse(session_mock().commit.called)
         self.assertTrue(session_mock().rollback.called)
@@ -166,7 +168,8 @@ class InsertCase(unittest.TestCase):
 
         session_mock.execute.side_effect = CustomException
 
-        self.assertRaises(CustomException, self.target_model.insert,
+        self.assertRaises(exceptions.UnknownStorageException,
+                          self.target_model.insert,
                           session=session_mock)
 
         self.assertFalse(session_mock.commit.called)
