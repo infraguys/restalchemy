@@ -22,6 +22,7 @@ import json
 import six
 
 from restalchemy.common import exceptions as common_exc
+from restalchemy.dm import filters
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -316,7 +317,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                 value = (cls.properties.properties[name].get_property_type()
                          .from_simple_type(value))
                 engine = engines.engine_factory.get_engine()
-                return cls.objects.get_one(filters={name: value},
+                return cls.objects.get_one(filters={name: filters.EQ(value)},
                                            cache=engine.query_cache)
 
 
