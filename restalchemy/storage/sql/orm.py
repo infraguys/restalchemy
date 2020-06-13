@@ -148,8 +148,9 @@ class ObjectCollection(base.AbstractObjectCollection):
         result = self._table.select(
             engine=self._engine, filters=filters, limit=limit,
             order_by=order_by, session=session, locked=locked)
+        data = list(result.fetchall())
         return [self.model_cls.restore_from_storage(**params)
-                for params in list(result.fetchall())]
+                for params in data]
 
     @base.error_catcher
     def get_one(self, filters=None, session=None, cache=False, locked=False):
