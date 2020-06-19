@@ -214,6 +214,15 @@ def _validate_scheme(scheme):
                          % (non_string_keys, BaseType))
 
 
+# TODO(d.burmistrov): we have to make this group of Dict Schemers:
+#   - ExactSchemaDict - data must follow schema in every detail
+#   - PartialSchemaDict - data must be within schema definition (some keys
+#                         may be missing)
+#   - ExtraSchemaDict - data must follow schema but may have extra keys
+#   - not sure about this option: there may be extra keys (not defined
+#     in schema) and some schema keys may be missing, but all defined keys
+#     matching schema must be valid due to schema
+
 class SoftSchemeDict(Dict):
 
     def __init__(self, scheme):
