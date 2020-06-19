@@ -144,11 +144,12 @@ class UUID(BaseType):
 
 class ComplexPythonType(BasePythonType):
 
-    _TYPE_ERROR_MSG = "Can't convert '%s' to %s"
+    _TYPE_ERROR_MSG = "Can't convert '%s' with type '%s' into %s"
 
     def _raise_on_invalid_type(self, value):
         if not isinstance(value, self._python_type):
-            raise TypeError(self._TYPE_ERROR_MSG % (value, self._python_type))
+            raise TypeError(self._TYPE_ERROR_MSG
+                            % (value, type(value), self._python_type))
 
     def from_simple_type(self, value):
         self._raise_on_invalid_type(value)
