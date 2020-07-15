@@ -90,7 +90,7 @@ class MySQLSession(object):
         self._log = LOG
         self.cache = SessionQueryCache(session=self)
 
-    def execute(self, statement, values):
+    def execute(self, statement, values=None):
         self._log.debug("Execute statement %s with values %s",
                         statement, values)
         self._cursor.execute(statement, values)

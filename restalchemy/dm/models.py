@@ -18,6 +18,7 @@
 
 import abc
 import collections
+import copy
 import uuid
 
 import six
@@ -56,6 +57,7 @@ class MetaModel(abc.ABCMeta):
 
 @six.add_metaclass(MetaModel)
 class Model(collections.Mapping):
+    _python_simple_types = (type(None), str, int, float, complex, bool)
 
     def __init__(self, **kwargs):
         super(Model, self).__init__()
@@ -155,6 +157,21 @@ class Model(collections.Mapping):
     @classmethod
     def get_model_type(cls):
         return cls
+
+    def as_plain_dict(self):
+        plain_dict = {}
+        props = self.properties
+
+        for name in props:
+            val = props[name].value
+            if isinstance(val, Model):
+                plain_dict[name] = val.get_id()
+            elif isinstance(val, self._python_simple_types):
+                plain_dict[name] = val
+            else:
+                plain_dict[name] = copy.deepcopy(val)
+
+        return plain_dict
 
     def __getitem__(self, name):
         return self.properties[name].value

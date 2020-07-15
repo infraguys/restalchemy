@@ -17,13 +17,14 @@
 #    under the License.
 
 import abc
+import logging
 import os
 import sys
 import uuid
 
 import six
 
-
+from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
@@ -34,6 +35,7 @@ from restalchemy.storage.sql import sessions
 
 
 RA_MIGRATION_TABLE_NAME = "ra_migrations"
+LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -80,9 +82,10 @@ class MigrationStepController(object):
     def __init__(self, migration_step, filename, session):
         self._migration_step = migration_step
         self._filename = filename
+        migr_uuid = uuid.UUID(self._migration_step.migration_id)
         try:
             self._migration_model = MigrationModel.objects.get_one(
-                filters={"uuid": uuid.UUID(self._migration_step.migration_id)},
+                filters={"uuid": filters.EQ(migr_uuid)},
                 session=session)
         except exceptions.RecordNotFound:
             self._migration_model = MigrationModel(
@@ -113,8 +116,15 @@ class MigrationStepController(object):
         self._migration_model.applied = False
         self._migration_model.save(session=session)
 
+    @property
+    def name(self):
+        return os.path.splitext(
+            os.path.basename(self._filename)
+        )[0]
+
 
 class MigrationEngine(object):
+    FILENAME_HASH_LEN = 6
 
     def __init__(self, migrations_path):
         self._migrations_path = migrations_path
@@ -136,7 +146,8 @@ class MigrationEngine(object):
     def new_migration(self, depends, message):
         depends = self._calculate_depends(depends)
         migration_id = str(uuid.uuid4())
-        mfilename = "%s-%s.py" % (migration_id[:6], message.replace(" ", "-"))
+        mfilename = "%s-%s.py" % (migration_id[:self.FILENAME_HASH_LEN],
+                                  message.replace(" ", "-"))
         mpath = os.path.join(self._migrations_path, mfilename)
         with open(mpath, "w") as fp_output:
             template_path = os.path.join(os.path.dirname(__file__),
@@ -179,11 +190,13 @@ class MigrationEngine(object):
         with sessions.session_manager(engine=engine) as session:
             self._init_migration_table(session)
             migrations = self._load_migrations(session)
-            if migrations[filename].is_applied():
-                for migration in migrations.values():
-                    if filename in migration.depends_from():
-                        migration.rollback(session, migrations)
+            migration = migrations[filename]
+            if migration.is_applied():
+                LOG.warning(
+                    "Migration '%s' is already applied",
+                    migration.name)
             else:
+                LOG.info("Applying '%s'", migration.name)
                 migrations[filename].apply(session, migrations)
 
     def rollback_migration(self, migration_name):
@@ -192,4 +205,11 @@ class MigrationEngine(object):
         with sessions.session_manager(engine=engine) as session:
             self._init_migration_table(session)
             migrations = self._load_migrations(session)
-            migrations[filename].rollback(session, migrations)
+            migration = migrations[filename]
+            if not migration.is_applied():
+                LOG.warning(
+                    "Migration '%s' is not applied",
+                    migration.name)
+            else:
+                LOG.info("Rolling back '%s'", migration.name)
+                migrations[filename].rollback(session, migrations)

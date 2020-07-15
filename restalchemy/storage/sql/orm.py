@@ -281,9 +281,10 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                 except exc.Conflict as e:
                     raise exceptions.ConflictRecords(model=self, msg=e.message)
                 if result.get_count() == 0:
-                    filters = {name: prop.value for name, prop in
-                               self.get_id_properties().items()}
-                    type(self).objects.get_one(filters=filters, session=s)
+                    _filters = {
+                        name: filters.EQ(prop.value)
+                        for name, prop in self.get_id_properties().items()}
+                    type(self).objects.get_one(filters=_filters, session=s)
                 if result.get_count() > 1:
                     raise exceptions.MultipleUpdatesDetected(model=self,
                                                              filters={})
