@@ -206,6 +206,35 @@ class ModelWithIDsTestCase(base.BaseTestCase):
         with self.assertRaises(TypeError):
             TestModelWithSeveralIDs.get_id_property_name()
 
+    def test_model_plain_dict(self):
+        fakeInt = 1
+        fakeUUID1 = uuid.uuid4()
+        fakeUUID2 = uuid.uuid4()
+        fakeUUID3 = uuid.uuid4()
+
+        model = TestModelWithID(
+            uuid=fakeUUID1,
+            property1=fakeInt,
+            property2=fakeInt,
+            property3=Model3(uuid=fakeUUID2),
+            property4=Model2()
+        )
+
+        expected = {
+            "uuid": fakeUUID1,
+            "property1": fakeInt,
+            "property2": fakeInt,
+            "property3": fakeUUID2,
+            "property4": None,
+        }
+
+        plain_dict = model.as_plain_dict()
+        self.assertEqual(plain_dict, expected)
+
+        # dictionary changes do not affect model
+        plain_dict["property3"] = Model3(uuid=fakeUUID3)
+        self.assertEqual(model.property3.uuid, fakeUUID2)
+
 
 class ModelWithRequiredUUIDTestCase(base.BaseTestCase):
 

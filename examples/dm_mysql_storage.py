@@ -70,6 +70,7 @@ bar1.save()
 six.print_(list(BarModel.objects.get_all()))
 six.print_(BarModel.objects.get_one(filters={"uuid": bar1.get_id()}))
 six.print_(list(BarModel.objects.get_all(filters={"foo": foo1})))
+six.print_(bar1.as_plain_dict())
 
 bar1.delete()
 
