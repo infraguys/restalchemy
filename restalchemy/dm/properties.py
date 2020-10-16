@@ -59,8 +59,12 @@ class Property(BaseProperty):
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
-        default = default() if callable(default) else default
-        self.set_value_force(value if value is not None else default)
+        if value is not None:
+            self.set_value_force(value)
+        elif callable(default):
+            self.set_value_force(default())
+        else:
+            self.set_value_force(default)
         self.__first_value = self.value
 
     def is_dirty(self):
