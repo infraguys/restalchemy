@@ -32,11 +32,15 @@ class MetaModel(abc.ABCMeta):
 
     def __new__(cls, name, bases, attrs):
         props = {}
+        attrs['id_properties'] = {}
+
         for key, value in attrs.copy().items():
             if isinstance(value, (properties.PropertyCreator,
                                   properties.PropertyCollection)):
                 props[key] = value
                 del attrs[key]
+                if value.get_property_class().is_id_property():
+                    attrs['id_properties'][key] = value
         all_base_properties = properties.PropertyCollection()
         for base in bases:
             base_properties = getattr(base, 'properties', None)
@@ -100,6 +104,11 @@ class Model(collections.Mapping):
                 model=self.__class__
             )
 
+        # TODO(g.melikov): check for equal props from __new__ and kwargs?
+        for name, prop in self.properties.items():
+            if prop.is_id_property():
+                self.id_properties[name] = prop
+
     @classmethod
     def restore(cls, **kwargs):
         obj = cls.__new__(cls)
@@ -118,16 +127,12 @@ class Model(collections.Mapping):
 
     @classmethod
     def get_id_property(cls):
-        result = {}
-        for name, prop in cls.properties.items():
-            if prop.is_id_property():
-                result[name] = cls.properties.properties[name]
-        if len(result) == 1:
-            return result
+        if len(cls.id_properties) == 1:
+            return cls.id_properties.copy()
         raise TypeError("Model %s has %s properties which marked as "
-                        "id_property. Please implement get_id_prop "
+                        "id_property. Please implement get_id_property "
                         "method on your model."
-                        % (type(cls), 'many' if result else 'no'))
+                        % (type(cls), 'many' if cls.id_properties else 'no'))
 
     @classmethod
     def get_id_property_name(cls):
@@ -135,11 +140,7 @@ class Model(collections.Mapping):
             return key
 
     def get_id_properties(self):
-        result = {}
-        for name, prop in self.properties.items():
-            if prop.is_id_property():
-                result[name] = prop
-        return result
+        return self.id_properties.copy()
 
     def get_data_properties(self):
         result = {}
