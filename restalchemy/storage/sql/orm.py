@@ -314,13 +314,12 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def from_simple_type(cls, value):
         if value is None:
             return None
-        for name, prop in cls.properties.items():
-            if prop.is_id_property():
-                value = (cls.properties.properties[name].get_property_type()
-                         .from_simple_type(value))
-                engine = engines.engine_factory.get_engine()
-                return cls.objects.get_one(filters={name: filters.EQ(value)},
-                                           cache=engine.query_cache)
+        for name in cls.id_properties:
+            value = (cls.properties.properties[name].get_property_type()
+                        .from_simple_type(value))
+            engine = engines.engine_factory.get_engine()
+            return cls.objects.get_one(filters={name: filters.EQ(value)},
+                                       cache=engine.query_cache)
 
 
 @six.add_metaclass(abc.ABCMeta)
