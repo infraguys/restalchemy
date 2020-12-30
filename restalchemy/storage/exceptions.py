@@ -16,6 +16,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 
 from restalchemy.common import exceptions
 
@@ -39,6 +40,31 @@ class HasManyRecords(exceptions.RestAlchemyException):
 
 class ConflictRecords(exceptions.RestAlchemyException):
     message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
+
+    def __init__(self, model, msg, **kwargs):
+        self._model = model
+        self._msg = msg
+        super(ConflictRecords, self).__init__(model=model, msg=msg, **kwargs)
+
+    @staticmethod
+    def _parse_message(msg):
+        re_template = "Duplicate entry '(.*)' for key '(.*)'"
+        result = re.search(re_template, msg)
+        if result is None:
+            raise ValueError(
+                'Incorrect message for parsing. %s but should be %s' % (
+                    msg,
+                    re_template,
+                ))
+        return result.groups()
+
+    @property
+    def value(self):
+        return self._parse_message(self._msg)[0]
+
+    @property
+    def key(self):
+        return self._parse_message(self._msg)[1]
 
 
 class UnknownStorageException(exceptions.RestAlchemyException):
