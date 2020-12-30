@@ -84,6 +84,10 @@ class AbstractStorableMixin(object):
     def delete(self):
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_storable_snapshot(self):
+        raise NotImplementedError()
+
 
 def error_catcher(func):
     @functools.wraps(func)

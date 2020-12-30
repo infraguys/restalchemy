@@ -25,7 +25,7 @@ class TestErrorCatcherTestCase(base.BaseTestCase):
     @sbase.error_catcher
     def my_func(self, *args, **kwargs):
         if args[0] == 'test_arg' and kwargs.get('kwarg0') == 'test_kwarg':
-            raise RuntimeError("Some Error!!!")
+            raise RuntimeError("Some Error!!!",)
         elif args[0] == 'test_arg' and kwargs.get('kwarg0') == 'RA_EXCEPTION':
             raise exceptions.RecordNotFound(model='FAKE', filters='FAKE')
 

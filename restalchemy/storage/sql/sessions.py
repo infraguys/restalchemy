@@ -20,6 +20,12 @@ import contextlib
 import logging
 import threading
 
+from mysql.connector import errors
+
+from restalchemy.storage import exceptions as exc
+from restalchemy.storage.sql.dialect import mysql
+from restalchemy.storage.sql import tables
+
 
 LOG = logging.getLogger(__name__)
 
@@ -90,10 +96,52 @@ class MySQLSession(object):
         self._log = LOG
         self.cache = SessionQueryCache(session=self)
 
+    def batch_insert(self, models):
+        if models:
+            # Check models type
+            first_model = models[0]
+            model_type = type(first_model)
+            if not min(map(lambda m: isinstance(m, model_type), models)):
+                raise TypeError(
+                    'All models in the list must be of the same type'
+                )
+
+            # process values
+            values = []
+            table = tables.SQLTable(first_model.__tablename__, first_model)
+            statement = mysql.MySQLInsert(
+                table,
+                first_model.get_storable_snapshot(),
+            ).get_statement()
+            for model in models:
+                snapshot = model.get_storable_snapshot()
+                insert = mysql.MySQLInsert(table, snapshot)
+                values.append(insert.get_values())
+
+            try:
+                return self.execute_many(statement, values)
+            except errors.IntegrityError as e:
+                # Error codes from Maria DB documentation. See more on website
+                # https://mariadb.com/kb/en/mariadb-error-codes/
+                # Errno: 1062 and sqlstate: 23000 is "Duplicate entry" error.
+                if e.errno == 1062 and e.sqlstate == '23000':
+                    raise exc.ConflictRecords(
+                        model=type(first_model).__name__,
+                        msg=e.msg,
+                    )
+                else:
+                    raise exc.UnknownStorageException(caused=e)
+
     def execute(self, statement, values=None):
         self._log.debug("Execute statement %s with values %s",
                         statement, values)
         self._cursor.execute(statement, values)
+        return self._cursor
+
+    def execute_many(self, statement, values):
+        self._log.debug("Execute batch statement %s with values %s",
+                        statement, values)
+        self._cursor.executemany(statement, values)
         return self._cursor
 
     def rollback(self):

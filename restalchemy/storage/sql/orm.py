@@ -28,89 +28,15 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import filters as flt
-from restalchemy.storage.sql import utils
-
-
-class SQLTable(object):
-
-    def __init__(self, table_name, model):
-        super(SQLTable, self).__init__()
-        self._table_name = table_name
-        self._model = model
-
-    def get_column_names(self, with_pk=True, do_sort=True):
-        result = []
-        for name, prop in self._model.properties.items():
-            if with_pk == False and prop.is_id_property():
-                continue
-            result.append(name)
-        if do_sort:
-            result.sort()
-        return result
-
-    def get_escaped_column_names(self, with_pk=True, do_sort=True):
-        return [utils.escape(column_name) for column_name in
-                self.get_column_names(with_pk=with_pk, do_sort=do_sort)]
-
-    def get_pk_names(self, do_sort=True):
-        result = []
-        for name, prop in self._model.properties.items():
-            if prop.is_id_property():
-                result.append(name)
-        if do_sort:
-            result.sort()
-        return result
-
-    def get_escaped_pk_names(self, do_sort=True):
-        return [utils.escape(column_name) for column_name in self.get_pk_names(
-            do_sort=do_sort)]
-
-    @property
-    def name(self):
-        return self._table_name
-
-    def insert(self, engine, data, session):
-        cmd = engine.dialect.insert(table=self, data=data)
-        return cmd.execute(session=session)
-
-    def update(self, engine, ids, data, session):
-        cmd = engine.dialect.update(table=self, ids=ids, data=data)
-        return cmd.execute(session=session)
-
-    def delete(self, engine, ids, session):
-        cmd = engine.dialect.delete(table=self, ids=ids)
-        return cmd.execute(session=session)
-
-    def select(self, engine, filters, session,
-               limit=None, order_by=None, locked=False):
-        '''
-
-        Warning: query with and w/o (limit or group_by) won't flush each other
-        if cached!
-        '''
-        cmd = engine.dialect.select(table=self, filters=filters, limit=limit,
-                                    order_by=order_by, locked=locked)
-        return cmd.execute(session=session)
-
-    def custom_select(self, engine, where_conditions, where_values,
-                      session, limit=None, order_by=None, locked=False):
-        cmd = engine.dialect.custom_select(
-            table=self,
-            where_conditions=where_conditions,
-            where_values=where_values,
-            limit=limit,
-            order_by=order_by,
-            locked=locked,
-        )
-        return cmd.execute(session=session)
+from restalchemy.storage.sql import tables
 
 
 class ObjectCollection(base.AbstractObjectCollection):
 
     @property
     def _table(self):
-        return SQLTable(table_name=self.model_cls.__tablename__,
-                        model=self.model_cls)
+        return tables.SQLTable(table_name=self.model_cls.__tablename__,
+                               model=self.model_cls)
 
     @property
     def _engine(self):
@@ -232,7 +158,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def _table(self):
         if self.__tablename__ is None:
             raise UndefinedAttribute(attr_name='__tablename__')
-        return SQLTable(table_name=self.__tablename__, model=self)
+        return tables.SQLTable(table_name=self.__tablename__, model=self)
 
     @property
     def _engine(self):
@@ -261,6 +187,9 @@ class SQLStorableMixin(base.AbstractStorableMixin):
             except exc.Conflict as e:
                 raise exceptions.ConflictRecords(model=self, msg=e.message)
             self._saved = True
+
+    def get_storable_snapshot(self):
+        return self._get_prepared_data()
 
     def save(self, session=None):
         # TODO(efrolov): Add filters parameters.
