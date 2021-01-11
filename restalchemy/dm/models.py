@@ -39,8 +39,6 @@ class MetaModel(abc.ABCMeta):
                                   properties.PropertyCollection)):
                 props[key] = value
                 del attrs[key]
-                if value.get_property_class().is_id_property():
-                    attrs['id_properties'][key] = value
         all_base_properties = properties.PropertyCollection()
         for base in bases:
             base_properties = getattr(base, 'properties', None)
@@ -49,6 +47,10 @@ class MetaModel(abc.ABCMeta):
         attrs['properties'] = (
             attrs.pop('properties', properties.PropertyCollection())
             + all_base_properties + properties.PropertyCollection(**props))
+        for key, prop in attrs['properties'].items():
+            if prop.is_id_property():
+                attrs['id_properties'][key] = (
+                    attrs['properties'].properties[key])
         return super(MetaModel, cls).__new__(cls, name, bases, attrs)
 
     def __getattr__(cls, name):
@@ -104,7 +106,7 @@ class Model(collections.Mapping):
                 model=self.__class__
             )
 
-        # TODO(g.melikov): check for equal props from __new__ and kwargs?
+        self.id_properties = {}
         for name, prop in self.properties.items():
             if prop.is_id_property():
                 self.id_properties[name] = prop
@@ -129,6 +131,7 @@ class Model(collections.Mapping):
     def get_id_property(cls):
         if len(cls.id_properties) == 1:
             return cls.id_properties.copy()
+
         raise TypeError("Model %s has %s properties which marked as "
                         "id_property. Please implement get_id_property "
                         "method on your model."
