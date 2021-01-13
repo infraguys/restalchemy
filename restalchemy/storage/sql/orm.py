@@ -188,9 +188,6 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                 raise exceptions.ConflictRecords(model=self, msg=e.message)
             self._saved = True
 
-    def get_storable_snapshot(self):
-        return self._get_prepared_data()
-
     def save(self, session=None):
         # TODO(efrolov): Add filters parameters.
         self.update(session) if self._saved else self.insert(session)
