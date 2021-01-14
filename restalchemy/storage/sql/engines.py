@@ -176,4 +176,24 @@ class EngineFactory(singletons.InheritSingleton):
         self._engine = None
 
 
+class DBConnectionUrl(object):
+
+    _CENSORED = ':<censored>@'
+
+    def __init__(self, db_url):
+        super(DBConnectionUrl, self).__init__()
+        self._db_url = parse.urlparse(db_url)
+
+    def __repr__(self):
+        if self._db_url.password is None:
+            orig_substr = "@"
+        else:
+            orig_substr = ":%s@" % self._db_url.password
+        return self.url.replace(orig_substr, self._CENSORED)
+
+    @property
+    def url(self):
+        return self._db_url.geturl()
+
+
 engine_factory = EngineFactory()

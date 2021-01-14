@@ -58,3 +58,38 @@ class TestEngineTestCase(base.BaseTestCase):
             with self._engine.session_manager() as s:
 
                 self.assertEqual(s, session)
+
+
+class DBConnectionUrlTestCase(base.BaseTestCase):
+    """Test case for DBConnectionUrl instance"""
+
+    _DB_URL_TEMPLATE = "mysql://john%s10.0.0.1/mydb"
+    _DB_URL_CENSORED = _DB_URL_TEMPLATE % engines.DBConnectionUrl._CENSORED
+
+    def test_repr_with_password(self):
+        db_url = engines.DBConnectionUrl(
+            self._DB_URL_TEMPLATE % ":my_cool_secret@")
+
+        actual_repr = repr(db_url)
+        actual_str = str(db_url)
+
+        self.assertEqual(actual_repr, self._DB_URL_CENSORED)
+        self.assertEqual(actual_str, actual_repr)
+
+    def test_repr_with_empty_password(self):
+        db_url = engines.DBConnectionUrl(self._DB_URL_TEMPLATE % ":@")
+
+        actual_repr = repr(db_url)
+        actual_str = str(db_url)
+
+        self.assertEqual(actual_repr, self._DB_URL_CENSORED)
+        self.assertEqual(actual_str, actual_repr)
+
+    def test_repr_without_password(self):
+        db_url = engines.DBConnectionUrl(self._DB_URL_TEMPLATE % "@")
+
+        actual_repr = repr(db_url)
+        actual_str = str(db_url)
+
+        self.assertEqual(actual_repr, self._DB_URL_CENSORED)
+        self.assertEqual(actual_str, actual_repr)
