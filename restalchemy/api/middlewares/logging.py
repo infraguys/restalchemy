@@ -38,7 +38,7 @@ class LoggingMiddleware(middlewares.Middleware):
     def process_request(self, req):
         req_chunk = self._request_chunk(req)
         headers = dict(req.headers)
-        self.logger.debug('API > %s %s %s',
+        self.logger.debug('API > %s headers=%s body=%r',
                           req_chunk,
                           self._headers_chunk(headers),
                           req.body)
@@ -49,7 +49,7 @@ class LoggingMiddleware(middlewares.Middleware):
             # unreachable if
             # :py:method:`middlewares.ContextMiddleware#process_request`
             # returns response.
-            self.logger.debug('API < %s %s %s %s',
+            self.logger.debug('API < %s %s headers=%s body=%r',
                               res.status_code,
                               self._request_chunk(req),
                               self._headers_chunk(res.headers),
