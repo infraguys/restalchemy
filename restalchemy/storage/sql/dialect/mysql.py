@@ -122,6 +122,65 @@ class MySQLDelete(AbstractDialectCommand):
         )
 
 
+class MySQLBatchDelete(AbstractDialectCommand):
+
+    def __init__(self, table, snapshot):
+        super(MySQLBatchDelete, self).__init__(table=table, data={})
+        self._snapshot = snapshot
+        self._pk_keys = self._table.get_escaped_pk_names()
+        keys_count = len(self._pk_keys)
+        if keys_count == 1:
+            self._is_multiple_primary_key = False
+        elif keys_count > 1:
+            self._is_multiple_primary_key = True
+        else:
+            raise ValueError("The model with table %r has 0 primary keys" %
+                             table)
+
+    def _get_values(self):
+        values = []
+        for snapshot in self._snapshot:
+            for key in self._table.get_pk_names():
+                values.append(snapshot[key])
+        return values
+
+    def _get_multiple_primary_key_values(self):
+        return self._get_values()
+
+    def _get_single_primary_key_values(self):
+        # NOTE(efrolov): Wrap to list for `in` optimization
+        return [self._get_multiple_primary_key_values()]
+
+    def get_values(self):
+        return (self._get_multiple_primary_key_values()
+                if self._is_multiple_primary_key else
+                self._get_single_primary_key_values())
+
+    def _get_single_primary_key_statement(self):
+        return "DELETE FROM `%s` WHERE %s in %s" % (
+            self._table.name,
+            self._pk_keys[0],
+            "%s"
+        )
+
+    def _get_multiple_primary_key_statement(self):
+        where_part = " AND ".join(
+            [("%s = %s" % (key, '%s')) for key in self._pk_keys]
+        )
+        where_condition = " OR ".join(
+            [where_part for _ in range(len(self._snapshot))]
+        )
+        return "DELETE FROM `%s` WHERE %s" % (
+            self._table.name,
+            where_condition,
+        )
+
+    def get_statement(self):
+        return (self._get_multiple_primary_key_statement()
+                if self._is_multiple_primary_key else
+                self._get_single_primary_key_statement())
+
+
 class MySQLBasicSelect(AbstractDialectCommand):
     def __init__(self, table, limit=None, order_by=None, locked=False):
         super(MySQLBasicSelect, self).__init__(table=table, data={})
