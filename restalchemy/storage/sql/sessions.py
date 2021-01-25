@@ -96,15 +96,19 @@ class MySQLSession(object):
         self._log = LOG
         self.cache = SessionQueryCache(session=self)
 
+    @staticmethod
+    def _all_model_is_same_type(target_model, models):
+        model_type = type(target_model)
+        if not min(map(lambda m: isinstance(m, model_type), models)):
+            raise TypeError(
+                'All models in the list must be of the same type'
+            )
+
     def batch_insert(self, models):
         if models:
             # Check models type
             first_model = models[0]
-            model_type = type(first_model)
-            if not min(map(lambda m: isinstance(m, model_type), models)):
-                raise TypeError(
-                    'All models in the list must be of the same type'
-                )
+            self._all_model_is_same_type(first_model, models)
 
             # process values
             values = []
@@ -131,6 +135,30 @@ class MySQLSession(object):
                     )
                 else:
                     raise exc.UnknownStorageException(caused=e)
+
+    def batch_delete(self, models):
+        if models:
+            # Check models type
+            first_model = models[0]
+            self._all_model_is_same_type(first_model, models)
+
+            # process values
+            table = tables.SQLTable(first_model.__tablename__, first_model)
+            values = []
+            for model in models:
+                pk_values = {}
+                for name, prop in model.get_id_properties().items():
+                    pk_values[name] = (
+                        prop.property_type.to_simple_type(prop.value)
+                    )
+                values.append(pk_values)
+            operation = mysql.MySQLBatchDelete(
+                table,
+                values,
+            )
+
+            return self.execute(operation.get_statement(),
+                                operation.get_values())
 
     def execute(self, statement, values=None):
         self._log.debug("Execute statement %s with values %s",

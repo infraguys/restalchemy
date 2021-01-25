@@ -84,8 +84,8 @@ class AbstractStorableMixin(object):
     def delete(self):
         raise NotImplementedError()
 
-    def get_storable_snapshot(self):
-        return self._get_prepared_data()
+    def get_storable_snapshot(self, properties=None):
+        return self._get_prepared_data(properties=properties)
 
 
 def error_catcher(func):

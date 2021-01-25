@@ -15,21 +15,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import unittest
 import uuid
 
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage import exceptions as exc
-from restalchemy.storage.sql import engines
-from restalchemy.storage.sql import migrations
 from restalchemy.storage.sql import orm
-from restalchemy.tests.functional import consts
-
-
-INIT_MIGRATION = "9e335f-test-batch-insert-migration"
+from restalchemy.tests.functional.storage.mysql.batch import base
 
 
 class BatchInsertModel(models.ModelWithUUID, orm.SQLStorableMixin):
@@ -38,29 +31,7 @@ class BatchInsertModel(models.ModelWithUUID, orm.SQLStorableMixin):
     foo_field2 = properties.property(types.String(), default="foo_str")
 
 
-class InsertCase(unittest.TestCase):
-
-    def setUp(self):
-        # configure engine factory
-        engines.engine_factory.configure_factory(
-            db_url=consts.DATABASE_URI)
-        self._engine = engines.engine_factory.get_engine()
-
-        # configure database structure, apply migrations
-        self._migrations = self._migration_engine()
-        self._migrations.rollback_migration(INIT_MIGRATION)
-        self._migrations.apply_migration(INIT_MIGRATION)
-
-    def tearDown(self):
-        # destroy database structure, rollback migrations
-        self._migrations = self._migration_engine()
-        self._migrations.rollback_migration(INIT_MIGRATION)
-
-    @staticmethod
-    def _migration_engine():
-        migrations_path = os.path.dirname(__file__)
-        return migrations.MigrationEngine(
-            migrations_path=migrations_path)
+class InsertCase(base.BaseBatchTestCase):
 
     def test_correct_batch_insert(self):
         model1 = BatchInsertModel(foo_field1=1, foo_field2="Model1")
