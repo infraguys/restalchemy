@@ -23,14 +23,20 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
 
 
-class BaseController(controllers.Controller):
+class IpAddressController(controllers.BaseNestedResourceController):
+    """Port controller
 
-    def _get_session(self):
-        ctx = self.get_context()
-        return ctx.session
+    Handle POST .../v1/vms/<vm_uuid>/ports/<port_uuid>/ip_addresses/
+    Handle GET .../v1/vms/<vm_uuid>/ports/<port_uuid>/ip_addresses/
+    Handle GET .../v1/vms/<vm_uuid>/ports/<port_uuid>/ip_addresses/<ip_uuid>
+    Handle DELETE .../vms/<vm_uuid>/ports/<port_uuid>/ip_addresses/<ip_uuid>
+    """
+
+    __resource__ = resources.ResourceByRAModel(models.IpAddress)
+    __pr_name__ = "port"
 
 
-class PortController(BaseController):
+class PortController(controllers.BaseNestedResourceController):
     """Port controller
 
     Handle POST http://127.0.0.1:8000/v1/vms/<vm_uuid>/ports/
@@ -40,35 +46,10 @@ class PortController(BaseController):
     """
 
     __resource__ = resources.ResourceByRAModel(models.Port)
-
-    def create(self, parent_resource, **kwargs):
-        session = self._get_session()
-        port = self.model(vm=parent_resource, **kwargs)
-        port.save(session=session)
-        session.commit()
-        return port
-
-    def filter(self, parent_resource, filters):
-        session = self._get_session()
-        ports = self.model.objects.get_all(filters={'vm': parent_resource},
-                                           session=session)
-        return ports
-
-    def get(self, parent_resource, uuid):
-        session = self._get_session()
-        port = self.model.objects.get_one(filters={'vm': parent_resource,
-                                                   'uuid': uuid},
-                                          session=session)
-        return port
-
-    def delete(self, parent_resource, uuid):
-        session = self._get_session()
-        port = self.get(parent_resource, uuid)
-        port.delete(session=session)
-        session.commit()
+    __pr_name__ = "vm"
 
 
-class VMController(BaseController):
+class VMController(controllers.BaseResourceController):
     """VM controller
 
     Handle POST http://127.0.0.1:8000/v1/vms/
@@ -82,52 +63,16 @@ class VMController(BaseController):
 
     __resource__ = resources.ResourceByRAModel(models.VM, process_filters=True)
 
-    def create(self, name):
-        session = self._get_session()
-        vm = self.model(name=name)
-        vm.insert(session=session)
-        session.commit()
-        return vm
-
-    def get(self, uuid):
-        session = self._get_session()
-        vm = self.model.objects.get_one(filters={'uuid': uuid},
-                                        session=session)
-        return vm
-
-    def delete(self, uuid):
-        session = self._get_session()
-        vm = self.get(uuid)
-        vm.delete(session=session)
-        session.commit()
-
-    def update(self, uuid, name, **kwargs):
-        session = self._get_session()
-        vm = self.get(uuid)
-        vm.name = name
-        vm.save(session=session)
-        session.commit()
-        return vm
-
-    def filter(self, filters):
-        session = self._get_session()
-        vms = self.model.objects.get_all(session=session, filters=filters)
-        return vms
-
     @actions.post
     def poweron(self, resource):
-        session = self._get_session()
         resource.state = "on"
-        resource.save(session=session)
-        session.commit()
+        resource.save()
         return resource
 
     @actions.post
     def poweroff(self, resource):
-        session = self._get_session()
         resource.state = "off"
-        resource.save(session=session)
-        session.commit()
+        resource.save()
         return resource
 
 

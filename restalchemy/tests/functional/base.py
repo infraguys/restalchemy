@@ -26,7 +26,10 @@ from restalchemy.tests.functional import consts
 INIT_MIGRATION = "9e335f-test-batch-migration"
 
 
-class BaseBatchTestCase(unittest.TestCase):
+class BaseWithDbMigrationsTestCase(unittest.TestCase):
+
+    __LAST_MIGRATION__ = None
+    __FIRST_MIGRATION__ = None
 
     def setUp(self):
         # configure engine factory
@@ -36,16 +39,21 @@ class BaseBatchTestCase(unittest.TestCase):
 
         # configure database structure, apply migrations
         self._migrations = self._migration_engine()
-        self._migrations.rollback_migration(INIT_MIGRATION)
-        self._migrations.apply_migration(INIT_MIGRATION)
+        self._migrations.rollback_migration(self.__FIRST_MIGRATION__)
+        self._migrations.apply_migration(self.__LAST_MIGRATION__)
 
     def tearDown(self):
         # destroy database structure, rollback migrations
         self._migrations = self._migration_engine()
-        self._migrations.rollback_migration(INIT_MIGRATION)
+        self._migrations.rollback_migration(self.__FIRST_MIGRATION__)
+        # Note(efrolov): Must be deleted otherwise we will start collect
+        #                connections and get an error "too many connections"
+        #                from MySQL
+        del self._engine
+        engines.engine_factory.destroy_engine()
 
     @staticmethod
     def _migration_engine():
-        migrations_path = os.path.dirname(__file__)
+        migrations_path = os.path.dirname(__file__) + '/migrations/'
         return migrations.MigrationEngine(
             migrations_path=migrations_path)

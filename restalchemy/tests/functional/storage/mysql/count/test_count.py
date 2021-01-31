@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
@@ -22,22 +23,33 @@ from restalchemy.storage.sql import orm
 from restalchemy.tests.functional import base
 
 
-class BatchDeleteModel(models.ModelWithUUID, orm.SQLStorableMixin):
-    __tablename__ = "batch_delete_one_pk"
+class CountModel(models.ModelWithUUID, orm.SQLStorableMixin):
+    __tablename__ = "test_count"
     foo_field1 = properties.property(types.Integer(), required=True)
     foo_field2 = properties.property(types.String(), default="foo_str")
 
 
-class WithDbMigrationsDeleteOnePkTestCase(base.BaseWithDbMigrationsTestCase):
-    __LAST_MIGRATION__ = "9e335f-test-batch-migration"
-    __FIRST_MIGRATION__ = "9e335f-test-batch-migration"
+class WithDbMigrationsCountTestCase(base.BaseWithDbMigrationsTestCase):
+    __LAST_MIGRATION__ = "502944-test-count-migration"
+    __FIRST_MIGRATION__ = "502944-test-count-migration"
 
-    def test_correct_batch_delete(self):
-        my_models = BatchDeleteModel.objects.get_all()
-        target = [my_models.pop(0), my_models.pop(2)]
+    def test_count(self):
+        target_cnt = 4
 
-        with self._engine.session_manager() as session:
-            session.batch_delete(my_models)
-        result = BatchDeleteModel.objects.get_all()
+        cnt = CountModel.objects.count()
 
-        self.assertEqual(target, result)
+        self.assertEqual(target_cnt, cnt)
+
+    def test_count_filter_single_row(self):
+        target_cnt = 1
+
+        cnt = CountModel.objects.count(filters={'foo_field2': 'value2'})
+
+        self.assertEqual(target_cnt, cnt)
+
+    def test_count_filter_many_rows(self):
+        target_cnt = 2
+
+        cnt = CountModel.objects.count(filters={'foo_field1': filters.GT(2)})
+
+        self.assertEqual(target_cnt, cnt)

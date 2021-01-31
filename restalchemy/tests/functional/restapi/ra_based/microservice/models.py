@@ -33,3 +33,9 @@ class Port(models.ModelWithUUID):
 
     mac = properties.property(types.Mac(), default='00:00:00:00:00:00')
     vm = relationships.relationship(VM, required=True)
+
+
+class IpAddress(models.ModelWithUUID):
+
+    ip = properties.property(types.String(), default='192.168.0.1')
+    port = relationships.relationship(Port, required=True)

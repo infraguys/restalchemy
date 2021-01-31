@@ -311,3 +311,28 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
             "FROM `FAKE_TABLE` WHERE "
             "NOT (`field_int` => %s AND `field_str` = %s) "
             "ORDER BY `field_str` ASC")
+
+
+class MySQLCountTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._TABLE = FakeTable()
+
+    def test_statement(self):
+        target = mysql.MySQLCount(self._TABLE, filters={})
+
+        self.assertEqual(
+            target.get_statement(),
+            "SELECT COUNT(*) as COUNT FROM `FAKE_TABLE`")
+
+    def test_statement_where(self):
+        FAKE_EQ_VALUES = [
+            filters.EQ(common.AsIsType(), v) for v in FAKE_VALUES]
+        target = mysql.MySQLCount(self._TABLE, dict(zip(
+            self._TABLE.get_column_names(), FAKE_EQ_VALUES)))
+
+        self.assertEqual(
+            target.get_statement(),
+            ("SELECT COUNT(*) as COUNT FROM `FAKE_TABLE` "
+             "WHERE `field_bool` = %s "
+             "AND `field_int` = %s AND `field_str` = %s AND `pk` = %s"))

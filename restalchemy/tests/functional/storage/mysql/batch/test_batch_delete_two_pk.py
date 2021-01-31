@@ -19,7 +19,7 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage.sql import orm
-from restalchemy.tests.functional.storage.mysql.batch import base
+from restalchemy.tests.functional import base
 
 
 class BatchDeleteModel(models.ModelWithUUID, orm.SQLStorableMixin):
@@ -38,7 +38,9 @@ class BatchDeleteModel(models.ModelWithUUID, orm.SQLStorableMixin):
                              cls.properties['foo_field1'],)}
 
 
-class BatchDeleteTwoPkTestCase(base.BaseBatchTestCase):
+class WithDbMigrationsDeleteTwoPkTestCase(base.BaseWithDbMigrationsTestCase):
+    __LAST_MIGRATION__ = "9e335f-test-batch-migration"
+    __FIRST_MIGRATION__ = "9e335f-test-batch-migration"
 
     def test_correct_batch_delete(self):
         my_models = BatchDeleteModel.objects.get_all()

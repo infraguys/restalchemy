@@ -92,9 +92,14 @@ packer_mapping = {
 }
 
 
+def parse_content_type(value):
+    # Cleanup: application/json;charset=UTF-8
+    return value.split(';')[0].strip() if value else None
+
+
 def get_packer(content_type):
     try:
-        return packer_mapping[content_type]
+        return packer_mapping[parse_content_type(content_type)]
     except KeyError:
         # TODO(Eugene Frolov): Specify Exception Type and message
         raise Exception("Packer can't found for content type %s " %

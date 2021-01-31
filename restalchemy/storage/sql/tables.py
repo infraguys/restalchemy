@@ -90,3 +90,7 @@ class SQLTable(object):
             locked=locked,
         )
         return cmd.execute(session=session)
+
+    def count(self, engine, session, filters):
+        cmd = engine.dialect.count(table=self, filters=filters)
+        return cmd.execute(session=session)

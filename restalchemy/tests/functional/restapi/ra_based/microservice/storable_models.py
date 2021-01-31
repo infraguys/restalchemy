@@ -30,3 +30,9 @@ class Port(models.Port, orm.SQLStorableMixin):
     __tablename__ = "ports"
 
     vm = relationships.relationship(VM, required=True)
+
+
+class IpAddress(models.IpAddress, orm.SQLStorableMixin):
+    __tablename__ = "ip_addresses"
+
+    port = relationships.relationship(Port, required=True)

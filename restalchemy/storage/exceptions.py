@@ -41,14 +41,13 @@ class HasManyRecords(exceptions.RestAlchemyException):
 class ConflictRecords(exceptions.RestAlchemyException):
     message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
 
-    def __init__(self, model, msg, **kwargs):
-        self._model = model
-        self._msg = msg
-        super(ConflictRecords, self).__init__(model=model, msg=msg, **kwargs)
+    def __init__(self, **kwargs):
+        super(ConflictRecords, self).__init__(**kwargs)
+        self._original_msg = kwargs.get("msg") or ""
 
     @staticmethod
     def _parse_message(msg):
-        re_template = "Duplicate entry '(.*)' for key '(.*)'"
+        re_template = r"Duplicate entry '(.*)' for key '(.*)'"
         result = re.search(re_template, msg)
         if result is None:
             raise ValueError(
@@ -60,11 +59,11 @@ class ConflictRecords(exceptions.RestAlchemyException):
 
     @property
     def value(self):
-        return self._parse_message(self._msg)[0]
+        return self._parse_message(self._original_msg)[0]
 
     @property
     def key(self):
-        return self._parse_message(self._msg)[1]
+        return self._parse_message(self._original_msg)[1]
 
 
 class UnknownStorageException(exceptions.RestAlchemyException):
