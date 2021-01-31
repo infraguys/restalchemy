@@ -22,7 +22,7 @@ from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage import exceptions as exc
 from restalchemy.storage.sql import orm
-from restalchemy.tests.functional.storage.mysql.batch import base
+from restalchemy.tests.functional import base
 
 
 class BatchInsertModel(models.ModelWithUUID, orm.SQLStorableMixin):
@@ -31,7 +31,9 @@ class BatchInsertModel(models.ModelWithUUID, orm.SQLStorableMixin):
     foo_field2 = properties.property(types.String(), default="foo_str")
 
 
-class InsertCase(base.BaseBatchTestCase):
+class InsertCase(base.BaseWithDbMigrationsTestCase):
+    __LAST_MIGRATION__ = "9e335f-test-batch-migration"
+    __FIRST_MIGRATION__ = "9e335f-test-batch-migration"
 
     def test_correct_batch_insert(self):
         model1 = BatchInsertModel(foo_field1=1, foo_field2="Model1")

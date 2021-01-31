@@ -279,6 +279,22 @@ class MySQLCustomSelect(MySQLBasicSelect):
             + self.construct_locked()
 
 
+class MySQLCount(MySQLSelect):
+
+    def __init__(self, table, filters):
+        super(MySQLCount, self).__init__(table=table, filters=filters)
+        self._check_filters(filters)
+        self._filters = filters
+
+    def get_statement(self):
+        sql = "SELECT COUNT(*) as COUNT FROM `%s`" % (
+            self._table.name
+        )
+        filt = self.construct_where()
+
+        return sql + (" WHERE %s" % filt if filt else "")
+
+
 class MySQLDialect(base.AbstractDialect):
 
     def insert(self, table, data):
@@ -297,3 +313,6 @@ class MySQLDialect(base.AbstractDialect):
                       order_by=None, locked=False):
         return MySQLCustomSelect(table, where_conditions, where_values, limit,
                                  order_by, locked)
+
+    def count(self, table, filters):
+        return MySQLCount(table, filters)

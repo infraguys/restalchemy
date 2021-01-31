@@ -71,3 +71,7 @@ class AbstractDialect(object):
     @abc.abstractproperty
     def select(self, table, filters, limit=None, order_by=None, locked=False):
         raise NotImplementedError()
+
+    @abc.abstractproperty
+    def count(self, table, filters):
+        raise NotImplementedError()

@@ -139,6 +139,15 @@ class ObjectCollection(base.AbstractObjectCollection):
                                order_by=order_by,
                                locked=locked)
 
+    @base.error_catcher
+    def count(self, session=None, filters=None):
+        filters = self._filters_to_storage_view(filters or {})
+        with self._engine.session_manager(session=session) as s:
+            result = self._table.count(
+                engine=self._engine, session=s, filters=filters)
+            data = list(result.fetchall())
+            return data[0]['COUNT']
+
 
 class UndefinedAttribute(common_exc.RestAlchemyException):
 
@@ -185,7 +194,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                                    session=s)
                 # TODO(efrolov): Check result
             except exc.Conflict as e:
-                raise exceptions.ConflictRecords(model=self, msg=e.message)
+                raise exceptions.ConflictRecords(model=self, msg=str(e))
             self._saved = True
 
     def save(self, session=None):
@@ -205,7 +214,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                             self.get_data_properties()),
                         session=s)
                 except exc.Conflict as e:
-                    raise exceptions.ConflictRecords(model=self, msg=e.message)
+                    raise exceptions.ConflictRecords(model=self, msg=str(e))
                 if result.get_count() == 0:
                     _filters = {
                         name: filters.EQ(prop.value)

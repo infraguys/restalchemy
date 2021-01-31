@@ -1,4 +1,4 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
+# coding=utf-8
 #
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
@@ -29,6 +29,21 @@ import six
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
 UUID_RE_TEMPLATE = r"[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
+
+# Copy-paste from validators library because RA must support python 2.7
+# and support cyrillic domain names. The validators library is located:
+# https://github.com/kvesteri/validators/blob/master/validators/domain.py#L5
+# the regexp has issue https://github.com/kvesteri/validators/issues/185
+HOSTNAME_RE_TEMPLATE = (
+    # First character of the domain
+    u'^(?:[а-яА-Яa-zA-Z0-9]'
+    # Sub domain + hostname
+    u'(?:[а-яА-Яa-zA-Z0-9-_]{0,61}[а-яА-ЯA-Za-z0-9])?\.)'  # noqa
+    # First 61 characters of the gTLD
+    u'+[а-яА-ЯA-Za-z0-9][а-яА-ЯA-Za-z0-9-_]{0,61}'
+    # Last character of the gTLD
+    u'[а-яА-ЯA-Za-z]$'
+)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -372,6 +387,11 @@ class Mac(BaseRegExpType):
 
     def __init__(self):
         super(Mac, self).__init__("^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
+
+
+class Hostname(BaseRegExpType):
+    def __init__(self):
+        super(Hostname, self).__init__(HOSTNAME_RE_TEMPLATE)
 
 
 class AllowNone(BaseType):

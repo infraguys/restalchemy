@@ -16,7 +16,7 @@
 
 from webob import dec
 
-from restalchemy.common import contexts
+from restalchemy.common import contexts as common_contexts
 
 
 SUCCESS_HTTP_METRIC_NAME = 'http.all.success'
@@ -73,4 +73,4 @@ class Middleware(object):
 class ContextMiddleware(Middleware):
 
     def process_request(self, req):
-        req.context = contexts.Context()
+        req.context = common_contexts.Context()

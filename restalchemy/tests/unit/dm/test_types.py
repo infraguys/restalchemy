@@ -1,4 +1,4 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
+# coding=utf-8
 #
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
@@ -537,3 +537,30 @@ class AllowNoneTestCase(base.BaseTestCase):
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(4))
+
+
+class HostnameTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(HostnameTestCase, self).setUp()
+
+        self.test_instance = types.Hostname()
+
+    def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate('ns1.mcs.mail.ru'))
+        self.assertTrue(self.test_instance.validate('ns1.55.mail.ru'))
+        self.assertTrue(self.test_instance.validate('n_s1.55.mail.ru'))
+        self.assertTrue(self.test_instance.validate('n-1.55.mail.ru'))
+        self.assertTrue(self.test_instance.validate('mail.ru'))
+
+    def test_validate_cyrillic_correct_value(self):
+        self.assertTrue(self.test_instance.validate(u'xx.москва.рф'))
+        self.assertTrue(self.test_instance.validate(u'москва.рф'))
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate('x.y.z'))
+        self.assertFalse(self.test_instance.validate('mail.ru.'))
+        self.assertFalse(self.test_instance.validate('mail.ru.55'))
+        self.assertFalse(self.test_instance.validate('-1.55.mail.ru'))
+        self.assertFalse(self.test_instance.validate('_s1.55.mail.ru'))
+        self.assertFalse(self.test_instance.validate('.mail.ru'))

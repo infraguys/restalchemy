@@ -27,7 +27,6 @@ import six
 
 from restalchemy.api import middlewares
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -49,7 +48,7 @@ class HttpMetricsMiddleware(middlewares.Middleware):
         try:
             res = req.get_response(self.application)
             elapsed = time.time() - current_time
-            if res.status_code / 400 > 0:
+            if res.status_code >= 400:
                 self._sender.send_metric(self._error_metric_name, elapsed)
                 self._sender.send_metric(
                     "%s.%d" % (self._error_metric_name, res.status_code),

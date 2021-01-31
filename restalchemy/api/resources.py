@@ -47,19 +47,34 @@ class ResourceMap(object):
 
     @classmethod
     def get_resource(cls, request, uri):
+        """Get any resource from service using request and custom uri
+
+        This method allows to get any resource, if there is a controller with
+        a get method for it. In this case, the request will be the same as the
+        call through the API, with the exception of the passage of
+        middlewares.
+
+        :param request: The user request
+        :param uri: The custom URI for desired resource
+
+        :return: The resource which controller returns
+        """
         resource_locator = cls.get_locator(uri)
+        uri_stack = uri.split('/')
 
         # has parent resource?
         pstack = resource_locator.path_stack
         parent_resource = None
 
-        for pice in reversed(pstack[:-1]):
-            if not isinstance(pice, six.string_types):
-                parent_uri = '/'.join(uri.split('/')[:pstack.index(pice) + 2])
+        # NOTE(efrolov): Get all resources except the last
+        for num in range(len(pstack[:-1])):
+            if not isinstance(pstack[num], six.string_types):
+                # NOTE(efrolov): pstack is shorter than uri_stack by 1
+                #                element. And I have to grab the ID, so +2.
+                parent_uri = '/'.join(uri_stack[0:num + 2])
                 parent_locator = cls.get_locator(parent_uri)
                 parent_resource = parent_locator.get_resource(
-                    request, parent_uri)
-                break
+                    request, parent_uri, parent_resource=parent_resource)
 
         return resource_locator.get_resource(request, uri, parent_resource)
 

@@ -20,10 +20,18 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
     controllers)
 
 
+class IpAddress(routes.Route):
+    __controller__ = controllers.IpAddressController
+    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
+                         routes.DELETE]
+
+
 class PortRoute(routes.Route):
     __controller__ = controllers.PortController
     __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
                          routes.DELETE]
+
+    ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
 class VMPowerOnAction(routes.Action):
