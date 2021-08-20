@@ -44,7 +44,7 @@ class BaseRelationship(properties.AbstractProperty):
 class Relationship(BaseRelationship):
 
     def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None):
+                 read_only=False, value=None, prefetch=False):
         if value and not isinstance(value, property_type):
             raise TypeError("Expected '%s' type; value: %r"
                             % (property_type, value))
@@ -58,6 +58,7 @@ class Relationship(BaseRelationship):
                 default) else self._safe_value(default)
         self._value = value
         self.__first_value = self.value
+        self._prefetch = prefetch
 
     def is_dirty(self):
         return not self.__first_value == self.value
@@ -76,13 +77,16 @@ class Relationship(BaseRelationship):
     def is_required(self):
         return self._required
 
+    def is_prefetch(self):
+        return self._prefetch
+
     @property
     def value(self):
         return self._value or self._default
 
     @value.setter
     def value(self, value):
-        if (self.is_read_only()):
+        if self.is_read_only():
             raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 
