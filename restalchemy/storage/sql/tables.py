@@ -18,6 +18,9 @@
 from restalchemy.storage.sql import utils
 
 
+OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = 'table'
+
+
 class SQLTable(object):
 
     def __init__(self, table_name, model):

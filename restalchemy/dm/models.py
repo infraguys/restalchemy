@@ -28,6 +28,22 @@ from restalchemy.dm import properties
 from restalchemy.dm import types
 
 
+class DmOperationalStorage(object):
+
+    def __init__(self):
+        super(DmOperationalStorage, self).__init__()
+        self._storage = {}
+
+    def store(self, name, data):
+        self._storage[name] = data
+
+    def get(self, name):
+        try:
+            return self._storage[name]
+        except KeyError:
+            raise exc.NotFoundOperationalStorageError(name=name)
+
+
 class MetaModel(abc.ABCMeta):
 
     def __new__(cls, name, bases, attrs):
@@ -51,7 +67,9 @@ class MetaModel(abc.ABCMeta):
             if prop.is_id_property():
                 attrs['id_properties'][key] = (
                     attrs['properties'].properties[key])
-        return super(MetaModel, cls).__new__(cls, name, bases, attrs)
+        dm_class = super(MetaModel, cls).__new__(cls, name, bases, attrs)
+        dm_class.__operational_storage__ = DmOperationalStorage()
+        return dm_class
 
     def __getattr__(cls, name):
         try:

@@ -156,3 +156,8 @@ class RelationshipModelError(RestAlchemyException):
 
     message = ("Invalid model %(model)s for relationship. Must be inherited "
                "from dm.core.models.Model")
+
+
+class NotFoundOperationalStorageError(RestAlchemyException):
+
+    message = "Can't get data for %(name)s key"

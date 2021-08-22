@@ -22,7 +22,7 @@ import json
 import six
 
 from restalchemy.common import exceptions as common_exc
-from restalchemy.dm import filters
+from restalchemy.dm import filters as dm_filters
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -162,9 +162,20 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     @property
     def _table(self):
-        if self.__tablename__ is None:
-            raise UndefinedAttribute(attr_name='__tablename__')
-        return tables.SQLTable(table_name=self.__tablename__, model=self)
+        try:
+            table = self.__operational_storage__.get(
+                tables.OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY,
+            )
+        except common_exc.NotFoundOperationalStorageError:
+            if self.__tablename__ is None:
+                raise UndefinedAttribute(attr_name='__tablename__')
+            table = tables.SQLTable(table_name=self.__tablename__,
+                                    model=type(self))
+            self.__operational_storage__.store(
+                tables.OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY,
+                table,
+            )
+        return table
 
     @property
     def _engine(self):
@@ -214,7 +225,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                     raise exceptions.ConflictRecords(model=self, msg=str(e))
                 if result.get_count() == 0:
                     _filters = {
-                        name: filters.EQ(prop.value)
+                        name: dm_filters.EQ(prop.value)
                         for name, prop in self.get_id_properties().items()}
                     type(self).objects.get_one(filters=_filters, session=s)
                 if result.get_count() > 1:
@@ -250,7 +261,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
             value = (cls.properties.properties[name].get_property_type()
                         .from_simple_type(value))
             engine = engines.engine_factory.get_engine()
-            return cls.objects.get_one(filters={name: filters.EQ(value)},
+            return cls.objects.get_one(filters={name: dm_filters.EQ(value)},
                                        cache=engine.query_cache)
 
 

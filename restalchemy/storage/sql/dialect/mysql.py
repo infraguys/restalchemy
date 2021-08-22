@@ -18,7 +18,10 @@
 
 from __future__ import absolute_import  # noqa
 
+import abc
+
 from mysql.connector import errors
+import six
 
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -46,6 +49,7 @@ class MySQLProcessResult(base.AbstractProcessResult):
         return self._rows
 
 
+@six.add_metaclass(abc.ABCMeta)
 class AbstractDialectCommand(base.AbstractDialectCommand):
 
     def execute(self, session):
