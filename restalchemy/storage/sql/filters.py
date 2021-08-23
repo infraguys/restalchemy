@@ -28,10 +28,10 @@ LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractExpression(object):
+class AbstractClause(object):
 
     def __init__(self, value_type, value):
-        super(AbstractExpression, self).__init__()
+        super(AbstractClause, self).__init__()
         self._value = self._convert_value(value_type, value)
 
     def _convert_value(self, value_type, value):
@@ -46,55 +46,55 @@ class AbstractExpression(object):
         raise NotImplementedError()
 
 
-class EQ(AbstractExpression):
+class EQ(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` = " % name) + "%s"
 
 
-class NE(AbstractExpression):
+class NE(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` <> " % name) + "%s"
 
 
-class GT(AbstractExpression):
+class GT(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` > " % name) + "%s"
 
 
-class GE(AbstractExpression):
+class GE(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` >= " % name) + "%s"
 
 
-class LT(AbstractExpression):
+class LT(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` < " % name) + "%s"
 
 
-class LE(AbstractExpression):
+class LE(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` <= " % name) + "%s"
 
 
-class Is(AbstractExpression):
+class Is(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` IS " % name) + "%s"
 
 
-class IsNot(AbstractExpression):
+class IsNot(AbstractClause):
 
     def construct_expression(self, name):
         return ("`%s` IS NOT " % name) + "%s"
 
 
-class In(AbstractExpression):
+class In(AbstractClause):
 
     def _convert_value(self, value_type, value):
         # Note(efrolov): Replace empty list with [Null]. Some SQL servers
@@ -134,7 +134,7 @@ def convert_filter(api_filter, value_type=None):
 
     value_type = value_type or AsIsType()
     # Make API compatible with previous versions.
-    if not isinstance(api_filter, filters.AbstractExpression):
+    if not isinstance(api_filter, filters.AbstractClause):
         LOG.warning("DEPRECATED: pleases use %s wrapper for filter value" %
                     filters.EQ)
         return EQ(value_type, api_filter)
