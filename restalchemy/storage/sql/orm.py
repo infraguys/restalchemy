@@ -42,19 +42,15 @@ class ObjectCollection(base.AbstractObjectCollection):
     def _engine(self):
         return engines.engine_factory.get_engine()
 
-    def _filters_to_storage_view(self, filters):
-        result = {}
-        for name, value in filters.items():
-            value_type = (self.model_cls.properties.properties[name]
-                          .get_property_type())
-            result[name] = flt.convert_filter(value, value_type)
-        return result
+    def _filters_to_storage_view(self, filter_list=None):
+        filter_list = filter_list or filters.AND()
+        return flt.convert_filters(self.model_cls, filter_list)
 
     @base.error_catcher
     def get_all(self, filters=None, session=None, cache=False, limit=None,
                 order_by=None, locked=False):
         # TODO(efrolov): Add limit and offset parameters
-        filters = self._filters_to_storage_view(filters or {})
+        filters = self._filters_to_storage_view(filters)
         with self._engine.session_manager(session=session) as s:
             if cache is True:
                 return s.cache.get_all(
