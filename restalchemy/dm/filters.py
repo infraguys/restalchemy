@@ -22,10 +22,10 @@ import six
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractExpression(object):
+class AbstractClause(object):
 
     def __init__(self, value):
-        super(AbstractExpression, self).__init__()
+        super(AbstractClause, self).__init__()
         self._value = value
 
     @property
@@ -39,37 +39,37 @@ class AbstractExpression(object):
         return "<%s (%r)>" % (type(self).__name__, self.value)
 
 
-class EQ(AbstractExpression):
+class EQ(AbstractClause):
     pass
 
 
-class NE(AbstractExpression):
+class NE(AbstractClause):
     pass
 
 
-class GT(AbstractExpression):
+class GT(AbstractClause):
     pass
 
 
-class GE(AbstractExpression):
+class GE(AbstractClause):
     pass
 
 
-class LT(AbstractExpression):
+class LT(AbstractClause):
     pass
 
 
-class LE(AbstractExpression):
+class LE(AbstractClause):
     pass
 
 
-class Is(AbstractExpression):
+class Is(AbstractClause):
     pass
 
 
-class IsNot(AbstractExpression):
+class IsNot(AbstractClause):
     pass
 
 
-class In(AbstractExpression):
+class In(AbstractClause):
     pass

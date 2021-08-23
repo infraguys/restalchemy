@@ -229,7 +229,7 @@ class MySQLSelect(MySQLBasicSelect):
         values = []
         for key in sorted(self._filters.keys()):
             value = self._filters[key]
-            if isinstance(value, filters.AbstractExpression):
+            if isinstance(value, filters.AbstractClause):
                 values.append(value.value)
             else:
                 values.append(value)
