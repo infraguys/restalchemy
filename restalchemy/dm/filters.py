@@ -73,3 +73,30 @@ class IsNot(AbstractClause):
 
 class In(AbstractClause):
     pass
+
+
+@six.add_metaclass(abc.ABCMeta)
+class AbstractExpression(object):
+
+    def __init__(self, *clauses):
+        super(AbstractExpression, self).__init__()
+        self._clauses = clauses
+
+    @property
+    def clauses(self):
+        return self._clauses
+
+    def __repr__(self):
+        return "<%s (%r)>" % (type(self).__name__, self.clauses)
+
+
+class ClauseList(AbstractExpression):
+    pass
+
+
+class AND(ClauseList):
+    pass
+
+
+class OR(ClauseList):
+    pass

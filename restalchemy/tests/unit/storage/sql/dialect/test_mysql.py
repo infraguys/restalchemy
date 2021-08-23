@@ -46,6 +46,7 @@ class FakeTable(object):
 
 
 FAKE_VALUES = ["pk", 111, "field2", True]
+FAKE_SORTED_VALUES = [True, 111, "field2", "pk"]
 FAKE_PK_VALUES = ["pk"]
 
 
@@ -93,144 +94,190 @@ class MySQLSelectTestCase(base.BaseTestCase):
     def setUp(self):
         self._TABLE = FakeTable()
 
-    def test_statement_EQ(self):
-        FAKE_EQ_VALUES = [
-            filters.EQ(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_EQ_VALUES)))
+    def test_statement_OR(self):
+        FAKE_EQ_VALUES = filters.OR(*[
+            filters.EQ(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_EQ_VALUES)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` = %s AND "
-            "`field_int` = %s AND `field_str` = %s AND `pk` = %s")
+            "FROM `FAKE_TABLE` WHERE (`field_bool` = %s OR "
+            "`field_int` = %s OR `field_str` = %s OR `pk` = %s)")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+
+    def test_statement_recursive_OR(self):
+        FAKE_EQ_VALUES = filters.OR(
+            filters.AND(
+                filters.EQ('field_bool', common.AsIsType(), True),
+                filters.EQ('field_int', common.AsIsType(), 111),
+            ),
+            filters.AND(
+                filters.EQ('field_str', common.AsIsType(), "field2"),
+                filters.EQ('pk', common.AsIsType(), "pk"),
+            ),
+        )
+        target = mysql.MySQLSelect(self._TABLE, FAKE_EQ_VALUES)
+
+        result = target.get_statement()
+
+        self.assertEqual(
+            result,
+            "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
+            "FROM `FAKE_TABLE` WHERE ((`field_bool` = %s AND "
+            "`field_int` = %s) OR (`field_str` = %s AND `pk` = %s))")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+
+    def test_statement_EQ(self):
+        FAKE_EQ_VALUES = filters.AND(*[
+            filters.EQ(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_EQ_VALUES)
+
+        result = target.get_statement()
+
+        self.assertEqual(
+            result,
+            "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
+            "FROM `FAKE_TABLE` WHERE (`field_bool` = %s AND "
+            "`field_int` = %s AND `field_str` = %s AND `pk` = %s)")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_NE(self):
-        FAKE_NE_VALUES = [
-            filters.NE(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_NE_VALUES)))
+        FAKE_NE_VALUES = filters.AND(*[
+            filters.NE(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_NE_VALUES)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` <> %s AND "
-            "`field_int` <> %s AND `field_str` <> %s AND `pk` <> %s")
+            "FROM `FAKE_TABLE` WHERE (`field_bool` <> %s AND "
+            "`field_int` <> %s AND `field_str` <> %s AND `pk` <> %s)")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_GT(self):
-        FAKE_GT_VALUES = [
-            filters.GT(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_GT_VALUES)))
+        FAKE_GT_VALUES = filters.AND(*[
+            filters.GT(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_GT_VALUES)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` > %s AND "
-            "`field_int` > %s AND `field_str` > %s AND `pk` > %s")
+            "FROM `FAKE_TABLE` WHERE (`field_bool` > %s AND "
+            "`field_int` > %s AND `field_str` > %s AND `pk` > %s)")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_GE(self):
-        FAKE_GE_VALUES = [
-            filters.GE(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_GE_VALUES)))
+        FAKE_GE_VALUES = filters.AND(*[
+            filters.GE(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_GE_VALUES)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` >= %s AND "
-            "`field_int` >= %s AND `field_str` >= %s AND `pk` >= %s")
+            "FROM `FAKE_TABLE` WHERE (`field_bool` >= %s AND "
+            "`field_int` >= %s AND `field_str` >= %s AND `pk` >= %s)")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_LT(self):
-        FAKE_LT_VALUES = [
-            filters.LT(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_LT_VALUES)))
+        FAKE_LT_VALUES = filters.AND(*[
+            filters.LT(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_LT_VALUES)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` < %s AND "
-            "`field_int` < %s AND `field_str` < %s AND `pk` < %s")
+            "FROM `FAKE_TABLE` WHERE (`field_bool` < %s AND "
+            "`field_int` < %s AND `field_str` < %s AND `pk` < %s)")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_LE(self):
-        FAKE_LE_VALUES = [
-            filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_LE_VALUES)))
+        FAKE_LE_VALUES = filters.AND(*[
+            filters.LE(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` <= %s AND "
-            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s")
+            "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
+            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s)")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_limit_with_where_clause(self):
-        FAKE_LE_VALUES = [
-            filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_LE_VALUES)), limit=2)
+        FAKE_LE_VALUES = filters.AND(*[
+            filters.LE(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES, limit=2)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` <= %s AND "
-            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s LIMIT 2")
+            "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
+            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s) LIMIT 2")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_locked_with_where_clause(self):
-        FAKE_LE_VALUES = [
-            filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_LE_VALUES)), locked=True)
+        FAKE_LE_VALUES = filters.AND(*[
+            filters.LE(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES, locked=True)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` <= %s AND "
-            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s "
+            "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
+            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s) "
             "FOR UPDATE"
         )
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_order_by_with_where_clause(self):
         orders = collections.OrderedDict()
         orders['field_str'] = ''
         orders['field_bool'] = 'desc'
-        FAKE_LE_VALUES = [
-            filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_LE_VALUES)),
-            order_by=orders)
+        FAKE_LE_VALUES = filters.AND(*[
+            filters.LE(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES,
+                                   order_by=orders)
 
         result = target.get_statement()
 
         self.assertEqual(
             result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
-            "FROM `FAKE_TABLE` WHERE `field_bool` <= %s AND "
-            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s "
+            "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
+            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s) "
             "ORDER BY `field_str` ASC, `field_bool` DESC")
+        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
 
     def test_statement_order_by_without_where_clause(self):
         orders = collections.OrderedDict()
         orders['field_str'] = ''
         orders['field_bool'] = 'desc'
-        target = mysql.MySQLSelect(self._TABLE, filters={}, order_by=orders)
+        target = mysql.MySQLSelect(self._TABLE, order_by=orders)
 
         result = target.get_statement()
 
@@ -239,13 +286,14 @@ class MySQLSelectTestCase(base.BaseTestCase):
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` "
             "ORDER BY `field_str` ASC, `field_bool` DESC")
+        self.assertEqual(target.get_values(), [])
 
     def test_statement_order_by_false_order(self):
-        FAKE_LE_VALUES = [
-            filters.LE(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLSelect(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_LE_VALUES)),
-            order_by={'field_str': 'FALSE'})
+        FAKE_LE_VALUES = filters.AND(*[
+            filters.LE(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES,
+                                   order_by={'field_str': 'FALSE'})
         self.assertRaises(ValueError, target.get_statement)
 
 
@@ -319,20 +367,20 @@ class MySQLCountTestCase(base.BaseTestCase):
         self._TABLE = FakeTable()
 
     def test_statement(self):
-        target = mysql.MySQLCount(self._TABLE, filters={})
+        target = mysql.MySQLCount(self._TABLE)
 
         self.assertEqual(
             target.get_statement(),
             "SELECT COUNT(*) as COUNT FROM `FAKE_TABLE`")
 
     def test_statement_where(self):
-        FAKE_EQ_VALUES = [
-            filters.EQ(common.AsIsType(), v) for v in FAKE_VALUES]
-        target = mysql.MySQLCount(self._TABLE, dict(zip(
-            self._TABLE.get_column_names(), FAKE_EQ_VALUES)))
+        FAKE_EQ_VALUES = filters.AND(*[
+            filters.EQ(k, common.AsIsType(), v) for k, v in sorted(zip(
+                self._TABLE.get_column_names(), FAKE_VALUES))])
+        target = mysql.MySQLCount(self._TABLE, FAKE_EQ_VALUES)
 
         self.assertEqual(
             target.get_statement(),
             ("SELECT COUNT(*) as COUNT FROM `FAKE_TABLE` "
-             "WHERE `field_bool` = %s "
-             "AND `field_int` = %s AND `field_str` = %s AND `pk` = %s"))
+             "WHERE (`field_bool` = %s "
+             "AND `field_int` = %s AND `field_str` = %s AND `pk` = %s)"))

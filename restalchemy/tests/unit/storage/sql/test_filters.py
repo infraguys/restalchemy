@@ -16,6 +16,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import OrderedDict
+
+from urllib3._collections import HTTPHeaderDict
+
+from restalchemy.dm import filters as dm_filters
+from restalchemy.dm import models
+from restalchemy.dm import properties
+from restalchemy.dm import types
 from restalchemy.storage.sql import filters
 from restalchemy.tests.unit import base
 from restalchemy.tests.unit.storage.sql import common
@@ -25,15 +33,22 @@ TEST_NAME = 'FAKE_NAME'
 TEST_VALUE = 'FAKE_VALUE'
 
 
+class BaseModel(models.Model):
+
+    name1 = properties.property(types.Integer())
+    name2 = properties.property(types.Integer())
+
+
 class EQTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.EQ(value_type=common.AsIsType(),
+        self._expr = filters.EQ(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` = %s')
 
@@ -44,12 +59,13 @@ class EQTestCase(base.BaseTestCase):
 class NETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.NE(value_type=common.AsIsType(),
+        self._expr = filters.NE(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` <> %s')
 
@@ -60,12 +76,13 @@ class NETestCase(base.BaseTestCase):
 class GTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GT(value_type=common.AsIsType(),
+        self._expr = filters.GT(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` > %s')
 
@@ -76,12 +93,13 @@ class GTTestCase(base.BaseTestCase):
 class GETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GE(value_type=common.AsIsType(),
+        self._expr = filters.GE(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` >= %s')
 
@@ -92,12 +110,13 @@ class GETestCase(base.BaseTestCase):
 class LTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LT(value_type=common.AsIsType(),
+        self._expr = filters.LT(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` < %s')
 
@@ -108,12 +127,13 @@ class LTTestCase(base.BaseTestCase):
 class LETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LE(value_type=common.AsIsType(),
+        self._expr = filters.LE(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` <= %s')
 
@@ -126,12 +146,13 @@ class InTestCase(base.BaseTestCase):
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
-        self._expr = filters.In(value_type=common.AsIsType(),
+        self._expr = filters.In(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=self.TEST_LIST_VALUES)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` IN %s')
 
@@ -142,12 +163,13 @@ class InTestCase(base.BaseTestCase):
 class InEmptyListTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.In(value_type=common.AsIsType(),
+        self._expr = filters.In(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=[])
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` IN %s')
 
@@ -158,12 +180,13 @@ class InEmptyListTestCase(base.BaseTestCase):
 class IsTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.Is(value_type=common.AsIsType(),
+        self._expr = filters.Is(name=TEST_NAME,
+                                value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` IS %s')
 
@@ -174,14 +197,79 @@ class IsTestCase(base.BaseTestCase):
 class IsNotTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.IsNot(value_type=common.AsIsType(),
+        self._expr = filters.IsNot(name=TEST_NAME,
+                                   value_type=common.AsIsType(),
                                    value=TEST_VALUE)
 
     def test_construct_expression(self):
 
-        result = self._expr.construct_expression(name=TEST_NAME)
+        result = self._expr.construct_expression()
 
         self.assertEqual(result, '`' + TEST_NAME + '` IS NOT %s')
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
+
+
+class ConvertFiltersTestCase(base.BaseTestCase):
+
+    def test_convert_filters_new(self):
+        d = OrderedDict()
+        d['name1'] = dm_filters.EQ(1)
+        d['name2'] = dm_filters.EQ(2)
+        filter_list = dm_filters.AND(d)
+
+        processed = filters.convert_filters(BaseModel, filter_list)
+
+        self.assertEqual('(`name1` = %s AND `name2` = %s)',
+                         processed.construct_expression())
+        self.assertEqual([1, 2], processed.value)
+
+    def test_convert_filters_new_separate_dicts(self):
+        filter_list = dm_filters.AND(
+            {'name1': dm_filters.EQ(1)},
+            {'name2': dm_filters.EQ(2)})
+
+        processed = filters.convert_filters(BaseModel, filter_list)
+
+        self.assertEqual('(`name1` = %s AND `name2` = %s)',
+                         processed.construct_expression())
+        self.assertEqual([1, 2], processed.value)
+
+    def test_convert_filters_new_nested(self):
+        d = OrderedDict()
+        d['name1'] = dm_filters.EQ(1)
+        d['name2'] = dm_filters.EQ(2)
+        filter_list = dm_filters.OR(
+            dm_filters.AND(d),
+            dm_filters.AND({'name2': dm_filters.EQ(2)}))
+
+        processed = filters.convert_filters(BaseModel, filter_list)
+
+        self.assertEqual('((`name1` = %s AND `name2` = %s) OR (`name2` = %s))',
+                         processed.construct_expression())
+        self.assertEqual([1, 2, 2], processed.value)
+
+    def test_convert_filters_old(self):
+        d = OrderedDict()
+        d['name1'] = dm_filters.EQ(1)
+        d['name2'] = dm_filters.EQ(2)
+        filter_list = d
+
+        processed = filters.convert_filters(BaseModel, filter_list)
+
+        self.assertEqual('(`name1` = %s AND `name2` = %s)',
+                         processed.construct_expression())
+        self.assertEqual([1, 2], processed.value)
+
+    def test_convert_filters_old_multidict(self):
+        d = HTTPHeaderDict()
+        d.add('name1', dm_filters.EQ(1))
+        d.add('name1', dm_filters.EQ(1))
+        filter_list = d
+
+        processed = filters.convert_filters(BaseModel, filter_list)
+
+        self.assertEqual('(`name1` = %s AND `name1` = %s)',
+                         processed.construct_expression())
+        self.assertEqual([1, 1], processed.value)

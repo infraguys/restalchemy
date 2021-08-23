@@ -17,6 +17,7 @@
 #    under the License.
 
 import abc
+import collections
 import logging
 
 import six
@@ -30,9 +31,10 @@ LOG = logging.getLogger(__name__)
 @six.add_metaclass(abc.ABCMeta)
 class AbstractClause(object):
 
-    def __init__(self, value_type, value):
+    def __init__(self, name, value_type, value):
         super(AbstractClause, self).__init__()
         self._value = self._convert_value(value_type, value)
+        self._name = name
 
     def _convert_value(self, value_type, value):
         return value_type.to_simple_type(value)
@@ -41,57 +43,61 @@ class AbstractClause(object):
     def value(self):
         return self._value
 
+    @property
+    def name(self):
+        return self._name
+
     @abc.abstractmethod
-    def construct_expression(self, name):
+    def construct_expression(self):
         raise NotImplementedError()
 
 
 class EQ(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` = " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` = " % self._name) + "%s"
 
 
 class NE(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` <> " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` <> " % self._name) + "%s"
 
 
 class GT(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` > " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` > " % self._name) + "%s"
 
 
 class GE(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` >= " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` >= " % self._name) + "%s"
 
 
 class LT(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` < " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` < " % self._name) + "%s"
 
 
 class LE(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` <= " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` <= " % self._name) + "%s"
 
 
 class Is(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` IS " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` IS " % self._name) + "%s"
 
 
 class IsNot(AbstractClause):
 
-    def construct_expression(self, name):
-        return ("`%s` IS NOT " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` IS NOT " % self._name) + "%s"
 
 
 class In(AbstractClause):
@@ -101,46 +107,133 @@ class In(AbstractClause):
         #                forbid empty lists in "in" operator.
         return [value_type.to_simple_type(item) for item in value] or [None]
 
-    def construct_expression(self, name):
-        return ("`%s` IN " % name) + "%s"
+    def construct_expression(self):
+        return ("`%s` IN " % self._name) + "%s"
 
 
-def convert_filter(api_filter, value_type=None):
-    FILTER_MAPPING = {
-        filters.EQ: EQ,
-        filters.NE: NE,
-        filters.GT: GT,
-        filters.GE: GE,
-        filters.LE: LE,
-        filters.LT: LT,
-        filters.Is: Is,
-        filters.IsNot: IsNot,
-        filters.In: In
-    }
+@six.add_metaclass(abc.ABCMeta)
+class AbstractExpression(object):
 
-    class AsIsType(types.BaseType):
+    def __init__(self, *clauses):
+        super(AbstractExpression, self).__init__()
+        self._clauses = clauses
 
-        def validate(self, value):
-            return True
+    @property
+    def value(self):
+        raise NotImplementedError
 
-        def to_simple_type(self, value):
-            return value
+    @abc.abstractmethod
+    def construct_expression(self):
+        raise NotImplementedError()
 
-        def from_simple_type(self, value):
-            return value
 
-        def from_unicode(self, value):
-            return value
+class ClauseList(AbstractExpression):
+    @property
+    def value(self):
+        res = []
+        for val in self._clauses:
+            if isinstance(val, AbstractExpression):
+                res.extend(val.value)
+            else:
+                res.append(val.value)
+        return res
 
-    value_type = value_type or AsIsType()
-    # Make API compatible with previous versions.
-    if not isinstance(api_filter, filters.AbstractClause):
-        LOG.warning("DEPRECATED: pleases use %s wrapper for filter value" %
-                    filters.EQ)
-        return EQ(value_type, api_filter)
+    @property
+    def operator(self):
+        raise NotImplementedError
 
-    if type(api_filter) not in FILTER_MAPPING:
-        raise ValueError("Can't convert API filter to SQL storage filter. "
-                         "Unknown filter %s" % api_filter)
+    def construct_expression(self):
+        return (
+            "("
+            + (" " + self.operator + " ").join(
+                val.construct_expression() for val in self._clauses)
+            + ")"
+        ) if self._clauses else ""
 
-    return FILTER_MAPPING[type(api_filter)](value_type, api_filter.value)
+
+class AND(ClauseList):
+    operator = "AND"
+
+
+class OR(ClauseList):
+    operator = "OR"
+
+
+FILTER_MAPPING = {
+    filters.EQ: EQ,
+    filters.NE: NE,
+    filters.GT: GT,
+    filters.GE: GE,
+    filters.LE: LE,
+    filters.LT: LT,
+    filters.Is: Is,
+    filters.IsNot: IsNot,
+    filters.In: In,
+}
+
+FILTER_EXPR_MAPPING = {
+    filters.AND: AND,
+    filters.OR: OR,
+}
+
+
+class AsIsType(types.BaseType):
+
+    def validate(self, value):
+        return True
+
+    def to_simple_type(self, value):
+        return value
+
+    def from_simple_type(self, value):
+        return value
+
+    def from_unicode(self, value):
+        return value
+
+
+def convert_filters(model, filters_root):
+    if isinstance(filters_root, filters.AbstractExpression):
+        return iterate_filters(model, filters_root)
+    return iterate_filters(model, filters.AND(filters_root))
+
+
+def iterate_filters(model, filter_list):
+    # Just expression
+    if isinstance(filter_list, filters.AbstractExpression):
+        clauses = iterate_filters(model, filter_list.clauses)
+        return FILTER_EXPR_MAPPING[type(filter_list)](*clauses)
+
+    # Tuple of causes from expression
+    if isinstance(filter_list, tuple):
+        clauses = []
+        for cause in filter_list:
+            c_causes = iterate_filters(model, cause)
+            if isinstance(cause, filters.AbstractExpression):
+                clauses.append(c_causes)
+            else:
+                clauses.extend(c_causes)
+        return clauses
+
+    # old style mappings (dict, multidict)
+    if isinstance(filter_list, collections.Mapping):
+        clauses = []
+        for name, filt in filter_list.items():
+            value_type = (model.properties.properties[name]
+                          .get_property_type()) or AsIsType()
+            # Make API compatible with previous versions.
+            if not isinstance(filt, filters.AbstractClause):
+                LOG.warning("DEPRECATED: pleases use %s wrapper for filter "
+                            "value", filters.EQ)
+                clauses.append(EQ(name, value_type, filt))
+                continue
+
+            try:
+                clauses.append(FILTER_MAPPING[type(filt)](
+                    name, value_type, filt.value))
+            except KeyError:
+                raise ValueError("Can't convert API filter to SQL storage "
+                                 "filter. Unknown filter %s" % filt)
+        return clauses
+
+    raise ValueError("Unknown type of filters: %s" % filter_list)

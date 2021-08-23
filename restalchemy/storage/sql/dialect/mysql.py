@@ -22,7 +22,7 @@ from mysql.connector import errors
 
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
-from restalchemy.storage.sql import filters
+from restalchemy.storage.sql import filters as flt
 from restalchemy.storage.sql import utils
 
 
@@ -212,34 +212,17 @@ class MySQLBasicSelect(AbstractDialectCommand):
 
 class MySQLSelect(MySQLBasicSelect):
 
-    def __init__(self, table, filters, limit=None,
+    def __init__(self, table, filters=None, limit=None,
                  order_by=None, locked=False):
         super(MySQLSelect, self).__init__(
             table=table, limit=limit, order_by=order_by, locked=locked)
-        self._check_filters(filters)
-        self._filters = filters
-
-    def _check_filters(self, filters):
-        result = set(filters.keys()) - set(self._table.get_column_names())
-        if result:
-            raise ValueError("Unknown columns: %s. Filters is %s" % (
-                result, filters))
+        self._filters = filters or flt.AND()
 
     def get_values(self):
-        values = []
-        for key in sorted(self._filters.keys()):
-            value = self._filters[key]
-            if isinstance(value, filters.AbstractClause):
-                values.append(value.value)
-            else:
-                values.append(value)
-        return values
+        return self._filters.value
 
     def construct_where(self):
-        where_list = []
-        for name, value in sorted(self._filters.items()):
-            where_list.append(value.construct_expression(name))
-        return " AND ".join(where_list)
+        return self._filters.construct_expression()
 
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
@@ -281,10 +264,8 @@ class MySQLCustomSelect(MySQLBasicSelect):
 
 class MySQLCount(MySQLSelect):
 
-    def __init__(self, table, filters):
+    def __init__(self, table, filters=None):
         super(MySQLCount, self).__init__(table=table, filters=filters)
-        self._check_filters(filters)
-        self._filters = filters
 
     def get_statement(self):
         sql = "SELECT COUNT(*) as COUNT FROM `%s`" % (
