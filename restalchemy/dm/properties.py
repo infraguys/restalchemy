@@ -21,12 +21,13 @@ import collections
 import copy
 import inspect
 
+import six
+from six.moves import builtins
+import sortedcontainers
+
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
 from restalchemy.dm import types
-
-import six
-from six.moves import builtins
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -159,7 +160,7 @@ class PropertyMapping(collections.Mapping):
 class PropertyCollection(PropertyMapping):
 
     def __init__(self, **kwargs):
-        self._properties = kwargs
+        self._properties = sortedcontainers.SortedDict(kwargs)
         super(PropertyCollection, self).__init__()
 
     def __getitem__(self, name):
@@ -187,7 +188,7 @@ class PropertyCollection(PropertyMapping):
 class PropertyManager(PropertyMapping):
 
     def __init__(self, property_collection, **kwargs):
-        self._properties = {}
+        self._properties = sortedcontainers.SortedDict()
         for name, item in property_collection.properties.items():
             if isinstance(item, PropertyCollection):
                 prop = PropertyManager(item, **kwargs.pop(name, {}))
