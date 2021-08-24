@@ -36,8 +36,7 @@ class ObjectCollection(base.AbstractObjectCollection,
 
     @property
     def _table(self):
-        return tables.SQLTable(table_name=self.model_cls.__tablename__,
-                               model=self.model_cls)
+        return self.model_cls.get_table()
 
     @property
     def _engine(self):
@@ -160,25 +159,26 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     __tablename__ = None
 
-    @property
-    def _table(self):
+    @classmethod
+    def get_table(cls):
         try:
-            table = self.__operational_storage__.get(
+            table = cls.__operational_storage__.get(
                 tables.OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY,
             )
         except common_exc.NotFoundOperationalStorageError:
-            if self.__tablename__ is None:
+            if cls.__tablename__ is None:
                 raise UndefinedAttribute(attr_name='__tablename__')
-            table = tables.SQLTable(table_name=self.__tablename__,
-                                    model=type(self))
-            self.__operational_storage__.store(
+            table = tables.SQLTable(engine=cls._get_engine(),
+                                    table_name=cls.__tablename__,
+                                    model=cls)
+            cls.__operational_storage__.store(
                 tables.OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY,
                 table,
             )
         return table
 
-    @property
-    def _engine(self):
+    @classmethod
+    def _get_engine(cls):
         return engines.engine_factory.get_engine()
 
     @classmethod
@@ -195,11 +195,11 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     @base.error_catcher
     def insert(self, session=None):
         # TODO(efrolov): Add filters parameters.
-        with self._engine.session_manager(session=session) as s:
+        with self._get_engine().session_manager(session=session) as s:
             try:
-                self._table.insert(engine=self._engine,
-                                   data=self._get_prepared_data(),
-                                   session=s)
+                self.get_table().insert(engine=self._get_engine(),
+                                        data=self._get_prepared_data(),
+                                        session=s)
                 # TODO(efrolov): Check result
             except exc.Conflict as e:
                 raise exceptions.ConflictRecords(model=self, msg=str(e))
@@ -213,10 +213,10 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def update(self, session=None, force=False):
         # TODO(efrolov): Add filters parameters.
         if self.is_dirty() or force:
-            with self._engine.session_manager(session=session) as s:
+            with self._get_engine().session_manager(session=session) as s:
                 try:
-                    result = self._table.update(
-                        engine=self._engine,
+                    result = self.get_table().update(
+                        engine=self._get_engine(),
                         ids=self._get_prepared_data(self.get_id_properties()),
                         data=self._get_prepared_data(
                             self.get_data_properties()),
@@ -235,9 +235,9 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     @base.error_catcher
     def delete(self, session=None):
         # TODO(efrolov): Add filters parameters.
-        with self._engine.session_manager(session=session) as s:
-            result = self._table.delete(
-                engine=self._engine,
+        with self._get_engine().session_manager(session=session) as s:
+            result = self.get_table().delete(
+                engine=self._get_engine(),
                 ids=self._get_prepared_data(self.get_id_properties()),
                 session=s)
             # TODO(efrolov): Check result

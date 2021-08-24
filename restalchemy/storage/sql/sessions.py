@@ -24,7 +24,6 @@ from mysql.connector import errors
 
 from restalchemy.storage import exceptions as exc
 from restalchemy.storage.sql.dialect import mysql
-from restalchemy.storage.sql import tables
 
 
 LOG = logging.getLogger(__name__)
@@ -112,7 +111,7 @@ class MySQLSession(object):
 
             # process values
             values = []
-            table = tables.SQLTable(first_model.__tablename__, first_model)
+            table = first_model.get_table()
             statement = mysql.MySQLInsert(
                 table,
                 first_model.get_storable_snapshot(),
@@ -143,7 +142,7 @@ class MySQLSession(object):
             self._all_model_is_same_type(first_model, models)
 
             # process values
-            table = tables.SQLTable(first_model.__tablename__, first_model)
+            table = first_model.get_table()
             values = []
             for model in models:
                 pk_values = {}

@@ -23,7 +23,7 @@ OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = 'table'
 
 class SQLTable(object):
 
-    def __init__(self, table_name, model):
+    def __init__(self, engine, table_name, model):
         super(SQLTable, self).__init__()
         self._table_name = table_name
         self._model = model
