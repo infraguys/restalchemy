@@ -78,8 +78,18 @@ class SQLTable(object):
         Warning: query with and w/o (limit or group_by) won't flush each other
         if cached!
         """
-        cmd = engine.dialect.select(table=self, filters=filters, limit=limit,
-                                    order_by=order_by, locked=locked)
+        q = engine.dialect.orm.select(self._model).where(filters=filters)
+
+        for name, sort_type in (order_by or {}).items():
+            q.order_by(property_name=name, sorttype=sort_type)
+
+        if limit:
+            q.limit(limit)
+
+        if locked:
+            q.for_(share=not locked)
+
+        cmd = engine.dialect.orm_command(table=self, query=q)
         return cmd.execute(session=session)
 
     def custom_select(self, engine, where_conditions, where_values,

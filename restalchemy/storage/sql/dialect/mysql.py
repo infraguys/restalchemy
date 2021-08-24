@@ -25,27 +25,60 @@ import six
 
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
+from restalchemy.storage.sql.dialect import query_builders
 from restalchemy.storage.sql import filters as flt
 from restalchemy.storage.sql import utils
 
 
-class MySQLProcessResult(base.AbstractProcessResult):
+@six.add_metaclass(abc.ABCMeta)
+class AbstractProcessResult(base.AbstractProcessResult):
+
+    def get_count(self):
+        return self._result.rowcount
+
+    @property
+    def rows(self):
+        return self.get_rows()
+
+    @abc.abstractmethod
+    def fetchall(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_rows(self):
+        raise NotImplementedError()
+
+
+class MySQLProcessResult(AbstractProcessResult):
 
     def __init__(self, result):
         super(MySQLProcessResult, self).__init__(result)
         self._rows = None
 
-    def get_count(self):
-        return self._result.rowcount
-
     def fetchall(self):
         for row in self._result:
             yield row
 
-    @property
-    def rows(self):
+    def get_rows(self):
         if self._rows is None:
             self._rows = self._result.fetchall()
+        return self._rows
+
+
+class MySqlOrmProcessResult(AbstractProcessResult):
+
+    def __init__(self, result, query):
+        super(MySqlOrmProcessResult, self).__init__(result=result)
+        self._query = query
+        self._rows = None
+
+    def fetchall(self):
+        for row in self._result:
+            yield self._query.parse_row(row)
+
+    def get_rows(self):
+        if self._rows is None:
+            self._rows = self._query.parse_results(self._result.fetchall())
         return self._rows
 
 
@@ -280,7 +313,50 @@ class MySQLCount(MySQLSelect):
         return sql + (" WHERE %s" % filt if filt else "")
 
 
+class MySqlOrmDialectCommand(base.AbstractDialectCommand):
+
+    def __init__(self, table, query):
+        super(MySqlOrmDialectCommand, self).__init__(table=table,
+                                                     data=None)
+        self._query = query
+
+    def get_statement(self):
+        return self._query.compile()
+
+    def get_values(self):
+        return self._query.values()
+
+    def execute(self, session):
+        try:
+            return MySqlOrmProcessResult(
+                result=super(MySqlOrmDialectCommand, self).execute(session),
+                query=self._query,
+            )
+        except errors.IntegrityError as e:
+            if e.errno == 1062:
+                raise exc.Conflict(code=e.sqlstate, message=e.msg)
+            raise
+
+
+class MySqlOrm(object):
+
+    @staticmethod
+    def select(model):
+        return query_builders.Q.select(model)
+
+
 class MySQLDialect(base.AbstractDialect):
+
+    def __init__(self):
+        super(MySQLDialect, self).__init__()
+        self._orm = MySqlOrm()
+
+    @property
+    def orm(self):
+        return self._orm
+
+    def orm_command(self, table, query):
+        return MySqlOrmDialectCommand(table, query)
 
     def insert(self, table, data):
         return MySQLInsert(table, data)

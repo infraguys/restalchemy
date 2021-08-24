@@ -22,6 +22,7 @@ import threading
 import six
 import sortedcontainers
 
+from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql import utils
 
 
@@ -43,6 +44,10 @@ class Alias(AbstractClause):
     @property
     def name(self):
         return self._name
+
+    @property
+    def original_name(self):
+        return self._clause.name
 
     def _wrap(self, column):
         return Alias(column, "%s_%s" % (self.name, column.name))
@@ -70,6 +75,10 @@ class Column(AbstractClause):
     def name(self):
         return self._name
 
+    @property
+    def original_name(self):
+        return self.name
+
     def compile(self):
         return "%s" % (utils.escape(self._name))
 
@@ -84,6 +93,10 @@ class ColumnFullPath(AbstractClause):
     @property
     def name(self):
         return self._column.name
+
+    @property
+    def original_name(self):
+        return self.name
 
     def compile(self):
         return "%s.%s" % (utils.escape(self._table.name),
@@ -145,10 +158,10 @@ class For(AbstractClause):
 
     def __init__(self, share=False):
         super(For, self).__init__()
-        self._share = share
+        self._is_share = share
 
     def compile(self):
-        return "FOR %s" % ('SHARE' if self._share else 'UPDATE')
+        return "FOR %s" % ('SHARE' if self._is_share else 'UPDATE')
 
 
 class OrderByValue(AbstractClause):
@@ -162,11 +175,54 @@ class OrderByValue(AbstractClause):
         return "%s %s" % (utils.escape(self._column.name), self._sort_type)
 
 
+class ResultField(object):
+
+    def __init__(self, alias_name):
+        super(ResultField, self).__init__()
+        self._alias_name = alias_name
+
+    def parse(self, row):
+        return row[self._alias_name]
+
+
+class ResultNode(object):
+
+    def __init__(self):
+        super(ResultNode, self).__init__()
+        self._child_nodes = {}
+
+    def add_child_field(self, name, alias_name):
+        self._child_nodes[name] = ResultField(alias_name=alias_name)
+        return self._child_nodes[name]
+
+    def add_child_node(self, name):
+        self._child_nodes[name] = ResultNode()
+        return self._child_nodes[name]
+
+    def parse(self, row):
+        result = base.PrefetchResult()
+        for name, child_node in self._child_nodes.items():
+            result[name] = child_node.parse(row)
+        return result
+
+
+class ResultParser(object):
+
+    def __init__(self):
+        super(ResultParser, self).__init__()
+        self._root = ResultNode()
+
+    @property
+    def root(self):
+        return self._root
+
+
 class SelectQ(AbstractClause):
 
     def __init__(self, model):
         self._autoinc = 0
         self._autoinc_lock = threading.RLock()
+        self._result_parser = ResultParser()
         self._model_table = Alias(Table(model), self._build_table_alias_name())
         self._select_expressions = self._model_table.get_fields()
         self._table_references = [self._model_table]
@@ -175,7 +231,13 @@ class SelectQ(AbstractClause):
         self._order_by_expressions = []
         self._for_expression = None
         self._limit_condition = None
+        self._init_parser()
         super(SelectQ, self).__init__()
+
+    def _init_parser(self):
+        result_root_node = self._result_parser.root
+        for column in self._select_expressions:
+            result_root_node.add_child_field(column.original_name, column.name)
 
     @staticmethod
     def _wrap_alias(table, fields):
@@ -202,8 +264,8 @@ class SelectQ(AbstractClause):
         self._for_expression = For(share)
         return self
 
-    def order_by(self, column_name, sort_type='ASC'):
-        column = self._model_table.get_field_by_name(column_name)
+    def order_by(self, property_name, sort_type='ASC'):
+        column = self._model_table.get_field_by_name(property_name)
         self._order_by_expressions.append(OrderByValue(column, sort_type))
         return self
 
@@ -239,6 +301,12 @@ class SelectQ(AbstractClause):
     def values(self):
         # TODO(efrolov): Must be read only list
         return self._expression_values
+
+    def parse_row(self, row):
+        return self._result_parser.root.parse(row)
+
+    def parse_results(self, rows):
+        return [self.parse_row(row) for row in rows]
 
 
 class Q(object):
