@@ -55,49 +55,49 @@ class AbstractClause(object):
 class EQ(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` = " % self._name) + "%s"
+        return ("%s = " % self._name) + "%s"
 
 
 class NE(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` <> " % self._name) + "%s"
+        return ("%s <> " % self._name) + "%s"
 
 
 class GT(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` > " % self._name) + "%s"
+        return ("%s > " % self._name) + "%s"
 
 
 class GE(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` >= " % self._name) + "%s"
+        return ("%s >= " % self._name) + "%s"
 
 
 class LT(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` < " % self._name) + "%s"
+        return ("%s < " % self._name) + "%s"
 
 
 class LE(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` <= " % self._name) + "%s"
+        return ("%s <= " % self._name) + "%s"
 
 
 class Is(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` IS " % self._name) + "%s"
+        return ("%s IS " % self._name) + "%s"
 
 
 class IsNot(AbstractClause):
 
     def construct_expression(self):
-        return ("`%s` IS NOT " % self._name) + "%s"
+        return ("%s IS NOT " % self._name) + "%s"
 
 
 class In(AbstractClause):
@@ -108,7 +108,7 @@ class In(AbstractClause):
         return [value_type.to_simple_type(item) for item in value] or [None]
 
     def construct_expression(self):
-        return ("`%s` IN " % self._name) + "%s"
+        return ("%s IN " % self._name) + "%s"
 
 
 @six.add_metaclass(abc.ABCMeta)
