@@ -61,7 +61,7 @@ class TestRestoreModelTestCase(base.BaseTestCase):
                      {})()
 
         with self.assertRaises(orm.UndefinedAttribute):
-            model._table
+            model.get_table()
 
 
 class TestRestoreWithJSONModel(models.Model,
