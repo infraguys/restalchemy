@@ -103,11 +103,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` = %s OR "
-            "`field_int` = %s OR `field_str` = %s OR `pk` = %s)")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` = %s OR `field_str` = %s OR `pk` = %s)",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_recursive_OR(self):
         FAKE_EQ_VALUES = filters.OR(
@@ -125,11 +125,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE ((`field_bool` = %s AND "
-            "`field_int` = %s) OR (`field_str` = %s AND `pk` = %s))")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` = %s) OR (`field_str` = %s AND `pk` = %s))",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_EQ(self):
         FAKE_EQ_VALUES = filters.AND(*[
@@ -140,11 +140,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` = %s AND "
-            "`field_int` = %s AND `field_str` = %s AND `pk` = %s)")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` = %s AND `field_str` = %s AND `pk` = %s)",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_NE(self):
         FAKE_NE_VALUES = filters.AND(*[
@@ -155,11 +155,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` <> %s AND "
-            "`field_int` <> %s AND `field_str` <> %s AND `pk` <> %s)")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` <> %s AND `field_str` <> %s AND `pk` <> %s)",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_GT(self):
         FAKE_GT_VALUES = filters.AND(*[
@@ -170,11 +170,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` > %s AND "
-            "`field_int` > %s AND `field_str` > %s AND `pk` > %s)")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` > %s AND `field_str` > %s AND `pk` > %s)",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_GE(self):
         FAKE_GE_VALUES = filters.AND(*[
@@ -185,11 +185,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` >= %s AND "
-            "`field_int` >= %s AND `field_str` >= %s AND `pk` >= %s)")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` >= %s AND `field_str` >= %s AND `pk` >= %s)",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_LT(self):
         FAKE_LT_VALUES = filters.AND(*[
@@ -200,11 +200,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` < %s AND "
-            "`field_int` < %s AND `field_str` < %s AND `pk` < %s)")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` < %s AND `field_str` < %s AND `pk` < %s)",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_LE(self):
         FAKE_LE_VALUES = filters.AND(*[
@@ -215,11 +215,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
-            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s)")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s)",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_limit_with_where_clause(self):
         FAKE_LE_VALUES = filters.AND(*[
@@ -230,11 +230,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
-            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s) LIMIT 2")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s) LIMIT 2",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_locked_with_where_clause(self):
         FAKE_LE_VALUES = filters.AND(*[
@@ -245,13 +245,13 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
             "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s) "
-            "FOR UPDATE"
+            "FOR UPDATE",
+            result
         )
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_order_by_with_where_clause(self):
         orders = collections.OrderedDict()
@@ -266,12 +266,12 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE (`field_bool` <= %s AND "
             "`field_int` <= %s AND `field_str` <= %s AND `pk` <= %s) "
-            "ORDER BY `field_str` ASC, `field_bool` DESC")
-        self.assertEqual(target.get_values(), FAKE_SORTED_VALUES)
+            "ORDER BY `field_str` ASC, `field_bool` DESC",
+            result)
+        self.assertEqual(FAKE_SORTED_VALUES, target.get_values())
 
     def test_statement_order_by_without_where_clause(self):
         orders = collections.OrderedDict()
@@ -282,11 +282,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` "
-            "ORDER BY `field_str` ASC, `field_bool` DESC")
-        self.assertEqual(target.get_values(), [])
+            "ORDER BY `field_str` ASC, `field_bool` DESC",
+            result)
+        self.assertEqual([], target.get_values())
 
     def test_statement_order_by_false_order(self):
         FAKE_LE_VALUES = filters.AND(*[
@@ -311,10 +311,10 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE "
-            "NOT (`field_int` => %s AND `field_str` = %s)")
+            "NOT (`field_int` => %s AND `field_str` = %s)",
+            result)
 
     def test_custom_where_condition_with_limit(self):
         FAKE_WHERE_CONDITION = "NOT (`field_int` => %s AND `field_str` = %s)"
@@ -325,10 +325,10 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE "
-            "NOT (`field_int` => %s AND `field_str` = %s) LIMIT 2")
+            "NOT (`field_int` => %s AND `field_str` = %s) LIMIT 2",
+            result)
 
     def test_custom_where_condition_with_locked(self):
         FAKE_WHERE_CONDITION = "NOT (`field_int` => %s AND `field_str` = %s)"
@@ -339,10 +339,10 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE "
-            "NOT (`field_int` => %s AND `field_str` = %s) FOR UPDATE")
+            "NOT (`field_int` => %s AND `field_str` = %s) FOR UPDATE",
+            result)
 
     def test_custom_where_condition_with_order_by(self):
         FAKE_WHERE_CONDITION = "NOT (`field_int` => %s AND `field_str` = %s)"
@@ -354,11 +354,11 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
         result = target.get_statement()
 
         self.assertEqual(
-            result,
             "SELECT `pk`, `field_int`, `field_str`, `field_bool` "
             "FROM `FAKE_TABLE` WHERE "
             "NOT (`field_int` => %s AND `field_str` = %s) "
-            "ORDER BY `field_str` ASC")
+            "ORDER BY `field_str` ASC",
+            result)
 
 
 class MySQLCountTestCase(base.BaseTestCase):
@@ -380,7 +380,7 @@ class MySQLCountTestCase(base.BaseTestCase):
         target = mysql.MySQLCount(self._TABLE, FAKE_EQ_VALUES)
 
         self.assertEqual(
-            target.get_statement(),
             ("SELECT COUNT(*) as COUNT FROM `FAKE_TABLE` "
              "WHERE (`field_bool` = %s "
-             "AND `field_int` = %s AND `field_str` = %s AND `pk` = %s)"))
+             "AND `field_int` = %s AND `field_str` = %s AND `pk` = %s)"),
+            target.get_statement())
