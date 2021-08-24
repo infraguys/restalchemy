@@ -50,7 +50,7 @@ class EQTestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` = %s')
+        self.assertEqual(TEST_NAME + ' = %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -67,7 +67,7 @@ class NETestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` <> %s')
+        self.assertEqual(TEST_NAME + ' <> %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -84,7 +84,7 @@ class GTTestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` > %s')
+        self.assertEqual(TEST_NAME + ' > %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -101,7 +101,7 @@ class GETestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` >= %s')
+        self.assertEqual(TEST_NAME + ' >= %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -118,7 +118,7 @@ class LTTestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` < %s')
+        self.assertEqual(TEST_NAME + ' < %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -135,7 +135,7 @@ class LETestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` <= %s')
+        self.assertEqual(TEST_NAME + ' <= %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -154,7 +154,7 @@ class InTestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` IN %s')
+        self.assertEqual(TEST_NAME + ' IN %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
@@ -171,7 +171,7 @@ class InEmptyListTestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` IN %s')
+        self.assertEqual(TEST_NAME + ' IN %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, [None])
@@ -188,7 +188,7 @@ class IsTestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` IS %s')
+        self.assertEqual(TEST_NAME + ' IS %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -205,7 +205,7 @@ class IsNotTestCase(base.BaseTestCase):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(result, '`' + TEST_NAME + '` IS NOT %s')
+        self.assertEqual(TEST_NAME + ' IS NOT %s', result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
