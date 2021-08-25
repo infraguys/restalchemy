@@ -22,7 +22,7 @@ from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
-from restalchemy.storage.sql.dialect import query_builders
+from restalchemy.storage.sql.dialect.query_builder import q
 
 
 class SimpleModel(models.ModelWithUUID):
@@ -37,7 +37,7 @@ class BaseTestCase(unittest.TestCase):
 
     def setUp(self):
         super(BaseTestCase, self).setUp()
-        self.Q = query_builders.Q
+        self.Q = q.Q
         self.flt = filters.AND(
             {'field_bool': filters.EQ(True)},
             {'field_int': filters.EQ(0)},

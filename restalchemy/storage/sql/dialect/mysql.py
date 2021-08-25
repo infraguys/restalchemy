@@ -25,7 +25,7 @@ import six
 
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
-from restalchemy.storage.sql.dialect import query_builders
+from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.storage.sql import filters as sql_filters
 from restalchemy.storage.sql import utils
 
@@ -342,7 +342,7 @@ class MySqlOrm(object):
 
     @staticmethod
     def select(model):
-        return query_builders.Q.select(model)
+        return q.Q.select(model)
 
 
 class MySQLDialect(base.AbstractDialect):
