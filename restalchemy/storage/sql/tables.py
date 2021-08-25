@@ -28,6 +28,10 @@ class SQLTable(object):
         self._table_name = table_name
         self._model = model
 
+    @property
+    def model(self):
+        return self._model
+
     def get_column_names(self, with_pk=True, do_sort=True):
         result = []
         for name, prop in self._model.properties.items():

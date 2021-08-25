@@ -42,7 +42,7 @@ class BaseModel(models.Model):
 class EQTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.EQ(name=TEST_NAME,
+        self._expr = filters.EQ(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
@@ -59,7 +59,7 @@ class EQTestCase(base.BaseTestCase):
 class NETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.NE(name=TEST_NAME,
+        self._expr = filters.NE(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
@@ -76,7 +76,7 @@ class NETestCase(base.BaseTestCase):
 class GTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GT(name=TEST_NAME,
+        self._expr = filters.GT(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
@@ -93,7 +93,7 @@ class GTTestCase(base.BaseTestCase):
 class GETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GE(name=TEST_NAME,
+        self._expr = filters.GE(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
@@ -110,7 +110,7 @@ class GETestCase(base.BaseTestCase):
 class LTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LT(name=TEST_NAME,
+        self._expr = filters.LT(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
@@ -127,7 +127,7 @@ class LTTestCase(base.BaseTestCase):
 class LETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LE(name=TEST_NAME,
+        self._expr = filters.LE(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
@@ -146,7 +146,7 @@ class InTestCase(base.BaseTestCase):
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
-        self._expr = filters.In(name=TEST_NAME,
+        self._expr = filters.In(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=self.TEST_LIST_VALUES)
 
@@ -163,7 +163,7 @@ class InTestCase(base.BaseTestCase):
 class InEmptyListTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.In(name=TEST_NAME,
+        self._expr = filters.In(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=[])
 
@@ -180,7 +180,7 @@ class InEmptyListTestCase(base.BaseTestCase):
 class IsTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.Is(name=TEST_NAME,
+        self._expr = filters.Is(column=TEST_NAME,
                                 value_type=common.AsIsType(),
                                 value=TEST_VALUE)
 
@@ -197,7 +197,7 @@ class IsTestCase(base.BaseTestCase):
 class IsNotTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.IsNot(name=TEST_NAME,
+        self._expr = filters.IsNot(column=TEST_NAME,
                                    value_type=common.AsIsType(),
                                    value=TEST_VALUE)
 

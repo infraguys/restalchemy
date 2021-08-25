@@ -24,6 +24,8 @@ import six
 
 from restalchemy.dm import filters
 from restalchemy.dm import types
+from restalchemy.storage.sql.dialect.query_builder import common
+from restalchemy.storage.sql import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -31,10 +33,10 @@ LOG = logging.getLogger(__name__)
 @six.add_metaclass(abc.ABCMeta)
 class AbstractClause(object):
 
-    def __init__(self, name, value_type, value):
+    def __init__(self, column, value_type, value):
         super(AbstractClause, self).__init__()
         self._value = self._convert_value(value_type, value)
-        self._name = name
+        self._column = column
 
     def _convert_value(self, value_type, value):
         return value_type.to_simple_type(value)
@@ -44,8 +46,10 @@ class AbstractClause(object):
         return self._value
 
     @property
-    def name(self):
-        return self._name
+    def column(self):
+        return (self._column.compile()
+                if isinstance(self._column, common.ColumnFullPath)
+                else self._column)
 
     @abc.abstractmethod
     def construct_expression(self):
@@ -55,49 +59,49 @@ class AbstractClause(object):
 class EQ(AbstractClause):
 
     def construct_expression(self):
-        return ("%s = " % self._name) + "%s"
+        return ("%s = " % self.column) + "%s"
 
 
 class NE(AbstractClause):
 
     def construct_expression(self):
-        return ("%s <> " % self._name) + "%s"
+        return ("%s <> " % self.column) + "%s"
 
 
 class GT(AbstractClause):
 
     def construct_expression(self):
-        return ("%s > " % self._name) + "%s"
+        return ("%s > " % self.column) + "%s"
 
 
 class GE(AbstractClause):
 
     def construct_expression(self):
-        return ("%s >= " % self._name) + "%s"
+        return ("%s >= " % self.column) + "%s"
 
 
 class LT(AbstractClause):
 
     def construct_expression(self):
-        return ("%s < " % self._name) + "%s"
+        return ("%s < " % self.column) + "%s"
 
 
 class LE(AbstractClause):
 
     def construct_expression(self):
-        return ("%s <= " % self._name) + "%s"
+        return ("%s <= " % self.column) + "%s"
 
 
 class Is(AbstractClause):
 
     def construct_expression(self):
-        return ("%s IS " % self._name) + "%s"
+        return ("%s IS " % self.column) + "%s"
 
 
 class IsNot(AbstractClause):
 
     def construct_expression(self):
-        return ("%s IS NOT " % self._name) + "%s"
+        return ("%s IS NOT " % self.column) + "%s"
 
 
 class In(AbstractClause):
@@ -108,7 +112,7 @@ class In(AbstractClause):
         return [value_type.to_simple_type(item) for item in value] or [None]
 
     def construct_expression(self):
-        return ("%s IN " % self._name) + "%s"
+        return ("%s IN " % self.column) + "%s"
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -193,6 +197,7 @@ class AsIsType(types.BaseType):
 
 
 def convert_filters(model, filters_root):
+    filters_root = filters_root or filters.AND()
     if isinstance(filters_root, filters.AbstractExpression):
         return iterate_filters(model, filters_root)
     return iterate_filters(model, filters.AND(filters_root))
@@ -219,18 +224,26 @@ def iterate_filters(model, filter_list):
     if isinstance(filter_list, collections.Mapping):
         clauses = []
         for name, filt in filter_list.items():
-            value_type = (model.properties.properties[name]
-                          .get_property_type()) or AsIsType()
+            if isinstance(model, common.Alias):
+                value_type = (model.clause.model.properties.properties[name]
+                              .get_property_type()) or AsIsType()
+                column = model.get_field_by_name(
+                    name, wrap_alias=False,
+                )
+            else:
+                value_type = (model.properties.properties[name]
+                              .get_property_type()) or AsIsType()
+                column = utils.escape(name)
             # Make API compatible with previous versions.
             if not isinstance(filt, filters.AbstractClause):
                 LOG.warning("DEPRECATED: pleases use %s wrapper for filter "
                             "value", filters.EQ)
-                clauses.append(EQ(name, value_type, filt))
+                clauses.append(EQ(column, value_type, filt))
                 continue
 
             try:
                 clauses.append(FILTER_MAPPING[type(filt)](
-                    name, value_type, filt.value))
+                    column, value_type, filt.value))
             except KeyError:
                 raise ValueError("Can't convert API filter to SQL storage "
                                  "filter. Unknown filter %s" % filt)
