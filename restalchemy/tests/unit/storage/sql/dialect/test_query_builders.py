@@ -18,11 +18,11 @@
 
 import unittest
 
+from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage.sql.dialect import query_builders
-from restalchemy.storage.sql import filters
 
 
 class SimpleModel(models.ModelWithUUID):
@@ -38,6 +38,11 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         super(BaseTestCase, self).setUp()
         self.Q = query_builders.Q
+        self.flt = filters.AND(
+            {'field_bool': filters.EQ(True)},
+            {'field_int': filters.EQ(0)},
+            {'field_str': filters.EQ('FAKE_STR')},
+        )
 
     def tearDown(self):
         super(BaseTestCase, self).tearDown()
@@ -58,12 +63,7 @@ class BaseTestCase(unittest.TestCase):
         )
 
     def test_select_with_filters(self):
-        flt = {
-            'field_str': filters.EQ(types.String(), 'FAKE_STR'),
-            'field_int': filters.EQ(types.Integer(), 0),
-            'field_bool': filters.EQ(types.Boolean(), True),
-        }
-        query = self.Q.select(SimpleModel).where(flt)
+        query = self.Q.select(SimpleModel).where(self.flt)
 
         result_expression = query.compile()
         result_values = query.values()
@@ -77,9 +77,9 @@ class BaseTestCase(unittest.TestCase):
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
-            " `t1`.`field_bool` = %s AND"
+            " (`t1`.`field_bool` = %s AND"
             " `t1`.`field_int` = %s AND"
-            " `t1`.`field_str` = %s",
+            " `t1`.`field_str` = %s)",
             result_expression
         )
         self.assertEqual(
@@ -88,12 +88,7 @@ class BaseTestCase(unittest.TestCase):
         )
 
     def test_select_with_filters_and_limit(self):
-        flt = {
-            'field_str': filters.EQ(types.String(), 'FAKE_STR'),
-            'field_int': filters.EQ(types.Integer(), 0),
-            'field_bool': filters.EQ(types.Boolean(), True),
-        }
-        query = self.Q.select(SimpleModel).where(flt).limit(2)
+        query = self.Q.select(SimpleModel).where(self.flt).limit(2)
 
         result_expression = query.compile()
         result_values = query.values()
@@ -107,9 +102,9 @@ class BaseTestCase(unittest.TestCase):
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
-            " `t1`.`field_bool` = %s AND"
+            " (`t1`.`field_bool` = %s AND"
             " `t1`.`field_int` = %s AND"
-            " `t1`.`field_str` = %s "
+            " `t1`.`field_str` = %s) "
             "LIMIT 2",
             result_expression
         )
@@ -119,12 +114,7 @@ class BaseTestCase(unittest.TestCase):
         )
 
     def test_select_lock_with_filters(self):
-        flt = {
-            'field_str': filters.EQ(types.String(), 'FAKE_STR'),
-            'field_int': filters.EQ(types.Integer(), 0),
-            'field_bool': filters.EQ(types.Boolean(), True),
-        }
-        query = self.Q.select(SimpleModel).where(flt).for_()
+        query = self.Q.select(SimpleModel).where(self.flt).for_()
 
         result_expression = query.compile()
         result_values = query.values()
@@ -138,9 +128,9 @@ class BaseTestCase(unittest.TestCase):
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
-            " `t1`.`field_bool` = %s AND"
+            " (`t1`.`field_bool` = %s AND"
             " `t1`.`field_int` = %s AND"
-            " `t1`.`field_str` = %s "
+            " `t1`.`field_str` = %s) "
             "FOR UPDATE",
             result_expression
         )
@@ -150,12 +140,8 @@ class BaseTestCase(unittest.TestCase):
         )
 
     def test_select_order_by_with_filters(self):
-        flt = {
-            'field_str': filters.EQ(types.String(), 'FAKE_STR'),
-            'field_int': filters.EQ(types.Integer(), 0),
-            'field_bool': filters.EQ(types.Boolean(), True),
-        }
-        query = self.Q.select(SimpleModel).where(flt).order_by('field_str')
+        query = self.Q.select(SimpleModel).where(self.flt).order_by(
+            'field_str')
         query = query.order_by('field_int', 'DESC')
 
         result_expression = query.compile()
@@ -170,9 +156,9 @@ class BaseTestCase(unittest.TestCase):
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
-            " `t1`.`field_bool` = %s AND"
+            " (`t1`.`field_bool` = %s AND"
             " `t1`.`field_int` = %s AND"
-            " `t1`.`field_str` = %s "
+            " `t1`.`field_str` = %s) "
             "ORDER BY"
             " `t1_field_str` ASC,"
             " `t1_field_int` DESC",

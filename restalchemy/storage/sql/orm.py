@@ -27,7 +27,6 @@ from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import engines
-from restalchemy.storage.sql import filters as flt
 from restalchemy.storage.sql import tables
 
 
@@ -42,15 +41,9 @@ class ObjectCollection(base.AbstractObjectCollection,
     def _engine(self):
         return engines.engine_factory.get_engine()
 
-    def _filters_to_storage_view(self, filter_list=None):
-        filter_list = filter_list or filters.AND()
-        return flt.convert_filters(self.model_cls, filter_list)
-
     @base.error_catcher
     def get_all(self, filters=None, session=None, cache=False, limit=None,
                 order_by=None, locked=False):
-        # TODO(efrolov): Add limit and offset parameters
-        filters = self._filters_to_storage_view(filters)
         with self._engine.session_manager(session=session) as s:
             if cache is True:
                 return s.cache.get_all(
@@ -136,7 +129,6 @@ class ObjectCollection(base.AbstractObjectCollection,
 
     @base.error_catcher
     def count(self, session=None, filters=None):
-        filters = self._filters_to_storage_view(filters or {})
         with self._engine.session_manager(session=session) as s:
             result = self._table.count(
                 engine=self._engine, session=s, filters=filters)

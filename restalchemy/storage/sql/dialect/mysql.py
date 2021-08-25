@@ -26,7 +26,7 @@ import six
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql.dialect import query_builders
-from restalchemy.storage.sql import filters as flt
+from restalchemy.storage.sql import filters as sql_filters
 from restalchemy.storage.sql import utils
 
 
@@ -253,7 +253,7 @@ class MySQLSelect(MySQLBasicSelect):
                  order_by=None, locked=False):
         super(MySQLSelect, self).__init__(
             table=table, limit=limit, order_by=order_by, locked=locked)
-        self._filters = filters or flt.AND()
+        self._filters = sql_filters.convert_filters(self._table.model, filters)
 
     def get_values(self):
         return self._filters.value

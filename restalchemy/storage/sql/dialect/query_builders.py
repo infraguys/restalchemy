@@ -15,95 +15,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import abc
 import collections
 import threading
 
-import six
-import sortedcontainers
-
 from restalchemy.storage.sql.dialect import base
+from restalchemy.storage.sql.dialect.query_builder import common
+from restalchemy.storage.sql import filters as sql_filters
 from restalchemy.storage.sql import utils
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractClause(object):
-
-    @abc.abstractmethod
-    def compile(self):
-        raise NotImplementedError()
-
-
-class Alias(AbstractClause):
-
-    def __init__(self, clause, name):
-        super(Alias, self).__init__()
-        self._clause = clause
-        self._name = name
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def original_name(self):
-        return self._clause.name
-
-    def _wrap(self, column):
-        return Alias(column, "%s_%s" % (self.name, column.name))
-
-    def get_fields(self, wrap_alias=True):
-        return [self.get_field_by_name(col.name, wrap_alias)
-                for col in self._clause.get_fields()]
-
-    def get_field_by_name(self, name, wrap_alias=True):
-        result = ColumnFullPath(self, self._clause.get_field_by_name(name))
-        return self._wrap(result) if wrap_alias else result
-
-    def compile(self):
-        return "%s AS %s" % (self._clause.compile(), utils.escape(self.name))
-
-
-class Column(AbstractClause):
-
-    def __init__(self, name, prop):
-        self._name = name
-        self._prop = prop
-        super(Column, self).__init__()
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def original_name(self):
-        return self.name
-
-    def compile(self):
-        return "%s" % (utils.escape(self._name))
-
-
-class ColumnFullPath(AbstractClause):
-
-    def __init__(self, table, column):
-        super(ColumnFullPath, self).__init__()
-        self._table = table
-        self._column = column
-
-    @property
-    def name(self):
-        return self._column.name
-
-    @property
-    def original_name(self):
-        return self.name
-
-    def compile(self):
-        return "%s.%s" % (utils.escape(self._table.name),
-                          self._column.compile())
-
-
-class Table(AbstractClause):
+class Table(common.AbstractClause):
 
     def __init__(self, model):
         self._name = model.__tablename__
@@ -115,12 +36,16 @@ class Table(AbstractClause):
     def name(self):
         return self._name
 
+    @property
+    def model(self):
+        return self._model
+
     @staticmethod
     def _build_columns(model):
         # Note(efrolov): to save ordering
         ordered_result = collections.OrderedDict()
         for name, prop in model.properties.items():
-            ordered_result[name] = Column(name, prop)
+            ordered_result[name] = common.Column(name, prop)
         return ordered_result
 
     def get_fields(self):
@@ -133,7 +58,7 @@ class Table(AbstractClause):
         return utils.escape(self._name)
 
 
-class Filter(AbstractClause):
+class Filter(common.AbstractClause):
 
     def __init__(self, filter, column):
         super(Filter, self).__init__()
@@ -144,7 +69,7 @@ class Filter(AbstractClause):
         return self._filter.construct_expression(self._column.compile())
 
 
-class Limit(AbstractClause):
+class Limit(common.AbstractClause):
 
     def __init__(self, value):
         super(Limit, self).__init__()
@@ -154,7 +79,7 @@ class Limit(AbstractClause):
         return "LIMIT %d" % self._value
 
 
-class For(AbstractClause):
+class For(common.AbstractClause):
 
     def __init__(self, share=False):
         super(For, self).__init__()
@@ -164,7 +89,7 @@ class For(AbstractClause):
         return "FOR %s" % ('SHARE' if self._is_share else 'UPDATE')
 
 
-class OrderByValue(AbstractClause):
+class OrderByValue(common.AbstractClause):
 
     def __init__(self, column, sort_type=None):
         super(OrderByValue, self).__init__()
@@ -217,17 +142,17 @@ class ResultParser(object):
         return self._root
 
 
-class SelectQ(AbstractClause):
+class SelectQ(common.AbstractClause):
 
     def __init__(self, model):
         self._autoinc = 0
         self._autoinc_lock = threading.RLock()
         self._result_parser = ResultParser()
-        self._model_table = Alias(Table(model), self._build_table_alias_name())
+        self._model_table = common.Alias(Table(model),
+                                         self._build_table_alias_name())
         self._select_expressions = self._model_table.get_fields()
         self._table_references = [self._model_table]
-        self._where_condition = []
-        self._expression_values = []
+        self._where_expression = sql_filters.AND()
         self._order_by_expressions = []
         self._for_expression = None
         self._limit_condition = None
@@ -241,19 +166,12 @@ class SelectQ(AbstractClause):
 
     @staticmethod
     def _wrap_alias(table, fields):
-        return [Alias(field, "%s_%s" % (table.name, field.name))
+        return [common.Alias(field, "%s_%s" % (table.name, field.name))
                 for field in fields]
 
     def where(self, filters=None):
-        # TODO(efrolov) Drop sorting here to performance
-        filters = sortedcontainers.SortedDict(filters or {})
-        for name, cause in filters.items():
-            column = self._model_table.get_field_by_name(
-                name, wrap_alias=False,
-            )
-            value = cause.value
-            self._where_condition.append(Filter(cause, column))
-            self._expression_values.append(value)
+        self._where_expression = sql_filters.convert_filters(
+            self._model_table, filters)
         return self
 
     def limit(self, value):
@@ -282,12 +200,10 @@ class SelectQ(AbstractClause):
             ", ".join([exp.compile() for exp in self._select_expressions]),
             " ".join([tbl.compile() for tbl in self._table_references]),
         )
-        if self._where_condition:
+        where_expressions = self._where_expression.construct_expression()
+        if where_expressions:
             expression += (
-                " WHERE %s" % " AND ".join(
-                    [exp.compile() for exp in self._where_condition]
-                )
-            )
+                " WHERE " + where_expressions)
         if self._order_by_expressions:
             expression += " ORDER BY %s" % ", ". join(
                 [exp.compile() for exp in self._order_by_expressions]
@@ -300,7 +216,7 @@ class SelectQ(AbstractClause):
 
     def values(self):
         # TODO(efrolov): Must be read only list
-        return self._expression_values
+        return self._where_expression.value
 
     def parse_row(self, row):
         return self._result_parser.root.parse(row)
