@@ -81,7 +81,7 @@ foo2.save()
 foos = list(FooModel.objects.get_all())
 six.print_(foos)
 
-six.print_(FooModel.objects.get_one(filters={'foo_field1': 10}))
+six.print_(FooModel.objects.get_one(filters={'foo_field1': filters.EQ(10)}))
 
 # Modify foo_field2 and update it in storage
 foo2.foo_field2 = 'xxx2 asdad asdasd'
@@ -106,3 +106,13 @@ six.print_(FooModel.objects.get_all(filters={
 
 for model in FooModel.objects.get_all():
     model.delete()
+
+# Complex filters
+# WHERE ((`name1` = 1 AND `name2` = 2) OR (`name2` = 3))
+filter_list = filters.OR(
+    filters.AND(
+        {'name1': filters.EQ(1), 'name2': filters.EQ(2)}),
+    filters.AND(
+        {'name2': filters.EQ(3)}))
+
+six.print_(FooModel.objects.get_one(filters=filter_list))
