@@ -248,6 +248,10 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def from_simple_type(cls, value):
         if value is None:
             return None
+        if isinstance(value, base.PrefetchResult):
+            if not any([value[name] for name in cls.id_properties.keys()]):
+                return None
+            return cls.restore_from_storage(**value)
         for name in cls.id_properties:
             value = (cls.properties.properties[name].get_property_type()
                         .from_simple_type(value))

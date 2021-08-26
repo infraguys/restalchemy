@@ -122,9 +122,16 @@ class AbstractExpression(object):
         super(AbstractExpression, self).__init__()
         self._clauses = clauses
 
+    def extend_clauses(self, clauses):
+        self._clauses = self._clauses + clauses
+
+    @property
+    def clauses(self):
+        return self._clauses
+
     @property
     def value(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def construct_expression(self):
@@ -224,10 +231,10 @@ def iterate_filters(model, filter_list):
     if isinstance(filter_list, collections.Mapping):
         clauses = []
         for name, filt in filter_list.items():
-            if isinstance(model, common.Alias):
-                value_type = (model.clause.model.properties.properties[name]
+            if isinstance(model, common.TableAlias):
+                value_type = (model.original.model.properties.properties[name]
                               .get_property_type()) or AsIsType()
-                column = model.get_field_by_name(
+                column = model.get_column_by_name(
                     name, wrap_alias=False,
                 )
             else:
