@@ -13,6 +13,9 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import abc
+
+import six
 
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import models
@@ -20,10 +23,14 @@ from restalchemy.dm import properties
 
 
 def relationship(property_type, *args, **kwargs):
+    prefetch = kwargs.get('prefetch', False)
     for arg in args:
         if not issubclass(arg, models.Model):
             raise exc.RelationshipModelError(model=arg)
-    kwargs['property_class'] = kwargs.get('property_class', Relationship)
+    kwargs['property_class'] = kwargs.get(
+        'property_class',
+        PrefetchRelationship if prefetch else Relationship,
+    )
     return properties.property(property_type=property_type, *args, **kwargs)
 
 
@@ -37,6 +44,7 @@ def readonly_relationship(property_type, *args, **kwargs):
     return required_relationship(property_type, *args, **kwargs)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class BaseRelationship(properties.AbstractProperty):
     pass
 
@@ -44,7 +52,7 @@ class BaseRelationship(properties.AbstractProperty):
 class Relationship(BaseRelationship):
 
     def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None, prefetch=False):
+                 read_only=False, value=None):
         if value and not isinstance(value, property_type):
             raise TypeError("Expected '%s' type; value: %r"
                             % (property_type, value))
@@ -58,7 +66,6 @@ class Relationship(BaseRelationship):
                 default) else self._safe_value(default)
         self._value = value
         self.__first_value = self.value
-        self._prefetch = prefetch
 
     def is_dirty(self):
         return not self.__first_value == self.value
@@ -77,8 +84,9 @@ class Relationship(BaseRelationship):
     def is_required(self):
         return self._required
 
-    def is_prefetch(self):
-        return self._prefetch
+    @classmethod
+    def is_prefetch(cls):
+        return False
 
     @property
     def value(self):
@@ -100,3 +108,10 @@ class Relationship(BaseRelationship):
     @classmethod
     def is_id_property(self):
         return False
+
+
+class PrefetchRelationship(Relationship):
+
+    @classmethod
+    def is_prefetch(cls):
+        return True

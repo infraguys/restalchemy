@@ -75,7 +75,3 @@ class AbstractDialect(object):
     @abc.abstractproperty
     def count(self, table, filters):
         raise NotImplementedError()
-
-
-class PrefetchResult(dict):
-    pass

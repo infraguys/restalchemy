@@ -29,11 +29,15 @@ class AbstractClause(object):
     def compile(self):
         raise NotImplementedError()
 
+    @property
+    def original(self):
+        return self
 
-class Alias(AbstractClause):
+
+class BaseAlias(AbstractClause):
 
     def __init__(self, clause, name):
-        super(Alias, self).__init__()
+        super(BaseAlias, self).__init__()
         self._clause = clause
         self._name = name
 
@@ -42,26 +46,40 @@ class Alias(AbstractClause):
         return self._name
 
     @property
-    def clause(self):
-        return self._clause
+    def original_name(self):
+        return self.original.name
 
     @property
-    def original_name(self):
-        return self._clause.name
-
-    def _wrap(self, column):
-        return Alias(column, "%s_%s" % (self.name, column.name))
-
-    def get_fields(self, wrap_alias=True):
-        return [self.get_field_by_name(col.name, wrap_alias)
-                for col in self._clause.get_fields()]
-
-    def get_field_by_name(self, name, wrap_alias=True):
-        result = ColumnFullPath(self, self._clause.get_field_by_name(name))
-        return self._wrap(result) if wrap_alias else result
+    def original(self):
+        return self._clause
 
     def compile(self):
         return "%s AS %s" % (self._clause.compile(), utils.escape(self.name))
+
+
+class ColumnAlias(BaseAlias):
+
+    @property
+    def model_property(self):
+        return self.original.model_property
+
+
+class TableAlias(BaseAlias):
+
+    def _wrap(self, column):
+        return ColumnAlias(column, "%s_%s" % (self.name, column.name))
+
+    def get_columns(self, with_prefetch=True, wrap_alias=True):
+        return [self.get_column_by_name(col.name, wrap_alias)
+                for col in self._clause.get_columns(with_prefetch)]
+
+    def get_prefetch_columns(self, wrap_alias=True):
+        return [self.get_column_by_name(col.name, wrap_alias)
+                for col in self._clause.get_prefetch_columns()]
+
+    def get_column_by_name(self, name, wrap_alias=True):
+        result = ColumnFullPath(self, self._clause.get_column_by_name(name))
+        return self._wrap(result) if wrap_alias else result
 
 
 class Column(AbstractClause):
@@ -74,6 +92,10 @@ class Column(AbstractClause):
     @property
     def name(self):
         return self._name
+
+    @property
+    def model_property(self):
+        return self._prop
 
     @property
     def original_name(self):
@@ -93,6 +115,10 @@ class ColumnFullPath(AbstractClause):
     @property
     def name(self):
         return self._column.name
+
+    @property
+    def model_property(self):
+        return self._column.model_property
 
     @property
     def original_name(self):

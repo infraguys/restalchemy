@@ -108,3 +108,7 @@ def error_catcher(func):
             raise exceptions.UnknownStorageException(caused=e)
 
     return wrapper
+
+
+class PrefetchResult(dict):
+    pass

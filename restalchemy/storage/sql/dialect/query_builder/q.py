@@ -14,11 +14,13 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import abc
 import collections
 import threading
 
-from restalchemy.storage.sql.dialect import base
+import six
+
+from restalchemy.storage import base
 from restalchemy.storage.sql.dialect.query_builder import common
 from restalchemy.storage.sql import filters as sql_filters
 from restalchemy.storage.sql import utils
@@ -44,29 +46,23 @@ class Table(common.AbstractClause):
     def _build_columns(model):
         # Note(efrolov): to save ordering
         ordered_result = collections.OrderedDict()
-        for name, prop in model.properties.items():
+        for name, prop in model.properties.properties.items():
             ordered_result[name] = common.Column(name, prop)
         return ordered_result
 
-    def get_fields(self):
-        return self._columns.values()
+    def get_columns(self, with_prefetch=True):
+        return [column for column in self._columns.values()
+                if not column.model_property.is_prefetch() or with_prefetch]
 
-    def get_field_by_name(self, name):
+    def get_prefetch_columns(self):
+        return [column for column in self._columns.values()
+                if column.model_property.is_prefetch()]
+
+    def get_column_by_name(self, name):
         return self._columns[name]
 
     def compile(self):
         return utils.escape(self._name)
-
-
-class Filter(common.AbstractClause):
-
-    def __init__(self, filter, column):
-        super(Filter, self).__init__()
-        self._filter = filter
-        self._column = column
-
-    def compile(self):
-        return self._filter.construct_expression(self._column.compile())
 
 
 class Limit(common.AbstractClause):
@@ -87,6 +83,47 @@ class For(common.AbstractClause):
 
     def compile(self):
         return "FOR %s" % ('SHARE' if self._is_share else 'UPDATE')
+
+
+@six.add_metaclass(abc.ABCMeta)
+class Criteria(common.AbstractClause):
+
+    def __init__(self, clause1, clause2):
+        super(Criteria, self).__init__()
+        self._clause1 = clause1
+        self._clause2 = clause2
+
+
+class EQCriteria(Criteria):
+
+    def compile(self):
+        return "%s = %s" % (self._clause1.original.compile(),
+                            self._clause2.original.compile())
+
+
+class On(common.AbstractClause):
+
+    def __init__(self, list_of_criteria):
+        super(On, self).__init__()
+        self._list_of_criteria = list_of_criteria
+
+    def compile(self):
+        return " AND ".join([c.compile() for c in self._list_of_criteria])
+
+
+class LeftJoin(common.AbstractClause):
+
+    def __init__(self, table, on):
+        # type: (common.TableAlias, On) -> LeftJoin
+        super(LeftJoin, self).__init__()
+        self._table = table
+        self._on = on
+
+    def compile(self):
+        return "LEFT JOIN %s ON (%s)" % (
+            self._table.compile(),
+            self._on.compile(),
+        )
 
 
 class OrderByValue(common.AbstractClause):
@@ -148,15 +185,23 @@ class SelectQ(common.AbstractClause):
         self._autoinc = 0
         self._autoinc_lock = threading.RLock()
         self._result_parser = ResultParser()
-        self._model_table = common.Alias(Table(model),
-                                         self._build_table_alias_name())
-        self._select_expressions = self._model_table.get_fields()
-        self._table_references = [self._model_table]
+        self._model_table = common.TableAlias(
+            Table(model), self._build_table_alias_name(),
+        )
+        self._select_expressions = []
+        self._table_references = [self._model_table]  # type: list
         self._where_expression = sql_filters.AND()
         self._order_by_expressions = []
         self._for_expression = None
         self._limit_condition = None
-        self._init_parser()
+        self._add_column_to_select_expressions(
+            result_parser_node=self._result_parser.root,
+            columns=self._model_table.get_columns(with_prefetch=False),
+        )
+        self._resolve_model_dependency(
+            table=self._model_table,
+            result_parser_node=self._result_parser.root,
+        )
         super(SelectQ, self).__init__()
 
     def _init_parser(self):
@@ -164,14 +209,59 @@ class SelectQ(common.AbstractClause):
         for column in self._select_expressions:
             result_root_node.add_child_field(column.original_name, column.name)
 
+    def _resolve_model_dependency(self, table, result_parser_node):
+        for column in table.get_prefetch_columns():
+            dep_model = column.model_property.get_property_type()
+
+            # Search primary key column
+            id_properties = dep_model.get_id_property()
+            if len(id_properties) != 1:
+                msg = ("Can't automatic resolve dependency for %s table"
+                       " because the number of fields for primary keys (%r)"
+                       " of model (%r) is not equal to 1.") % (table.name,
+                                                               id_properties,
+                                                               dep_model)
+                raise ValueError(msg)
+            alias = common.TableAlias(
+                Table(dep_model), self._build_table_alias_name(),
+            )
+            id_column = alias.get_column_by_name(list(id_properties.keys())[0])
+
+            # Construct Left Join for prefetch dependency
+            left_join = LeftJoin(
+                table=alias, on=On([EQCriteria(column, id_column)])
+            )
+            self._table_references.append(left_join)
+
+            # Adding columns to fetch data on it
+            node = result_parser_node.add_child_node(column.original_name)
+            self._add_column_to_select_expressions(
+                result_parser_node=node,
+                columns=alias.get_columns(with_prefetch=False),
+            )
+
+            # Processing parent model to resolve dependencies
+            self._resolve_model_dependency(
+                table=alias, result_parser_node=node,
+            )
+
+    def _add_column_to_select_expressions(self, result_parser_node, columns):
+        for column in columns:
+            result_parser_node.add_child_field(
+                column.original_name, column.name,
+            )
+            self._select_expressions.append(column)
+        return self._select_expressions
+
     @staticmethod
     def _wrap_alias(table, fields):
-        return [common.Alias(field, "%s_%s" % (table.name, field.name))
+        return [common.ColumnAlias(field, "%s_%s" % (table.name, field.name))
                 for field in fields]
 
     def where(self, filters=None):
-        self._where_expression = sql_filters.convert_filters(
-            self._model_table, filters)
+        self._where_expression.extend_clauses(
+            sql_filters.convert_filters(self._model_table, filters).clauses,
+        )
         return self
 
     def limit(self, value):
@@ -183,7 +273,7 @@ class SelectQ(common.AbstractClause):
         return self
 
     def order_by(self, property_name, sort_type='ASC'):
-        column = self._model_table.get_field_by_name(property_name)
+        column = self._model_table.get_column_by_name(property_name)
         self._order_by_expressions.append(OrderByValue(column, sort_type))
         return self
 
@@ -196,6 +286,7 @@ class SelectQ(common.AbstractClause):
             return self._autoinc
 
     def compile(self):
+        # noinspection SqlInjection
         expression = "SELECT %s FROM %s" % (
             ", ".join([exp.compile() for exp in self._select_expressions]),
             " ".join([tbl.compile() for tbl in self._table_references]),

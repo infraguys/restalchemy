@@ -45,6 +45,10 @@ class AbstractProperty(object):
     def is_dirty(self):
         pass
 
+    @classmethod
+    def is_prefetch(cls):
+        return False
+
 
 class BaseProperty(AbstractProperty):
     pass
@@ -128,6 +132,7 @@ class PropertyCreator(object):
         self._property_type = prop_type
         self._args = args
         self._kwargs = kwargs
+        self._prefetch = kwargs.pop('prefetch', False)
 
     def __call__(self, value):
         return self._property(value=value, property_type=self._property_type,
@@ -138,6 +143,9 @@ class PropertyCreator(object):
 
     def get_property_type(self):
         return self._property_type
+
+    def is_prefetch(self):
+        return self._prefetch
 
 
 @six.add_metaclass(abc.ABCMeta)
