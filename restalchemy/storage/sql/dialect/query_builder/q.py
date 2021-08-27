@@ -204,11 +204,6 @@ class SelectQ(common.AbstractClause):
         )
         super(SelectQ, self).__init__()
 
-    def _init_parser(self):
-        result_root_node = self._result_parser.root
-        for column in self._select_expressions:
-            result_root_node.add_child_field(column.original_name, column.name)
-
     def _resolve_model_dependency(self, table, result_parser_node):
         for column in table.get_prefetch_columns():
             dep_model = column.model_property.get_property_type()
@@ -299,10 +294,10 @@ class SelectQ(common.AbstractClause):
             expression += " ORDER BY %s" % ", ". join(
                 [exp.compile() for exp in self._order_by_expressions]
             )
-        if self._for_expression:
-            expression += " %s" % self._for_expression.compile()
         if self._limit_condition:
             expression += " %s" % self._limit_condition.compile()
+        if self._for_expression:
+            expression += " %s" % self._for_expression.compile()
         return expression
 
     def values(self):

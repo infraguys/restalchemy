@@ -166,6 +166,33 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             result_values
         )
 
+    def test_select_lock_with_filters_and_limit(self):
+        query = self.Q.select(SimpleModel).where(self.flt).for_().limit(2)
+
+        result_expression = query.compile()
+        result_values = query.values()
+
+        self.assertEqual(
+            "SELECT"
+            " `t1`.`field_bool` AS `t1_field_bool`,"
+            " `t1`.`field_int` AS `t1_field_int`,"
+            " `t1`.`field_str` AS `t1_field_str`,"
+            " `t1`.`uuid` AS `t1_uuid`"
+            " FROM"
+            " `simple_table` AS `t1` "
+            "WHERE"
+            " (`t1`.`field_bool` = %s AND"
+            " `t1`.`field_int` = %s AND"
+            " `t1`.`field_str` = %s) "
+            "LIMIT 2 "
+            "FOR UPDATE",
+            result_expression
+        )
+        self.assertEqual(
+            [True, 0, 'FAKE_STR'],
+            result_values
+        )
+
     def test_select_order_by_with_filters(self):
         query = self.Q.select(SimpleModel).where(self.flt).order_by(
             'field_str')
