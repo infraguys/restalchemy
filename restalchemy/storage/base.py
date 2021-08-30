@@ -51,6 +51,10 @@ class AbstractObjectCollection(object):
         except exceptions.RecordNotFound:
             return None
 
+
+@six.add_metaclass(abc.ABCMeta)
+class AbstractObjectCollectionCountMixin(object):
+
     @abc.abstractmethod
     def count(self, filters=None):
         raise NotImplementedError()

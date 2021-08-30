@@ -31,7 +31,8 @@ from restalchemy.storage.sql import filters as flt
 from restalchemy.storage.sql import tables
 
 
-class ObjectCollection(base.AbstractObjectCollection):
+class ObjectCollection(base.AbstractObjectCollection,
+                       base.AbstractObjectCollectionCountMixin):
 
     @property
     def _table(self):
