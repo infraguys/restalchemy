@@ -33,6 +33,10 @@ class SimpleModel(models.ModelWithUUID):
     field_bool = properties.property(types.Boolean())
 
 
+# NOTE(efrolov): Sort model properties for correct ordering in asserts
+SimpleModel.properties.sort_properties()
+
+
 class MySQLQueryBuilderTestCase(unittest.TestCase):
 
     def setUp(self):

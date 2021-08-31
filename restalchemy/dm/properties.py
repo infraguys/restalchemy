@@ -23,7 +23,6 @@ import inspect
 
 import six
 from six.moves import builtins
-import sortedcontainers
 
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
@@ -168,8 +167,31 @@ class PropertyMapping(collections.Mapping):
 class PropertyCollection(PropertyMapping):
 
     def __init__(self, **kwargs):
-        self._properties = sortedcontainers.SortedDict(kwargs)
+        self._properties = kwargs
         super(PropertyCollection, self).__init__()
+
+    def sort_properties(self):
+        """Switch the model to sorted properties
+
+        After call this method all requests to Model.properties will return
+        sorted values. For example:
+
+        ```
+        class Model(Model):
+            b = properties.property(type.B())
+            a = properties.property(type.A())
+
+        Model.properties.keys()  #-> ['b', 'a']
+        Model.properties.sort_properties()
+        Model.properties.keys()  #-> ['a', 'b']
+        ```
+
+        Most often, this functionality is needed for tests.
+        """
+        result = collections.OrderedDict()
+        for key in sorted(self._properties):
+            result[key] = self._properties[key]
+        self._properties = result
 
     def __getitem__(self, name):
         return self.properties[name].get_property_class()
@@ -196,7 +218,7 @@ class PropertyCollection(PropertyMapping):
 class PropertyManager(PropertyMapping):
 
     def __init__(self, property_collection, **kwargs):
-        self._properties = sortedcontainers.SortedDict()
+        self._properties = {}
         for name, item in property_collection.properties.items():
             if isinstance(item, PropertyCollection):
                 prop = PropertyManager(item, **kwargs.pop(name, {}))
