@@ -56,6 +56,11 @@ class ModelWithL2Relationships(models.ModelWithUUID, orm.SQLStorableMixin):
                                           prefetch=False)
 
 
+# NOTE(efrolov): Sort model properties for correct ordering in asserts
+for model in [SimpleModel, ModelWithL1Relationships, ModelWithL2Relationships]:
+    model.properties.sort_properties()
+
+
 class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
 
     def setUp(self):

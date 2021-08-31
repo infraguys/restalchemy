@@ -249,7 +249,10 @@ class SQLStorableMixin(base.AbstractStorableMixin):
         if value is None:
             return None
         if isinstance(value, base.PrefetchResult):
-            if not any([value[name] for name in cls.id_properties.keys()]):
+            for name in cls.id_properties.keys():
+                if value[name]:
+                    break
+            else:
                 return None
             return cls.restore_from_storage(**value)
         for name in cls.id_properties:
