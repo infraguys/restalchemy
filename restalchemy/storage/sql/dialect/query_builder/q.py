@@ -131,6 +131,7 @@ class OrderByValue(common.AbstractClause):
     def __init__(self, column, sort_type=None):
         super(OrderByValue, self).__init__()
         self._column = column
+        # TODO(g.melikov): add validation
         self._sort_type = sort_type or 'ASC'
 
     def compile(self):

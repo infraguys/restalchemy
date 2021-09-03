@@ -85,7 +85,7 @@ class SQLTable(object):
         q = engine.dialect.orm.select(self._model).where(filters=filters)
 
         for name, sort_type in (order_by or {}).items():
-            q.order_by(property_name=name, sorttype=sort_type)
+            q.order_by(property_name=name, sort_type=sort_type)
 
         if limit:
             q.limit(limit)
