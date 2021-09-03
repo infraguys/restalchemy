@@ -39,3 +39,8 @@ class TestOrderByValue(unittest.TestCase):
     def test_invalid_type(self):
         with self.assertRaises(ValueError):
             q.OrderByValue(self.column, sort_type='WRONG')
+
+    def test_valid_type_lowercase(self):
+        order = q.OrderByValue(self.column, sort_type='desc')
+
+        self.assertEqual('`1` DESC', order.compile())

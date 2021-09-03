@@ -135,9 +135,9 @@ class OrderByValue(common.AbstractClause):
         if not sort_type:
             self._sort_type = 'ASC'
         else:
-            if sort_type not in self.SORT_TYPES:
-                raise ValueError("Unknown order: %s" % sort_type)
-            self._sort_type = sort_type
+            self._sort_type = sort_type.upper()
+            if self._sort_type not in self.SORT_TYPES:
+                raise ValueError("Unknown order: %s" % self._sort_type)
 
     def compile(self):
         return "%s %s" % (utils.escape(self._column.name), self._sort_type)
