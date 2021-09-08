@@ -28,9 +28,11 @@ from restalchemy.tests.unit import base
 
 
 TEST_STR_VALUE = 'test_value :)'
+TEST_INT_AS_STR_VALUE = '1234'
 TEST_INT_VALUE = 5
 TEST_TYPE = 'FAKE TYPE'
 INCORECT_UUID = '4a775g98-eg85-4a0e-a0g0-639f0a16f4c3'
+INCORECT_INT_AS_STR = '123abc'
 
 
 @mock.patch("re.compile", return_value=mock.MagicMock(), autospec=True)
@@ -308,17 +310,39 @@ class TypedListTestCase(base.BaseTestCase):
     def setUp(self):
         super(TypedListTestCase, self).setUp()
 
-        self.test_instance = types.TypedList(nested_type=types.Integer())
+        self.test_instance_int = types.TypedList(nested_type=types.Integer())
+        self.test_instance_str = types.TypedList(nested_type=types.String())
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate([]))
-        self.assertTrue(self.test_instance.validate([1, 2, 3]))
+        self.assertTrue(self.test_instance_int.validate([]))
+        self.assertTrue(self.test_instance_int.validate([1, 2, 3]))
 
     def test_validate_incorrect_value(self):
-        self.assertFalse(self.test_instance.validate([1, 2, '3', 4]))
+        self.assertFalse(self.test_instance_int.validate([1, 2, '3', 4]))
 
     def test_incorrect_nested_type(self):
         self.assertRaises(TypeError, types.TypedList, int)
+
+    def test_from_unicode(self):
+        payload = (
+            (TEST_INT_AS_STR_VALUE, [int(TEST_INT_AS_STR_VALUE)]),
+        )
+
+        for value, expectedResult in payload:
+            result = self.test_instance_int.from_unicode(value)
+            self.assertEqual(expectedResult, result)
+
+        payload = (
+            (TEST_STR_VALUE, [TEST_STR_VALUE]),
+        )
+
+        for value, expectedResult in payload:
+            result = self.test_instance_str.from_unicode(value)
+            self.assertEqual(expectedResult, result)
+
+        with self.assertRaises(TypeError):
+            self.test_instance_int.from_unicode(None)
+            self.test_instance_int.from_unicode(INCORECT_INT_AS_STR)
 
 
 class DictTestCase(base.BaseTestCase):

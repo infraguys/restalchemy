@@ -25,6 +25,10 @@ import uuid
 
 import six
 
+if six.PY2:
+    # http://bugs.python.org/issue7980
+    datetime.datetime.strptime('', '')
+
 
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
@@ -204,6 +208,14 @@ class TypedList(List):
 
     def from_simple_type(self, value):
         return [self._nested_type.from_simple_type(e) for e in value]
+
+    def from_unicode(self, value):
+        if not isinstance(value, six.string_types):
+            raise TypeError("Value must be six.string_types, not %s",
+                            type(value))
+
+        value = self._nested_type.from_unicode(value)
+        return [value]
 
 
 class Dict(ComplexPythonType):
