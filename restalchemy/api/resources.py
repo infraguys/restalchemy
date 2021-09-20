@@ -176,6 +176,30 @@ class AbstractResource(object):
     def __init__(self, model_class, name_map=None, hidden_fields=None,
                  convert_underscore=True, process_filters=False,
                  model_subclasses=None):
+        """Resource constructor
+
+        :param model_class: The model class that is the source of the fields
+                            for the resource
+        :param name_map: The dictionary whose key is the name of the field in
+                         the model and the value is the name of the field in
+                         the resource. All model fields that match the names
+                         from the passed keys in dictionary will be renamed to
+                         values in passed dictionary.
+        :param hidden_fields: The list of field names to hide from the API
+                              user. The user will also not be able to set these
+                              fields using API. All fields starting with _ are
+                              already hidden from the user.
+        :param convert_underscore: The boolean value. Should a resource
+                                   convert _ to -
+        :param process_filters: The boolean value. If the value is True then RA
+                                will try to automatically parse the filters and
+                                convert the filter values to the field type of
+                                the model (resource).
+        :param model_subclasses: The list of subclasses that can be represented
+                                 by this resource, most often these are the
+                                 children of the model specified in the
+                                 model_class argument.
+        """
         super(AbstractResource, self).__init__()
         self._model_class = model_class
         self._name_map = name_map or {}
