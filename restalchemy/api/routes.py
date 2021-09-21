@@ -22,17 +22,22 @@ import posixpath
 
 import six
 
+from restalchemy.api import constants
 from restalchemy.common import exceptions as exc
 
 
-GET = 'GET'
-PUT = 'PUT'
-POST = 'POST'
-FILTER = 'FILTER'
-CREATE = 'CREATE'
-UPDATE = 'UPDATE'
-DELETE = 'DELETE'
+# RA HTTP methods
+GET = constants.GET
+FILTER = constants.FILTER
+CREATE = constants.CREATE
+UPDATE = constants.UPDATE
+DELETE = constants.DELETE
 
+# Other HTTP methods
+PUT = constants.PUT
+POST = constants.POST
+
+# route constants
 COLLECTION_ROUTE = 1
 RESOURCE_ROUTE = 2
 
@@ -175,9 +180,8 @@ class Route(BaseRoute):
                     return resource.get_parent_model(model)
                 models = []
                 for name, prop in resource.get_fields():
-                    value = getattr(model, name)
-                    if isinstance(value, parent_type):
-                        models.append(value)
+                    if prop.get_type() is parent_type:
+                        models.append(getattr(model, name))
                 if len(models) == 1:
                     return models[0]
                 raise ValueError("Can't find resource %s. Please "

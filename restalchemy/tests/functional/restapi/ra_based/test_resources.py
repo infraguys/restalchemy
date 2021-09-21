@@ -290,7 +290,10 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "mac": "00:00:00:00:00:03",
             "vm": parse.urlparse(
                 self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
-                                  VM_RESOURCE_ID)).path
+                                  VM_RESOURCE_ID)).path,
+            "some-field2": "some_field2",
+            "some-field3": "some_field3",
+            "some-field4": "some_field4",
         }
         LOCATION = self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT,
                                      VM_RESOURCE_ID,
@@ -302,7 +305,38 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.headers['location'], LOCATION)
-        self.assertEqual(response.json(), port_response_body)
+        self.assertEqual(port_response_body, response.json())
+
+    def test_update_nested_resource_successful(self):
+        VM_RESOURCE_ID = UUID1
+        PORT_RESOURCE_ID = UUID3
+        port = models.Port(uuid=PORT_RESOURCE_ID,
+                           mac="00:00:00:00:00:03",
+                           vm=self.vm1)
+        port.save()
+        port_request_body = {
+            "mac": "00:00:00:00:00:04"
+        }
+        port_response_body = {
+            "uuid": str(PORT_RESOURCE_ID),
+            "mac": "00:00:00:00:00:04",
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path,
+            "some-field1": "some_field1",
+            "some-field2": "some_field2",
+            "some-field3": "some_field3",
+        }
+
+        response = requests.put(
+            self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT,
+                              VM_RESOURCE_ID,
+                              PORT_RESOURCE_ID),
+            json=port_request_body,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(port_response_body, response.json())
 
     def test_get_nested_resource_successful(self):
         VM_RESOURCE_ID = UUID1
@@ -316,7 +350,10 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "mac": "00:00:00:00:00:03",
             "vm": parse.urlparse(
                 self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
-                                  VM_RESOURCE_ID)).path
+                                  VM_RESOURCE_ID)).path,
+            "some-field1": "some_field1",
+            "some-field2": "some_field2",
+            "some-field4": "some_field4",
         }
 
         response = requests.get(
@@ -325,7 +362,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                               PORT_RESOURCE_ID))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), port_response_body)
+        self.assertEqual(port_response_body, response.json())
 
     def test_get_ports_collection_successful(self):
         VM_RESOURCE_ID = UUID1
@@ -349,20 +386,26 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "mac": "00:00:00:00:00:03",
             "vm": parse.urlparse(
                 self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
-                                  VM_RESOURCE_ID)).path
+                                  VM_RESOURCE_ID)).path,
+            "some-field1": "some_field1",
+            "some-field3": "some_field3",
+            "some-field4": "some_field4",
         }, {
             "uuid": str(PORT2_RESOURCE_ID),
             "mac": "00:00:00:00:00:04",
             "vm": parse.urlparse(
                 self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
-                                  VM_RESOURCE_ID)).path
+                                  VM_RESOURCE_ID)).path,
+            "some-field1": "some_field1",
+            "some-field3": "some_field3",
+            "some-field4": "some_field4",
         }]
 
         response = requests.get(
             self.get_endpoint(TEMPL_PORTS_COLLECTION_ENDPOINT, VM_RESOURCE_ID))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), ports_response_body)
+        self.assertEqual(ports_response_body, response.json())
 
     def test_delete_nested_resource_successful(self):
         VM_RESOURCE_ID = UUID1

@@ -1,6 +1,5 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
-# Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+#    Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+#    Copyright 2021 Eugene Frolov.
 #
 # All Rights Reserved.
 #
@@ -18,6 +17,7 @@
 
 from webob import dec
 
+from restalchemy.api import contexts
 from restalchemy.api import resources
 from restalchemy.api import routes
 
@@ -34,6 +34,7 @@ class WSGIApp(object):
             routes.Route.build_resource_map(route_class))
 
     def process_request(self, req):
+        req.api_context = contexts.RequestContext(req)
         return self._main_route(req).do()
 
     @dec.wsgify

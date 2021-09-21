@@ -1,6 +1,5 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
-# Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+#    Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+#    Copyright 2021 Eugene Frolov.
 #
 # All Rights Reserved.
 #
@@ -18,6 +17,7 @@
 
 import copy
 import json
+import logging
 import types
 
 import six
@@ -25,6 +25,9 @@ import six
 
 DEFAULT_CONTENT_TYPE = 'application/json'
 DEFAULT_VALUE = object()
+
+
+LOG = logging.getLogger(__name__)
 
 
 def get_content_type(headers):
@@ -43,11 +46,12 @@ class BaseResourcePacker(object):
             return obj
         else:
             result = {}
-            for name, prop in self._rt.get_fields():
+            for name, prop in self._rt.get_fields_by_request(self._req):
                 api_name = prop.api_name
-                value = getattr(obj, name)
-                if (value is not None and prop.is_public()):
-                    result[api_name] = prop.dump_value(value)
+                if prop.is_public():
+                    value = getattr(obj, name)
+                    if value is not None:
+                        result[api_name] = prop.dump_value(value)
 
             return result
 
@@ -58,19 +62,19 @@ class BaseResourcePacker(object):
         else:
             return self.pack_resource(obj)
 
-    def unpack(self, obj):
-        obj = copy.deepcopy(obj)
+    def unpack(self, value):
+        value = copy.deepcopy(value)
         result = {}
-        for name, prop in self._rt.get_fields():
+        for name, prop in self._rt.get_fields_by_request(self._req):
             api_name = prop.api_name
-            value = obj.pop(api_name, DEFAULT_VALUE)
-            if value is not DEFAULT_VALUE:
+            prop_value = value.pop(api_name, DEFAULT_VALUE)
+            if prop_value is not DEFAULT_VALUE:
                 if not prop.is_public():
                     raise ValueError("Property %s is private" % api_name)
-                result[name] = prop.parse_value(self._req, value)
+                result[name] = prop.parse_value(self._req, prop_value)
 
-        if len(obj) > 0:
-            raise TypeError("%s is not compatible with %s" % (obj, self._rt))
+        if len(value) > 0:
+            raise TypeError("%s is not compatible with %s" % (value, self._rt))
 
         return result
 
@@ -81,9 +85,10 @@ class JSONPacker(BaseResourcePacker):
         return json.dumps(super(JSONPacker, self).pack(obj))
 
     def unpack(self, value):
-        if (six.PY3 and isinstance(value, six.binary_type)):
+        if six.PY3 and isinstance(value, six.binary_type):
             return super(JSONPacker, self).unpack(
-                json.loads(str(value, 'utf-8')))
+                json.loads(str(value, 'utf-8')),
+            )
         return super(JSONPacker, self).unpack(json.loads(value))
 
 

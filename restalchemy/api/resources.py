@@ -21,6 +21,7 @@ import inspect
 
 import six
 
+from restalchemy.api import constants
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties as ra_properties
 from restalchemy.dm import relationships as ra_relationsips
@@ -112,6 +113,11 @@ class AbstractResourceProperty(object):
     def is_public(self):
         return self._public
 
+    def get_type(self,):
+        return self._resource.get_property_type(
+            property_name=self._model_property_name,
+        )
+
     @property
     def api_name(self):
         return self._resource.get_resource_field_name(
@@ -170,6 +176,76 @@ class ResourceRelationship(AbstractResourceProperty):
         return ResourceMap.get_location(value)
 
 
+class BaseHiddenFieldsMap(object):
+
+    def __init__(self, hidden_fields=None):
+        super(BaseHiddenFieldsMap, self).__init__()
+        self._hidden_fields = set(hidden_fields or [])
+
+    def is_hidden_field(self, model_field_name, req):
+        return model_field_name in self
+
+    def __contains__(self, item):
+        # NOTE(efrolov): backward compatibility
+        return item in self._hidden_fields
+
+
+class HiddenFieldsCompatibleClass(BaseHiddenFieldsMap):
+    pass
+
+
+class HiddenFieldMap(BaseHiddenFieldsMap):
+
+    def __init__(self, **kwargs):
+        """Hidden fields mapper for resource
+
+        This class describes a list of fields that should be hidden for
+        various RestAlchemy API methods. The methods supported by RA are
+        declared in the `restalchemy.api.constants` module. To hide the
+        `my_hidden_field` field for the FILTER method, the code will look
+        like this:
+
+        ```
+        HiddenFieldMap(filter=['my_hidden_field'])
+        ```
+
+        For all other RA API methods, `my_hidden_field` field will not be
+        hidden.
+
+        :param filter: HTTP method GET for :func:`Controller.filter` method
+        :param get: HTTP method GET for :func:`Controller.get` method
+        :param create: HTTP method POST for :func:`Controller.create` method
+        :param update: HTTP method PUT for :func:`Controller.update` method
+        :param delete: HTTP method PUT for :func:`Controller.delete` method
+        :param action_get: HTTP method GET for :func:`Action.get` method
+        :param action_post: HTTP method POST for :func:`Action.post` method
+        :param action_put: HTTP method PUT for :func:`Action.put` method
+        """
+        params = {}
+        all_values = []
+        for method in constants.ALL_RA_METHODS:
+            value_arg = kwargs.pop(method.lower(), [])
+            params[method] = value_arg
+            all_values += value_arg
+        if kwargs:
+            raise TypeError('Got an unexpected keyword arguments %r' % kwargs)
+        super(HiddenFieldMap, self).__init__(hidden_fields=all_values)
+        self._method_map = {m: set(v) for m, v in params.items()}
+
+    def is_hidden_field(self, model_field_name, req):
+        """Checks that a field is in the list of hidden list
+
+        :param model_field_name: The field name
+        :param req: The webob request
+        :return: True or False
+        """
+        try:
+            method = req.api_context.get_active_method()
+            return model_field_name in self._method_map[method]
+        except KeyError:
+            raise NotImplementedError("Unsupported RA method `%s`" % req)
+
+
 @six.add_metaclass(abc.ABCMeta)
 class AbstractResource(object):
 
@@ -185,10 +261,11 @@ class AbstractResource(object):
                          the resource. All model fields that match the names
                          from the passed keys in dictionary will be renamed to
                          values in passed dictionary.
-        :param hidden_fields: The list of field names to hide from the API
-                              user. The user will also not be able to set these
-                              fields using API. All fields starting with _ are
-                              already hidden from the user.
+        :param hidden_fields: The list of field names or instance of
+                              :class:`HiddenFieldMap` class to hide from the
+                              API user. The user will also not be able to set
+                              these fields using API. All fields starting with
+                              _ are already hidden from the user.
         :param convert_underscore: The boolean value. Should a resource
                                    convert _ to -
         :param process_filters: The boolean value. If the value is True then RA
@@ -203,7 +280,12 @@ class AbstractResource(object):
         super(AbstractResource, self).__init__()
         self._model_class = model_class
         self._name_map = name_map or {}
-        self._hidden_fields = hidden_fields or []
+        # NOTE(efrolov): to support the old resource interface
+        if not isinstance(hidden_fields, BaseHiddenFieldsMap):
+            hidden_fields = HiddenFieldsCompatibleClass(
+                hidden_fields=hidden_fields,
+            )
+        self._hidden_fields = hidden_fields
         self._convert_underscore = convert_underscore
         self._process_filters = process_filters
         self._model_subclasses = model_subclasses or []
@@ -215,8 +297,22 @@ class AbstractResource(object):
         return self._process_filters
 
     @abc.abstractmethod
-    def get_fields(self):
+    def get_fields(self, override_is_public_field_func=None):
         raise NotImplementedError()
+
+    def get_fields_by_request(self, req):
+        """Get fields
+
+        :param req: the webob request
+        :return: A dict of fields for specific method
+        """
+        def is_public_field(model_field_name):
+            return self.is_public_field_by_request(
+                req=req,
+                model_field_name=model_field_name,
+            )
+
+        return self.get_fields(override_is_public_field_func=is_public_field)
 
     @abc.abstractmethod
     def get_resource_id(self, model):
@@ -239,6 +335,19 @@ class AbstractResource(object):
         return not (model_field_name.startswith('_')
                     or model_field_name in self._hidden_model_fields)
 
+    def is_public_field_by_request(self, req, model_field_name):
+        return not (
+            model_field_name.startswith('_')
+            or self._hidden_fields.is_hidden_field(
+                model_field_name=model_field_name,
+                req=req,
+            )
+        )
+
+    def get_property_type(self, property_name):
+        model = self.get_model()
+        return model.properties.properties[property_name].get_property_type()
+
     def get_model(self):
         return self._model_class
 
@@ -255,7 +364,14 @@ class AbstractResource(object):
 
 class ResourceByRAModel(AbstractResource):
 
-    def get_fields(self):
+    def get_fields(self, override_is_public_field_func=None):
+        """Get resource fields
+
+        :return: The dict of resource fields.
+        """
+        is_public_field = (
+            override_is_public_field_func or self.is_public_field
+        )
         for name, prop in self._model_class.properties.items():
             if issubclass(prop, ra_properties.BaseProperty):
                 prop = ResourceRAProperty(
@@ -263,11 +379,13 @@ class ResourceByRAModel(AbstractResource):
                     prop_type=(self._model_class.properties.properties[name]
                                .get_property_type()),
                     model_property_name=name,
-                    public=self.is_public_field(name))
+                    public=is_public_field(name),
+                )
             elif issubclass(prop, ra_relationsips.BaseRelationship):
                 prop = ResourceRelationship(
                     self, model_property_name=name,
-                    public=self.is_public_field(name))
+                    public=is_public_field(name),
+                )
             else:
                 raise TypeError("Unknown property type %s" % type(prop))
             yield name, prop
@@ -296,7 +414,14 @@ class ResourceByRAModel(AbstractResource):
 
 class ResourceByModelWithCustomProps(ResourceByRAModel):
 
-    def get_fields(self):
+    def get_fields(self, override_is_public_field_func=None):
+        """Get resource fields
+
+        :return: The dict of resource fields.
+        """
+        is_public_field = (
+            override_is_public_field_func or self.is_public_field
+        )
         for name, prop in super(
                 ResourceByModelWithCustomProps, self).get_fields():
             yield name, prop
@@ -305,7 +430,21 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
                 resource=self,
                 prop_type=prop_type,
                 model_property_name=name,
-                public=self.is_public_field(name))
+                public=is_public_field(name),
+            )
+
+    def get_property_type(self, property_name):
+        try:
+            property_type = super(
+                ResourceByModelWithCustomProps,
+                self,
+            ).get_property_type(property_name=property_name)
+        except KeyError:
+            model = self.get_model()
+            property_type = model.get_custom_property_type(
+                property_name=property_name,
+            )
+        return property_type
 
     def get_resource_id(self, model):
         return str(model.get_id())
