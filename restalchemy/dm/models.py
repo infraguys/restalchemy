@@ -254,6 +254,10 @@ class CustomPropertiesMixin(object):
         for name, prop_type in six.iteritems(cls.__custom_properties__):
             yield name, prop_type
 
+    @classmethod
+    def get_custom_property_type(cls, property_name):
+        return cls.__custom_properties__[property_name]
+
     def _check_custom_property_value(self, name, value, static=False,
                                      should_be=None):
         prop_type = self.__custom_properties__[name]

@@ -29,7 +29,7 @@ class IpAddress(routes.Route):
 class PortRoute(routes.Route):
     __controller__ = controllers.PortController
     __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
-                         routes.DELETE]
+                         routes.UPDATE, routes.DELETE]
 
     ip_addresses = routes.route(IpAddress, resource_route=True)
 

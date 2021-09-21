@@ -45,7 +45,15 @@ class PortController(controllers.BaseNestedResourceController):
     Handle DELETE http://127.0.0.1:8000/v1/vms/<vm_uuid>/ports/<port_uuid>
     """
 
-    __resource__ = resources.ResourceByRAModel(models.Port)
+    __resource__ = resources.ResourceByModelWithCustomProps(
+        models.Port,
+        hidden_fields=resources.HiddenFieldMap(
+            create=['never_call', 'some_field1'],
+            filter=['never_call', 'some_field2'],
+            get=['never_call', 'some_field3'],
+            update=['never_call', 'some_field4'],
+        )
+    )
     __pr_name__ = "vm"
 
 

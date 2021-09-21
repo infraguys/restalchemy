@@ -1,6 +1,5 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
-# Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+#    Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+#    Copyright 2021 Eugene Frolov.
 #
 # All Rights Reserved.
 #
@@ -16,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from restalchemy.api import constants
 from restalchemy.common import exceptions as exc
 
 
@@ -25,6 +25,11 @@ class ActionHandler(object):
         self._get = get
         self._post = post
         self._put = put
+        self._method_actions_map = {
+            get: constants.ACTION_GET,
+            post: constants.ACTION_POST,
+            put: constants.ACTION_PUT,
+        }
 
     def get(self, fn):
         self._get = fn
@@ -40,8 +45,10 @@ class ActionHandler(object):
 
     def do(self, fn, controller, *args, **kwargs):
         if fn:
+            api_context = controller.request.api_context
+            api_context.set_active_method(self._method_actions_map[fn])
             result = fn(self=controller, *args, **kwargs)
-            return controller.process_result(result)
+            return controller.process_result(result=result)
         else:
             raise exc.NotImplementedError()
 

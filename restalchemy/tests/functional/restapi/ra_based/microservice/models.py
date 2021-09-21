@@ -29,10 +29,43 @@ class VM(models.ModelWithUUID):
     name = properties.property(types.String(max_length=255), required=True)
 
 
-class Port(models.ModelWithUUID):
+class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
+
+    __custom_properties__ = {
+        "never_call": types.String(),
+        "_hidden_field": types.String(),
+        "some_field1": types.String(),
+        "some_field2": types.String(),
+        "some_field3": types.String(),
+        "some_field4": types.String(),
+    }
 
     mac = properties.property(types.Mac(), default='00:00:00:00:00:00')
     vm = relationships.relationship(VM, required=True)
+
+    @property
+    def never_call(self):
+        raise NotImplementedError('Should be call never')
+
+    @property
+    def _hidden_field(self):
+        return "_hidden_field"
+
+    @property
+    def some_field1(self):
+        return "some_field1"
+
+    @property
+    def some_field2(self):
+        return "some_field2"
+
+    @property
+    def some_field3(self):
+        return "some_field3"
+
+    @property
+    def some_field4(self):
+        return "some_field4"
 
 
 class IpAddress(models.ModelWithUUID):

@@ -14,7 +14,10 @@
 #    under the License.
 
 import unittest
+import webob
 
+from restalchemy.api import constants
+from restalchemy.api import contexts
 from restalchemy.api import resources
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -27,6 +30,7 @@ class TestModel(models.ModelWithUUID):
     standard_field2 = properties.property(types.Integer())
     standard_field3 = properties.property(types.Integer())
     standard_field4 = properties.property(types.Integer())
+    standard_field5 = properties.property(types.Integer())
 
 
 # NOTE(efrolov): Interface tests
@@ -39,7 +43,8 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
     def test_hide_some_fields(self):
         resource = resources.ResourceByRAModel(
             TestModel,
-            hidden_fields=['standard_field1', 'standard_field4'],
+            hidden_fields=['standard_field1', 'standard_field4',
+                           'standard_field5'],
         )
 
         result = [name for name, prop in resource.get_fields()
@@ -51,7 +56,8 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
     def test_hide_renamed_fields(self):
         resource = resources.ResourceByRAModel(
             TestModel,
-            hidden_fields=['standard_field1', 'standard_field4'],
+            hidden_fields=['standard_field1', 'standard_field4',
+                           'standard_field5'],
             name_map={'standard_field1': 'new_standard_field1'},
         )
 
@@ -60,3 +66,105 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
 
         self.assertEqual(['standard_field2', 'standard_field3', 'uuid'],
                          sorted(result))
+
+
+class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase,
+              self).setUp()
+        self.target = resources.ResourceByRAModel(
+            TestModel,
+            hidden_fields=resources.HiddenFieldMap(
+                filter=['standard_field1', 'standard_field2', 'uuid'],
+                get=['standard_field1', 'standard_field3', 'uuid'],
+                create=['standard_field1', 'standard_field4', 'uuid'],
+                update=['standard_field1', 'standard_field5', 'uuid'],
+                delete=['standard_field2', 'standard_field3', 'uuid'],
+                action_get=['standard_field2', 'standard_field4', 'uuid'],
+                action_post=['standard_field2', 'standard_field5', 'uuid'],
+                action_put=['standard_field3', 'standard_field4', 'uuid'],
+            ),
+        )
+        self._request = webob.Request.blank('/some-uri')
+        self._request.api_context = contexts.RequestContext(self._request)
+
+    def tearDown(self):
+        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase,
+              self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._request
+
+    def _test_hide_some_fields_for_request(self, req, fields):
+
+        result = [
+            name
+            for name, prop in self.target.get_fields_by_request(req)
+            if prop.is_public()
+        ]
+
+        self.assertEqual(sorted(fields), sorted(result))
+
+    def test_hide_some_fields_for_filter_method(self):
+        self._request.api_context.set_active_method(constants.FILTER)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field3', 'standard_field4', 'standard_field5'],
+        )
+
+    def test_hide_some_fields_for_get_method(self):
+        self._request.api_context.set_active_method(constants.GET)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field2', 'standard_field4', 'standard_field5'],
+        )
+
+    def test_hide_some_fields_for_create_method(self):
+        self._request.api_context.set_active_method(constants.CREATE)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field2', 'standard_field3', 'standard_field5'],
+        )
+
+    def test_hide_some_fields_for_update_method(self):
+        self._request.api_context.set_active_method(constants.UPDATE)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field2', 'standard_field3', 'standard_field4'],
+        )
+
+    def test_hide_some_fields_for_delete_method(self):
+        self._request.api_context.set_active_method(constants.DELETE)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field1', 'standard_field4', 'standard_field5'],
+        )
+
+    def test_hide_some_fields_for_action_get_method(self):
+        self._request.api_context.set_active_method(constants.ACTION_GET)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field1', 'standard_field3', 'standard_field5'],
+        )
+
+    def test_hide_some_fields_for_action_post_method(self):
+        self._request.api_context.set_active_method(constants.ACTION_POST)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field1', 'standard_field3', 'standard_field4'],
+        )
+
+    def test_hide_some_fields_for_action_put_method(self):
+        self._request.api_context.set_active_method(constants.ACTION_PUT)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field1', 'standard_field2', 'standard_field5'],
+        )

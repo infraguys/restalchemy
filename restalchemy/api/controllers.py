@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -21,6 +19,7 @@ import logging
 import six
 import webob
 
+from restalchemy.api import constants
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
@@ -36,6 +35,10 @@ class Controller(object):
     def __init__(self, request):
         super(Controller, self).__init__()
         self._req = request
+
+    @property
+    def request(self):
+        return self._req
 
     def get_packer(self, content_type, resource_type=None):
         packer = packers.get_packer(content_type)
@@ -120,18 +123,26 @@ class Controller(object):
     def do_collection(self, parent_resource=None):
         method = self._req.method
 
+        api_context = self._req.api_context
         if method == 'GET':
+            api_context.set_active_method(constants.FILTER)
             filters = self._prepare_filters(params=self._req.params)
             kwargs = self._make_kwargs(parent_resource, filters=filters)
-            return self.process_result(self.filter(**kwargs))
+            return self.process_result(result=self.filter(**kwargs))
         elif method == 'POST':
+            api_context.set_active_method(constants.CREATE)
             content_type = packers.get_content_type(self._req.headers)
             packer = self.get_packer(content_type)
-            kwargs = self._make_kwargs(parent_resource,
-                                       **packer.unpack(self._req.body))
+            kwargs = self._make_kwargs(
+                parent_resource,
+                **packer.unpack(value=self._req.body)
+            )
 
-            return self.process_result(self.create(**kwargs), 201,
-                                       add_location=True)
+            return self.process_result(
+                result=self.create(**kwargs),
+                status_code=201,
+                add_location=True,
+            )
         else:
             raise exc.UnsupportedHttpMethod(method=method)
 
@@ -149,16 +160,28 @@ class Controller(object):
         parsed_id = (self.get_resource().get_id_type().from_unicode(uuid)
                      if self.__resource__ else uuid)
 
+        api_context = self._req.api_context
+
         if method == 'GET':
-            return self.process_result(self.get(uuid=parsed_id, **kwargs))
+            api_context.set_active_method(constants.GET)
+            return self.process_result(
+                result=self.get(uuid=parsed_id, **kwargs),
+            )
         elif method == 'PUT':
+            api_context.set_active_method(constants.UPDATE)
             content_type = packers.get_content_type(self._req.headers)
             packer = self.get_packer(content_type)
-            kwargs.update(packer.unpack(self._req.body))
-            return self.process_result(self.update(uuid=parsed_id, **kwargs))
+            kwargs.update(packer.unpack(value=self._req.body))
+            return self.process_result(
+                result=self.update(uuid=parsed_id, **kwargs),
+            )
         elif method == 'DELETE':
+            api_context.set_active_method(constants.DELETE)
             result = self.delete(uuid=parsed_id, **kwargs)
-            return self.process_result(result, 200 if result else 204)
+            return self.process_result(
+                result=result,
+                status_code=200 if result else 204,
+            )
         else:
             raise exc.UnsupportedHttpMethod(method=method)
 
