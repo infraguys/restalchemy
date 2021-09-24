@@ -207,9 +207,10 @@ class SessionNotFound(Exception):
 
 class SessionThreadStorage(object):
 
+    _storage = threading.local()
+
     def __init__(self):
         super(SessionThreadStorage, self).__init__()
-        self._storage = threading.local()
 
     def get_session(self):
         thread_session = getattr(self._storage, 'session', None)

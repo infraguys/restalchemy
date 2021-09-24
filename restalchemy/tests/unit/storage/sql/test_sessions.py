@@ -31,6 +31,7 @@ class TestLocalThreadStorage(base.BaseTestCase):
 
     def tearDown(self):
         super(TestLocalThreadStorage, self).tearDown()
+        self._storage.remove_session()
         del self._storage
 
     def test_store_session(self):
@@ -48,6 +49,17 @@ class TestLocalThreadStorage(base.BaseTestCase):
             self.assertRaises(sessions.SessionConflict,
                               self._storage.store_session,
                               session)
+
+    def test_store_session_conflict_exception_with_two_instance(self):
+        instance_one = sessions.SessionThreadStorage()
+        instance_two = sessions.SessionThreadStorage()
+        session1 = mock.Mock()
+        session2 = mock.Mock()
+
+        instance_one.store_session(session1)
+
+        with self.assertRaises(sessions.SessionConflict):
+            instance_two.store_session(session2)
 
     def test_get_session_not_found_exception(self):
 

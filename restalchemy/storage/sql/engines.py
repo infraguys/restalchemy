@@ -29,6 +29,9 @@ from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql import sessions
 
 
+DEFAULT_NAME = 'default'
+
+
 @six.add_metaclass(abc.ABCMeta)
 class AbstractEngine(object):
 
@@ -146,19 +149,20 @@ class EngineFactory(singletons.InheritSingleton):
 
     def __init__(self):
         super(EngineFactory, self).__init__()
-        self._engine = None
+        self._engines = {}
         self._engines_map = {
             MySQLEngine.URL_SCHEMA: MySQLEngine
         }
 
-    def configure_factory(self, db_url, config=None, query_cache=False):
+    def configure_factory(self, db_url, config=None, query_cache=False,
+                          name=DEFAULT_NAME):
         """Configure_factory
 
         @property db_url: str. For example driver://user:passwd@host:port/db
         """
         schema = db_url.split(':')[0]
         try:
-            self._engine = self._engines_map[schema.lower()](
+            self._engines[name] = self._engines_map[schema.lower()](
                 db_url=db_url,
                 config=config,
                 query_cache=query_cache
@@ -166,14 +170,21 @@ class EngineFactory(singletons.InheritSingleton):
         except KeyError:
             raise ValueError("Can not find driver for schema %s" % schema)
 
-    def get_engine(self):
-        if self._engine:
-            return self._engine
-        raise ValueError("Can not return engine. Please configure "
-                         "EngineFactory")
+    def get_engine(self, name=DEFAULT_NAME):
+        engine = self._engines.get(name, None)
+        if engine:
+            return engine
+        raise ValueError(("Can not return %s engine. Please configure"
+                         " EngineFactory") % name)
 
-    def destroy_engine(self):
-        self._engine = None
+    def destroy_engine(self, name=DEFAULT_NAME):
+        try:
+            del self._engines[name]
+        except KeyError:
+            pass
+
+    def destroy_all_engines(self):
+        self._engines = {}
 
 
 class DBConnectionUrl(object):
