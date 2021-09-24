@@ -21,22 +21,27 @@ import logging
 
 from restalchemy.storage.sql import engines
 
+
 LOG = logging.getLogger(__name__)
 
 
 class Context(object):
 
-    def __init__(self):
+    def __init__(self, engine_name=engines.DEFAULT_NAME):
         super(Context, self).__init__()
+        self._engine_name = engine_name
 
-    @staticmethod
-    def start_new_session():
-        engine = engines.engine_factory.get_engine()
+    def start_new_session(self):
+        engine = self._engine
         storage = engine.get_session_storage()
         session = engine.get_session()
         storage.store_session(session)
         LOG.debug("New session %r has been started", session)
         return session
+
+    @property
+    def _engine(self):
+        return engines.engine_factory.get_engine(name=self._engine_name)
 
     @contextlib.contextmanager
     def session_manager(self):
@@ -53,9 +58,8 @@ class Context(object):
         finally:
             self.session_close()
 
-    @staticmethod
-    def _get_storage():
-        engine = engines.engine_factory.get_engine()
+    def _get_storage(self):
+        engine = self._engine
         return engine.get_session_storage()
 
     def get_session(self):
