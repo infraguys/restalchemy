@@ -261,7 +261,7 @@ class Route(BaseRoute):
             action_name = self._req.path_info_peek()
             action = self.get_action(action_name)
             worker = action(self._req)
-            return worker.do(resource=resource, **self._req.params)
+            return worker.do(resource=resource, **self._req.api_context.params)
 
         elif (name != '' and path is not None):
             # Intermediate resource route

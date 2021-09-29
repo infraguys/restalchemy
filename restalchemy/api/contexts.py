@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from webob import multidict
+
 from restalchemy.common import exceptions
 
 
@@ -24,6 +26,7 @@ class RequestContext(object):
 
     def __init__(self, request):
         super(RequestContext, self).__init__()
+        self._req = request
         self._fields_to_show = request.params.getall('fields')
         self._method = None
 
@@ -34,3 +37,16 @@ class RequestContext(object):
         if self._method:
             return self._method
         raise CanNotGetActiveMethod()
+
+    @property
+    def params(self):
+        result_multi_dict_items = [
+            (name, value) for name, value in self._req.params.items()
+            if name != 'fields'
+        ]
+        return multidict.MultiDict(result_multi_dict_items)
+
+    def can_be_shown_field(self, resource_field_name):
+        if self._fields_to_show:
+            return resource_field_name in self._fields_to_show
+        return True
