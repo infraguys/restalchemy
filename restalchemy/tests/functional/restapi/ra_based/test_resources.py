@@ -219,6 +219,42 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
 
+    def test_get_collection_vms_with_field_definition_successful(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID1),
+        }, {
+            "uuid": str(RESOURCE_ID2),
+        }]
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT + "?fields=uuid"))
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(vm_response_body, response.json())
+
+    def test_get_collection_vms_with_fields_definition_successful(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID1),
+            "name": "test1",
+        }, {
+            "uuid": str(RESOURCE_ID2),
+            "name": "test2",
+        }]
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT + "?fields=uuid&fields=name"))
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(vm_response_body, response.json())
+
     def test_get_collection_vms_with_filter_by_uuid(self):
         RESOURCE_ID1 = UUID1
         RESOURCE_ID2 = UUID2
@@ -237,6 +273,29 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
+
+    def test_get_collection_vms_with_fields_definition_and_filter_by_uuid(
+            self,
+    ):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        RESOURCE_ID3 = UUID3
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="off")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID2),
+            "state": "on"
+        }]
+
+        response = requests.get(self.get_endpoint(
+            "%s?fields=uuid&uuid=%s&fields=state" % (
+                TEMPL_VMS_COLLECTION_ENDPOINT, str(RESOURCE_ID2)
+            )
+        ))
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(vm_response_body, response.json())
 
     def test_get_collection_vms_with_filter_by_two_uuid(self):
         RESOURCE_ID1 = UUID1
@@ -365,6 +424,30 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                               PORT_RESOURCE_ID))
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(port_response_body, response.json())
+
+    def test_get_nested_resource_with_fields_definition_successful(self):
+        VM_RESOURCE_ID = UUID1
+        PORT_RESOURCE_ID = UUID3
+        port = models.Port(uuid=PORT_RESOURCE_ID,
+                           mac="00:00:00:00:00:03",
+                           vm=self.vm1)
+        port.save()
+        port_response_body = {
+            "uuid": str(PORT_RESOURCE_ID),
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path,
+            "some-field2": "some_field2",
+        }
+
+        response = requests.get(
+            self.get_endpoint(
+                TEMPL_PORT_RESOURCE_ENDPOINT, VM_RESOURCE_ID, PORT_RESOURCE_ID
+            ) + '?fields=uuid&fields=vm&fields=some-field2'
+        )
+
+        self.assertEqual(200, response.status_code)
         self.assertEqual(port_response_body, response.json())
 
     def test_get_ports_collection_successful(self):

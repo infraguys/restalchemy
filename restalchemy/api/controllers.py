@@ -133,7 +133,9 @@ class Controller(object):
         api_context = self._req.api_context
         if method == 'GET':
             api_context.set_active_method(constants.FILTER)
-            filters = self._prepare_filters(params=self._req.params)
+            filters = self._prepare_filters(
+                params=self._req.api_context.params,
+            )
             kwargs = self._make_kwargs(parent_resource, filters=filters)
             return self.process_result(result=self.filter(**kwargs))
         elif method == 'POST':

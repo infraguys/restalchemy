@@ -310,6 +310,10 @@ class AbstractResource(object):
             return self.is_public_field_by_request(
                 req=req,
                 model_field_name=model_field_name,
+            ) and req.api_context.can_be_shown_field(
+                self.get_resource_field_name(
+                    model_field_name=model_field_name,
+                )
             )
 
         return self.get_fields(override_is_public_field_func=is_public_field)
