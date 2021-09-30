@@ -21,6 +21,8 @@ import collections
 
 import six
 
+from restalchemy.common import exceptions as ra_exc
+
 
 class ReadOnlyDictProxy(collections.Mapping):
     """A hashable, immutable dict proxy.
@@ -83,3 +85,13 @@ def lastslash(url):
         return url + '/'
     else:
         return url
+
+
+def raise_parse_error_on_fail(func):
+    def wrapper(obj, name, value, *args, **kwargs):
+        try:
+            return func(obj, name, value, *args, **kwargs)
+        except Exception:
+            value = "%s=%s" % (name, value)
+            raise ra_exc.ParseError(value=value)
+    return wrapper

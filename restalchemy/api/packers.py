@@ -22,6 +22,8 @@ import types
 
 import six
 
+from restalchemy.common import utils
+
 
 DEFAULT_CONTENT_TYPE = 'application/json'
 DEFAULT_VALUE = object()
@@ -62,6 +64,10 @@ class BaseResourcePacker(object):
         else:
             return self.pack_resource(obj)
 
+    @utils.raise_parse_error_on_fail
+    def _parse_value(self, name, value, prop):
+        return prop.parse_value(self._req, value)
+
     def unpack(self, value):
         value = copy.deepcopy(value)
         result = {}
@@ -71,7 +77,7 @@ class BaseResourcePacker(object):
             if prop_value is not DEFAULT_VALUE:
                 if not prop.is_public():
                     raise ValueError("Property %s is private" % api_name)
-                result[name] = prop.parse_value(self._req, prop_value)
+                result[name] = self._parse_value(api_name, prop_value, prop)
 
         if len(value) > 0:
             raise TypeError("%s is not compatible with %s" % (value, self._rt))

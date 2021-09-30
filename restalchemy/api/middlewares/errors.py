@@ -22,8 +22,8 @@ import logging
 from six.moves import http_client
 
 from restalchemy.api import middlewares
+from restalchemy.common import exceptions as comm_exc
 from restalchemy.storage import exceptions as ra_exceptions
-
 
 UNKNOWN_ERROR_CODE = 10000001
 
@@ -53,6 +53,10 @@ class ErrorsHandlerMiddleware(middlewares.Middleware):
         except ra_exceptions.ConflictRecords as e:
             return req.ResponseClass(status=http_client.CONFLICT,
                                      json=exception2dict(e))
+        except comm_exc.RestAlchemyException as e:
+            return req.ResponseClass(status=e.code,
+                                     json=exception2dict(e))
+
         except Exception as e:
             LOG.exception("Unknown error has occurred.")
             return req.ResponseClass(status=http_client.INTERNAL_SERVER_ERROR,

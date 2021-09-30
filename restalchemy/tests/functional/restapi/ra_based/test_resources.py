@@ -33,7 +33,6 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
 from restalchemy.tests.functional.restapi.ra_based.microservice import service
 
-
 TEMPL_SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:%s/")
 TEMPL_ROOT_COLLECTION_ENDPOINT = TEMPL_SERVICE_ENDPOINT
 TEMPL_V1_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
@@ -41,6 +40,8 @@ TEMPL_V1_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
 TEMPL_VMS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
     TEMPL_V1_COLLECTION_ENDPOINT, 'vms'))
 TEMPL_VM_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_VMS_COLLECTION_ENDPOINT, '%s')
+TEMPL_VMS_COLLECTION_ENDPOINT_WITH_FILTER = parse.urljoin(
+    TEMPL_VMS_COLLECTION_ENDPOINT, '?%s=%s')
 TEMPL_POWERON_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT),
     'actions/poweron/invoke')
@@ -54,6 +55,8 @@ UUID2 = pyuuid.UUID('00000000-0000-0000-0000-000000000002')
 UUID3 = pyuuid.UUID('00000000-0000-0000-0000-000000000003')
 UUID4 = pyuuid.UUID('00000000-0000-0000-0000-000000000004')
 UUID5 = pyuuid.UUID('00000000-0000-0000-0000-000000000005')
+
+BAD_UUID = 'bad_uuid'
 
 
 class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
@@ -424,6 +427,51 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
         self.assertRaises(exceptions.RecordNotFound,
                           models.Port.objects.get_one,
                           filters={'uuid': PORT_RESOURCE_ID})
+
+
+class TestResourceExceptions(BaseResourceTestCase):
+    def _insert_vm_to_db(self, uuid, name, state):
+        vm = models.VM(uuid=uuid, name=name, state=state)
+        vm.save()
+
+    def test_create_parse_error_exception(self):
+        vm_request_body = {
+            "uuid": BAD_UUID,
+            "name": "test"
+        }
+
+        response = requests.post(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT), json=vm_request_body)
+
+        message = response.json()["message"]
+        self.assertEqual(response.status_code, 400)
+        expected_message = "Can't parse value: %s=%s" % ("uuid", BAD_UUID)
+        self.assertEqual(message, expected_message)
+
+    def test_filter_parse_error_exception(self):
+        self._insert_vm_to_db(uuid=UUID1, name="test", state="off")
+
+        end_point = self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT_WITH_FILTER,
+            "uuid", BAD_UUID)
+
+        response = requests.get(end_point)
+
+        message = response.json()["message"]
+        self.assertEqual(response.status_code, 400)
+        expected_message = "Can't parse value: %s=%s" % ("uuid", BAD_UUID)
+        self.assertEqual(message, expected_message)
+
+    def test_resource_id_parse_error_exception(self):
+        end_point = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                      BAD_UUID)
+
+        response = requests.get(end_point)
+
+        message = response.json()["message"]
+        self.assertEqual(response.status_code, 400)
+        expected_message = "Can't parse value: %s=%s" % ("uuid", BAD_UUID)
+        self.assertEqual(message, expected_message)
 
 
 class TestNestedResourceForUnpackerTestCase(BaseResourceTestCase):
