@@ -21,6 +21,7 @@ from wsgiref.simple_server import make_server
 from wsgiref.simple_server import WSGIServer
 
 from restalchemy.api import applications
+from restalchemy.api.middlewares import errors as errors_middleware
 from restalchemy.storage.sql import engines
 from restalchemy.tests.functional import consts
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
@@ -34,8 +35,10 @@ class RESTService(threading.Thread):
         super(RESTService, self).__init__(name="REST Service")
         self._httpd = make_server(
             bind_host, bind_port,
-            middlewares.ContextMiddleware(
-                application=applications.Application(routes.Root)),
+            errors_middleware.ErrorsHandlerMiddleware(
+                middlewares.ContextMiddleware(
+                    application=applications.Application(routes.Root))
+            ),
             WSGIServer)
 
     def run(self):

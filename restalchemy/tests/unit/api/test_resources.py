@@ -24,7 +24,7 @@ from restalchemy.dm import properties
 from restalchemy.dm import types
 
 
-class TestModel(models.ModelWithUUID):
+class TestModel(models.CustomPropertiesMixin, models.ModelWithUUID):
     _private_field = properties.property(types.Integer())
     standard_field1 = properties.property(types.Integer())
     standard_field2 = properties.property(types.Integer())
@@ -168,3 +168,39 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
             req=self._request,
             fields=['standard_field1', 'standard_field2', 'standard_field5'],
         )
+
+    def test_get_fields_with_custom_is_public_field_func(self):
+        def always_true(name):
+            return True
+
+        result = self.target.get_fields(
+            override_is_public_field_func=always_true,
+        )
+
+        for name, prop in result:
+            self.assertTrue(prop.is_public())
+
+
+class ResourceByRAModelWithCustomPropsHiddenFieldsNewInterfacesTestCase(
+    ResourceByRAModelHiddenFieldsNewInterfacesTestCase
+):
+    def setUp(self):
+        self.target = resources.ResourceByModelWithCustomProps(
+            TestModel,
+            hidden_fields=resources.HiddenFieldMap(
+                filter=['standard_field1', 'standard_field2', 'uuid'],
+                get=['standard_field1', 'standard_field3', 'uuid'],
+                create=['standard_field1', 'standard_field4', 'uuid'],
+                update=['standard_field1', 'standard_field5', 'uuid'],
+                delete=['standard_field2', 'standard_field3', 'uuid'],
+                action_get=['standard_field2', 'standard_field4', 'uuid'],
+                action_post=['standard_field2', 'standard_field5', 'uuid'],
+                action_put=['standard_field3', 'standard_field4', 'uuid'],
+            ),
+        )
+        self._request = webob.Request.blank('/some-uri')
+        self._request.api_context = contexts.RequestContext(self._request)
+
+    def tearDown(self):
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._request

@@ -23,6 +23,7 @@ from restalchemy.api import constants
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
+from restalchemy.common import utils
 from restalchemy.dm import filters as dm_filters
 
 
@@ -35,6 +36,9 @@ class Controller(object):
     def __init__(self, request):
         super(Controller, self).__init__()
         self._req = request
+
+    def __repr__(self):
+        return self.__class__.__name__
 
     @property
     def request(self):
@@ -85,6 +89,10 @@ class Controller(object):
             kwargs['parent_resource'] = parent_resource
         return kwargs
 
+    @utils.raise_parse_error_on_fail
+    def _parse_field_value(self, name, value, resource_field):
+        return resource_field.parse_value_from_unicode(self._req, value)
+
     def _prepare_filter(self, param_name, value):
         resource_fields = {}
         if self.model is not None:
@@ -97,11 +105,10 @@ class Controller(object):
                              "resource %r" % (param_name,
                                               value,
                                               self.__resource__))
-        value = resource_fields[param_name].parse_value_from_unicode(
-            self._req, value)
-        param_name = resource_fields[param_name].name
+        resource_field = resource_fields[param_name]
+        value = self._parse_field_value(param_name, value, resource_field)
 
-        return param_name, value
+        return resource_field.name, value
 
     def _prepare_filters(self, params):
         if not (self.__resource__ and self.__resource__.is_process_filters()):
@@ -153,12 +160,17 @@ class Controller(object):
             return result[0]
         return result
 
+    @utils.raise_parse_error_on_fail
+    def _parse_resource_uuid(self, name, value, id_type):
+        return id_type.from_unicode(value)
+
     def do_resource(self, uuid, parent_resource=None):
         method = self._req.method
         kwargs = self._make_kwargs(parent_resource)
 
-        parsed_id = (self.get_resource().get_id_type().from_unicode(uuid)
-                     if self.__resource__ else uuid)
+        parsed_id = self._parse_resource_uuid(
+            "uuid", uuid, self.get_resource().get_id_type()
+        ) if self.__resource__ else uuid
 
         api_context = self._req.api_context
 

@@ -422,8 +422,12 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
         is_public_field = (
             override_is_public_field_func or self.is_public_field
         )
-        for name, prop in super(
-                ResourceByModelWithCustomProps, self).get_fields():
+
+        fields = super(ResourceByModelWithCustomProps, self).get_fields(
+            override_is_public_field_func=override_is_public_field_func,
+        )
+
+        for name, prop in fields:
             yield name, prop
         for name, prop_type in self._model_class.get_custom_properties():
             yield name, ResourceRAProperty(

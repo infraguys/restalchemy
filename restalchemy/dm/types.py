@@ -69,6 +69,9 @@ class BaseType(object):
     def from_unicode(self, value):
         pass
 
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 class BasePythonType(BaseType):
 

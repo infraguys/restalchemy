@@ -161,3 +161,8 @@ class RelationshipModelError(RestAlchemyException):
 class NotFoundOperationalStorageError(RestAlchemyException):
 
     message = "Can't get data for %(name)s key"
+
+
+class ParseError(RestAlchemyException):
+    message = "Can't parse value: %(value)s"
+    code = 400
