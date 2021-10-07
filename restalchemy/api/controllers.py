@@ -257,6 +257,8 @@ class BaseResourceController(Controller):
         return {}, filters
 
     def _process_custom_filters(self, result, filters):
+        if not filters:
+            return result
         for item in result[:]:
             for field_name, filter_value in filters.items():
                 if not result:
