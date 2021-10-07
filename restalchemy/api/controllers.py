@@ -256,13 +256,9 @@ class BaseResourceController(Controller):
 
         return {}, filters
 
-    def filter(self, filters):
-        custom_filters, storage_filters = self._split_filters(filters)
-
-        result = self.model.objects.get_all(filters=storage_filters)
-
+    def _process_custom_filters(self, result, filters):
         for item in result[:]:
-            for field_name, filter_value in custom_filters.items():
+            for field_name, filter_value in filters.items():
                 if not result:
                     break
                 elif item not in result:
@@ -279,6 +275,16 @@ class BaseResourceController(Controller):
                     raise ValueError("Unknown filter %s<%s>" % (field_name,
                                                                 filter_value))
         return result
+
+    def _process_storage_filters(self, filters):
+        return self.model.objects.get_all(filters=filters)
+
+    def filter(self, filters):
+        custom_filters, storage_filters = self._split_filters(filters)
+
+        result = self._process_storage_filters(storage_filters)
+
+        return self._process_custom_filters(result, custom_filters)
 
     def delete(self, uuid):
         self.get(uuid=uuid).delete()
