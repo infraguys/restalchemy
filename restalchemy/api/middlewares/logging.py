@@ -31,16 +31,20 @@ LOG = logging.getLogger(__name__)
 class LoggingMiddleware(middlewares.Middleware):
     """API logging middleware."""
 
+    SENSITIVE_HEADERS = {
+        'AUTHORIZATION',
+    }
+
     def __init__(self, application, logger_name=__name__):
         super(LoggingMiddleware, self).__init__(application)
         self.logger = logging.getLogger(logger_name)
 
     def process_request(self, req):
         req_chunk = self._request_chunk(req)
-        headers = dict(req.headers)
+        sanitized_headers = self._sanitize_headers(req.headers)
         self.logger.debug('API > %s headers=%s body=%r',
                           req_chunk,
-                          self._headers_chunk(headers),
+                          self._headers_chunk(sanitized_headers),
                           req.body)
         try:
             res = req.get_response(self.application)
@@ -72,3 +76,11 @@ class LoggingMiddleware(middlewares.Middleware):
     @staticmethod
     def _headers_chunk(headers):
         return ['%s: %s' % (h, headers[h]) for h in headers]
+
+    def _sanitize_headers(self, headers):
+        def _sanitized(header, header_value):
+            if str(header).upper() in self.SENSITIVE_HEADERS:
+                return '***'
+            return header_value
+
+        return {k: _sanitized(k, v) for k, v in headers.items()}
