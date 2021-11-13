@@ -25,12 +25,14 @@ from restalchemy.common import log as ra_log
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import migrations
 
-
 cmd_opts = [
-    cfg.StrOpt("migration", short="m", required=True,
-               help="migrate to"),
+    cfg.StrOpt("migration", default="HEAD", short="m", required=False,
+               help="migrate to given migration."
+               "If migration is not specified, HEAD migration will be used"),
     cfg.StrOpt('path', required=True, short="p",
-               help="Path to migrations folder")
+               help="Path to migrations folder"),
+    cfg.BoolOpt('dry-run', default=False,
+                help="Dry run upgrade for migration w/o any real changes.")
 ]
 
 cmd_db_opts = [
@@ -48,4 +50,15 @@ def main():
     ra_log.configure()
     engines.engine_factory.configure_factory(db_url=CONF.db.connection)
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
-    engine.apply_migration(migration_name=CONF.migration)
+
+    migration = (
+        engine.get_latest_migration()
+        if CONF.migration.upper() == 'HEAD'
+        else CONF.migration
+    )
+    engine.apply_migration(migration_name=migration,
+                           dry_run=CONF.dry_run)
+
+
+if __name__ == "__main__":
+    main()

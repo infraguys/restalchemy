@@ -183,6 +183,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
         obj._saved = True
         return obj
 
+    @base.dead_lock_catcher
     @base.error_catcher
     def insert(self, session=None):
         # TODO(efrolov): Add filters parameters.
@@ -200,6 +201,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
         # TODO(efrolov): Add filters parameters.
         self.update(session) if self._saved else self.insert(session)
 
+    @base.dead_lock_catcher
     @base.error_catcher
     def update(self, session=None, force=False):
         # TODO(efrolov): Add filters parameters.
@@ -223,6 +225,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                     raise exceptions.MultipleUpdatesDetected(model=self,
                                                              filters={})
 
+    @base.dead_lock_catcher
     @base.error_catcher
     def delete(self, session=None):
         # TODO(efrolov): Add filters parameters.
@@ -245,6 +248,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                          "type" % value)
 
     @classmethod
+    @base.dead_lock_catcher
     def from_simple_type(cls, value):
         if value is None:
             return None

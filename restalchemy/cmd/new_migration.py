@@ -28,9 +28,13 @@ from restalchemy.storage.sql import migrations
 cmd_opts = [
     cfg.StrOpt("message", default="", short="m", help="message to migration"),
     cfg.MultiOpt("depend", item_type=str, short="d", required=False,
-                 help="dependens from"),
+                 help="depends from"),
     cfg.StrOpt('path', required=True, short="p",
-               help="Path to migrations folder")
+               help="Path to migrations folder"),
+    cfg.BoolOpt('dry-run', default=False,
+                help="Dry run migration create w/o any changes."),
+    cfg.BoolOpt('manual', default=False,
+                help="Is migration manual")
 ]
 
 CONF = cfg.CONF
@@ -41,4 +45,15 @@ def main():
     config.parse(sys.argv[1:])
     ra_log.configure()
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
-    engine.new_migration(depends=CONF.depend or [], message=CONF.message)
+
+    depends = CONF.depend or []
+
+    if (CONF.manual is False
+            and not engine.validate_auto_migration_dependencies(depends)):
+        sys.exit(1)
+
+    engine.new_migration(depends=depends,
+                         message=CONF.message,
+                         dry_run=CONF.dry_run,
+                         is_manual=CONF.manual
+                         )
