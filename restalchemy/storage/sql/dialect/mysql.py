@@ -89,6 +89,10 @@ class AbstractDialectCommand(base.AbstractDialectCommand):
         try:
             return MySQLProcessResult(
                 super(AbstractDialectCommand, self).execute(session))
+        except errors.OperationalError as e:
+            if e.errno == 1213:
+                raise exc.DeadLock(code=e.sqlstate, message=e.msg)
+            raise
         except errors.IntegrityError as e:
             if e.errno == 1062:
                 raise exc.Conflict(code=e.sqlstate, message=e.msg)

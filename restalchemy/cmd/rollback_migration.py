@@ -30,7 +30,9 @@ cmd_opts = [
     cfg.StrOpt("migration", short="m", required=True,
                help="migrate to"),
     cfg.StrOpt('path', required=True, short="p",
-               help="Path to migrations folder")
+               help="Path to migrations folder"),
+    cfg.BoolOpt('dry-run', default=False,
+                help="Dry run downgrade migration w/o any real changes.")
 ]
 
 cmd_db_opts = [
@@ -48,4 +50,5 @@ def main():
     ra_log.configure()
     engines.engine_factory.configure_factory(db_url=CONF.db.connection)
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
-    engine.rollback_migration(migration_name=CONF.migration)
+    engine.rollback_migration(migration_name=CONF.migration,
+                              dry_run=CONF.dry_run)

@@ -112,6 +112,10 @@ class InsertCase(unittest.TestCase):
 
     def tearDown(self):
         del self.target_model
+        # Note(efrolov): Must be deleted otherwise we will start collect
+        #                connections and get an error "too many connections"
+        #                from MySQL
+        engines.engine_factory.destroy_engine()
 
     @mock.patch('restalchemy.storage.sql.sessions.MySQLSession')
     def test_insert_new_model_session_is_none(self, session_mock):
@@ -201,6 +205,10 @@ class UpdateTestCase(unittest.TestCase):
     def tearDown(self):
         super(UpdateTestCase, self).tearDown()
         self.session.execute("DROP TABLE IF EXISTS test_update;", None)
+        # Note(efrolov): Must be deleted otherwise we will start collect
+        #                connections and get an error "too many connections"
+        #                from MySQL
+        engines.engine_factory.destroy_engine()
 
     def test_update_not_changed_model(self):
         test_model = TestUpdateModel(field1=FAKE_STR1, field2=FAKE_STR2)

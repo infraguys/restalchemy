@@ -1,7 +1,5 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
-# Copyright 2018 Eugene Frolov
-#
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -16,21 +14,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from restalchemy.storage.sql import migrations
 
-class BaseException(Exception):
 
-    def __init__(self, code, message):
-        super(BaseException, self).__init__(message)
-        self._code = code
+class MigrationStep(migrations.AbstarctMigrationStep):
+
+    def __init__(self):
+        self._depends = ["a77d58fd-3b3c-49ca-8a36-cff8c8d80289"]
 
     @property
-    def code(self):
-        return self._code
+    def migration_id(self):
+        return "6ee4a887-91bf-4785-b9ad-e312c95c3b63"
+
+    @property
+    def is_manual(self):
+        return False
+
+    def upgrade(self, session):
+        pass
+
+    def downgrade(self, session):
+        pass
 
 
-class Conflict(BaseException):
-    pass
-
-
-class DeadLock(BaseException):
-    pass
+migration_step = MigrationStep()

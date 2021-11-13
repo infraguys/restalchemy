@@ -25,6 +25,7 @@ import six
 from restalchemy.common import exceptions as common_exc
 from restalchemy.common import utils
 from restalchemy.storage import exceptions
+from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 
 
 LOG = logging.getLogger(__name__)
@@ -106,6 +107,17 @@ def error_catcher(func):
         except Exception as e:
             LOG.exception("Some exception has been raised:")
             raise exceptions.UnknownStorageException(caused=e)
+
+    return wrapper
+
+
+def dead_lock_catcher(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except dialect_exc.DeadLock as e:
+            raise exceptions.DeadLock(msg=str(e))
 
     return wrapper
 

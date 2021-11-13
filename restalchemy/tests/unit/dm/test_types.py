@@ -571,11 +571,11 @@ class HostnameTestCase(base.BaseTestCase):
         self.test_instance = types.Hostname()
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate('ns1.mcs.mail.ru'))
-        self.assertTrue(self.test_instance.validate('ns1.55.mail.ru'))
-        self.assertTrue(self.test_instance.validate('n_s1.55.mail.ru'))
-        self.assertTrue(self.test_instance.validate('n-1.55.mail.ru'))
-        self.assertTrue(self.test_instance.validate('mail.ru'))
+        self.assertTrue(self.test_instance.validate('ns1.ra.restalchemy.com'))
+        self.assertTrue(self.test_instance.validate('ns1.55.restalchemy.com'))
+        self.assertTrue(self.test_instance.validate('n_s1.55.restalchemy.com'))
+        self.assertTrue(self.test_instance.validate('n-1.55.restalchemy.com'))
+        self.assertTrue(self.test_instance.validate('restalchemy.com'))
 
     def test_validate_cyrillic_correct_value(self):
         self.assertTrue(self.test_instance.validate(u'xx.москва.рф'))
@@ -583,8 +583,8 @@ class HostnameTestCase(base.BaseTestCase):
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate('x.y.z'))
-        self.assertFalse(self.test_instance.validate('mail.ru.'))
-        self.assertFalse(self.test_instance.validate('mail.ru.55'))
-        self.assertFalse(self.test_instance.validate('-1.55.mail.ru'))
-        self.assertFalse(self.test_instance.validate('_s1.55.mail.ru'))
-        self.assertFalse(self.test_instance.validate('.mail.ru'))
+        self.assertFalse(self.test_instance.validate('restalchemy.com.'))
+        self.assertFalse(self.test_instance.validate('restalchemy.com.55'))
+        self.assertFalse(self.test_instance.validate('-1.55.restalchemy.com'))
+        self.assertFalse(self.test_instance.validate('_s1.55.restalchemy.com'))
+        self.assertFalse(self.test_instance.validate('.restalchemy.com'))

@@ -13,6 +13,9 @@ Migration commands
 
 Create migrations:
 
+.. warning::
+    Auto migration should not depend on manual one.
+
 ::
 
   $ ra-new-migration --path examples/migrations/ --message "1st migration"
@@ -20,6 +23,11 @@ Create migrations:
   $ ra-new-migration --path examples/migrations/ --message "3st migration" --depend 2st
   $ ra-new-migration --path examples/migrations/ --message "4st migration"
   $ ra-new-migration --path examples/migrations/ --message "5st migration" --depend 3st --depend 4st
+
+.. note::
+    You can create MANUAL migrations using --manual parameter
+
+    $ ra-new-migration --path examples/migrations/ --message "manual migration" --manual
 
 
 Apply migrations:
@@ -33,6 +41,13 @@ Apply migrations:
   > upgrade 4st
   > upgrade 5st
 
+.. note::
+    if you want to apply the latest migration run ra-apply-migration without -m parameter
+
+    $ ra-apply-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test
+
+    if it is impossible to find the latests migration, the tool will crash with the error
+    "Head migration for current migrations couldnt be found"
 
 Rolled back migrations:
 

@@ -38,6 +38,12 @@ class HasManyRecords(exceptions.RestAlchemyException):
                "(%(filters)s).")
 
 
+class DeadLock(exceptions.RestAlchemyException):
+
+    message = ("Deadlock found when trying to get lock. "
+               "Original message: %(msg)s")
+
+
 class ConflictRecords(exceptions.RestAlchemyException):
     message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
 
