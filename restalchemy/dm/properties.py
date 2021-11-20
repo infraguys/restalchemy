@@ -122,7 +122,7 @@ class Property(BaseProperty):
 class IDProperty(Property):
 
     @classmethod
-    def is_id_property(self):
+    def is_id_property(cls):
         return True
 
 
@@ -251,7 +251,7 @@ class PropertyManager(PropertyMapping):
 
     @value.setter
     def value(self, values):
-        for k, v in values.iteritems():
+        for k, v in six.iteritems(values):
             self._properties[k].value = v
 
 
