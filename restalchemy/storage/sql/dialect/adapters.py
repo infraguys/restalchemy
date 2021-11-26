@@ -57,3 +57,15 @@ class MySQLConverter(conversion.MySQLConverter):
             tmp_str_buf = b'(%s)' % (b', '.join(tmp_list_buf))
             return bytearray(tmp_str_buf)
         return super(MySQLConverter, self).quote(buf)
+
+    _JSON_to_python = conversion.MySQLConverter._STRING_to_python
+
+    def _BLOB_to_python(self, value, dsc=None):  # pylint: disable=C0103
+        """Convert BLOB data type to Python."""
+        if dsc is not None:
+            if (
+                    dsc[7] & conversion.FieldFlag.BLOB
+                    and dsc[7] & conversion.FieldFlag.BINARY
+            ):
+                return bytes(value)
+        return self._STRING_to_python(value, dsc)
