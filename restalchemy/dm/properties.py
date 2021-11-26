@@ -56,7 +56,7 @@ class BaseProperty(AbstractProperty):
 class Property(BaseProperty):
 
     def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None):
+                 read_only=False, value=None, mutable=False):
         if not isinstance(property_type, types.BaseType):
             raise TypeError("Property type must be instance of %s" %
                             types.BaseType)
@@ -69,7 +69,9 @@ class Property(BaseProperty):
             self.set_value_force(default())
         else:
             self.set_value_force(default)
-        self.__first_value = self.value
+        self.__first_value = (
+            copy.deepcopy(self.value) if mutable else self.value
+        )
 
     def is_dirty(self):
         return not self.__first_value == self.value
