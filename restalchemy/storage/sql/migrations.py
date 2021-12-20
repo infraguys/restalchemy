@@ -23,14 +23,13 @@ import six
 import sys
 import uuid
 
+from restalchemy.common import contexts
 from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage import exceptions
-from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
-from restalchemy.storage.sql import sessions
 
 
 RA_MIGRATION_TABLE_NAME = "ra_migrations"
@@ -234,10 +233,8 @@ class MigrationEngine(object):
         }
 
     def apply_migration(self, migration_name, dry_run=False):
-        engine = engines.engine_factory.get_engine()
-
         filename = self.get_file_name(migration_name)
-        with sessions.session_manager(engine=engine) as session:
+        with contexts.Context().session_manager() as session:
             self._init_migration_table(session)
             migrations = self._load_migration_controllers(session)
 
@@ -251,9 +248,8 @@ class MigrationEngine(object):
                                            dry_run=dry_run)
 
     def rollback_migration(self, migration_name, dry_run=False):
-        engine = engines.engine_factory.get_engine()
         filename = self.get_file_name(migration_name)
-        with sessions.session_manager(engine=engine) as session:
+        with contexts.Context().session_manager() as session:
             self._init_migration_table(session)
             migrations = self._load_migration_controllers(session)
             migration = migrations[filename]
