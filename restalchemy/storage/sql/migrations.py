@@ -280,8 +280,8 @@ class MigrationEngine(object):
         if len(migrations) == 1:
             return migrations.popitem()[0]
 
-        raise HeadMigrationNotFoundException("Head migration for "
-              "current migrations couldnt be found")
+        raise HeadMigrationNotFoundException(
+            "Head migration for current migrations couldn't be found")
 
     def validate_auto_migration_dependencies(self, depends):
         depends = self._calculate_depends(depends)
