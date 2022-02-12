@@ -18,42 +18,57 @@
 import os
 import unittest
 
-from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import migrations
-from restalchemy.tests.functional import consts
-
+from restalchemy.tests.functional import db_utils
 
 INIT_MIGRATION = "9e335f-test-batch-migration"
 
 
-class BaseWithDbMigrationsTestCase(unittest.TestCase):
+class BaseFunctionalTestCase(unittest.TestCase):
+    """All other functional tests should inherit from it."""
+    pass
+
+
+class BaseDBEngineTestCase(db_utils.DBEngineMixin, BaseFunctionalTestCase):
+    """Base recommended class to inherit from for all db-related tests"""
+
+    @classmethod
+    def setUpClass(cls):
+        super(BaseDBEngineTestCase, cls).setUpClass()
+
+        cls.init_engine()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(BaseDBEngineTestCase, cls).tearDownClass()
+
+        cls.drop_all_tables()
+        cls.destroy_engine()
+
+
+class BaseWithDbMigrationsTestCase(BaseDBEngineTestCase):
 
     __LAST_MIGRATION__ = None
     __FIRST_MIGRATION__ = None
 
     def setUp(self):
-        # configure engine factory
-        engines.engine_factory.configure_factory(
-            db_url=consts.DATABASE_URI)
-        self._engine = engines.engine_factory.get_engine()
+        super(BaseWithDbMigrationsTestCase, self).setUp()
 
         # configure database structure, apply migrations
-        self._migrations = self._migration_engine()
+        self._migrations = self.get_migration_engine()
         self._migrations.rollback_migration(self.__FIRST_MIGRATION__)
         self._migrations.apply_migration(self.__LAST_MIGRATION__)
 
     def tearDown(self):
+        super(BaseWithDbMigrationsTestCase, self).tearDown()
+
         # destroy database structure, rollback migrations
-        self._migrations = self._migration_engine()
+        self._migrations = self.get_migration_engine()
         self._migrations.rollback_migration(self.__FIRST_MIGRATION__)
-        # Note(efrolov): Must be deleted otherwise we will start collect
-        #                connections and get an error "too many connections"
-        #                from MySQL
-        del self._engine
-        engines.engine_factory.destroy_engine()
 
     @staticmethod
-    def _migration_engine():
+    def get_migration_engine():
         migrations_path = os.path.dirname(__file__) + '/migrations/'
-        return migrations.MigrationEngine(
+        migration_engine = migrations.MigrationEngine(
             migrations_path=migrations_path)
+        return migration_engine

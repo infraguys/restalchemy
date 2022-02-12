@@ -14,11 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import unittest
-
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.tests.functional import base
 
 
 class TestModel(models.Model):
@@ -29,7 +28,7 @@ class TestModel(models.Model):
                                        mutable=True)
 
 
-class DirtyPropertiesTestCase(unittest.TestCase):
+class DirtyPropertiesTestCase(base.BaseFunctionalTestCase):
 
     def test_dirty_for_mutable_property_append_values(self):
         target = TestModel(mutable_dict={'test': 'test'})

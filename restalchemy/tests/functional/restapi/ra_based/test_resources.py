@@ -60,6 +60,7 @@ BAD_UUID = 'bad_uuid'
 
 
 class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
+
     __LAST_MIGRATION__ = "e31a12-0001-rest-service-tables-migration"
     __FIRST_MIGRATION__ = "e31a12-0001-rest-service-tables-migration"
 
@@ -68,6 +69,7 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
 
     def setUp(self):
         super(BaseResourceTestCase, self).setUp()
+
         self.service_port = random.choice(range(2000, 10000))
         url = parse.urlparse(self.get_endpoint(TEMPL_SERVICE_ENDPOINT))
         self._service = service.RESTService(bind_host=url.hostname,
@@ -76,6 +78,7 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
 
     def tearDown(self):
         super(BaseResourceTestCase, self).tearDown()
+
         self._service.stop()
 
 
@@ -323,12 +326,14 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
 
 class TestNestedResourceTestCase(BaseResourceTestCase):
+
     __LAST_MIGRATION__ = (
         "c17a60-0002-0-rest-service-data-for-test-nested-resource"
     )
 
     def setUp(self):
         super(TestNestedResourceTestCase, self).setUp()
+
         self.vm1 = models.VM.objects.get_one(filters={
             'uuid': filters.EQ(UUID1)
         })
@@ -512,7 +517,8 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                           filters={'uuid': PORT_RESOURCE_ID})
 
 
-class TestResourceExceptions(BaseResourceTestCase):
+class ResourceExceptionsTestCase(BaseResourceTestCase):
+
     def _insert_vm_to_db(self, uuid, name, state):
         vm = models.VM(uuid=uuid, name=name, state=state)
         vm.save()
@@ -558,9 +564,8 @@ class TestResourceExceptions(BaseResourceTestCase):
 
 
 class TestNestedResourceForUnpackerTestCase(BaseResourceTestCase):
-    __LAST_MIGRATION__ = (
-        "1a9112-0002-1-rest-service-data-for-test-unpacker"
-    )
+
+    __LAST_MIGRATION__ = "1a9112-0002-1-rest-service-data-for-test-unpacker"
 
     def test_get_resource_by_uri(self):
         uri = '/v1/vms/%s/ports/%s/ip_addresses/%s' % (

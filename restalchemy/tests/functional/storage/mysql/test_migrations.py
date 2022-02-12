@@ -17,17 +17,14 @@
 #    under the License.
 
 import logging
+import os
 
 import mock
-import os
-import unittest
-
 import six.moves
 
 from restalchemy.dm import filters
-from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import migrations as sql_migrations
-from restalchemy.tests.functional import consts
+from restalchemy.tests.functional import base
 
 INIT_MIGRATION = "0d06a9-0000-init"
 FIRST_MIGRATION = "fc0c16-0001-first"
@@ -46,48 +43,45 @@ MIGRATIONS_TOTAL_COUNT = len([
     THIRD_MIGRATION
 ])
 
+MIGRATIONS_FIXTURES_DIR_NAME = "migrations_fixtures"
 NONEXISTENT_MIGRATION = "nonexistent_migration"
 
 
-class BaseMigrationTestCase(unittest.TestCase):
+class BaseMigrationTestCase(base.BaseDBEngineTestCase):
 
     def setUp(self):
         super(BaseMigrationTestCase, self).setUp()
-        engines.engine_factory.configure_factory(consts.DATABASE_URI)
-        engine = engines.engine_factory.get_engine()
-        self.engine = engine
-        self.session = engine.get_session()
-        self.migration_engine = self._migration_engine()
+
+        self.session = self.engine.get_session()
+        self.migration_engine = self.get_migration_engine()
 
         self._drop_ra_migrations_table()
 
     def tearDown(self):
         super(BaseMigrationTestCase, self).tearDown()
+
         self._drop_ra_migrations_table()
         self.session.close()
-        # Note(efrolov): Must be deleted otherwise we will start collect
-        #                connections and get an error "too many connections"
-        #                from MySQL
-        del self.engine
-        engines.engine_factory.destroy_engine()
 
     @staticmethod
-    def _migration_engine(current_dir="migrations"):
+    def get_migration_engine(migrations_dir_name="migrations"):
         migrations_path = os.path.join(
             os.path.dirname(__file__),
-            current_dir
+            MIGRATIONS_FIXTURES_DIR_NAME,
+            migrations_dir_name
         )
-        return sql_migrations.MigrationEngine(
+        migration_engine = sql_migrations.MigrationEngine(
             migrations_path=migrations_path)
+        return migration_engine
 
     def _truncate_ra_migrations_table(self):
         # DDL with auto-commit
-        self.session.execute("TRUNCATE TABLE `%s`" %
-                             sql_migrations.RA_MIGRATION_TABLE_NAME, None)
+        self.truncate_table(sql_migrations.RA_MIGRATION_TABLE_NAME,
+                            session=self.session)
 
     def _drop_ra_migrations_table(self):
-        self.session.execute("DROP TABLE IF EXISTS `%s`" %
-                             sql_migrations.RA_MIGRATION_TABLE_NAME, None)
+        self.drop_table(sql_migrations.RA_MIGRATION_TABLE_NAME,
+                        session=self.session)
 
     def load_migrations(self):
         migrations = self.migration_engine._load_migration_controllers(
@@ -152,9 +146,9 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
                           ]
         self.migration_engine._init_migration_table(
             self.session)
-        filter = {'applied': filters.EQ(True)}
+        db_filter = {'applied': filters.EQ(True)}
         db_migrations = sql_migrations.MigrationModel.objects.get_all(
-            filters=filter)
+            filters=db_filter)
         self.assertEqual(0, len(db_migrations))
 
         latest_migration_name = self.migration_engine.get_latest_migration()
@@ -162,7 +156,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.migration_engine.apply_migration(
             migration_name=latest_migration_name)
         db_migrations = sql_migrations.MigrationModel.objects.get_all(
-            filters=filter)
+            filters=db_filter)
         self.assertEqual(4, len(db_migrations))
         self.assertTrue(str(migration.uuid) in expected_uuids
                         for migration in db_migrations)
@@ -175,8 +169,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         # 0002-second.py(MANUAL) <- 0003-third.py(MANUAL)
         # Expected last migration: 0001-first.py
         expected_last_migration = "a8a827-0001-first.py"
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_1")
+        custom_migration_engine = self.get_migration_engine("migration_ok_1")
 
         last_migration = custom_migration_engine.get_latest_migration()
 
@@ -189,8 +182,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         # 0000-init.py  0001-first.py(MANUAL)
         # Expected last migration: 0000-init.py
         expected_last_migration = "672a1b-0000-init.py"
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_3")
+        custom_migration_engine = self.get_migration_engine("migration_ok_3")
 
         last_migration = custom_migration_engine.get_latest_migration()
 
@@ -206,8 +198,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         #                ^-- 0007-seventh.py --^
         # Expected last migration: 0007-seventh.py
         expected_last_migration = "7368be-0007-seventh.py"
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_2")
+        custom_migration_engine = self.get_migration_engine("migration_ok_2")
 
         last_migration = custom_migration_engine.get_latest_migration()
 
@@ -219,7 +210,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         # migrations dependencies:
         # 0000-init.py <- 0001-first.py   0002-second.py
         # Expected: has two last migrations: 0001-first.py, 0002-second.py
-        custom_migration_engine = self._migration_engine(
+        custom_migration_engine = self.get_migration_engine(
             "migrations_invalid_two_last_migrations")
 
         with self.assertRaises(sql_migrations.HeadMigrationNotFoundException):
@@ -233,16 +224,14 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         #                      ^--  0002-second.py --> 0003-third.py(MANUAL)
         # Expected: 0002-second.py
         expected_last_migration = "c9221f-0002-second.py"
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_4")
+        custom_migration_engine = self.get_migration_engine("migration_ok_4")
 
         last_migration = custom_migration_engine.get_latest_migration()
 
         self.assertEqual(expected_last_migration, last_migration)
 
     def test_not_manual_migration_depends_from_manual(self):
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_1")
+        custom_migration_engine = self.get_migration_engine("migration_ok_1")
         new_migration_depends = ["11f1da-0003-third.py"]
         fmdm = custom_migration_engine.validate_auto_migration_dependencies
 
@@ -254,8 +243,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.assertFalse(result)
 
     def test_not_manual_migration_depends_from_not_manual(self):
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_1")
+        custom_migration_engine = self.get_migration_engine("migration_ok_1")
         new_migration_depends = ["a8a827-0001-first.py"]
         fmdm = custom_migration_engine.validate_auto_migration_dependencies
 
@@ -266,8 +254,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.assertTrue(result)
 
     def test_get_unapplied_migrations(self):
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_1")
+        custom_migration_engine = self.get_migration_engine("migration_ok_1")
         expected_result = ["1711de-0000-init.py",
                            "a8a827-0001-first.py"
                            ]
@@ -282,8 +269,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.assertListEqual(expected_result, result)
 
     def test_get_unapplied_mixed_migrations(self):
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_1")
+        custom_migration_engine = self.get_migration_engine("migration_ok_1")
         expected_result = ["a8a827-0001-first.py",
                            "377e90-0002-second.py",
                            "11f1da-0003-third.py"
@@ -302,8 +288,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.assertListEqual(expected_result, result)
 
     def test_no_unapplied_migrations(self):
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_1")
+        custom_migration_engine = self.get_migration_engine("migration_ok_1")
         head_migration = "a8a827-0001-first.py"
         custom_migration_engine.apply_migration(migration_name=head_migration)
         expected_result = []
@@ -316,8 +301,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.assertListEqual(expected_result, list(result.keys()))
 
     def test_get_unapplied_manual_migrations(self):
-        custom_migration_engine = self._migration_engine(
-            "migration_ok_1")
+        custom_migration_engine = self.get_migration_engine("migration_ok_1")
         head_migration = "a8a827-0001-first.py"
         custom_migration_engine.apply_migration(migration_name=head_migration)
         expected_result = ["377e90-0002-second.py",
@@ -444,9 +428,8 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
             for m in migrations_after.values()
         ]))
 
-    @mock.patch(
-        "%s.open" % six.moves.builtins.__name__,
-        new_callable=mock.mock_open())
+    @mock.patch("%s.open" % six.moves.builtins.__name__,
+                new_callable=mock.mock_open())
     def test_create_new_migration(self, file_mock):
 
         self.migration_engine.new_migration(NEW_MIGRATION_DEPENDS,
@@ -473,9 +456,8 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
             "%s.py" % NEW_MIGRATION
         ))
 
-    @mock.patch(
-        "%s.open" % six.moves.builtins.__name__,
-        new_callable=mock.mock_open())
+    @mock.patch("%s.open" % six.moves.builtins.__name__,
+                new_callable=mock.mock_open())
     def test_create_new_migration_dry_run(self, file_mock):
         self.migration_engine.new_migration(NEW_MIGRATION_DEPENDS,
                                             NEW_MIGRATION,

@@ -36,7 +36,7 @@ class WithDbMigrationsDeleteOnePkTestCase(base.BaseWithDbMigrationsTestCase):
         my_models = BatchDeleteModel.objects.get_all()
         target = [my_models.pop(0), my_models.pop(2)]
 
-        with self._engine.session_manager() as session:
+        with self.engine.session_manager() as session:
             session.batch_delete(my_models)
         result = BatchDeleteModel.objects.get_all()
 

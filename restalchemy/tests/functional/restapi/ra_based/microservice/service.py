@@ -33,6 +33,7 @@ class RESTService(threading.Thread):
 
     def __init__(self, bind_host="127.0.0.1", bind_port=8080):
         super(RESTService, self).__init__(name="REST Service")
+
         self._httpd = make_server(
             bind_host, bind_port,
             errors_middleware.ErrorsHandlerMiddleware(

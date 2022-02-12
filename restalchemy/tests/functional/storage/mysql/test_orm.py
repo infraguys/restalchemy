@@ -28,7 +28,8 @@ class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
     foo_field2 = properties.property(types.String(), default="foo_str")
 
 
-class TestOrderBy(base.BaseWithDbMigrationsTestCase):
+class TestOrderByTestCase(base.BaseWithDbMigrationsTestCase):
+
     __LAST_MIGRATION__ = "9e335f-test-batch-migration"
     __FIRST_MIGRATION__ = "9e335f-test-batch-migration"
 
@@ -36,7 +37,7 @@ class TestOrderBy(base.BaseWithDbMigrationsTestCase):
         model1 = FakeModel(foo_field1=1, foo_field2="Model1")
         model2 = FakeModel(foo_field1=2, foo_field2="Model2")
 
-        with self._engine.session_manager() as session:
+        with self.engine.session_manager() as session:
             session.batch_insert([model1, model2])
 
         all_models = set(FakeModel.objects.get_all())
@@ -47,7 +48,7 @@ class TestOrderBy(base.BaseWithDbMigrationsTestCase):
         model1 = FakeModel(foo_field1=1, foo_field2="Model1")
         model2 = FakeModel(foo_field1=2, foo_field2="Model2")
 
-        with self._engine.session_manager() as session:
+        with self.engine.session_manager() as session:
             session.batch_insert([model1, model2])
 
         all_models = FakeModel.objects.get_all(
@@ -59,7 +60,7 @@ class TestOrderBy(base.BaseWithDbMigrationsTestCase):
         model1 = FakeModel(foo_field1=1, foo_field2="Model1")
         model2 = FakeModel(foo_field1=2, foo_field2="Model2")
 
-        with self._engine.session_manager() as session:
+        with self.engine.session_manager() as session:
             session.batch_insert([model1, model2])
 
         all_models = FakeModel.objects.get_all(
