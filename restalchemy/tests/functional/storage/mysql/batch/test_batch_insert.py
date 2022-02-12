@@ -31,7 +31,8 @@ class BatchInsertModel(models.ModelWithUUID, orm.SQLStorableMixin):
     foo_field2 = properties.property(types.String(), default="foo_str")
 
 
-class InsertCase(base.BaseWithDbMigrationsTestCase):
+class InsertTestCase(base.BaseWithDbMigrationsTestCase):
+
     __LAST_MIGRATION__ = "9e335f-test-batch-migration"
     __FIRST_MIGRATION__ = "9e335f-test-batch-migration"
 
@@ -40,7 +41,7 @@ class InsertCase(base.BaseWithDbMigrationsTestCase):
         model2 = BatchInsertModel(foo_field1=2, foo_field2="Model2")
         model3 = BatchInsertModel(foo_field1=3, foo_field2="Model3")
 
-        with self._engine.session_manager() as session:
+        with self.engine.session_manager() as session:
             session.batch_insert([model1, model2, model3])
 
         all_models = set(BatchInsertModel.objects.get_all())
@@ -55,7 +56,7 @@ class InsertCase(base.BaseWithDbMigrationsTestCase):
         model3 = BatchInsertModel(uuid=dup_uuid, foo_field1=3,
                                   foo_field2="Model3")
 
-        with self._engine.session_manager() as session:
+        with self.engine.session_manager() as session:
             with self.assertRaises(exc.ConflictRecords):
                 try:
                     session.batch_insert([model1, model2, model3])
@@ -77,7 +78,7 @@ class InsertCase(base.BaseWithDbMigrationsTestCase):
         model2 = BatchInsertModel(foo_field1=dup_value, foo_field2="Model2")
         model3 = BatchInsertModel(foo_field1=dup_value, foo_field2="Model3")
 
-        with self._engine.session_manager() as session:
+        with self.engine.session_manager() as session:
             with self.assertRaises(exc.ConflictRecords):
                 try:
                     session.batch_insert([model1, model2, model3])

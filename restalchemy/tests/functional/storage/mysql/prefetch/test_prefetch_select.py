@@ -20,11 +20,13 @@ from restalchemy.tests.functional.storage.mysql.prefetch import models
 
 
 class PrefetchTestCase(base.BaseWithDbMigrationsTestCase):
+
     __LAST_MIGRATION__ = "9727f3-prefetch-relationship-tests-data"
     __FIRST_MIGRATION__ = "f3841e-prefetch-relationship-tests"
 
     def setUp(self):
         super(PrefetchTestCase, self).setUp()
+
         models.OBJECT_COLLECTION_MOCK.reset_mock()
 
     def test_get_model_without_relationships(self):

@@ -17,7 +17,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import unittest
 import uuid
 
 import mock
@@ -30,6 +29,7 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
 from restalchemy.storage.sql import sessions
+from restalchemy.tests.functional import base
 from restalchemy.tests.functional import consts
 
 
@@ -98,10 +98,12 @@ def escape(list_of_fields):
     return ["`%s`" % field for field in list_of_fields]
 
 
-class InsertCase(unittest.TestCase):
+class InsertCaseTestCase(base.BaseFunctionalTestCase):
 
     @mock.patch('mysql.connector.pooling.MySQLConnectionPool')
     def setUp(self, mysql_pool_mock):
+        super(InsertCaseTestCase, self).setUp()
+
         # configure engine factory
         engines.engine_factory.configure_factory(
             db_url=URL_TO_DB)
@@ -111,6 +113,8 @@ class InsertCase(unittest.TestCase):
             test_parent_relationship=self.parent_model)
 
     def tearDown(self):
+        super(InsertCaseTestCase, self).tearDown()
+
         del self.target_model
         # Note(efrolov): Must be deleted otherwise we will start collect
         #                connections and get an error "too many connections"
@@ -188,10 +192,11 @@ class TestUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
     field2 = properties.property(types.String(), required=True)
 
 
-class UpdateTestCase(unittest.TestCase):
+class UpdateTestCase(base.BaseFunctionalTestCase):
 
     def setUp(self):
         super(UpdateTestCase, self).setUp()
+
         engines.engine_factory.configure_factory(consts.DATABASE_URI)
         engine = engines.engine_factory.get_engine()
         self.session = engine.get_session()
@@ -204,6 +209,7 @@ class UpdateTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(UpdateTestCase, self).tearDown()
+
         self.session.execute("DROP TABLE IF EXISTS test_update;", None)
         # Note(efrolov): Must be deleted otherwise we will start collect
         #                connections and get an error "too many connections"

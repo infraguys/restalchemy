@@ -16,15 +16,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
 import threading
 import unittest
 
+import six
+
 from restalchemy.dm import types
+from restalchemy.tests.functional import base
 
 
 @unittest.skipUnless(six.PY2, "Actual only for python2")
-class TestThreadImport(unittest.TestCase):
+class ThreadImportTestCase(base.BaseFunctionalTestCase):
+
     def test_strptime(self):
         exc_raised = [0]
 
