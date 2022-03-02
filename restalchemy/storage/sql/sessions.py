@@ -160,14 +160,18 @@ class MySQLSession(object):
                                 operation.get_values())
 
     def execute(self, statement, values=None):
-        self._log.debug("Execute statement %s with values %s",
-                        statement, values)
+        self._log.debug(("Execute statement %s"
+                         " with values %s"
+                         " within %s database"),
+                        statement, self._conn.database, values)
         self._cursor.execute(statement, values)
         return self._cursor
 
     def execute_many(self, statement, values):
-        self._log.debug("Execute batch statement %s with values %s",
-                        statement, values)
+        self._log.debug(("Execute batch statement %s"
+                         " with values %s"
+                         " within %s database"),
+                        statement, self._conn.database, values)
         self._cursor.executemany(statement, values)
         return self._cursor
 
