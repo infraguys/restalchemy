@@ -18,6 +18,7 @@
 
 import abc
 import contextlib
+import logging
 
 from mysql.connector import pooling
 import six
@@ -30,6 +31,7 @@ from restalchemy.storage.sql import sessions
 
 
 DEFAULT_NAME = 'default'
+LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -75,7 +77,17 @@ class MySQLEngine(AbstractEngine):
             'port': self.db_port,
             'converter_class': adapters.MySQLConverter
         })
-        self._pool = pooling.MySQLConnectionPool(**config)
+
+        try:
+            self._pool = pooling.MySQLConnectionPool(**config)
+        except AttributeError as e:
+            pool_name = e.args[0].split("'")[1]
+            new_name = str(hash(pool_name))
+            LOG.warning("Changing '%s' pool name to '%s'",
+                        pool_name, new_name)
+            config["pool_name"] = new_name
+            self._pool = pooling.MySQLConnectionPool(**config)
+
         self._dialect = mysql.MySQLDialect()
         self._session_storage = sessions.SessionThreadStorage()
         self._query_cache = query_cache
