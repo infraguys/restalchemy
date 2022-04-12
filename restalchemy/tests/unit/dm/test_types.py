@@ -58,13 +58,38 @@ class BaseRegExpTypeTestCase(base.BaseTestCase):
 
         self.assertFalse(test_instance.validate(None))
 
-    def test_incorect_value(self, re_mock):
+    def test_incorrect_value(self, re_mock):
         self._prepare_mock(re_mock, None)
 
         test_instance = types.BaseRegExpType("")
 
         self.assertFalse(test_instance.validate(TEST_STR_VALUE))
         self.re_match_mock.match.assert_called_once_with(TEST_STR_VALUE)
+
+
+class BaseCompiledRegExpTypeTestCase(base.BaseTestCase):
+
+    def test_correct_value_if_value_is_not_none(self):
+        test_instance = types.BaseCompiledRegExpType(re.compile(r"t"))
+
+        self.assertTrue(test_instance.validate(TEST_STR_VALUE))
+
+    def test_correct_value_if_value_is_none(self):
+        test_instance = types.BaseCompiledRegExpType(re.compile(r""))
+
+        self.assertFalse(test_instance.validate(None))
+
+    def test_incorrect_value(self):
+        test_instance = types.BaseCompiledRegExpType(re.compile(r"-"))
+
+        self.assertFalse(test_instance.validate(TEST_STR_VALUE))
+
+    def test_get_pattern_from_attribute(self):
+        class TestType(types.BaseCompiledRegExpTypeFromAttr):
+            pattern = re.compile(r"t")
+        test_instance = TestType()
+
+        self.assertTrue(test_instance.validate(TEST_STR_VALUE))
 
 
 class BaseTestCase(base.BaseTestCase):

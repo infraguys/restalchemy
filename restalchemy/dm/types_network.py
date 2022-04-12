@@ -75,20 +75,13 @@ class IpWithMask(types.BaseType):
         return self.from_simple_type(value)
 
 
-class OUI(types.BaseRegExpType):
-
-    def __init__(self):
-        super(OUI, self).__init__("^([0-9a-fA-F]{2,2}:){2,2}[0-9a-fA-F]{2,2}$")
+class OUI(types.BaseCompiledRegExpTypeFromAttr):
+    pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){2,2}[0-9a-fA-F]{2,2}$")
 
 
-class RecordName(types.BaseRegExpType):
-    NAME_RE_TEMPLATE = u'^([а-яА-ЯёЁa-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$'  # noqa
-
-    def __init__(self):
-        super(RecordName, self).__init__(self.NAME_RE_TEMPLATE)
-
-    def validate(self, value):
-        return super(RecordName, self).validate(value)
+class RecordName(types.BaseCompiledRegExpTypeFromAttr):
+    pattern = re.compile(
+        u"^([а-яА-ЯёЁa-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")  # noqa
 
     def from_simple_type(self, value):
         converted_value = super(RecordName, self).from_simple_type(value)
