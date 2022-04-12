@@ -413,6 +413,7 @@ class Mac(BaseCompiledRegExpTypeFromAttr):
 
 
 class Hostname(BaseCompiledRegExpTypeFromAttr):
+    '''DEPRECATED! Use types from types_network module'''
     pattern = re.compile(HOSTNAME_RE_TEMPLATE)
 
 

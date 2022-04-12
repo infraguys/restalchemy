@@ -65,3 +65,113 @@ class SrvNameTest(unittest.TestCase):
         self.assertFalse(self.srv_record.validate("sip._tcp.ra.ru"))
         self.assertFalse(self.srv_record.validate("_sip.tcp.ra.ru"))
         self.assertFalse(self.srv_record.validate("hcb.jyg"))
+
+
+class HostnameTest(unittest.TestCase):
+    def setUp(self):
+        self.fqdn = types_network.Hostname()
+
+    def test_validate(self):
+        data = [
+            'first_level',
+            'test_me.me',
+            'fe.fe',
+            'aa',
+            'a.bc',
+            '1.2.3.4.com',
+            'xn--kxae4bafwg.xn--pxaix.gr',
+            'a23456789-123456789-123456789-123456789-123456789-123456789-123.'
+            'b23.com',
+            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a234567.com',
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde.'
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
+            'com',
+        ]
+        for fqdn in data:
+            self.assertTrue(self.fqdn.validate(fqdn))
+
+    def test_validate_negative(self):
+        data = [
+            'тест.ру',
+            '-fe.fe',
+            'a..bc',
+            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com',
+            '-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com',
+            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com',
+            'a23456789-123456789-123456789-123456789-123456789-123456789-1234.'
+            'b23.com',
+            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.com',
+            'mx.gmail.com.',
+            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.com',
+        ]
+        for fqdn in data:
+            self.assertFalse(self.fqdn.validate(fqdn))
+
+
+class FQDNTest(unittest.TestCase):
+    def setUp(self):
+        self.fqdn = types_network.FQDN()
+
+    def test_validate(self):
+        data = [
+            'first_level.',
+            'test_me.me.',
+            'fe.fe.',
+            'aa.',
+            'a.bc.',
+            '1.2.3.4.com.',
+            'xn--kxae4bafwg.xn--pxaix.gr.',
+            'a23456789-123456789-123456789-123456789-123456789-123456789-123.'
+            'b23.com.',
+            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a234567.com.',
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde.'
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
+            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
+            'com.',
+        ]
+        for fqdn in data:
+            self.assertTrue(self.fqdn.validate(fqdn))
+
+    def test_validate_negative(self):
+        data = [
+            'тест.ру.',
+            '-fe.fe.',
+            'a..bc.',
+            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.',
+            '-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com.',
+            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.',
+            'a23456789-123456789-123456789-123456789-123456789-123456789-1234.'
+            'b23.com.',
+            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.com.',
+            'mx.gmail.com',
+            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
+            'a23456789.com.',
+        ]
+        for fqdn in data:
+            self.assertFalse(self.fqdn.validate(fqdn))
