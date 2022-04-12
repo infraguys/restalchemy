@@ -40,13 +40,13 @@ UUID_RE_TEMPLATE = r"[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
 # the regexp has issue https://github.com/kvesteri/validators/issues/185
 HOSTNAME_RE_TEMPLATE = (
     # First character of the domain
-    u'^(?:[а-яА-Яa-zA-Z0-9]'
+    u'^(?:[a-zA-Z0-9]'
     # Sub domain + hostname
-    u'(?:[а-яА-Яa-zA-Z0-9-_]{0,61}[а-яА-ЯA-Za-z0-9])?\.)'  # noqa
+    u'(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)'  # noqa
     # First 61 characters of the gTLD
-    u'+[а-яА-ЯA-Za-z0-9][а-яА-ЯA-Za-z0-9-_]{0,61}'
+    u'+[A-Za-z0-9][A-Za-z0-9-_]{0,61}'
     # Last character of the gTLD
-    u'[а-яА-ЯA-Za-z]$'
+    u'[A-Za-z]$'
 )
 
 
