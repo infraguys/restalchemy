@@ -602,10 +602,6 @@ class HostnameTestCase(base.BaseTestCase):
         self.assertTrue(self.test_instance.validate('n-1.55.restalchemy.com'))
         self.assertTrue(self.test_instance.validate('restalchemy.com'))
 
-    def test_validate_cyrillic_correct_value(self):
-        self.assertTrue(self.test_instance.validate(u'xx.москва.рф'))
-        self.assertTrue(self.test_instance.validate(u'москва.рф'))
-
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate('x.y.z'))
         self.assertFalse(self.test_instance.validate('restalchemy.com.'))
@@ -613,3 +609,5 @@ class HostnameTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance.validate('-1.55.restalchemy.com'))
         self.assertFalse(self.test_instance.validate('_s1.55.restalchemy.com'))
         self.assertFalse(self.test_instance.validate('.restalchemy.com'))
+        self.assertFalse(self.test_instance.validate(u'xx.москва.рф'))
+        self.assertFalse(self.test_instance.validate(u'москва.рф'))

@@ -44,15 +44,13 @@ class RecordNameTestCase(unittest.TestCase):
         self.assertEqual(self.test_instance.to_simple_type(''), '@')
         self.assertEqual(self.test_instance.to_simple_type('xxx'), 'xxx')
 
-    def test_validate_cyrillic_correct_value(self):
-        self.assertTrue(self.test_instance.validate(u'my.москва.рф'))
-        self.assertTrue(self.test_instance.validate(u'москва.рф'))
-        self.assertTrue(self.test_instance.validate(u'ee.ёёё.ЕЁ'))
-
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate('a..b.s'))
         self.assertFalse(self.test_instance.validate('.a.b.s'))
         self.assertFalse(self.test_instance.validate('a.b.s..'))
+        self.assertFalse(self.test_instance.validate(u'my.москва.рф'))
+        self.assertFalse(self.test_instance.validate(u'москва.рф'))
+        self.assertFalse(self.test_instance.validate(u'ee.ёёё.ЕЁ'))
 
 
 class SrvNameTest(unittest.TestCase):

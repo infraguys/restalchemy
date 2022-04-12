@@ -80,8 +80,7 @@ class OUI(types.BaseCompiledRegExpTypeFromAttr):
 
 
 class RecordName(types.BaseCompiledRegExpTypeFromAttr):
-    pattern = re.compile(
-        u"^([а-яА-ЯёЁa-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")  # noqa
+    pattern = re.compile(r"^([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")
 
     def from_simple_type(self, value):
         converted_value = super(RecordName, self).from_simple_type(value)
