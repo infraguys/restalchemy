@@ -370,6 +370,7 @@ class Enum(BaseType):
 
 
 class BaseRegExpType(BaseType):
+    '''BaseCompiledRegExpTypeFromAttr is preferred to be used'''
 
     def __init__(self, pattern):
         super(BaseType, self).__init__()
@@ -391,22 +392,28 @@ class BaseRegExpType(BaseType):
         return value
 
 
-class Uri(BaseRegExpType):
+class BaseCompiledRegExpType(BaseRegExpType):
+    def __init__(self, pattern):
+        super(BaseRegExpType, self).__init__()
+        self._pattern = pattern
 
+
+class BaseCompiledRegExpTypeFromAttr(BaseCompiledRegExpType):
     def __init__(self):
-        super(Uri, self).__init__(pattern=r"^(/[A-Za-z0-9\-_]*)*/%s$" %
-                                  UUID_RE_TEMPLATE)
+        super(BaseCompiledRegExpTypeFromAttr, self).__init__(
+            pattern=self.pattern)
 
 
-class Mac(BaseRegExpType):
-
-    def __init__(self):
-        super(Mac, self).__init__("^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
+class Uri(BaseCompiledRegExpTypeFromAttr):
+    pattern = re.compile(r"^(/[A-Za-z0-9\-_]*)*/%s$" % UUID_RE_TEMPLATE)
 
 
-class Hostname(BaseRegExpType):
-    def __init__(self):
-        super(Hostname, self).__init__(HOSTNAME_RE_TEMPLATE)
+class Mac(BaseCompiledRegExpTypeFromAttr):
+    pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
+
+
+class Hostname(BaseCompiledRegExpTypeFromAttr):
+    pattern = re.compile(HOSTNAME_RE_TEMPLATE)
 
 
 class AllowNone(BaseType):
