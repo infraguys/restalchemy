@@ -22,12 +22,8 @@ import re
 from restalchemy.dm import types
 
 DNS_LABEL_MAX_LEN = 63
-FQDN_MAX_LEN = 255
-
-MATCH_DN = re.compile("[a-z0-9-]{1,%d}$" % DNS_LABEL_MAX_LEN)
-# RFC 1123 hints that a TLD can't be all numeric. last is a TLD if
-# it's an FQDN.
-MATCH_TDL = re.compile("^[0-9]+$")
+FQDN_MAX_LEN = 254
+HOSTNAME_MAX_LEN = FQDN_MAX_LEN - 1
 
 
 class IPAddress(types.BaseType):
@@ -111,56 +107,21 @@ class SrvName(RecordName):
         return True
 
 
-class HostName(types.String):
+class FQDN(types.BaseCompiledRegExpTypeFromAttr):
+    '''FQDN type. Allows 1 level too. Root only is prohibited.
 
-    def __init__(self):
-        super(HostName, self).__init__(min_length=1, max_length=FQDN_MAX_LEN)
-
-    def validate(self, value):
-        if not super(HostName, self).validate(value):
-            return False
-
-        names = value.split('.')
-
-        for name in names:
-            if (not name
-                    or name[-1] == '-'
-                    or name[0] == '-'
-                    or not MATCH_DN.match(name)):
-                return False
-
-        return True
+    See https://github.com/powerdns/pdns/blob/master/pdns/dnsname.cc#L44
+    and https://github.com/powerdns/pdns/blob/master/pdns/ws-api.cc#L387
+    '''
+    pattern = re.compile(
+        r"(?=^.{2,%i}$)(^((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-)\.){1,}$)" %
+        (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN))
 
 
-class AddressRecordName(HostName):
-
-    def validate(self, value):
-        names = value.split('.')
-
-        if len(names) == 1 and names[0] in ['*', '@']:
-            return True
-        if len(names) >= 1 and names[0] == '*':
-            value = '.'.join(names[1:])
-
-        if not super(AddressRecordName, self).validate(value):
-            return False
-
-        return True
-
-
-class FQDN(HostName):
-
-    def validate(self, value):
-
-        names = value.split('.')
-        if names[-1]:
-            return False
-        value = '.'.join(names[:-1])
-
-        if not super(FQDN, self).validate(value):
-            return False
-
-        if MATCH_TDL.match(names[-2]):
-            return False
-
-        return True
+class Hostname(types.BaseCompiledRegExpTypeFromAttr):
+    '''Same as FQDN but without root dot. Allows 1 level too. '''
+    pattern = re.compile(
+        r"(?=^.{1,%i}$)(^((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-)\.)*"
+        r"((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-))$)" %
+        (HOSTNAME_MAX_LEN, DNS_LABEL_MAX_LEN, DNS_LABEL_MAX_LEN)
+    )
