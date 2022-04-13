@@ -69,7 +69,9 @@ class SrvNameTest(unittest.TestCase):
 
 class HostnameTest(unittest.TestCase):
     def setUp(self):
+        super(HostnameTest, self).setUp()
         self.fqdn = types_network.Hostname()
+        self.fqdn_2level = types_network.Hostname(min_levels=2)
 
     def test_validate(self):
         data = [
@@ -94,7 +96,7 @@ class HostnameTest(unittest.TestCase):
             'com',
         ]
         for fqdn in data:
-            self.assertTrue(self.fqdn.validate(fqdn))
+            self.assertTrue(self.fqdn.validate(fqdn), fqdn)
 
     def test_validate_negative(self):
         data = [
@@ -119,12 +121,32 @@ class HostnameTest(unittest.TestCase):
             'a23456789.com',
         ]
         for fqdn in data:
-            self.assertFalse(self.fqdn.validate(fqdn))
+            self.assertFalse(self.fqdn.validate(fqdn), fqdn)
+
+    def test_min_levels(self):
+        data = [
+            'test_me.me',
+            'fe.fe',
+            'a.bc',
+            '1.2.3.4.com',
+        ]
+        for fqdn in data:
+            self.assertTrue(self.fqdn_2level.validate(fqdn), fqdn)
+
+    def test_min_levels_negative(self):
+        data = [
+            'first_level',
+            'aa',
+        ]
+        for fqdn in data:
+            self.assertFalse(self.fqdn_2level.validate(fqdn), fqdn)
 
 
 class FQDNTest(unittest.TestCase):
     def setUp(self):
+        super(FQDNTest, self).setUp()
         self.fqdn = types_network.FQDN()
+        self.fqdn_2level = types_network.FQDN(min_levels=2)
 
     def test_validate(self):
         data = [
@@ -149,7 +171,7 @@ class FQDNTest(unittest.TestCase):
             'com.',
         ]
         for fqdn in data:
-            self.assertTrue(self.fqdn.validate(fqdn))
+            self.assertTrue(self.fqdn.validate(fqdn), fqdn)
 
     def test_validate_negative(self):
         data = [
@@ -174,4 +196,22 @@ class FQDNTest(unittest.TestCase):
             'a23456789.com.',
         ]
         for fqdn in data:
-            self.assertFalse(self.fqdn.validate(fqdn))
+            self.assertFalse(self.fqdn.validate(fqdn), fqdn)
+
+    def test_min_levels(self):
+        data = [
+            'test_me.me.',
+            'fe.fe.',
+            'a.bc.',
+            '1.2.3.4.com.',
+        ]
+        for fqdn in data:
+            self.assertTrue(self.fqdn_2level.validate(fqdn), fqdn)
+
+    def test_min_levels_negative(self):
+        data = [
+            'first_level.',
+            'aa.',
+        ]
+        for fqdn in data:
+            self.assertFalse(self.fqdn_2level.validate(fqdn), fqdn)
