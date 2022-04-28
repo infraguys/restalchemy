@@ -163,7 +163,7 @@ class MySQLSession(object):
         self._log.debug(("Execute statement %s"
                          " with values %s"
                          " within %s database"),
-                        statement, self._conn.database, values)
+                        statement, values, self._conn.database)
         self._cursor.execute(statement, values)
         return self._cursor
 
@@ -171,7 +171,7 @@ class MySQLSession(object):
         self._log.debug(("Execute batch statement %s"
                          " with values %s"
                          " within %s database"),
-                        statement, self._conn.database, values)
+                        statement, values, self._conn.database)
         self._cursor.executemany(statement, values)
         return self._cursor
 
