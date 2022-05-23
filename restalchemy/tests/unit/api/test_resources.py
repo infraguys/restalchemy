@@ -33,6 +33,26 @@ class TestModel(models.CustomPropertiesMixin, models.ModelWithUUID):
     standard_field5 = properties.property(types.Integer())
 
 
+class FakeMemberContext(object):
+    roles = ['member', 'some-role']
+
+
+class FakeAdminContext(object):
+    roles = ['member', 'admin']
+
+
+class FakeEmptyContext(object):
+    roles = []
+
+
+class FakeIncorrectFieldsRoleContext(object):
+    roles = ['incorrect_fields']
+
+
+class FakeEmptyFieldsRoleContext(object):
+    roles = ['empty_fields']
+
+
 # NOTE(efrolov): Interface tests
 class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
 
@@ -204,3 +224,107 @@ class ResourceByRAModelWithCustomPropsHiddenFieldsNewInterfacesTestCase(
     def tearDown(self):
         resources.ResourceMap.model_type_to_resource = {}
         del self._request
+
+
+class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(ResourceByRAModelRoleBasedHiddenFieldsTestCase, self).setUp()
+        self.target = resources.ResourceByRAModel(
+            TestModel,
+            hidden_fields=resources.RoleBasedHiddenFieldContainer(
+                default=resources.HiddenFieldMap(
+                    get=['standard_field1', 'standard_field2',
+                         'standard_field3', 'standard_field4',
+                         'standard_field5', 'uuid'],
+                ),
+                member=resources.HiddenFieldMap(
+                    get=['standard_field1', 'standard_field3', 'uuid'],
+                ),
+                admin=resources.HiddenFieldMap(
+                    get=['standard_field1', 'uuid'],
+                ),
+                incorrect_fields=resources.HiddenFieldMap(
+                    get=['fake1', 'fake2'],
+                ),
+                empty_fields=resources.HiddenFieldMap(get=[]),
+            ),
+        )
+        self._request = webob.Request.blank('/some-uri')
+        self._request.api_context = contexts.RequestContext(self._request)
+
+    def tearDown(self):
+        super(ResourceByRAModelRoleBasedHiddenFieldsTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._request
+
+    def _test_hide_some_fields_for_request(self, req, fields):
+
+        result = [
+            name
+            for name, prop in self.target.get_fields_by_request(req)
+            if prop.is_public()
+        ]
+
+        self.assertEqual(sorted(fields), sorted(result))
+
+    def test_hide_some_fields_for_admin_context_method(self):
+        self._request.api_context.set_active_method(constants.GET)
+        admin_context = FakeAdminContext()
+        self._request.context = admin_context
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field2', 'standard_field3', 'standard_field4',
+                    'standard_field5'],
+        )
+
+    def test_hide_some_fields_for_member_context_method(self):
+        self._request.api_context.set_active_method(constants.GET)
+        member_context = FakeMemberContext()
+        self._request.context = member_context
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field2', 'standard_field4', 'standard_field5'],
+        )
+
+    def test_hide_some_fields_for_empty_role_context_method(self):
+        self._request.api_context.set_active_method(constants.GET)
+        member_context = FakeEmptyContext()
+        self._request.context = member_context
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=[],
+        )
+
+    def test_hide_some_fields_without_context(self):
+        self._request.api_context.set_active_method(constants.GET)
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=[],
+        )
+
+    def test_no_hide_incorrect_fields(self):
+        self._request.api_context.set_active_method(constants.GET)
+        context = FakeIncorrectFieldsRoleContext()
+        self._request.context = context
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field1', 'standard_field2', 'standard_field3',
+                    'standard_field4', 'standard_field5', 'uuid'],
+        )
+
+    def test_no_hide_all_fields(self):
+        self._request.api_context.set_active_method(constants.GET)
+        context = FakeEmptyFieldsRoleContext()
+        self._request.context = context
+
+        self._test_hide_some_fields_for_request(
+            req=self._request,
+            fields=['standard_field1', 'standard_field2', 'standard_field3',
+                    'standard_field4', 'standard_field5', 'uuid'],
+        )

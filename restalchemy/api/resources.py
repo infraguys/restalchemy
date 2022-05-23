@@ -182,6 +182,10 @@ class BaseHiddenFieldsMap(object):
         super(BaseHiddenFieldsMap, self).__init__()
         self._hidden_fields = set(hidden_fields or [])
 
+    @property
+    def hidden_fields(self):
+        return self._hidden_fields
+
     def is_hidden_field(self, model_field_name, req):
         return model_field_name in self
 
@@ -244,6 +248,88 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
             return model_field_name in self._method_map[method]
         except KeyError:
             raise NotImplementedError("Unsupported RA method `%s`" % req)
+
+
+class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
+
+    def __init__(self, default, **kwargs):
+        """The role based hidden field container
+
+        The container of hidden fields. The class calculates the hidden fields
+        using the roles from the oslo context.
+
+        This class describes a list of fields that should be hidden for
+        various oslo context roles. An object of the HiddenFieldMap class is
+        used to specify lists of hidden fields for a role. The example below
+        describes a different set of hidden fields for a user with the admin
+        role and for users without the admin role:
+
+        ```
+        RoleBasedHiddenFieldContainer(
+            default=HiddenFieldMap(get=['only_for_admin', 'hidden_field']),
+            admin=HiddenFieldMap(get=['hidden_field']),
+        )
+        ```
+
+        The example shows that the resource fields `only_for_admin` and
+        `hidden_field` will be hidden by default for all roles. For the admin
+        role, only `hidden_field` field is hidden.
+
+        :param default: The instance of :class:`HiddenFieldMap` class. Hidden
+                        fields for any role that has no other rules defined.
+        :type default: HiddenFieldMap
+        :param **kwargs: An optional parameter. The parameter name is the name
+                         of the role name and parameter value is an instance
+                         of :class:`HiddenFieldMap` class.
+        :type default: HiddenFieldMap
+        """
+        self._default_hidden_fields = default
+        self._hidden_fields_by_role = kwargs
+        super(RoleBasedHiddenFieldContainer, self).__init__(
+            hidden_fields=default.hidden_fields,
+        )
+
+    @staticmethod
+    def _get_roles(req):
+        """Returns the roles
+
+        Returns the roles from the oslo context or an empty list if the
+        context does not exist in the request from the user. Oslo context may
+        be missing in the request if keystone middleware is not included to
+        wsgi pipeline.
+
+        :param req: The webob request that can contain oslo context
+        :return: The list of roles from context or empty list if context is
+                 missing.
+
+        """
+        roles = []
+
+        if hasattr(req, 'context') and hasattr(req.context, 'roles'):
+            roles = req.context.roles
+
+        return roles
+
+    def is_hidden_field(self, model_field_name, req):
+        """Checks that a field is in the list of hidden list
+
+        The field is considered hidden if the field is included to all hidden
+        fields lists    for the specified roles.
+
+        :param model_field_name: The field name
+        :param req: The webob request that can contain oslo context
+        :return: True or False
+        """
+        context_roles = self._get_roles(req)
+
+        for rname, h_fields in self._hidden_fields_by_role.items():
+            if rname in context_roles and not h_fields.is_hidden_field(
+                model_field_name,
+                req,
+            ):
+                return False
+        return self._default_hidden_fields.is_hidden_field(model_field_name,
+                                                           req)
 
 
 @six.add_metaclass(abc.ABCMeta)
