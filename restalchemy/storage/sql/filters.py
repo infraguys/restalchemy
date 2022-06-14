@@ -17,10 +17,10 @@
 #    under the License.
 
 import abc
-import collections
 import logging
 
 import six
+from six.moves import collections_abc
 
 from restalchemy.dm import filters
 from restalchemy.dm import types
@@ -228,7 +228,7 @@ def iterate_filters(model, filter_list):
         return clauses
 
     # old style mappings (dict, multidict)
-    if isinstance(filter_list, collections.Mapping):
+    if isinstance(filter_list, collections_abc.Mapping):
         clauses = []
         for name, filt in filter_list.items():
             if isinstance(model, common.TableAlias):

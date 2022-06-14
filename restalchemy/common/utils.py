@@ -17,14 +17,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import collections
-
 import six
+from six.moves import collections_abc
 
 from restalchemy.common import exceptions as ra_exc
 
 
-class ReadOnlyDictProxy(collections.Mapping):
+class ReadOnlyDictProxy(collections_abc.Mapping):
     """A hashable, immutable dict proxy.
 
     Return a proxy object for a mapping which enforces read-only behavior.

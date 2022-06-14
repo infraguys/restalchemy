@@ -17,11 +17,11 @@
 #    under the License.
 
 import abc
-import collections
 import copy
 import uuid
 
 import six
+from six.moves import collections_abc
 
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
@@ -80,7 +80,7 @@ class MetaModel(abc.ABCMeta):
 
 
 @six.add_metaclass(MetaModel)
-class Model(collections.Mapping):
+class Model(collections_abc.Mapping):
     _python_simple_types = (type(None), str, int, float, complex, bool)
 
     def __init__(self, **kwargs):

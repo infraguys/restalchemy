@@ -23,6 +23,7 @@ import inspect
 
 import six
 from six.moves import builtins
+from six.moves import collections_abc
 
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
@@ -150,7 +151,7 @@ class PropertyCreator(object):
 
 
 @six.add_metaclass(abc.ABCMeta)
-class PropertyMapping(collections.Mapping):
+class PropertyMapping(collections_abc.Mapping):
 
     @abc.abstractproperty
     def properties(self):

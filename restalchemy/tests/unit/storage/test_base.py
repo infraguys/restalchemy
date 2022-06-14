@@ -14,6 +14,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import sys
+
+import pytest
 
 from restalchemy.storage import base as sbase
 from restalchemy.storage import exceptions
@@ -37,7 +40,8 @@ class TestErrorCatcherTestCase(base.BaseTestCase):
         self.assertRaises(exceptions.RecordNotFound, self.my_func,
                           'test_arg', kwarg0='RA_EXCEPTION')
 
-    def test_catcher_message_error(self):
+    @pytest.mark.skipif(sys.version_info > (3, 9), reason="python > 3.9")
+    def test_catcher_message_error_lt_39(self):
         try:
             self.my_func('test_arg', kwarg0='test_kwarg')
             raise AssertionError("The exception is't raised")
@@ -45,4 +49,15 @@ class TestErrorCatcherTestCase(base.BaseTestCase):
             self.assertEqual(
                 str(e),
                 "Unknown storage exception: RuntimeError('Some Error!!!',)"
+            )
+
+    @pytest.mark.skipif(sys.version_info < (3, 10), reason="python < 3.10")
+    def test_catcher_message_error_gt_310(self):
+        try:
+            self.my_func('test_arg', kwarg0='test_kwarg')
+            raise AssertionError("The exception is't raised")
+        except exceptions.UnknownStorageException as e:
+            self.assertEqual(
+                str(e),
+                "Unknown storage exception: RuntimeError('Some Error!!!')"
             )
