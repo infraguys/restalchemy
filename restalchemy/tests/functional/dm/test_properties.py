@@ -20,7 +20,7 @@ from restalchemy.dm import types
 from restalchemy.tests.functional import base
 
 
-class TestModel(models.Model):
+class FakeModel(models.Model):
 
     mutable_dict = properties.property(types.Dict(), required=True,
                                        mutable=True)
@@ -31,28 +31,28 @@ class TestModel(models.Model):
 class DirtyPropertiesTestCase(base.BaseFunctionalTestCase):
 
     def test_dirty_for_mutable_property_append_values(self):
-        target = TestModel(mutable_dict={'test': 'test'})
+        target = FakeModel(mutable_dict={'test': 'test'})
 
         target.mutable_dict['xxx'] = 'yyyy'
 
         self.assertTrue(target.is_dirty())
 
     def test_dirty_for_mutable_property_append_deep_values(self):
-        target = TestModel(mutable_dict={'test': {}})
+        target = FakeModel(mutable_dict={'test': {}})
 
         target.mutable_dict['test']['xxx'] = 'yyyy'
 
         self.assertTrue(target.is_dirty())
 
     def test_dirty_for_mutable_property_change_values(self):
-        target = TestModel(mutable_dict={'test': 'test'})
+        target = FakeModel(mutable_dict={'test': 'test'})
 
         target.mutable_dict['test'] = 'yyyy'
 
         self.assertTrue(target.is_dirty())
 
     def test_dirty_for_mutable_property_append_to_default(self):
-        target = TestModel(mutable_dict={})
+        target = FakeModel(mutable_dict={})
 
         target.mutable_list.append('test')
 

@@ -51,12 +51,12 @@ FAKE_UUID2_STR = str(FAKE_UUID2)
 URL_TO_DB = "mysql://fake:fake@127.0.0.1/test"
 
 
-class TestParentModel(models.ModelWithUUID, orm.SQLStorableMixin):
+class FakeParentModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
     __tablename__ = FAKE_TABLE_NAME2
 
 
-class TestModel(models.ModelWithUUID, orm.SQLStorableMixin):
+class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
     __tablename__ = FAKE_TABLE_NAME1
 
@@ -72,7 +72,7 @@ class TestModel(models.ModelWithUUID, orm.SQLStorableMixin):
     test_mac_field1 = properties.property(types.Mac(), default=FAKE_MAC1)
     test_mac_field2 = properties.property(types.Mac(), default=FAKE_MAC2)
 
-    test_parent_relationship = relationships.relationship(TestParentModel)
+    test_parent_relationship = relationships.relationship(FakeParentModel)
 
 
 ROW = {
@@ -107,8 +107,8 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         # configure engine factory
         engines.engine_factory.configure_factory(
             db_url=URL_TO_DB)
-        self.parent_model = TestParentModel(uuid=FAKE_UUID2)
-        self.target_model = TestModel(
+        self.parent_model = FakeParentModel(uuid=FAKE_UUID2)
+        self.target_model = FakeModel(
             uuid=FAKE_UUID1,
             test_parent_relationship=self.parent_model)
 
@@ -185,7 +185,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         self.assertFalse(session_mock.close.called)
 
 
-class TestUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
+class FakeUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = "test_update"
 
     field1 = properties.property(types.String(), required=True)
@@ -217,13 +217,13 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
         engines.engine_factory.destroy_engine()
 
     def test_update_not_changed_model(self):
-        test_model = TestUpdateModel(field1=FAKE_STR1, field2=FAKE_STR2)
+        test_model = FakeUpdateModel(field1=FAKE_STR1, field2=FAKE_STR2)
         test_model.save()
 
         self.assertIsNone(test_model.update())
 
     def test_force_update_not_changed_model(self):
-        test_model = TestUpdateModel(field1=FAKE_STR1, field2=FAKE_STR2)
+        test_model = FakeUpdateModel(field1=FAKE_STR1, field2=FAKE_STR2)
         test_model.save()
 
         self.assertIsNone(test_model.update(force=True))

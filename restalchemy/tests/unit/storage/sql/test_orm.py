@@ -34,14 +34,14 @@ FAKE_LIST = [1, 'a', None]
 FAKE_LIST_JSON = json.dumps(FAKE_LIST)
 
 
-class TestRestoreModel(models.Model, orm.SQLStorableMixin):
+class FakeRestoreModel(models.Model, orm.SQLStorableMixin):
     __tablename__ = 'fake_table'
 
     a = properties.property(types.String())
     b = properties.property(types.String())
 
     def __init__(self, args, **kwargs):
-        super(TestRestoreModel, self).__init__(*args, **kwargs)
+        super(FakeRestoreModel, self).__init__(*args, **kwargs)
         raise AssertionError("Init method should not be called")
 
 
@@ -49,7 +49,7 @@ class TestRestoreModelTestCase(base.BaseTestCase):
 
     def test_init_should_not_be_called(self):
 
-        model = TestRestoreModel.restore_from_storage(a=FAKE_VALUE_A,
+        model = FakeRestoreModel.restore_from_storage(a=FAKE_VALUE_A,
                                                       b=FAKE_VALUE_B)
 
         self.assertEqual(model.a, FAKE_VALUE_A)
@@ -64,7 +64,7 @@ class TestRestoreModelTestCase(base.BaseTestCase):
             model.get_table()
 
 
-class TestRestoreWithJSONModel(models.Model,
+class FakeRestoreWithJSONModel(models.Model,
                                orm.SQLStorableWithJSONFieldsMixin):
     __tablename__ = 'fake_table'
     __jsonfields__ = ['a', 'b']
@@ -76,14 +76,14 @@ class TestRestoreWithJSONModel(models.Model,
 class TestRestoreWithJSONModelTestCase(base.BaseTestCase):
 
     def test_json_parsed(self):
-        model = TestRestoreWithJSONModel.restore_from_storage(a=FAKE_DICT_JSON,
+        model = FakeRestoreWithJSONModel.restore_from_storage(a=FAKE_DICT_JSON,
                                                               b=FAKE_LIST_JSON)
 
         self.assertEqual(model.a, FAKE_DICT)
         self.assertEqual(model.b, FAKE_LIST)
 
     def test_json_dumped(self):
-        model = TestRestoreWithJSONModel(a=FAKE_DICT, b=FAKE_LIST)
+        model = FakeRestoreWithJSONModel(a=FAKE_DICT, b=FAKE_LIST)
         prepared_data = model._get_prepared_data()
 
         self.assertEqual(prepared_data['a'], FAKE_DICT_JSON)
