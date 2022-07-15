@@ -121,7 +121,7 @@ class BaseModel(models.Model):
     property4 = relationships.relationship(Model2)
 
 
-class TestModel(BaseModel):
+class FakeModel(BaseModel):
     property1 = properties.property(types.String())
     property3 = relationships.relationship(Model3)
 
@@ -137,7 +137,7 @@ class InheritModelTestCase(base.BaseTestCase):
         self.assertEqual(props['property4']._property_type, Model2)
 
     def test_correct_type_in_inherit_model(self):
-        props = TestModel.properties.properties
+        props = FakeModel.properties.properties
 
         self.assertIsInstance(props['property1']._property_type, types.String)
         self.assertIsInstance(props['property2']._property_type, types.Integer)
@@ -149,7 +149,7 @@ class DirtyModelTestCase(base.BaseTestCase):
 
     def setUp(self):
         super(DirtyModelTestCase, self).setUp()
-        self._model = TestModel(
+        self._model = FakeModel(
             property1="fake_string",
             property2=2,
             property3=Model3(),
@@ -180,12 +180,12 @@ class DirtyModelTestCase(base.BaseTestCase):
         self.assertFalse(self._model.is_dirty())
 
 
-class TestModelWithID(BaseModel):
+class FakeModelWithID(BaseModel):
     uuid = properties.property(types.UUID(), id_property=True)
     property3 = relationships.relationship(Model3)
 
 
-class TestModelWithSeveralIDs(BaseModel):
+class FakeModelWithSeveralIDs(BaseModel):
     uuid = properties.property(types.UUID(), id_property=True)
     uuid2 = properties.property(types.UUID(), id_property=True)
     property3 = relationships.relationship(Model3)
@@ -194,17 +194,17 @@ class TestModelWithSeveralIDs(BaseModel):
 class ModelWithIDsTestCase(base.BaseTestCase):
 
     def test_get_id_property(self):
-        props = TestModelWithID.properties.properties
+        props = FakeModelWithID.properties.properties
 
-        self.assertEqual(TestModelWithID.get_id_property(),
+        self.assertEqual(FakeModelWithID.get_id_property(),
                          {'uuid': props['uuid']})
         with self.assertRaises(TypeError):
-            TestModelWithSeveralIDs.get_id_property()
+            FakeModelWithSeveralIDs.get_id_property()
 
     def test_get_id_property_name(self):
-        self.assertEqual(TestModelWithID.get_id_property_name(), 'uuid')
+        self.assertEqual(FakeModelWithID.get_id_property_name(), 'uuid')
         with self.assertRaises(TypeError):
-            TestModelWithSeveralIDs.get_id_property_name()
+            FakeModelWithSeveralIDs.get_id_property_name()
 
     def test_model_plain_dict(self):
         fakeInt = 1
@@ -212,7 +212,7 @@ class ModelWithIDsTestCase(base.BaseTestCase):
         fakeUUID2 = uuid.uuid4()
         fakeUUID3 = uuid.uuid4()
 
-        model = TestModelWithID(
+        model = FakeModelWithID(
             uuid=fakeUUID1,
             property1=fakeInt,
             property2=fakeInt,

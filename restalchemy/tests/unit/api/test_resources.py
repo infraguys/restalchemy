@@ -24,7 +24,7 @@ from restalchemy.dm import properties
 from restalchemy.dm import types
 
 
-class TestModel(models.CustomPropertiesMixin, models.ModelWithUUID):
+class FakeModel(models.CustomPropertiesMixin, models.ModelWithUUID):
     _private_field = properties.property(types.Integer())
     standard_field1 = properties.property(types.Integer())
     standard_field2 = properties.property(types.Integer())
@@ -62,7 +62,7 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
 
     def test_hide_some_fields(self):
         resource = resources.ResourceByRAModel(
-            TestModel,
+            FakeModel,
             hidden_fields=['standard_field1', 'standard_field4',
                            'standard_field5'],
         )
@@ -75,7 +75,7 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
 
     def test_hide_renamed_fields(self):
         resource = resources.ResourceByRAModel(
-            TestModel,
+            FakeModel,
             hidden_fields=['standard_field1', 'standard_field4',
                            'standard_field5'],
             name_map={'standard_field1': 'new_standard_field1'},
@@ -94,7 +94,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
         super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase,
               self).setUp()
         self.target = resources.ResourceByRAModel(
-            TestModel,
+            FakeModel,
             hidden_fields=resources.HiddenFieldMap(
                 filter=['standard_field1', 'standard_field2', 'uuid'],
                 get=['standard_field1', 'standard_field3', 'uuid'],
@@ -206,7 +206,7 @@ class ResourceByRAModelWithCustomPropsHiddenFieldsNewInterfacesTestCase(
 ):
     def setUp(self):
         self.target = resources.ResourceByModelWithCustomProps(
-            TestModel,
+            FakeModel,
             hidden_fields=resources.HiddenFieldMap(
                 filter=['standard_field1', 'standard_field2', 'uuid'],
                 get=['standard_field1', 'standard_field3', 'uuid'],
@@ -231,7 +231,7 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
     def setUp(self):
         super(ResourceByRAModelRoleBasedHiddenFieldsTestCase, self).setUp()
         self.target = resources.ResourceByRAModel(
-            TestModel,
+            FakeModel,
             hidden_fields=resources.RoleBasedHiddenFieldContainer(
                 default=resources.HiddenFieldMap(
                     get=['standard_field1', 'standard_field2',
