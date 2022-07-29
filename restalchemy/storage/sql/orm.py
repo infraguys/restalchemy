@@ -23,6 +23,7 @@ import six
 
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
+from restalchemy.dm import models
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -241,11 +242,11 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def to_simple_type(cls, value):
         if value is None:
             return None
-        for prop in value.properties.values():
-            if prop.is_id_property():
-                return prop.property_type.to_simple_type(value.get_id())
-        raise ValueError("Model (%s) should contain a property of IdProperty "
-                         "type" % value)
+        id_type = cls.get_id_property().popitem()[-1].get_property_type()
+        if isinstance(value, models.Model):
+            return id_type.to_simple_type(value.get_id())
+        # Allow to filter by id without full model
+        return id_type.to_simple_type(value)
 
     @classmethod
     @base.dead_lock_catcher
