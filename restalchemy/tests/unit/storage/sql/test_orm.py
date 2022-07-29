@@ -27,6 +27,7 @@ from restalchemy.tests.unit import base
 
 FAKE_VALUE_A = 'FAKE_A'
 FAKE_VALUE_B = 'FAKE_B'
+FAKE_UUID = '89d423c5-4365-4be2-bde9-2730909a9af8'
 
 FAKE_DICT = {'key': 'value', 'list': [1, 2, 3], 'dict': {'a': 'A'}}
 FAKE_DICT_JSON = json.dumps(FAKE_DICT)
@@ -43,6 +44,10 @@ class FakeRestoreModel(models.Model, orm.SQLStorableMixin):
     def __init__(self, args, **kwargs):
         super(FakeRestoreModel, self).__init__(*args, **kwargs)
         raise AssertionError("Init method should not be called")
+
+
+class FakeRestoreModelWithUUID(FakeRestoreModel, models.ModelWithUUID):
+    pass
 
 
 class TestRestoreModelTestCase(base.BaseTestCase):
@@ -98,3 +103,17 @@ class TestRestoreWithJSONModelTestCase(base.BaseTestCase):
             model.restore_from_storage()
         with self.assertRaises(orm.UndefinedAttribute):
             model._get_prepared_data()
+
+
+class TestSimplifyModelTestCase(base.BaseTestCase):
+    def test_from_model(self):
+        model = FakeRestoreModelWithUUID.restore_from_storage(a=FAKE_DICT_JSON,
+                                                              b=FAKE_LIST_JSON,
+                                                              uuid=FAKE_UUID)
+
+        self.assertEqual(FakeRestoreModelWithUUID.to_simple_type(model),
+                         str(model.uuid))
+
+    def test_from_id_type(self):
+        self.assertEqual(FakeRestoreModelWithUUID.to_simple_type(FAKE_UUID),
+                         str(FAKE_UUID))

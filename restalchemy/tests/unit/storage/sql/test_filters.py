@@ -17,26 +17,38 @@
 #    under the License.
 
 from collections import OrderedDict
+import uuid
 
 from urllib3._collections import HTTPHeaderDict
 
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
+from restalchemy.dm import relationships
 from restalchemy.dm import types
 from restalchemy.storage.sql import filters
+from restalchemy.storage.sql import orm
 from restalchemy.tests.unit import base
 from restalchemy.tests.unit.storage.sql import common
 
 
 TEST_NAME = 'FAKE_NAME'
 TEST_VALUE = 'FAKE_VALUE'
+TEST_UUID = uuid.UUID('89d423c5-4365-4be2-bde9-2730909a9af8')
 
 
 class BaseModel(models.Model):
 
     name1 = properties.property(types.Integer())
     name2 = properties.property(types.Integer())
+
+
+class BaseModelWithUUID(BaseModel, models.ModelWithUUID, orm.SQLStorableMixin):
+    pass
+
+
+class BaseModelWithRelation(BaseModel, models.ModelWithUUID):
+    parent = relationships.relationship(BaseModelWithUUID)
 
 
 class EQTestCase(base.BaseTestCase):
@@ -273,3 +285,26 @@ class ConvertFiltersTestCase(base.BaseTestCase):
         self.assertEqual('(`name1` = %s AND `name1` = %s)',
                          processed.construct_expression())
         self.assertEqual([1, 1], processed.value)
+
+    def test_convert_filters_new_relationship_by_model(self):
+        model = BaseModelWithUUID(
+            name1=1,
+            name2=2,
+            uuid=TEST_UUID
+        )
+        filter_list = {'parent': dm_filters.EQ(model)}
+
+        processed = filters.convert_filters(BaseModelWithRelation, filter_list)
+
+        self.assertEqual('(`parent` = %s)',
+                         processed.construct_expression())
+        self.assertEqual([str(TEST_UUID)], processed.value)
+
+    def test_convert_filters_new_relationship_by_id(self):
+        filter_list = {'parent': dm_filters.EQ(TEST_UUID)}
+
+        processed = filters.convert_filters(BaseModelWithRelation, filter_list)
+
+        self.assertEqual('(`parent` = %s)',
+                         processed.construct_expression())
+        self.assertEqual([str(TEST_UUID)], processed.value)
