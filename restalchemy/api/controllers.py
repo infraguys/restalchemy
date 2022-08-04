@@ -33,6 +33,14 @@ LOG = logging.getLogger(__name__)
 class Controller(object):
     __resource__ = None  # type: resources.ResourceByRAModel
 
+    # You can also generate location header for GET and UPDATE methods,
+    # just expand the list with the following constants:
+    #  * constants.GET
+    #  * constants.UPDATE
+    __generate_location_for__ = {
+        constants.CREATE,
+    }
+
     def __init__(self, request):
         super(Controller, self).__init__()
         self._req = request
@@ -53,9 +61,10 @@ class Controller(object):
                        add_location=False):
         headers = headers or {}
 
-        def correct(body, c=status_code, h=None, *args):
+        def correct(body, c=status_code, h=None, h_location=add_location,
+                    *args):
             h = h or {}
-            if add_location:
+            if h_location:
                 try:
                     headers['Location'] = resources.ResourceMap.get_location(
                         body)
@@ -79,7 +88,7 @@ class Controller(object):
                 content_type=headers.get('Content-Type', None),
                 headerlist=[(k, v) for k, v in headers.items()])
 
-        if type(result) == tuple:
+        if isinstance(result, tuple):
             return create_response(*correct(*result))
         else:
             return create_response(*correct(result))
@@ -150,7 +159,7 @@ class Controller(object):
             return self.process_result(
                 result=self.create(**kwargs),
                 status_code=201,
-                add_location=True,
+                add_location=constants.CREATE in self.__generate_location_for__
             )
         else:
             raise exc.UnsupportedHttpMethod(method=method)
@@ -180,6 +189,7 @@ class Controller(object):
             api_context.set_active_method(constants.GET)
             return self.process_result(
                 result=self.get(uuid=parsed_id, **kwargs),
+                add_location=constants.GET in self.__generate_location_for__
             )
         elif method == 'PUT':
             api_context.set_active_method(constants.UPDATE)
@@ -188,6 +198,7 @@ class Controller(object):
             kwargs.update(packer.unpack(value=self._req.body))
             return self.process_result(
                 result=self.update(uuid=parsed_id, **kwargs),
+                add_location=constants.UPDATE in self.__generate_location_for__
             )
         elif method == 'DELETE':
             api_context.set_active_method(constants.DELETE)
