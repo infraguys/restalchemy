@@ -22,6 +22,7 @@ import inspect
 import six
 
 from restalchemy.api import constants
+from restalchemy.api import field_permissions
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties as ra_properties
 from restalchemy.dm import relationships as ra_relationsips
@@ -337,7 +338,7 @@ class AbstractResource(object):
 
     def __init__(self, model_class, name_map=None, hidden_fields=None,
                  convert_underscore=True, process_filters=False,
-                 model_subclasses=None):
+                 model_subclasses=None, fields_permissions=None):
         """Resource constructor
 
         :param model_class: The model class that is the source of the fields
@@ -362,6 +363,13 @@ class AbstractResource(object):
                                  by this resource, most often these are the
                                  children of the model specified in the
                                  model_class argument.
+        :param fields_permissions: The dict of field and permissions, instance
+                                 of `field_permissions.BasePermissions`.
+                                 Use for setting field hidden or readonly by
+                                 role from request context. if
+                                 fields_permissionsis wouldn't set,
+                                 it would be the object of UniversalPermissions
+                                 with READWRITE permissions to all fields
         """
         super(AbstractResource, self).__init__()
         self._model_class = model_class
@@ -378,6 +386,18 @@ class AbstractResource(object):
         ResourceMap.add_model_to_resource_mapping(model_class, self)
         for model_subclass in self._model_subclasses:
             ResourceMap.add_model_to_resource_mapping(model_subclass, self)
+
+        self._fields_permissions = (
+            fields_permissions
+            if fields_permissions is not None
+            else field_permissions.UniversalPermissions(
+                permission=field_permissions.Permissions.RW))
+
+        if not isinstance(self._fields_permissions,
+                          field_permissions.BasePermissions):
+            raise ValueError('Fields_permissions should inherit'
+                             'from BasePermissions, not {%s}' %
+                             (type(fields_permissions)))
 
     def is_process_filters(self):
         return self._process_filters

@@ -166,3 +166,7 @@ class NotFoundOperationalStorageError(RestAlchemyException):
 class ParseError(RestAlchemyException):
     message = "Can't parse value: %(value)s"
     code = 400
+
+
+class FieldPermissionError(RestAlchemyException):
+    message = "Permission denied for field %(field)s"

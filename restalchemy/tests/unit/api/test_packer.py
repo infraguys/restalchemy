@@ -20,8 +20,10 @@
 
 import mock
 
+from restalchemy.api import field_permissions
 from restalchemy.api import packers
 from restalchemy.api import resources
+from restalchemy.common import exceptions
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
@@ -30,6 +32,17 @@ from restalchemy.tests.unit import base
 
 class FakeModel(models.ModelWithUUID):
     field1 = properties.property(types.Integer(), required=False)
+    field2 = properties.property(types.Integer())
+    field3 = properties.property(types.Integer())
+    field4 = properties.property(types.Integer(), required=True)
+
+
+class TestData(object):
+    uuid = None
+    field1 = None
+    field2 = 2
+    field3 = 3
+    field4 = 4
 
 
 class BasePackerTestCase(base.BaseTestCase):
@@ -39,73 +52,84 @@ class BasePackerTestCase(base.BaseTestCase):
         self._test_instance = packers.BaseResourcePacker(
             resources.ResourceByRAModel(FakeModel), mock.Mock())
 
+    def tearDown(self):
+        super(BasePackerTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._test_instance
+
     def test_none_field_value(self):
-        TEST_OBJ = {'field1': None}
+        test_data = {'field1': None}
 
-        result = self._test_instance.unpack(TEST_OBJ)
+        result = self._test_instance.unpack(test_data)
 
-        self.assertDictEqual(result, TEST_OBJ)
+        self.assertDictEqual(result, test_data)
 
-#     def test_prepare_resource_dict_type(self):
-#         test_value = {'test': 'test', 'test2': 12345}
 
-#         self.assertDictEqual(self.test_instance.prepare_resource(test_value),
-#                              test_value)
+class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
+    def setUp(self):
+        super(PackerFieldPermissionsHiddenTestCase, self).setUp()
+        self._test_resource_packer = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(
+                FakeModel,
+                fields_permissions=field_permissions.FieldsPermissionsByRole(
+                    default=field_permissions.UniversalPermissions(
+                        permission=field_permissions.Permissions.HIDDEN)
+                )
+            ), mock.Mock())
 
-#     def test_prepare_resource_list_type(self):
-#         test_value = ['test', 'test', 'test2', 12345]
+    def tearDown(self):
+        super(PackerFieldPermissionsHiddenTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._test_resource_packer
 
-#         self.assertListEqual(self.test_instance.prepare_resource(test_value),
-#                              test_value)
+    def test_pack(self):
+        new_data = TestData()
+        expected_data = {}
 
-#     def assertPrepareResourceEqual(self, value):
+        result = self._test_resource_packer.pack(new_data)
+        self.assertDictEqual(result, expected_data)
 
-#         self.assertEqual(self.test_instance.prepare_resource(value), value)
+    def test_unpack(self):
+        new_data = {
+            'field2': 2
+        }
 
-#     def test_prepare_resource_basestring_type(self):
-#         self.assertPrepareResourceEqual("FakeValue")
-#         self.assertPrepareResourceEqual(u"FakeValue")
+        with self.assertRaises(exceptions.FieldPermissionError) as context:
+            self._test_resource_packer.unpack(new_data)
 
-#     def test_prepare_resource_int_type(self):
-#         self.assertPrepareResourceEqual(10)
+        self.assertEqual(
+            "Permission denied for field field2", str(context.exception))
+        self.assertEqual(context.exception.code, 500)
 
-#     def test_prepare_resource_long_type(self):
-#         self.assertPrepareResourceEqual(long(11))
 
-#     def test_prepare_resource_bool_type(self):
-#         self.assertPrepareResourceEqual(True)
-#         self.assertPrepareResourceEqual(False)
+class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
+    def setUp(self):
+        super(PackerFieldPermissionsRWTestCase, self).setUp()
+        self._test_resource_packer = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(
+                FakeModel,
+                fields_permissions=field_permissions.FieldsPermissionsByRole(
+                    default=field_permissions.UniversalPermissions()
+                )
+            ), mock.Mock())
 
-#     def test_prepare_resource_float_type(self):
-#         self.assertPrepareResourceEqual(0.1123)
+    def tearDown(self):
+        super(PackerFieldPermissionsRWTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._test_resource_packer
 
-#     def test_prepare_resource_none_type(self):
-#         self.assertPrepareResourceEqual(None)
+    def test_pack(self):
+        new_data = TestData()
+        expected_data = {'field2': 2, 'field3': 3, 'field4': 4}
 
-#     def test_raise_type_error(self):
-#         self.assertRaises(TypeError, self.test_instance.prepare_resource,
-#                           object())
+        result = self._test_resource_packer.pack(new_data)
+        self.assertDictEqual(result, expected_data)
 
-#     def test_prepare_resource_model_type(self):
-#         test_value = {'foo1': 'bar1', 'foo2': 'bar2'}
+    def test_unpack(self):
+        new_data = {
+            'field1': None,
+            'field2': 2
+        }
 
-#         model = mock.MagicMock(spec=models.Model)
-#         model.configure_mock(**{
-#             'items.return_value': test_value.items()})
-
-#         self.assertDictEqual(self.test_instance.prepare_resource(model),
-#                              test_value)
-
-#     @mock.patch.object(routes.RoutesMap, 'get_resource_location',
-#                        return_value='FakeUri')
-#     def test_prepare_resource_model_type_relationship(self, uri_mock):
-#         test_value = {'foo1': 'bar1',
-#                       'foo2': mock.MagicMock(spec=models.Model)}
-#         result = test_value.copy()
-#         result['foo2'] = 'FakeUri'
-#         model = mock.MagicMock(spec=models.Model)
-#         model.configure_mock(**{
-#             'items.return_value': test_value.items()})
-
-#         self.assertDictEqual(self.test_instance.prepare_resource(model),
-#                              result)
+        result = self._test_resource_packer.unpack(new_data)
+        self.assertDictEqual(result, new_data)
