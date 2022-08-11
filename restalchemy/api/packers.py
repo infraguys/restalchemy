@@ -1,7 +1,7 @@
 #    Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #    Copyright 2021 Eugene Frolov.
 #
-# All Rights Reserved.
+#    All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -22,6 +22,7 @@ import types
 
 import six
 
+from restalchemy.common import exceptions
 from restalchemy.common import utils
 
 
@@ -50,7 +51,10 @@ class BaseResourcePacker(object):
             result = {}
             for name, prop in self._rt.get_fields_by_request(self._req):
                 api_name = prop.api_name
-                if prop.is_public():
+                if (prop.is_public()
+                    and not self._rt._fields_permissions.is_hidden(
+                        self._req,
+                        name)):
                     value = getattr(obj, name)
                     if value is not None:
                         result[api_name] = prop.dump_value(value)
@@ -77,6 +81,11 @@ class BaseResourcePacker(object):
             if prop_value is not DEFAULT_VALUE:
                 if not prop.is_public():
                     raise ValueError("Property %s is private" % api_name)
+
+                if self._rt._fields_permissions.is_readonly(self._req, name):
+                    raise exceptions.FieldPermissionError(
+                        field=name
+                    )
                 result[name] = self._parse_value(api_name, prop_value, prop)
 
         if len(value) > 0:

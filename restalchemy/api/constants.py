@@ -29,6 +29,8 @@ ACTION_GET = 'ACTION_GET'
 ACTION_POST = 'ACTION_POST'
 ACTION_PUT = 'ACTION_PUT'
 
+# all RA methods
+ALL = 'ALL'
 
 ALL_RA_METHODS = [
     GET,              # Controller.get
@@ -39,4 +41,5 @@ ALL_RA_METHODS = [
     ACTION_GET,       # Action.get
     ACTION_POST,      # Action.post
     ACTION_PUT,       # Action.put
+    ALL               # All RA methods + actions
 ]
