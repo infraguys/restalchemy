@@ -69,6 +69,7 @@ class MySQLEngine(AbstractEngine):
                              "For example: mysql://username:password@"
                              "127.0.0.1:3306/database_name")
         config = config or {}
+        self._db_name = self._db_url.path[1:]
         config.update({
             'user': self.db_username,
             'password': self.db_password,
@@ -107,7 +108,7 @@ class MySQLEngine(AbstractEngine):
 
     @property
     def db_name(self):
-        return self._db_url.path[1:]
+        return self._db_name
 
     @property
     def db_username(self):
@@ -129,7 +130,7 @@ class MySQLEngine(AbstractEngine):
         return self._pool.get_connection()
 
     def get_session(self):
-        return sessions.MySQLSession(self.get_connection())
+        return sessions.MySQLSession(engine=self)
 
     def _get_session_from_storage(self):
         try:

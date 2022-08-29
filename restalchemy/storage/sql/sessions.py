@@ -89,9 +89,10 @@ class SessionQueryCache(object):
 
 class MySQLSession(object):
 
-    def __init__(self, conn):
-        self._conn = conn
-        self._cursor = conn.cursor(dictionary=True, buffered=True)
+    def __init__(self, engine):
+        self._engine = engine
+        self._conn = self._engine.get_connection()
+        self._cursor = self._conn.cursor(dictionary=True, buffered=True)
         self._log = LOG
         self.cache = SessionQueryCache(session=self)
 
@@ -163,7 +164,7 @@ class MySQLSession(object):
         self._log.debug(("Execute statement %s"
                          " with values %s"
                          " within %s database"),
-                        statement, values, self._conn.database)
+                        statement, values, self._engine.db_name)
         self._cursor.execute(statement, values)
         return self._cursor
 
@@ -171,7 +172,7 @@ class MySQLSession(object):
         self._log.debug(("Execute batch statement %s"
                          " with values %s"
                          " within %s database"),
-                        statement, values, self._conn.database)
+                        statement, values, self._engine.db_name)
         self._cursor.executemany(statement, values)
         return self._cursor
 
