@@ -34,6 +34,11 @@ HOSTNAME_TEMPLATE = (r"(?=^.{1,%i}$)(^%s((?!-)[a-zA-Z0-9-]{1,%i}(?<!-)\.){%i,}"
 
 class IPAddress(types.BaseType):
 
+    def __init__(self, **kwargs):
+        super(IPAddress, self).__init__(
+            openapi_type="string", **kwargs
+        )
+
     def validate(self, value):
         return isinstance(value, netaddr.IPAddress)
 
@@ -46,8 +51,21 @@ class IPAddress(types.BaseType):
     def from_unicode(self, value):
         return self.from_simple_type(value)
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            'type': self.openapi_type,
+            'anyOf': [{"format": "ipv4"}, {"format": "ipv6"}]
+        }
+        spec.update(types.build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 class Network(types.BaseType):
+
+    def __init__(self, **kwargs):
+        super(Network, self).__init__(
+            openapi_type="string", **kwargs
+        )
 
     def validate(self, value):
         return isinstance(value, netaddr.IPNetwork)
@@ -114,28 +132,29 @@ class SrvName(RecordName):
 
 
 class FQDN(types.BaseCompiledRegExpTypeFromAttr):
-    '''FQDN type. Allows 1 level too. Root only is prohibited.
+    """FQDN type. Allows 1 level too. Root only is prohibited.
 
     See https://github.com/powerdns/pdns/blob/master/pdns/dnsname.cc#L44
     and https://github.com/powerdns/pdns/blob/master/pdns/ws-api.cc#L387
-    '''
+    """
     pattern = re.compile(
         FQDN_TEMPLATE %
         (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, FQDN_MIN_LEVELS))
 
-    def __init__(self, min_levels=FQDN_MIN_LEVELS):
+    def __init__(self, min_levels=FQDN_MIN_LEVELS, **kwargs):
         if min_levels > FQDN_MIN_LEVELS:
             self.pattern = re.compile(
                 FQDN_TEMPLATE %
                 (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, min_levels))
-        super(FQDN, self).__init__()
+        super(FQDN, self).__init__(**kwargs)
 
 
 class Hostname(types.BaseCompiledRegExpTypeFromAttr):
-    '''Same as FQDN but without root dot. Allows 1 level too. '''
+    """Same as FQDN but without root dot. Allows 1 level too. """
 
     def __init__(self, min_levels=HOSTNAME_MIN_LEVELS,
-                 allow_leading_underscore=False):
+                 allow_leading_underscore=False,
+                 **kwargs):
         self.pattern = re.compile(
             HOSTNAME_TEMPLATE % (
                 HOSTNAME_MAX_LEN,
@@ -145,4 +164,4 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
                 DNS_LABEL_MAX_LEN
             )
         )
-        super(Hostname, self).__init__()
+        super(Hostname, self).__init__(**kwargs)

@@ -38,19 +38,19 @@ class RestAlchemyException(Exception):
 
 class PropertyNotFoundError(RestAlchemyException):
 
-    message = "'%(class_name)s' object has no property '%(property_name)s'"
+    message = "'%(class_name)s' object has no property '%(property_name)s'."
     code = 400
 
 
 class NotFoundError(RestAlchemyException):
 
-    message = "Nothing is found on path '%(path)s'"
+    message = "Nothing is found on path '%(path)s'."
     code = 404
 
 
 class NotImplementedError(NotFoundError):
 
-    message = "Not implemented"
+    message = "Not implemented."
 
 
 class UnsupportedHttpMethod(RestAlchemyException):
@@ -60,44 +60,44 @@ class UnsupportedHttpMethod(RestAlchemyException):
 
 class UnsupportedMethod(NotFoundError):
     message = "Method '%(method)s' is not supported " \
-              "for %(object_name)s"
+              "for %(object_name)s."
 
 
 class LocatorNotFound(NotFoundError):
     message = ("Locator is not found for URI %(uri)s. "
-               "Thus resource could not be found. ")
+               "Thus resource could not be found.")
 
 
 class UnknownResourceLocation(NotFoundError):
     message = ("Can not construct resource location for resource %(resource)r "
-               "because the resource can't be got using REST API")
+               "because the resource can't be got using REST API.")
 
 
 class CanNotFindResourceByModel(NotFoundError):
-    message = "Can not find a resource by model (%(model)r)"
+    message = "Can not find a resource by model (%(model)r)."
 
 
 class IncorrectRouteAttributeClass(NotFoundError):
-    message = "Route %(route)s is of unacceptable class"
+    message = "Route %(route)s is of unacceptable class."
 
 
 class IncorrectRouteAttribute(NotFoundError):
-    message = "Route %(route)s doesn't have method %(attr)s"
+    message = "Route %(route)s doesn't have method %(attr)s."
 
 
 class IncorrectActionCall(NotFoundError):
     message = "Action %(action)s is incorrectly called with HTTP method %(" \
-              "method)s"
+              "method)s."
 
 
 class ResourceNotFoundError(NotFoundError):
 
-    message = "Resource '%(resource)s' is not found on path: %(path)s"
+    message = "Resource '%(resource)s' is not found on path: %(path)s."
 
 
 class CollectionNotFoundError(NotFoundError):
 
-    message = "Collection '%(collection)s' is not found on path: %(path)s"
+    message = "Collection '%(collection)s' is not found on path: %(path)s."
 
 
 class PropertyException(RestAlchemyException, ValueError):
@@ -119,12 +119,12 @@ class PropertyRequired(PropertyException):
 
 class ReadOnlyProperty(PropertyException):
 
-    message = ("Property '%(name)s' of model %(model)s is read only!")
+    message = ("Property '%(name)s' of model %(model)s is read only.")
 
 
 class TypeError(RestAlchemyException, TypeError):
 
-    message = "Invalid type value '%(value)s' for '%(property_type)s'"
+    message = "Invalid type value '%(value)s' for '%(property_type)s'."
 
     def __init__(self, value, property_type):
         self._value = value
@@ -142,7 +142,7 @@ class TypeError(RestAlchemyException, TypeError):
 class ModelTypeError(TypeError):
 
     message = ("Invalid type value '%(value)s'(%(value_type)s) for "
-               "'%(model_name)s.%(property_name)s'(%(property_type)s)")
+               "'%(model_name)s.%(property_name)s'(%(property_type)s).")
 
     def __init__(self, value, property_name, property_type, model):
         super(TypeError, self).__init__(
@@ -155,21 +155,21 @@ class ModelTypeError(TypeError):
 class RelationshipModelError(RestAlchemyException):
 
     message = ("Invalid model %(model)s for relationship. Must be inherited "
-               "from dm.core.models.Model")
+               "from dm.core.models.Model.")
 
 
 class NotFoundOperationalStorageError(RestAlchemyException):
 
-    message = "Can't get data for %(name)s key"
+    message = "Can't get data for %(name)s key."
 
 
 class ParseError(RestAlchemyException):
-    message = "Can't parse value: %(value)s"
+    message = "Can't parse value: %(value)s."
     code = 400
 
 
 class FieldPermissionError(RestAlchemyException):
-    message = "Permission denied for field %(field)s"
+    message = "Permission denied for field %(field)s."
 
 
 class ValidationErrorException(RestAlchemyException):

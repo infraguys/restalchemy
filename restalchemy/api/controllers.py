@@ -25,13 +25,17 @@ from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
 from restalchemy.dm import filters as dm_filters
-
+from restalchemy.openapi import constants as oa_c
+from restalchemy.openapi import utils as oa_utils
 
 LOG = logging.getLogger(__name__)
 
 
 class Controller(object):
     __resource__ = None  # type: resources.ResourceByRAModel
+
+    # Not for common cases (Example: for JSONPackerIncludeNullFields)
+    __packer__ = None  # type: packers.BaseResourcePacker
 
     # You can also generate location header for GET and UPDATE methods,
     # just expand the list with the following constants:
@@ -53,7 +57,7 @@ class Controller(object):
         return self._req
 
     def get_packer(self, content_type, resource_type=None):
-        packer = packers.get_packer(content_type)
+        packer = self.__packer__ or packers.get_packer(content_type)
         rt = resource_type or self.get_resource()
         return packer(rt, request=self._req)
 
@@ -356,3 +360,33 @@ class BaseNestedResourceController(BaseResourceController):
         dm.update_dm(values=kwargs)
         dm.update()
         return dm
+
+
+class RootController(Controller):
+
+    def filter(self, filters):
+        main_route = self.request.application.main_route
+        req = self.request
+        return [
+            route_name for route_name in main_route.get_routes()
+            if main_route.get_route(route_name)(req).is_collection_route()
+        ]
+
+
+class OpenApiSpecificationController(Controller):
+
+    @oa_utils.extend_schema(summary="OpenApi specification",
+                            responses=oa_c.build_openapi_object_response({}))
+    def get(self, uuid):
+        openapi_engine = self.request.application.openapi_engine
+        if openapi_engine:
+            return openapi_engine.build_openapi_specification(
+                version=uuid, request=self._req,
+            )
+        raise exc.NotExtended()
+
+    def filter(self, filters):
+        openapi_engine = self.request.application.openapi_engine
+        if openapi_engine:
+            return openapi_engine.list_supported_openapi_versions()
+        return []

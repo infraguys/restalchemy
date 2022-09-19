@@ -16,6 +16,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from restalchemy.api import routes
+from restalchemy.openapi import structures
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     controllers)
 
@@ -24,13 +25,15 @@ class IpAddress(routes.Route):
     __controller__ = controllers.IpAddressController
     __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
                          routes.DELETE]
+    __tags__ = ["IpAddress_tag"]
 
 
 class PortRoute(routes.Route):
     __controller__ = controllers.PortController
     __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
                          routes.UPDATE, routes.DELETE]
-
+    __tags__ = [structures.OpenApiTag(name="PortTestTag",
+                                      description="port_descr")]
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
@@ -68,8 +71,6 @@ class V1Route(routes.Route):
     vms = routes.route(VMRoute)
 
 
-class Root(routes.Route):
-    __controller__ = controllers.RootController
-    __allow_methods__ = [routes.FILTER]
+class Root(routes.RootRoute):
 
     v1 = routes.route(V1Route)

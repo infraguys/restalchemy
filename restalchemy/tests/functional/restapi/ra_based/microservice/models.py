@@ -26,9 +26,13 @@ class VM(models.ModelWithUUID):
 
     state = properties.property(types.String(max_length=10), required=True,
                                 default="off")
-    name = properties.property(types.String(max_length=255), required=True)
+    name = properties.property(types.String(max_length=255), required=True,
+                               example="testname")
     just_none = properties.property(types.AllowNone(types.String),
                                     required=False, default=None)
+    status = properties.property(types.Enum(["active", "disabled"]),
+                                 default="active",
+                                 required=True)
 
 
 class Port(models.CustomPropertiesMixin, models.ModelWithUUID):

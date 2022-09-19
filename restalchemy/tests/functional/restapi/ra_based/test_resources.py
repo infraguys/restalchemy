@@ -24,6 +24,7 @@ import requests
 from six.moves.urllib import parse
 from webob import request
 
+from restalchemy.api import constants
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import utils
@@ -36,6 +37,10 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import service
 
 TEMPL_SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:%s/")
 TEMPL_ROOT_COLLECTION_ENDPOINT = TEMPL_SERVICE_ENDPOINT
+TEMPL_SPEC_SPEC_ENDPOINT = utils.lastslash(parse.urljoin(
+    TEMPL_SERVICE_ENDPOINT, 'specifications'))
+TEMPL_OPENAPI_SPEC_ENDPOINT = parse.urljoin(
+    TEMPL_SPEC_SPEC_ENDPOINT, '3.0.3')
 TEMPL_V1_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
     TEMPL_SERVICE_ENDPOINT, 'v1'))
 TEMPL_VMS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
@@ -95,7 +100,39 @@ class TestRootResourceTestCase(BaseResourceTestCase):
             TEMPL_ROOT_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), ["v1"])
+        self.assertEqual(sorted(response.json()),
+                         ["specifications", "v1"])
+
+
+class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
+
+    def test_generate_openapi_specification(self):
+        info = {
+            'title': 'REST API Microservice',
+            'description': 'REST API Microservice for tests',
+            'termsOfService': 'https://functional.tests/terms/',
+            'contact': {
+                'name': 'Functional Tests',
+                'url': 'https://functional.tests/',
+                'email': 'functional@tests.local',
+            },
+            'license': {
+                'name': 'Apache 2.0',
+                'url': 'https://www.apache.org/licenses/LICENSE-2.0.html',
+            },
+            'version': '1.2.3',
+        }
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_OPENAPI_SPEC_ENDPOINT),
+        )
+
+        self.assertEqual(200, response.status_code)
+
+        res = response.json()
+
+        self.assertEqual(res["openapi"], '3.0.3')
+        self.assertEqual(res["info"], info)
 
 
 class TestVersionsResourceTestCase(BaseResourceTestCase):
@@ -113,7 +150,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
     def tearDown(self):
         super(TestVMResourceTestCase, self).tearDown()
-        packers.set_packer(packers.CONTENT_TYPE_APPLICATION_JSON,
+        packers.set_packer(constants.CONTENT_TYPE_APPLICATION_JSON,
                            packers.JSONPacker)
 
     def _insert_vm_to_db(self, uuid, name, state):
@@ -137,7 +174,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         vm_response_body = {
             "uuid": str(RESOURCE_ID),
             "name": "test",
-            "state": "off"
+            "state": "off",
+            "status": "active"
         }
         LOCATION = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
 
@@ -154,7 +192,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         vm_response_body = {
             "uuid": str(RESOURCE_ID),
             "name": "test",
-            "state": "off"
+            "state": "off",
+            "status": "active"
         }
         VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
                                             RESOURCE_ID)
@@ -171,11 +210,12 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID),
             "name": "test",
             "state": "off",
-            "just-none": None
+            "just-none": None,
+            "status": "active"
         }
         VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
                                             RESOURCE_ID)
-        packers.set_packer(packers.CONTENT_TYPE_APPLICATION_JSON,
+        packers.set_packer(constants.CONTENT_TYPE_APPLICATION_JSON,
                            packers.JSONPackerIncludeNullFields)
 
         response = requests.get(VM_RES_ENDPOINT)
@@ -192,7 +232,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         vm_response_body = {
             "uuid": str(RESOURCE_ID),
             "name": "new",
-            "state": "off"
+            "state": "off",
+            "status": "active"
         }
         VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
                                             RESOURCE_ID)
@@ -229,6 +270,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID),
             "name": "new",
             "state": "off",
+            "status": "active",
         }
         response = requests.put(VM_RES_ENDPOINT, json=vm_request_body)
 
@@ -253,7 +295,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         vm_response_body = {
             "uuid": str(RESOURCE_ID),
             "name": "test",
-            "state": "on"
+            "state": "on",
+            "status": "active"
         }
         POWERON_ACT_ENDPOINT = self.get_endpoint(TEMPL_POWERON_ACTION_ENDPOINT,
                                                  RESOURCE_ID)
@@ -271,11 +314,13 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         vm_response_body = [{
             "uuid": str(RESOURCE_ID1),
             "name": "test1",
-            "state": "off"
+            "state": "off",
+            "status": "active"
         }, {
             "uuid": str(RESOURCE_ID2),
             "name": "test2",
-            "state": "on"
+            "state": "on",
+            "status": "active"
         }]
 
         response = requests.get(self.get_endpoint(
@@ -330,7 +375,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         vm_response_body = [{
             "uuid": str(RESOURCE_ID2),
             "name": "test2",
-            "state": "on"
+            "state": "on",
+            "status": "active"
         }]
 
         response = requests.get(self.get_endpoint("%s?uuid=%s" % (
@@ -372,11 +418,13 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         vm_response_body = [{
             "uuid": str(RESOURCE_ID1),
             "name": "test1",
-            "state": "off"
+            "state": "off",
+            "status": "active"
         }, {
             "uuid": str(RESOURCE_ID3),
             "name": "test3",
-            "state": "off"
+            "state": "off",
+            "status": "active"
         }]
 
         response = requests.get(self.get_endpoint("%s?uuid=%s&uuid=%s" % (
@@ -623,7 +671,7 @@ class ResourceExceptionsTestCase(BaseResourceTestCase):
 
         message = response.json()["message"]
         self.assertEqual(response.status_code, 400)
-        expected_message = "Can't parse value: %s=%s" % ("uuid", BAD_UUID)
+        expected_message = "Can't parse value: %s=%s." % ("uuid", BAD_UUID)
         self.assertEqual(message, expected_message)
 
     def test_filter_parse_error_exception(self):
@@ -637,7 +685,7 @@ class ResourceExceptionsTestCase(BaseResourceTestCase):
 
         message = response.json()["message"]
         self.assertEqual(response.status_code, 400)
-        expected_message = "Can't parse value: %s=%s" % ("uuid", BAD_UUID)
+        expected_message = "Can't parse value: %s=%s." % ("uuid", BAD_UUID)
         self.assertEqual(message, expected_message)
 
     def test_resource_id_parse_error_exception(self):
@@ -648,7 +696,7 @@ class ResourceExceptionsTestCase(BaseResourceTestCase):
 
         message = response.json()["message"]
         self.assertEqual(response.status_code, 400)
-        expected_message = "Can't parse value: %s=%s" % ("uuid", BAD_UUID)
+        expected_message = "Can't parse value: %s=%s." % ("uuid", BAD_UUID)
         self.assertEqual(message, expected_message)
 
 

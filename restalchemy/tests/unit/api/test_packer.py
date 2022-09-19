@@ -99,7 +99,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
             self._test_resource_packer.unpack(new_data)
 
         self.assertEqual(
-            "Permission denied for field field2", str(context.exception))
+            "Permission denied for field field2.", str(context.exception))
         self.assertEqual(context.exception.code, 500)
 
 

@@ -17,14 +17,21 @@
 #    under the License.
 
 import abc
+import collections
 import inspect
 import posixpath
+import re
 
 import six
 
+from restalchemy.api import actions
 from restalchemy.api import constants
+from restalchemy.api import controllers
 from restalchemy.common import exceptions as exc
-
+from restalchemy.common import utils
+from restalchemy.openapi import constants as oa_c
+from restalchemy.openapi import parse
+from restalchemy.openapi import structures
 
 # RA HTTP methods
 GET = constants.GET
@@ -44,9 +51,9 @@ RESOURCE_ROUTE = 2
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseRoute(object):
-
     __controller__ = None
     __allow_methods__ = []
+    __tags__ = None  # list of strings or dicts with name and description
 
     def __init__(self, req):
         super(BaseRoute, self).__init__()
@@ -67,6 +74,34 @@ class BaseRoute(object):
     @abc.abstractmethod
     def do(self, **kwargs):
         pass
+
+    @classmethod
+    def tags(cls, for_paths=False):
+        if not cls.__tags__:
+            controller = cls.get_controller_class()
+            if controller:
+                resource = controller.get_resource()
+                if resource:
+                    if for_paths:
+                        return [resource.get_model().__name__]
+                    else:
+                        return [{"name": resource.get_model().__name__,
+                                 "description": ""}]
+            return []
+        res = []
+        if isinstance(cls.__tags__, list):
+            for tag in cls.__tags__:
+                if isinstance(tag, str):
+                    if for_paths:
+                        res.append(tag)
+                    else:
+                        res.append({"name": tag, "description": ""})
+                elif isinstance(tag, structures.OpenApiTag):
+                    if for_paths:
+                        res.append(tag.name)
+                    else:
+                        res.append(tag.build())
+        return res
 
 
 class Route(BaseRoute):
@@ -108,8 +143,24 @@ class Route(BaseRoute):
             return False
 
     @classmethod
+    def is_action(cls, name):
+        try:
+            cls.get_action(name)
+            return True
+        except (exc.IncorrectRouteAttributeClass, exc.IncorrectRouteAttribute):
+            return False
+
+    @classmethod
     def get_routes(cls):
         return filter(lambda x: cls.is_route(x), dir(cls))
+
+    @classmethod
+    def get_action_names(cls):
+        return filter(lambda x: cls.is_action(x), dir(cls))
+
+    @classmethod
+    def get_actions_by_names(cls, names):
+        return [getattr(cls.get_controller_class(), name) for name in names]
 
     @classmethod
     def check_allow_methods(cls, *args):
@@ -127,6 +178,195 @@ class Route(BaseRoute):
             return mapping[self._req.method]
         except KeyError:
             raise exc.UnsupportedHttpMethod(method=self._req.method)
+
+    def _build_openapi_routes_specification(self,
+                                            route_names,
+                                            current_path,
+                                            parameters=None):
+        for name in route_names:
+            next_route = self.get_route(name)(self._req)
+            route_path = posixpath.join(current_path, name + '/')
+            yield next_route.build_openapi_specification(route_path,
+                                                         parameters)
+
+    def _build_openapi_method_specification(self,
+                                            method,
+                                            parameters=None,
+                                            current_path='/'):
+        controller = self.get_controller(request=self._req)
+        if isinstance(method, actions.ActionHandler):
+            method_name = method.name
+        else:
+            method = getattr(controller, method.lower())
+            method_name = method.__name__.upper()
+        openapi_schema = getattr(method, "openapi_schema", None)
+        if openapi_schema:
+            return openapi_schema.result
+
+        parsed_doc = parse.parse_docstring(method.__doc__)
+        res = controller.get_resource()
+        model_name = res.get_model().__name__ if res else "Unknown"
+        summary_name = (model_name if res else
+                        "{} {}".format(self.__class__.__name__,
+                                       controller.__class__.__name__))
+        if method_name == constants.FILTER:
+            summary_name += "s"
+        summary = parsed_doc['short_description']
+        summary = summary or "%s %s" % (
+            (method_name.capitalize() if method_name != constants.FILTER
+             else constants.GET.capitalize()),
+            summary_name)
+
+        # Fill responses
+        responses = parsed_doc['returns']
+        method_model_name = "{}_{}".format(model_name,
+                                           method_name.capitalize())
+        if not responses:
+            if method_name in [constants.UPDATE,
+                               constants.GET]:
+                if res:
+                    responses = oa_c.build_openapi_get_update_response(
+                        method_model_name)
+                else:
+                    responses = oa_c.OPENAPI_FILTER_RESPONSE
+            elif method_name == constants.FILTER:
+                if res:
+                    responses = oa_c.build_openapi_list_model_response(
+                        method_model_name
+                    )
+                else:
+                    responses = oa_c.OPENAPI_FILTER_RESPONSE
+            elif method_name == constants.CREATE:
+                responses = oa_c.build_openapi_create_response(
+                    method_model_name
+                )
+            elif method_name == constants.DELETE:
+                responses = oa_c.OPENAPI_DELETE_RESPONSE
+            else:
+                responses = oa_c.OPENAPI_DEFAULT_RESPONSE
+
+        # fill url parameters
+        params = parsed_doc['params']
+        if not params and parameters:
+            path_params = re.findall(r'\{(.*?)\}', current_path)
+            for path_param in path_params:
+                param = parameters.get("components",
+                                       {}).get("parameters",
+                                               {}).get(path_param,
+                                                       {})
+                if param:
+                    param["name"] = path_param
+                    params.append(param)
+            if res and self.is_collection_route() and (
+                    method_name == constants.FILTER):
+                for name, prop in res.get_fields_by_request(self._req):
+                    param = parameters.get("components",
+                                           {}).get("parameters",
+                                                   {}).get(prop.api_name,
+                                                           {})
+                    if param:
+                        params.append(param)
+
+        result = {
+            'summary': summary,
+            'tags': self.tags(for_paths=True),
+            'parameters': params,
+            'responses': responses
+        }
+
+        # Fill request_body
+        if method_name in [constants.CREATE, constants.UPDATE]:
+            result["requestBody"] = oa_c.build_openapi_request_body(
+                method_model_name
+            )
+
+        return result
+
+    def build_openapi_specification(self, current_path='/', parameters=None):
+
+        paths_result = collections.defaultdict(dict)
+        schemas_result = collections.defaultdict(dict)
+
+        if self.__class__ == OpenApiSpecificationRoute:
+            ctr = self.get_controller(request=self._req)
+            versions = ctr.filter({})
+            for version in versions:
+                resource_path = posixpath.join(current_path, version)
+                paths_result[resource_path][GET.lower()] = (
+                    self._build_openapi_method_specification(GET,
+                                                             parameters,
+                                                             current_path))
+                assert True
+
+        openapi_collection_methods = {GET: FILTER, POST: CREATE}
+        openapi_resource_methods = {GET: GET, PUT: UPDATE, DELETE: DELETE}
+
+        # build specification for collection methods
+        for http_method, ra_method in openapi_collection_methods.items():
+            if self.check_allow_methods(ra_method):
+                paths_result[current_path][http_method.lower()] = (
+                    self._build_openapi_method_specification(ra_method,
+                                                             parameters,
+                                                             current_path)
+                )
+            routes = [r for r in self.get_routes()
+                      if self.get_route(r).is_collection_route()]
+            route_gen = self._build_openapi_routes_specification(routes,
+                                                                 current_path,
+                                                                 parameters)
+            for p, s in route_gen:
+                paths_result.update(p)
+                schemas_result.update(s)
+
+        # build specification for resource methods
+        resource = self.get_controller(request=self._req).get_resource()
+        if resource is not None:
+            model = resource.get_model()
+            id_prop_struct = model.get_id_property()
+            id_name = list(id_prop_struct)[0]
+            id_parameter_name = "{%s%s}" % (model.__name__,
+                                            id_name.capitalize())
+            resource_path = posixpath.join(current_path, id_parameter_name)
+            for http_method, ra_method in openapi_resource_methods.items():
+                if self.check_allow_methods(ra_method):
+                    paths_result[resource_path][http_method.lower()] = (
+                        self._build_openapi_method_specification(ra_method,
+                                                                 parameters,
+                                                                 resource_path)
+                    )
+            routes = [route_name for route_name in self.get_routes()
+                      if self.get_route(route_name).is_resource_route()]
+            route_gen = self._build_openapi_routes_specification(routes,
+                                                                 resource_path,
+                                                                 parameters)
+            for p, s in route_gen:
+                paths_result.update(p)
+                schemas_result.update(s)
+
+            action_names = [r for r in self.get_action_names()]
+            if action_names:
+                route_actions = self.get_actions_by_names(action_names)
+                for route_action in route_actions:
+                    is_invoke = getattr(self,
+                                        route_action.name).is_invoke()
+                    if is_invoke:
+                        action_path = utils.lastslash(
+                            posixpath.join(current_path,
+                                           id_parameter_name,
+                                           "actions",
+                                           route_action.name,
+                                           "invoke"))
+                    else:
+                        action_path = utils.lastslash(
+                            posixpath.join(current_path,
+                                           id_parameter_name,
+                                           route_action.name))
+                    paths_result[action_path][route_action.method.lower()] = (
+                        self._build_openapi_method_specification(route_action,
+                                                                 parameters,
+                                                                 action_path)
+                    )
+        return paths_result, schemas_result
 
     @classmethod
     def build_resource_map(cls, root_route, path_stack=None):
@@ -281,25 +521,26 @@ class Route(BaseRoute):
 
 
 def route(route_class, resource_route=False):
+    @classmethod
+    def is_resource_route(cls):
+        return resource_route
 
-    class RouteBased(route_class):
+    @classmethod
+    def is_collection_route(cls):
+        return not resource_route
 
-        @classmethod
-        def is_resource_route(cls):
-            return resource_route
+    route_class.is_resource_route = is_resource_route
+    route_class.is_collection_route = is_collection_route
 
-        @classmethod
-        def is_collection_route(cls):
-            return not resource_route
-
-    return RouteBased
+    return route_class
 
 
 class Action(BaseRoute):
     __controller__ = None
     __allow_methods__ = [GET]
 
-    def is_invoke(self):
+    @classmethod
+    def is_invoke(cls):
         return False
 
     def do(self, resource, **kwargs):
@@ -327,10 +568,21 @@ class Action(BaseRoute):
 
 
 def action(action_class, invoke=False):
+    @classmethod
+    def is_invoke(cls):
+        return invoke
 
-    class ActionBased(action_class):
+    action_class.is_invoke = is_invoke
+    return action_class
 
-        def is_invoke(self):
-            return invoke
 
-    return ActionBased
+class OpenApiSpecificationRoute(Route):
+    __controller__ = controllers.OpenApiSpecificationController
+    __allow_methods__ = [FILTER, GET]
+
+
+class RootRoute(Route):
+    __controller__ = controllers.RootController
+    __allow_methods__ = [FILTER, GET]
+
+    specifications = route(OpenApiSpecificationRoute)

@@ -616,3 +616,22 @@ class HostnameTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance.validate('.restalchemy.com'))
         self.assertFalse(self.test_instance.validate(u'xx.москва.рф'))
         self.assertFalse(self.test_instance.validate(u'москва.рф'))
+
+
+class UrlTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(UrlTestCase, self).setUp()
+
+        self.test_instance = types.Url()
+
+    def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate(
+            'http://www.gmail.com'))
+        self.assertTrue(self.test_instance.validate(
+            'https://www.gmail.com/test'))
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate('x.y.z'))
+        self.assertFalse(self.test_instance.validate(532))
+        self.assertFalse(self.test_instance.validate('google.com.55'))

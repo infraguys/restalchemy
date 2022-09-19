@@ -21,13 +21,15 @@ import copy
 import datetime
 import json
 import re
+import sys
+import time
 import uuid
 
 import six
 
 if six.PY2:
     # http://bugs.python.org/issue7980
-    datetime.datetime.strptime('', '')
+    datetime.datetime.strptime("", "")
 
 
 INFINITY = float("inf")
@@ -40,18 +42,46 @@ UUID_RE_TEMPLATE = r"[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
 # the regexp has issue https://github.com/kvesteri/validators/issues/185
 HOSTNAME_RE_TEMPLATE = (
     # First character of the domain
-    u'^(?:[a-zA-Z0-9]'
+    u"^(?:[a-zA-Z0-9]"
     # Sub domain + hostname
-    u'(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)'  # noqa
+    u"(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)"  # noqa
     # First 61 characters of the gTLD
-    u'+[A-Za-z0-9][A-Za-z0-9-_]{0,61}'
+    u"+[A-Za-z0-9][A-Za-z0-9-_]{0,61}"
     # Last character of the gTLD
-    u'[A-Za-z]$'
+    u"[A-Za-z]$"
 )
+KWARGS_OPENAPI_MAP = {
+    "read_only": "readOnly",
+    "default": "default",
+    "example": "example",
+}
+OPENAPI_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def build_prop_kwargs(kwargs):
+    result = {}
+    for k, v in KWARGS_OPENAPI_MAP.items():
+        if k in kwargs.keys():
+            value = kwargs[k]() if callable(kwargs[k]) else kwargs[k]
+            if isinstance(value, (UUID, uuid.UUID)):
+                value = "uuid"
+            elif isinstance(value, datetime.datetime):
+                value = value.strftime(OPENAPI_FMT)
+            elif hasattr(value, '__dict__'):
+                value = "{} object".format(value.__class__.__name__)
+            result[v] = value
+    return result
 
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseType(object):
+
+    def __init__(self,
+                 openapi_type="object",
+                 openapi_format=None):
+        super(BaseType, self).__init__()
+        self._openapi_type = openapi_type
+        self._openapi_format = openapi_format
 
     @abc.abstractmethod
     def validate(self, value):
@@ -72,11 +102,31 @@ class BaseType(object):
     def __repr__(self):
         return self.__class__.__name__
 
+    @property
+    def ra_type(self):
+        return self.__class__
+
+    @property
+    def openapi_type(self):
+        return self._openapi_type
+
+    @property
+    def openapi_format(self):
+        return self._openapi_format
+
+    def to_openapi_spec(self,
+                        prop_kwargs):
+        spec = {"type": self._openapi_type}
+        if self._openapi_format is not None:
+            spec["format"] = self._openapi_format
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 class BasePythonType(BaseType):
 
-    def __init__(self, python_type):
-        super(BasePythonType, self).__init__()
+    def __init__(self, python_type, **kwargs):
+        super(BasePythonType, self).__init__(**kwargs)
         self._python_type = python_type
 
     def validate(self, value):
@@ -95,19 +145,21 @@ class BasePythonType(BaseType):
 class Boolean(BasePythonType):
 
     def __init__(self):
-        super(Boolean, self).__init__(bool)
+        super(Boolean, self).__init__(bool,
+                                      openapi_type="boolean")
 
     def from_simple_type(self, value):
         return bool(value)
 
     def from_unicode(self, value):
-        return value.lower() in ['yes', 'true', '1']
+        return value.lower() in ["yes", "true", "1"]
 
 
 class String(BasePythonType):
 
     def __init__(self, min_length=0, max_length=six.MAXSIZE):
-        super(String, self).__init__(six.string_types)
+        super(String, self).__init__(six.string_types,
+                                     openapi_type="string")
         self.min_length = int(min_length)
         self.max_length = int(max_length)
 
@@ -118,11 +170,21 @@ class String(BasePythonType):
     def from_unicode(self, value):
         return six.text_type(value)
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "minLength": self.min_length,
+            "maxLength": self.max_length,
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 class Integer(BasePythonType):
 
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
-        super(Integer, self).__init__(six.integer_types)
+        super(Integer, self).__init__(six.integer_types,
+                                      openapi_type="integer")
         self.min_value = (
             min_value if min_value == -INFINITY else int(min_value))
         self.max_value = max_value if max_value == INFINITY else int(max_value)
@@ -134,11 +196,49 @@ class Integer(BasePythonType):
     def from_unicode(self, value):
         return int(value)
 
+    @property
+    def max_openapi_value(self):
+        if self.max_value == INFINITI:
+            if six.PY2:
+                return sys.maxint
+            else:
+                return sys.maxsize
+        else:
+            return self.max_value
+
+    @property
+    def min_openapi_value(self):
+        if self.min_value == -INFINITI:
+            if six.PY2:
+                return -sys.maxint
+            else:
+                return -sys.maxsize
+        else:
+            return self.min_value
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "minimum": self.min_openapi_value,
+            "maximum": self.max_openapi_value,
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
+
+class Int8(Integer):
+    def __init__(self):
+        super(Int8, self).__init__(
+            min_value=0,
+            max_value=2 ** 8 - 1)
+
 
 class Float(BasePythonType):
 
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
-        super(Float, self).__init__(float)
+        super(Float, self).__init__(float,
+                                    openapi_type="number",
+                                    openapi_format="float")
         self.min_value = (
             min_value if min_value == -INFINITY else float(min_value))
         self.max_value = max_value if max_value == INFINITY else float(
@@ -148,8 +248,42 @@ class Float(BasePythonType):
         result = super(Float, self).validate(value)
         return result and self.min_value <= value <= self.max_value
 
+    @property
+    def max_openapi_value(self):
+        if self.max_value == INFINITI:
+            if six.PY2:
+                return sys.maxint
+            else:
+                return sys.float_info.max
+        else:
+            return self.max_value
+
+    @property
+    def min_openapi_value(self):
+        if self.min_value == -INFINITI:
+            if six.PY2:
+                return -sys.maxint
+            else:
+                return -sys.float_info.max
+        else:
+            return self.min_value
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "format": self.openapi_format,
+            "minimum": self.min_openapi_value,
+            "maximum": self.max_openapi_value,
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 class UUID(BaseType):
+
+    def __init__(self):
+        super(UUID, self).__init__(openapi_type="string",
+                                   openapi_format="uuid")
 
     def to_simple_type(self, value):
         return str(value)
@@ -190,7 +324,18 @@ class ComplexPythonType(BasePythonType):
 class List(ComplexPythonType):
 
     def __init__(self):
-        super(List, self).__init__(list)
+        super(List, self).__init__(list,
+                                   openapi_type="array",
+                                   openapi_format="string")
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "format": self.openapi_format,
+            "items": {"type": "string"}
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
 
 
 class TypedList(List):
@@ -325,10 +470,12 @@ class TypedDict(Dict):
 
 class UTCDateTime(BasePythonType):
 
-    _FORMAT = '%Y-%m-%d %H:%M:%S.%f'
+    _FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
     def __init__(self):
-        super(UTCDateTime, self).__init__(python_type=datetime.datetime)
+        super(UTCDateTime, self).__init__(python_type=datetime.datetime,
+                                          openapi_type="string",
+                                          openapi_format="date-time")
 
     def validate(self, value):
         return isinstance(value, datetime.datetime) and value.tzinfo is None
@@ -345,11 +492,30 @@ class UTCDateTime(BasePythonType):
         return self.from_simple_type(value)
 
 
+class DateTime(BasePythonType):
+
+    def __init__(self):
+        super(DateTime, self).__init__(python_type=datetime.datetime)
+
+    def to_simple_type(self, value):
+        return int(time.mktime(value.utctimetuple()))
+
+    def from_simple_type(self, value):
+        return datetime.datetime.utcfromtimestamp(value)
+
+    def from_unicode(self, value):
+        return self.from_simple_type(value)
+
+
 class Enum(BaseType):
 
     def __init__(self, enum_values):
-        super(Enum, self).__init__()
+        super(Enum, self).__init__(openapi_type="string")
         self._enums_values = copy.deepcopy(enum_values)
+
+    @property
+    def values(self):
+        return self._enums_values
 
     def validate(self, value):
         return value in self._enums_values
@@ -368,12 +534,22 @@ class Enum(BaseType):
                         " Allowed values are %s"
                         % (value, self._enums_values))
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "enum": list(self.values),
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 class BaseRegExpType(BaseType):
-    '''BaseCompiledRegExpTypeFromAttr is preferred to be used'''
+    """BaseCompiledRegExpTypeFromAttr is preferred to be used"""
 
-    def __init__(self, pattern):
-        super(BaseType, self).__init__()
+    def __init__(self, pattern,
+                 openapi_type="string",
+                 **kwargs):
+        super(BaseRegExpType, self).__init__(openapi_type, **kwargs)
         self._pattern = re.compile(pattern)
 
     def validate(self, value):
@@ -391,36 +567,81 @@ class BaseRegExpType(BaseType):
     def from_unicode(self, value):
         return value
 
+    @property
+    def pattern_openapi(self):
+        return self._pattern.pattern
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "pattern": self.pattern_openapi
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 class BaseCompiledRegExpType(BaseRegExpType):
-    def __init__(self, pattern):
-        super(BaseRegExpType, self).__init__()
+    def __init__(self, pattern, **kwargs):
+        super(BaseRegExpType, self).__init__(**kwargs)
         self._pattern = pattern
 
 
 class BaseCompiledRegExpTypeFromAttr(BaseCompiledRegExpType):
-    def __init__(self):
+    def __init__(self, **kwargs):
         super(BaseCompiledRegExpTypeFromAttr, self).__init__(
-            pattern=self.pattern)
+            pattern=self.pattern, **kwargs)
 
 
 class Uri(BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^(/[A-Za-z0-9\-_]*)*/%s$" % UUID_RE_TEMPLATE)
 
+    def __init__(self):
+        super(Uri, self).__init__(
+            openapi_type="string",
+            openapi_format="uri",
+        )
+
 
 class Mac(BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
 
+    def __init__(self):
+        super(Mac, self).__init__(
+            openapi_type="string",
+            openapi_format="mac",
+        )
+
 
 class Hostname(BaseCompiledRegExpTypeFromAttr):
-    '''DEPRECATED! Use types from types_network module'''
+    """DEPRECATED! Use types from types_network module"""
     pattern = re.compile(HOSTNAME_RE_TEMPLATE)
+
+    def __init__(self):
+        super(Hostname, self).__init__(
+            openapi_type="hostname",
+        )
+
+
+class Url(BaseCompiledRegExpTypeFromAttr):
+    """
+
+    django url validation regex
+    (https://github.com/django/django/blob/stable/1.3.x/django/core/validators.py#L45):
+    """
+
+    pattern = re.compile(
+        r"^(?:http|ftp)s?://"
+        r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # noqa
+        r"localhost|"
+        r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+        r"(?::\d+)?"
+        r"(?:/?|[/?]\S+)$", re.IGNORECASE)
 
 
 class AllowNone(BaseType):
 
     def __init__(self, nested_type):
-        super(AllowNone, self).__init__()
+        super(AllowNone, self).__init__(openapi_type="string")
         self._nested_type = nested_type
 
     @property
@@ -443,3 +664,11 @@ class AllowNone(BaseType):
             return None
         else:
             return self._nested_type.from_unicode(value)
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "nullable": True
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
