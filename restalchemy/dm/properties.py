@@ -57,7 +57,7 @@ class BaseProperty(AbstractProperty):
 class Property(BaseProperty):
 
     def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None, mutable=False):
+                 read_only=False, value=None, mutable=False, example=None):
         if not isinstance(property_type, types.BaseType):
             raise TypeError("Property type must be instance of %s" %
                             types.BaseType)
@@ -73,6 +73,7 @@ class Property(BaseProperty):
         self.__first_value = (
             copy.deepcopy(self.value) if mutable else self.value
         )
+        self._example = example
 
     def is_dirty(self):
         return not self.__first_value == self.value
@@ -119,6 +120,9 @@ class Property(BaseProperty):
     def get_property_type(self):
         return self._type
 
+    def example(self):
+        return self._example
+
 
 class IDProperty(Property):
 
@@ -145,6 +149,9 @@ class PropertyCreator(object):
 
     def get_property_type(self):
         return self._property_type
+
+    def get_kwargs(self):
+        return self._kwargs
 
     def is_prefetch(self):
         return self._prefetch

@@ -36,6 +36,7 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     state VARCHAR(10) NOT NULL,
                     name VARCHAR(255) NOT NULL,
                     just_none VARCHAR(255) NULL,
+                    status VARCHAR(255) NULL,
                     PRIMARY KEY (uuid)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             """, """

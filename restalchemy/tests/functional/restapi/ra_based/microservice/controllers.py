@@ -17,9 +17,12 @@
 #    under the License.
 
 from restalchemy.api import actions
+from restalchemy.api import constants
 from restalchemy.api import controllers
 from restalchemy.api import packers
 from restalchemy.api import resources
+from restalchemy.openapi import constants as oa_c
+from restalchemy.openapi import utils
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
 
@@ -61,7 +64,7 @@ class PortController(controllers.BaseNestedResourceController):
 class PortControllerNone(PortController):
 
     def get_packer(self, content_type, resource_type=None):
-        if content_type == packers.CONTENT_TYPE_APPLICATION_JSON:
+        if content_type == constants.CONTENT_TYPE_APPLICATION_JSON:
             rt = resource_type or self.get_resource()
             return packers.JSONPackerIncludeNullFields(rt, request=self._req)
         return super(PortControllerNone,
@@ -82,12 +85,34 @@ class VMController(controllers.BaseResourceController):
 
     __resource__ = resources.ResourceByRAModel(models.VM, process_filters=True)
 
+    def create(self, **kwargs):
+        """Create VM resource
+
+        API endpoint to create VM resource.
+
+        """
+        return super(VMController, self).create(**kwargs)
+
+    @utils.extend_schema(summary="Power on virtual machine",
+                         parameters=[oa_c.build_openapi_parameter("VMUuid")],
+                         responses=oa_c.build_openapi_get_update_response(
+                             "{}_{}".format(models.VM.__name__,
+                                            constants.CREATE.capitalize())),
+                         tags=["VM"],
+                         )
     @actions.post
     def poweron(self, resource):
         resource.state = "on"
         resource.save()
         return resource
 
+    @utils.extend_schema(summary="Power off virtual machine",
+                         parameters=[oa_c.build_openapi_parameter("VMUuid")],
+                         responses=oa_c.build_openapi_get_update_response(
+                             "{}_{}".format(models.VM.__name__,
+                                            constants.CREATE.capitalize())),
+                         tags=["VM"],
+                         )
     @actions.post
     def poweroff(self, resource):
         resource.state = "off"
@@ -99,9 +124,3 @@ class V1Controller(controllers.Controller):
 
     def filter(self, filters):
         return ["vms"]
-
-
-class RootController(controllers.Controller):
-
-    def filter(self, filters):
-        return ["v1"]

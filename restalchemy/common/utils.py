@@ -94,3 +94,8 @@ def raise_parse_error_on_fail(func):
             value = "%s=%s" % (name, value)
             raise ra_exc.ParseError(value=value)
     return wrapper
+
+
+def find_first(seq, predicate):
+    """Return first item in seq for which predicate(item) is True"""
+    return next((x for x in seq if predicate(x)), None)

@@ -22,21 +22,18 @@ import types
 
 import six
 
+from restalchemy.api import constants
 from restalchemy.common import exceptions
 from restalchemy.common import utils
 
-
-CONTENT_TYPE_APPLICATION_JSON = 'application/json'
-
-DEFAULT_CONTENT_TYPE = CONTENT_TYPE_APPLICATION_JSON
 DEFAULT_VALUE = object()
-
+CONTENT_TYPE_APPLICATION_JSON = constants.CONTENT_TYPE_APPLICATION_JSON
 
 LOG = logging.getLogger(__name__)
 
 
 def get_content_type(headers):
-    return headers.get('Content-Type') or DEFAULT_CONTENT_TYPE
+    return headers.get('Content-Type') or constants.DEFAULT_CONTENT_TYPE
 
 
 class BaseResourcePacker(object):
@@ -120,7 +117,7 @@ class JSONPackerIncludeNullFields(JSONPacker):
 
 
 packer_mapping = {
-    CONTENT_TYPE_APPLICATION_JSON: JSONPacker
+    constants.CONTENT_TYPE_APPLICATION_JSON: JSONPacker
 }
 
 

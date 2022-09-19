@@ -119,6 +119,11 @@ class AbstractResourceProperty(object):
             property_name=self._model_property_name,
         )
 
+    def is_id_property(self):
+        return self._resource.is_id_property(
+            property_name=self._model_property_name,
+        )
+
     @property
     def api_name(self):
         return self._resource.get_resource_field_name(
@@ -176,6 +181,9 @@ class ResourceRelationship(AbstractResourceProperty):
     def dump_value(self, value):
         return ResourceMap.get_location(value)
 
+    def is_id_property(self):
+        return False
+
 
 class BaseHiddenFieldsMap(object):
 
@@ -188,6 +196,9 @@ class BaseHiddenFieldsMap(object):
         return self._hidden_fields
 
     def is_hidden_field(self, model_field_name, req):
+        return model_field_name in self
+
+    def is_hidden_field_by_method(self, model_field_name, method):
         return model_field_name in self
 
     def __contains__(self, item):
@@ -249,6 +260,12 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
             return model_field_name in self._method_map[method]
         except KeyError:
             raise NotImplementedError("Unsupported RA method `%s`" % req)
+
+    def is_hidden_field_by_method(self, model_field_name, method):
+        try:
+            return model_field_name in self._method_map[method]
+        except KeyError:
+            raise NotImplementedError("Unsupported RA method `%s`" % method)
 
 
 class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
@@ -331,6 +348,9 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
                 return False
         return self._default_hidden_fields.is_hidden_field(model_field_name,
                                                            req)
+
+    def is_hidden_field_by_method(self, model_field_name, method):
+        return True
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -424,6 +444,15 @@ class AbstractResource(object):
 
         return self.get_fields(override_is_public_field_func=is_public_field)
 
+    def get_fields_by_method(self, method):
+        def is_public_field(model_field_name):
+            return self.is_public_field_by_method(
+                model_field_name=model_field_name,
+                method=method,
+            )
+
+        return self.get_fields(override_is_public_field_func=is_public_field)
+
     @abc.abstractmethod
     def get_resource_id(self, model):
         raise NotImplementedError()
@@ -454,9 +483,22 @@ class AbstractResource(object):
             )
         )
 
+    def is_public_field_by_method(self, method, model_field_name):
+        return not (
+            model_field_name.startswith('_')
+            or self._hidden_fields.is_hidden_field_by_method(
+                model_field_name=model_field_name,
+                method=method,
+            )
+        )
+
     def get_property_type(self, property_name):
         model = self.get_model()
         return model.properties.properties[property_name].get_property_type()
+
+    def is_id_property(self, property_name):
+        model = self.get_model()
+        return model.properties[property_name].is_id_property()
 
     def get_model(self):
         return self._model_class

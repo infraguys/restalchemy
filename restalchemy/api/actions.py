@@ -30,10 +30,27 @@ class ActionHandler(object):
             post: constants.ACTION_POST,
             put: constants.ACTION_PUT,
         }
+        if get:
+            self._name = get.__name__
+            self._method = constants.GET
+        elif post:
+            self._name = post.__name__
+            self._method = constants.POST
+        elif put:
+            self._name = put.__name__
+            self._method = constants.PUT
 
     def get(self, fn):
         self._get = fn
         return self
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def method(self):
+        return self._method
 
     def post(self, fn):
         self._post = fn

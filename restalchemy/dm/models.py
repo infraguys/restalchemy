@@ -78,6 +78,14 @@ class MetaModel(abc.ABCMeta):
             raise AttributeError("%s object has no attribute %s" % (
                 cls.__name__, name))
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": "string",
+            "format": "uuid",
+        }
+        spec.update(types.build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 @six.add_metaclass(MetaModel)
 class Model(collections_abc.Mapping):
