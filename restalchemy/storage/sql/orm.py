@@ -207,6 +207,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def update(self, session=None, force=False):
         # TODO(efrolov): Add filters parameters.
         if self.is_dirty() or force:
+            self.validate()
             with self._get_engine().session_manager(session=session) as s:
                 try:
                     result = self.get_table().update(
