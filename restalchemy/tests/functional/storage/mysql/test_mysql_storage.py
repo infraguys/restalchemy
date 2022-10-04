@@ -75,6 +75,13 @@ class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
     test_parent_relationship = relationships.relationship(FakeParentModel)
 
 
+class FakeModelWithValidate(FakeModel):
+
+    def validate(self):
+        if self.test_str_field1 == self.test_str_field2:
+            raise ValueError
+
+
 ROW = {
     'test_str_field1': FAKE_STR1,
     'test_str_field2': FAKE_STR2,
@@ -184,6 +191,15 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         self.assertFalse(session_mock.rollback.called)
         self.assertFalse(session_mock.close.called)
 
+    def test_validate(self):
+        with self.assertRaises(ValueError):
+            FakeModelWithValidate(
+                uuid=FAKE_UUID1,
+                test_parent_relationship=self.parent_model,
+                test_str_field1=FAKE_STR1,
+                test_str_field2=FAKE_STR1,
+            )
+
 
 class FakeUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = "test_update"
@@ -227,3 +243,12 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
         test_model.save()
 
         self.assertIsNone(test_model.update(force=True))
+
+    def test_validate(self):
+        model = FakeModelWithValidate(
+            uuid=FAKE_UUID1,
+            test_parent_relationship=FakeParentModel(uuid=FAKE_UUID2),
+        )
+        model.test_str_field2 = FAKE_STR1
+        with self.assertRaises(exceptions.UnknownStorageException):
+            model.update()
