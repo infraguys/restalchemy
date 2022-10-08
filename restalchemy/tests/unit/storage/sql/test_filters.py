@@ -172,6 +172,25 @@ class InTestCase(base.BaseTestCase):
         self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
 
 
+class NotInTestCase(base.BaseTestCase):
+
+    TEST_LIST_VALUES = [1, 2, 3]
+
+    def setUp(self):
+        self._expr = filters.NotIn(column=TEST_NAME,
+                                   value_type=common.AsIsType(),
+                                   value=self.TEST_LIST_VALUES)
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression()
+
+        self.assertEqual(TEST_NAME + ' NOT IN %s', result)
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
+
+
 class InEmptyListTestCase(base.BaseTestCase):
 
     def setUp(self):
