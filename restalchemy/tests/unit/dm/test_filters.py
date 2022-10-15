@@ -39,3 +39,21 @@ class FilterEqualityTestCase(base.BaseTestCase):
         f2 = filters.GT(-80)
 
         self.assertNotEqual(f1, f2)
+
+    def test_expr_filters_equal(self):
+        f1 = filters.AND([filters.EQ(4), filters.NE(10)])
+        f2 = filters.AND([filters.EQ(4), filters.NE(10)])
+
+        self.assertEqual(f1, f2)
+
+    def test_expr_filters_not_equal_type(self):
+        f1 = filters.AND([filters.EQ(4), filters.NE(10)])
+        f2 = filters.AND([filters.GT(4), filters.NE(10)])
+
+        self.assertNotEqual(f1, f2)
+
+    def test_expr_filters_not_equal_value(self):
+        f1 = filters.AND([filters.EQ(2), filters.NE(10)])
+        f2 = filters.AND([filters.EQ(4), filters.NE(10)])
+
+        self.assertNotEqual(f1, f2)
