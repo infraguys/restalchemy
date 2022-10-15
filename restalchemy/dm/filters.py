@@ -90,6 +90,9 @@ class AbstractExpression(object):
     def clauses(self):
         return self._clauses
 
+    def __eq__(self, other):
+        return isinstance(other, type(self)) and self.clauses == other.clauses
+
     def __repr__(self):
         return "<%s (%r)>" % (type(self).__name__, self.clauses)
 
