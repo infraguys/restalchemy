@@ -24,6 +24,7 @@ import requests
 from six.moves.urllib import parse
 from webob import request
 
+from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import utils
 from restalchemy.dm import filters
@@ -106,6 +107,11 @@ class TestVersionsResourceTestCase(BaseResourceTestCase):
 
 class TestVMResourceTestCase(BaseResourceTestCase):
 
+    def tearDown(self):
+        super(TestVMResourceTestCase, self).tearDown()
+        packers.set_packer(packers.CONTENT_TYPE_APPLICATION_JSON,
+                           packers.JSONPacker)
+
     def _insert_vm_to_db(self, uuid, name, state):
         vm = models.VM(uuid=uuid, name=name, state=state)
         vm.save()
@@ -148,6 +154,25 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         }
         VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
                                             RESOURCE_ID)
+
+        response = requests.get(VM_RES_ENDPOINT)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+
+    def test_get_vm_resource_with_null_fields_by_uuid_successful(self):
+        RESOURCE_ID = UUID1
+        self._insert_vm_to_db(uuid=RESOURCE_ID, name="test", state="off")
+        vm_response_body = {
+            "uuid": str(RESOURCE_ID),
+            "name": "test",
+            "state": "off",
+            "just-none": None
+        }
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                            RESOURCE_ID)
+        packers.set_packer(packers.CONTENT_TYPE_APPLICATION_JSON,
+                           packers.JSONPackerIncludeNullFields)
 
         response = requests.get(VM_RES_ENDPOINT)
 

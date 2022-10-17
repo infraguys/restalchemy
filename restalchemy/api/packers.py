@@ -26,7 +26,9 @@ from restalchemy.common import exceptions
 from restalchemy.common import utils
 
 
-DEFAULT_CONTENT_TYPE = 'application/json'
+CONTENT_TYPE_APPLICATION_JSON = 'application/json'
+
+DEFAULT_CONTENT_TYPE = CONTENT_TYPE_APPLICATION_JSON
 DEFAULT_VALUE = object()
 
 
@@ -38,6 +40,8 @@ def get_content_type(headers):
 
 
 class BaseResourcePacker(object):
+
+    _skip_none = True
 
     def __init__(self, resource_type, request):
         self._rt = resource_type
@@ -56,8 +60,9 @@ class BaseResourcePacker(object):
                         self._req,
                         name)):
                     value = getattr(obj, name)
-                    if value is not None:
-                        result[api_name] = prop.dump_value(value)
+                    if self._skip_none and value is None:
+                        continue
+                    result[api_name] = prop.dump_value(value)
 
             return result
 
@@ -107,8 +112,13 @@ class JSONPacker(BaseResourcePacker):
         return super(JSONPacker, self).unpack(json.loads(value))
 
 
+class JSONPackerIncludeNullFields(JSONPacker):
+
+    _skip_none = False
+
+
 packer_mapping = {
-    'application/json': JSONPacker
+    CONTENT_TYPE_APPLICATION_JSON: JSONPacker
 }
 
 
@@ -124,3 +134,7 @@ def get_packer(content_type):
         # TODO(Eugene Frolov): Specify Exception Type and message
         raise Exception("Packer can't found for content type %s " %
                         content_type)
+
+
+def set_packer(content_type, packer_class):
+    packer_mapping[content_type] = packer_class
