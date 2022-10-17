@@ -27,6 +27,8 @@ class VM(models.ModelWithUUID):
     state = properties.property(types.String(max_length=10), required=True,
                                 default="off")
     name = properties.property(types.String(max_length=255), required=True)
+    just_none = properties.property(types.AllowNone(types.String),
+                                    required=False, default=None)
 
 
 class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
