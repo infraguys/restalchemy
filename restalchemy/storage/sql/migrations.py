@@ -32,6 +32,9 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql import orm
 
 
+HEAD_MIGRATION = "HEAD"
+MANUAL_MIGRATION = "MANUAL"
+
 RA_MIGRATION_TABLE_NAME = "ra_migrations"
 LOG = logging.getLogger(__name__)
 
@@ -163,9 +166,20 @@ class MigrationEngine(object):
         self._migrations_path = migrations_path
 
     def get_file_name(self, part_of_name):
+        candidates = []
         for filename in os.listdir(self._migrations_path):
             if part_of_name in filename and filename.endswith('.py'):
-                return filename
+                candidates.append(filename)
+
+        candidates_count = len(candidates)
+
+        if candidates_count == 1:
+            return candidates[0]
+
+        if candidates_count > 1:
+            raise ValueError("Multiple file found for name '%s': %s." %
+                             (part_of_name, candidates))
+
         raise ValueError("Migration file for dependency %s not found" %
                          part_of_name)
 
@@ -173,15 +187,49 @@ class MigrationEngine(object):
         files = []
 
         for depend in depends:
-            files.append(self.get_file_name(depend))
+            if depend.upper() == HEAD_MIGRATION:
+                file_name = self.get_latest_migration()
+            else:
+                file_name = self.get_file_name(depend)
+            files.append(file_name)
         return files
+
+    def _suggest_new_migration_number(self):
+        suggestion_number = ""
+        migrations = self._load_migrations()
+        migration_numbers = set()
+        for migration in migrations:
+            parts = migration.split("-")
+            if len(parts) > 1:
+                number_part = parts[1].rstrip(".py")
+                if number_part.isdigit():
+                    migration_numbers.add(number_part)
+
+        if not migration_numbers:
+            return suggestion_number
+
+        max_number = int(max(migration_numbers, key=int))
+        max_len = len(max(migration_numbers, key=len))
+
+        suggestion_number = str(max_number + 1).zfill(max_len)
+        return suggestion_number
 
     def new_migration(self, depends, message, dry_run=False, is_manual=False):
         files = self._calculate_depends(depends)
-        depends = '", "'.join(files)
+        depends = '"{}"'.format('", "'.join(files)) if files else ''
+
         migration_id = str(uuid.uuid4())
-        mfilename = "%s-%s.py" % (migration_id[:self.FILENAME_HASH_LEN],
-                                  message.replace(" ", "-"))
+        filename_hash = migration_id[:self.FILENAME_HASH_LEN]
+        migration_number = (MANUAL_MIGRATION if is_manual
+                            else self._suggest_new_migration_number())
+        message = message.replace(" ", "-")
+
+        mfilename = "-".join([
+            filename_hash,
+            migration_number,
+            message
+        ]) + ".py"
+
         mpath = os.path.join(self._migrations_path, mfilename)
 
         if dry_run:
@@ -198,6 +246,8 @@ class MigrationEngine(object):
                     "depends": depends,
                     "is_manual": is_manual
                 })
+
+        LOG.info("New migration '%s' has been created: %s", mfilename, mpath)
 
     @staticmethod
     def _init_migration_table(session):

@@ -33,7 +33,8 @@ THIRD_MIGRATION = "bbd5d8-0003-third"
 
 HEAD_MIGRATION = THIRD_MIGRATION
 
-NEW_MIGRATION = "0004-fourth"
+NEW_MIGRATION_NUMBER = "0004"
+NEW_MIGRATION_MESSAGE = "fourth"
 NEW_MIGRATION_DEPENDS = [HEAD_MIGRATION]
 
 MIGRATIONS_TOTAL_COUNT = len([
@@ -45,6 +46,13 @@ MIGRATIONS_TOTAL_COUNT = len([
 
 MIGRATIONS_FIXTURES_DIR_NAME = "migrations_fixtures"
 NONEXISTENT_MIGRATION = "nonexistent_migration"
+
+
+def ensure_py_extension(filename):
+    py_extension = ".py"
+    if filename.endswith(py_extension):
+        return filename
+    return filename + py_extension
 
 
 class BaseMigrationTestCase(base.BaseDBEngineTestCase):
@@ -325,11 +333,37 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
 
         self.assertEqual("%s.py" % FIRST_MIGRATION, file_name)
 
+    def test_get_file_name_ambiguous_name(self):
+        ambiguous_name = "0"
+
+        self.assertRaises(ValueError,
+                          self.migration_engine.get_file_name,
+                          ambiguous_name)
+
     def test_get_file_name_nonexistent(self):
 
         self.assertRaises(ValueError,
                           self.migration_engine.get_file_name,
                           NONEXISTENT_MIGRATION)
+
+    def test__calculate_depends_head(self):
+        depends = [sql_migrations.HEAD_MIGRATION]
+        files = self.migration_engine._calculate_depends(depends)
+        expected_files = list(map(ensure_py_extension, [
+            HEAD_MIGRATION,
+        ]))
+
+        self.assertListEqual(expected_files, files)
+
+    def test__calculate_depends_multiple(self):
+        depends = [FIRST_MIGRATION, SECOND_MIGRATION]
+        files = self.migration_engine._calculate_depends(depends)
+        expected_files = list(map(ensure_py_extension, [
+            FIRST_MIGRATION,
+            SECOND_MIGRATION,
+        ]))
+
+        self.assertListEqual(expected_files, files)
 
     def test_apply_migration(self):
         self.migration_engine._init_migration_table(self.session)
@@ -433,7 +467,7 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
     def test_create_new_migration(self, file_mock):
 
         self.migration_engine.new_migration(NEW_MIGRATION_DEPENDS,
-                                            NEW_MIGRATION,
+                                            NEW_MIGRATION_MESSAGE,
                                             dry_run=False)
 
         self.assertTrue(file_mock.called)
@@ -453,14 +487,44 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
 
         self.assertEqual("w", migration_write_args[1])
         self.assertTrue(migration_write_args[0].endswith(
-            "%s.py" % NEW_MIGRATION
+            "%s-%s.py" % (NEW_MIGRATION_NUMBER, NEW_MIGRATION_MESSAGE)
+        ))
+
+    @mock.patch("%s.open" % six.moves.builtins.__name__,
+                new_callable=mock.mock_open())
+    def test_create_new_migration_manual(self, file_mock):
+
+        self.migration_engine.new_migration(NEW_MIGRATION_DEPENDS,
+                                            NEW_MIGRATION_MESSAGE,
+                                            dry_run=False,
+                                            is_manual=True)
+
+        self.assertTrue(file_mock.called)
+
+        # two calls - load template, write new migration
+        self.assertEqual(2, file_mock.call_count)
+
+        template_path = os.path.join(
+            os.path.dirname(sql_migrations.__file__),
+            'migration_templ.tmpl'
+        )
+
+        template_read_args = file_mock.call_args_list[1][0]
+        migration_write_args = file_mock.call_args_list[0][0]
+
+        self.assertEqual((template_path, "r"), template_read_args)
+
+        self.assertEqual("w", migration_write_args[1])
+        self.assertTrue(migration_write_args[0].endswith(
+            "%s-%s.py" % (sql_migrations.MANUAL_MIGRATION,
+                          NEW_MIGRATION_MESSAGE)
         ))
 
     @mock.patch("%s.open" % six.moves.builtins.__name__,
                 new_callable=mock.mock_open())
     def test_create_new_migration_dry_run(self, file_mock):
         self.migration_engine.new_migration(NEW_MIGRATION_DEPENDS,
-                                            NEW_MIGRATION,
+                                            NEW_MIGRATION_MESSAGE,
                                             dry_run=True)
 
         self.assertFalse(file_mock.called)
