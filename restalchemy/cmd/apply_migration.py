@@ -26,7 +26,8 @@ from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import migrations
 
 cmd_opts = [
-    cfg.StrOpt("migration", default="HEAD", short="m", required=False,
+    cfg.StrOpt("migration", default=migrations.HEAD_MIGRATION, short="m",
+               required=False,
                help="migrate to given migration."
                "If migration is not specified, HEAD migration will be used"),
     cfg.StrOpt('path', required=True, short="p",
@@ -53,7 +54,7 @@ def main():
 
     migration = (
         engine.get_latest_migration()
-        if CONF.migration.upper() == 'HEAD'
+        if CONF.migration.upper() == migrations.HEAD_MIGRATION
         else CONF.migration
     )
     engine.apply_migration(migration_name=migration,

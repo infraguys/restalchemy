@@ -46,7 +46,7 @@ def main():
     ra_log.configure()
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
 
-    depends = CONF.depend or []
+    depends = set(CONF.depend or [])
 
     if (CONF.manual is False
             and not engine.validate_auto_migration_dependencies(depends)):
