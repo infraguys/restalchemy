@@ -580,6 +580,11 @@ class AllowNoneTestCase(base.BaseTestCase):
 
         self.test_instance = types.AllowNone(types.String())
 
+    def test_from_unicode(self):
+        s = "blah273 2 s3d3"
+        self.assertEqual(self.test_instance.from_unicode(s), s)
+        self.assertIsNone(self.test_instance.from_unicode("null"))
+
     def test_validate_correct_value(self):
         self.assertTrue(self.test_instance.validate(None))
         self.assertTrue(self.test_instance.validate('string'))
