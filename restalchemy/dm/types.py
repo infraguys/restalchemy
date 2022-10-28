@@ -439,5 +439,7 @@ class AllowNone(BaseType):
             value)
 
     def from_unicode(self, value):
-        return None if value is None else self._nested_type.from_unicode(
-            value)
+        if value == "null":
+            return None
+        else:
+            return self._nested_type.from_unicode(value)
