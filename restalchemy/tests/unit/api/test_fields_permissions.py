@@ -162,6 +162,49 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
 
         self.assertEqual(sorted(expected_fields), sorted(result))
 
+    def _test_default(self):
+        resource = resources.ResourceByRAModel(
+            FakeModel,
+            fields_permissions=field_permissions.FieldsPermissionsByRole(
+                default=field_permissions.UniversalPermissions(
+                    permission=field_permissions.Permissions.HIDDEN),
+                admin=field_permissions.FieldsPermissions(
+                    {
+                        'standard_field1': {
+                            constants.ALL: field_permissions.Permissions.HIDDEN
+                        },
+                    },
+                ),
+            )
+        )
+
+        self.assertFalse(resource._fields_permissions.is_readonly(
+                         'standard_field2',
+                         self._request
+                         ))
+
+    def _test_default_custom_value(self):
+        resource = resources.ResourceByRAModel(
+            FakeModel,
+            fields_permissions=field_permissions.FieldsPermissionsByRole(
+                default=field_permissions.UniversalPermissions(
+                    permission=field_permissions.Permissions.HIDDEN),
+                admin=field_permissions.FieldsPermissions(
+                    {
+                        'standard_field1': {
+                            constants.ALL: field_permissions.Permissions.HIDDEN
+                        },
+                    },
+                    default=field_permissions.Permissions.RO
+                ),
+            )
+        )
+
+        self.assertTrue(resource._fields_permissions.is_readonly(
+                        'standard_field2',
+                        self._request
+                        ))
+
 
 class ResourceByRAModelFieldsPermissionsRoleAdmin(
     ResourceByRAModelFieldsPermissions):

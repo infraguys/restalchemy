@@ -81,7 +81,7 @@ class UniversalPermissions(BasePermissions):
 
 
 class FieldsPermissions(BasePermissions):
-    def __init__(self, kwargs):
+    def __init__(self, fields, default=Permissions.RW):
         """Field permissions container for resource
 
         This class describes a dict of fields with permissions for
@@ -97,7 +97,8 @@ class FieldsPermissions(BasePermissions):
 
         ```
         FieldsPermissions(
-            {
+            default=Permissions.RW,
+            fields={
                 'one_field':{
                     constants.FILTER: Permissions.HIDDEN},
                 'two_field': {
@@ -112,14 +113,15 @@ class FieldsPermissions(BasePermissions):
         Pay attention: if you wouldn't set permission for field and RA method
         by default it would be RW (READWRITE) permission.
 
-        :param kwargs: dict of field model name and permissions
+        :param fields: dict of field model name and permissions
+        :param default: default permission for non-described fields
         """
-        for method_permission in kwargs.values():
+        for method_permission in fields.values():
             for method, permission in method_permission.items():
                 assert (method.upper() in constants.ALL_RA_METHODS
                         and permission in Permissions.ALL_PERMISSIONS)
-        super(FieldsPermissions, self).__init__()
-        self.fields = kwargs
+        super(FieldsPermissions, self).__init__(permission=default)
+        self.fields = fields
 
     def meets_field_permission(self,
                                model_field_name,
@@ -150,7 +152,8 @@ class FieldsPermissionsByRole(BasePermissions):
         ```
         FieldsPermissionsByRole(
         some_role=FieldsPermissions(
-            {
+            default=Permissions.RW,
+            fields={
                 'status':
                 {
                     constants.ALL: Permissions.RO
@@ -158,7 +161,8 @@ class FieldsPermissionsByRole(BasePermissions):
             }
         ),
         admin=FieldsPermissions(
-            {
+            default=Permissions.RW,
+            fields={
                 'namespace':
                 {
                     constants.ALL: Permissions.HIDDEN
@@ -171,6 +175,7 @@ class FieldsPermissionsByRole(BasePermissions):
         )
         ```
 
+        :param default: default permission for non-described roles
         :param kwargs: dict of roles with FieldsPermissions.
         """
         for role, permissions in kwargs.items():
