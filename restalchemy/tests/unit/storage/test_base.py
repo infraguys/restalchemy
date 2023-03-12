@@ -40,8 +40,8 @@ class TestErrorCatcherTestCase(base.BaseTestCase):
         self.assertRaises(exceptions.RecordNotFound, self.my_func,
                           'test_arg', kwarg0='RA_EXCEPTION')
 
-    @pytest.mark.skipif(sys.version_info > (3, 9), reason="python > 3.9")
-    def test_catcher_message_error_lt_39(self):
+    @pytest.mark.skipif(sys.version_info > (3, 6), reason="python > 3.6")
+    def test_catcher_message_error_lt_36(self):
         try:
             self.my_func('test_arg', kwarg0='test_kwarg')
             raise AssertionError("The exception is't raised")
@@ -51,8 +51,8 @@ class TestErrorCatcherTestCase(base.BaseTestCase):
                 "Unknown storage exception: RuntimeError('Some Error!!!',)"
             )
 
-    @pytest.mark.skipif(sys.version_info < (3, 10), reason="python < 3.10")
-    def test_catcher_message_error_gt_310(self):
+    @pytest.mark.skipif(sys.version_info < (3, 7), reason="python < 3.7")
+    def test_catcher_message_error_gt_36(self):
         try:
             self.my_func('test_arg', kwarg0='test_kwarg')
             raise AssertionError("The exception is't raised")
