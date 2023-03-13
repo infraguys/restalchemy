@@ -71,7 +71,7 @@ def configure():
         config_data = DEFAULT_CONFIG
     else:
         with open(config_file) as f:
-            config_data = yaml.load(f)
+            config_data = yaml.safe_load(f)
 
     logging_config.dictConfig(config_data)
 
