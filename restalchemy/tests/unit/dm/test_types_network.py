@@ -72,11 +72,13 @@ class HostnameTest(unittest.TestCase):
         super(HostnameTest, self).setUp()
         self.fqdn = types_network.Hostname()
         self.fqdn_2level = types_network.Hostname(min_levels=2)
+        self.fqdn_with_leading_undersore = types_network.Hostname(
+            allow_leading_underscore=True)
 
     def test_validate(self):
         data = [
-            'first_level',
-            'test_me.me',
+            'first-level',
+            'test-me.me',
             'fe.fe',
             'aa',
             'a.bc',
@@ -98,10 +100,35 @@ class HostnameTest(unittest.TestCase):
         for fqdn in data:
             self.assertTrue(self.fqdn.validate(fqdn), fqdn)
 
+    def test_validate_underscore(self):
+        data = [
+            '_acme-challenge.example.com',
+            '_acme-challenge'
+        ]
+
+        for fqdn in data:
+            self.assertTrue(
+                self.fqdn_with_leading_undersore.validate(fqdn),
+                fqdn)
+
+    def test_validate_underscore_negative(self):
+        data = [
+            '_acme-challenge._example.com'
+        ]
+
+        for fqdn in data:
+            self.assertFalse(
+                self.fqdn_with_leading_undersore.validate(fqdn),
+                fqdn)
+
     def test_validate_negative(self):
         data = [
             'тест.ру',
             '-fe.fe',
+            'fe-.fe',
+            '_fe.fe',
+            'f_e.fe',
+            'fe_.fe',
             'a..bc',
             'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com',
             '-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com',
@@ -125,7 +152,7 @@ class HostnameTest(unittest.TestCase):
 
     def test_min_levels(self):
         data = [
-            'test_me.me',
+            'test-me.me',
             'fe.fe',
             'a.bc',
             '1.2.3.4.com',
@@ -135,7 +162,7 @@ class HostnameTest(unittest.TestCase):
 
     def test_min_levels_negative(self):
         data = [
-            'first_level',
+            'first-level',
             'aa',
         ]
         for fqdn in data:

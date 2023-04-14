@@ -27,8 +27,9 @@ HOSTNAME_MAX_LEN = FQDN_MAX_LEN - 1
 FQDN_MIN_LEVELS = 1
 FQDN_TEMPLATE = r"(?=^.{2,%i}$)(^((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-)\.){%i,}$)"
 HOSTNAME_MIN_LEVELS = 1
-HOSTNAME_TEMPLATE = (r"(?=^.{1,%i}$)(^((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-)\.){%i,}"
-                     r"((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-))$)")
+LEADING_UNDERSCORE_GROUP = "(_?)"
+HOSTNAME_TEMPLATE = (r"(?=^.{1,%i}$)(^%s((?!-)[a-zA-Z0-9-]{1,%i}(?<!-)\.){%i,}"
+                     r"((?!-)[a-zA-Z0-9-]{1,%i}(?<!-))$)")
 
 
 class IPAddress(types.BaseType):
@@ -132,16 +133,16 @@ class FQDN(types.BaseCompiledRegExpTypeFromAttr):
 
 class Hostname(types.BaseCompiledRegExpTypeFromAttr):
     '''Same as FQDN but without root dot. Allows 1 level too. '''
-    pattern = re.compile(
-        HOSTNAME_TEMPLATE %
-        (HOSTNAME_MAX_LEN, DNS_LABEL_MAX_LEN, HOSTNAME_MIN_LEVELS - 1,
-         DNS_LABEL_MAX_LEN)
-    )
 
-    def __init__(self, min_levels=HOSTNAME_MIN_LEVELS):
-        if min_levels > HOSTNAME_MIN_LEVELS:
-            self.pattern = re.compile(
-                HOSTNAME_TEMPLATE %
-                (HOSTNAME_MAX_LEN, DNS_LABEL_MAX_LEN, min_levels - 1,
-                 DNS_LABEL_MAX_LEN))
+    def __init__(self, min_levels=HOSTNAME_MIN_LEVELS,
+                 allow_leading_underscore=False):
+        self.pattern = re.compile(
+            HOSTNAME_TEMPLATE % (
+                HOSTNAME_MAX_LEN,
+                LEADING_UNDERSCORE_GROUP if allow_leading_underscore else "",
+                DNS_LABEL_MAX_LEN,
+                max([min_levels, HOSTNAME_MIN_LEVELS]) - 1,
+                DNS_LABEL_MAX_LEN
+            )
+        )
         super(Hostname, self).__init__()
