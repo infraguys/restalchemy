@@ -60,9 +60,11 @@ class BaseResourcePacker(object):
                         self._req,
                         name)):
                     value = getattr(obj, name)
-                    if self._skip_none and value is None:
-                        continue
-                    result[api_name] = prop.dump_value(value)
+                    if value is None:
+                        if not self._skip_none:
+                            result[api_name] = value
+                    else:
+                        result[api_name] = prop.dump_value(value)
 
             return result
 

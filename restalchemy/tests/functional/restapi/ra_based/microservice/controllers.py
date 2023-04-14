@@ -18,6 +18,7 @@
 
 from restalchemy.api import actions
 from restalchemy.api import controllers
+from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
@@ -55,6 +56,16 @@ class PortController(controllers.BaseNestedResourceController):
         )
     )
     __pr_name__ = "vm"
+
+
+class PortControllerNone(PortController):
+
+    def get_packer(self, content_type, resource_type=None):
+        if content_type == packers.CONTENT_TYPE_APPLICATION_JSON:
+            rt = resource_type or self.get_resource()
+            return packers.JSONPackerIncludeNullFields(rt, request=self._req)
+        return super(PortControllerNone,
+                     self).get_packer(content_type, resource_type)
 
 
 class VMController(controllers.BaseResourceController):

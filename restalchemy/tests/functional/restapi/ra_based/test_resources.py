@@ -48,8 +48,12 @@ TEMPL_POWERON_ACTION_ENDPOINT = parse.urljoin(
     'actions/poweron/invoke')
 TEMPL_PORTS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), 'ports'))
+TEMPL_PORTSNONE_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
+    utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), 'none_ports'))
 TEMPL_PORT_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_PORTS_COLLECTION_ENDPOINT,
                                              '%s')
+TEMPL_PORTNONE_RESOURCE_ENDPOINT = parse.urljoin(
+    TEMPL_PORTSNONE_COLLECTION_ENDPOINT, '%s')
 
 UUID1 = pyuuid.UUID('00000000-0000-0000-0000-000000000001')
 UUID2 = pyuuid.UUID('00000000-0000-0000-0000-000000000002')
@@ -450,6 +454,33 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT,
+                              VM_RESOURCE_ID,
+                              PORT_RESOURCE_ID))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(port_response_body, response.json())
+
+    def test_get_nested_resource_none_successful(self):
+        VM_RESOURCE_ID = UUID1
+        PORT_RESOURCE_ID = UUID3
+        port = models.Port(uuid=PORT_RESOURCE_ID,
+                           mac="00:00:00:00:00:03",
+                           vm=self.vm1)
+        port.save()
+        port_response_body = {
+            "uuid": str(PORT_RESOURCE_ID),
+            "mac": "00:00:00:00:00:03",
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path,
+            "some-field1": "some_field1",
+            "some-field2": "some_field2",
+            "some-field4": "some_field4",
+            "some-field5": None,
+        }
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_PORTNONE_RESOURCE_ENDPOINT,
                               VM_RESOURCE_ID,
                               PORT_RESOURCE_ID))
 

@@ -34,6 +34,14 @@ class PortRoute(routes.Route):
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
+class PortRouteNone(routes.Route):
+    __controller__ = controllers.PortControllerNone
+    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
+                         routes.UPDATE, routes.DELETE]
+
+    ip_addresses = routes.route(IpAddress, resource_route=True)
+
+
 class VMPowerOnAction(routes.Action):
     __controller__ = controllers.VMController
 
@@ -49,6 +57,7 @@ class VMRoute(routes.Route):
 
     poweron = routes.action(VMPowerOnAction, invoke=True)
     poweroff = routes.action(VMPowerOffAction, invoke=True)
+    none_ports = routes.route(PortRouteNone, resource_route=True)
     ports = routes.route(PortRoute, resource_route=True)
 
 

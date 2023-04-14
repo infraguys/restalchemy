@@ -17,6 +17,7 @@
 #    under the License.
 
 # TODO(Eugene Frolov): Rewrite tests
+import json
 
 import mock
 
@@ -132,4 +133,41 @@ class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
         }
 
         result = self._test_resource_packer.unpack(new_data)
+        self.assertDictEqual(result, new_data)
+
+
+class JSONPackerIncludeNullTestCase(base.BaseTestCase):
+    def setUp(self):
+        super(JSONPackerIncludeNullTestCase, self).setUp()
+        self._test_resource_packer = packers.JSONPackerIncludeNullFields(
+            resources.ResourceByRAModel(
+                FakeModel,
+                fields_permissions=field_permissions.FieldsPermissionsByRole(
+                    default=field_permissions.UniversalPermissions()
+                )
+            ), mock.Mock())
+
+    def tearDown(self):
+        super(JSONPackerIncludeNullTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._test_resource_packer
+
+    def test_pack(self):
+        new_data = TestData()
+        expected_data = {'field1': None,
+                         'field2': 2,
+                         'field3': 3,
+                         'field4': 4,
+                         'uuid': None}
+
+        result = json.loads(self._test_resource_packer.pack(new_data))
+        self.assertDictEqual(result, expected_data)
+
+    def test_unpack(self):
+        new_data = {
+            'field1': None,
+            'field2': 2
+        }
+
+        result = self._test_resource_packer.unpack(json.dumps(new_data))
         self.assertDictEqual(result, new_data)
