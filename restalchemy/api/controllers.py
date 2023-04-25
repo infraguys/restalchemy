@@ -249,7 +249,7 @@ class BaseResourceController(Controller):
 
     def get(self, uuid, **kwargs):
         # TODO(d.burmistrov): replace this hack with normal argument passing
-        kwargs[self.model.get_id_property_name()] = uuid
+        kwargs[self.model.get_id_property_name()] = dm_filters.EQ(uuid)
         return self.model.objects.get_one(filters=kwargs)
 
     def _split_filters(self, filters):
@@ -291,6 +291,14 @@ class BaseResourceController(Controller):
 
     def _process_storage_filters(self, filters):
         return self.model.objects.get_all(filters=filters)
+
+    @staticmethod
+    def _convert_raw_filters_to_dm_filters(filters):
+        """For use in places, where we manually work with input raw filters"""
+        for k, v in filters.items():
+            if not isinstance(v, dm_filters.AbstractClause):
+                filters[k] = dm_filters.EQ(v)
+        return filters
 
     def filter(self, filters):
         custom_filters, storage_filters = self._split_filters(filters)
