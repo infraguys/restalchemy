@@ -37,6 +37,7 @@ def exception2dict(exception):
     message = (exception.msg if hasattr(exception, 'msg') else
                exception.message)
     return {
+        'type': exception.__class__.__name__,
         'code': code,
         'message': message
     }
@@ -44,20 +45,28 @@ def exception2dict(exception):
 
 class ErrorsHandlerMiddleware(middlewares.Middleware):
 
+    not_found_exc = (ra_exceptions.RecordNotFound,)
+    conflict_exc = (ra_exceptions.ConflictRecords,)
+    common_exc = (comm_exc.RestAlchemyException,)
+    valid_exc = (comm_exc.ValidationErrorException,)
+
     def process_request(self, req):
         try:
             return req.get_response(self.application)
-        except ra_exceptions.RecordNotFound as e:
+        except self.not_found_exc as e:
             return req.ResponseClass(status=http_client.NOT_FOUND,
                                      json=exception2dict(e))
-        except ra_exceptions.ConflictRecords as e:
+        except self.conflict_exc as e:
             return req.ResponseClass(status=http_client.CONFLICT,
                                      json=exception2dict(e))
-        except comm_exc.RestAlchemyException as e:
+        except self.valid_exc as e:
+            return req.ResponseClass(status=http_client.BAD_REQUEST,
+                                     json=exception2dict(e))
+        except self.common_exc as e:
             return req.ResponseClass(status=e.code,
                                      json=exception2dict(e))
-
         except Exception as e:
-            LOG.exception("Unknown error has occurred.")
+            LOG.exception("Unknown error has occurred on url: %s %s",
+                          req.method, req.url)
             return req.ResponseClass(status=http_client.INTERNAL_SERVER_ERROR,
                                      json=exception2dict(e))

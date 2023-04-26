@@ -170,3 +170,10 @@ class ParseError(RestAlchemyException):
 
 class FieldPermissionError(RestAlchemyException):
     message = "Permission denied for field %(field)s"
+
+
+class ValidationErrorException(RestAlchemyException):
+    """Base Validation Exception."""
+
+    message = "Validation error occurred."
+    code = 400
