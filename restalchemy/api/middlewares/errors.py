@@ -35,7 +35,8 @@ def exception2dict(exception):
     code = (UNKNOWN_ERROR_CODE if not hasattr(exception, 'get_code') else
             exception.get_code())
     message = (exception.msg if hasattr(exception, 'msg') else
-               exception.message)
+               exception.message if hasattr(exception, 'message') else
+               str(exception))
     return {
         'type': exception.__class__.__name__,
         'code': code,

@@ -77,3 +77,11 @@ class ErrorsHandlerMiddlewareTestCase(base.BaseTestCase):
         response = self.middlew.process_request(request_mock)
 
         assert response.status == http_client.NOT_FOUND
+
+    def test_absent_message_attr_for_base_exceptions(self):
+        request_mock = mock.Mock(spec=request.Request)
+        request_mock.get_response.side_effect = TypeError
+        request_mock.ResponseClass = FakeResponse
+        response = self.middlew.process_request(request_mock)
+
+        assert response.status == http_client.INTERNAL_SERVER_ERROR
