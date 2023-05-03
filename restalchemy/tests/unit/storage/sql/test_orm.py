@@ -18,12 +18,15 @@
 
 import json
 
+import mock
+
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.storage import exceptions
+from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql import orm
 from restalchemy.tests.unit import base
-
 
 FAKE_VALUE_A = 'FAKE_A'
 FAKE_VALUE_B = 'FAKE_B'
@@ -50,10 +53,14 @@ class FakeRestoreModelWithUUID(FakeRestoreModel, models.ModelWithUUID):
     pass
 
 
+class FakeDirtyRestoreModelWithUUID(FakeRestoreModel, models.ModelWithUUID):
+    def is_dirty(self):
+        return True
+
+
 class TestRestoreModelTestCase(base.BaseTestCase):
 
     def test_init_should_not_be_called(self):
-
         model = FakeRestoreModel.restore_from_storage(a=FAKE_VALUE_A,
                                                       b=FAKE_VALUE_B)
 
@@ -117,3 +124,79 @@ class TestSimplifyModelTestCase(base.BaseTestCase):
     def test_from_id_type(self):
         self.assertEqual(FakeRestoreModelWithUUID.to_simple_type(FAKE_UUID),
                          str(FAKE_UUID))
+
+
+@mock.patch('restalchemy.storage.sql.engines.engine_factory')
+class TestModelErrorHandlingCase(base.BaseTestCase):
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.insert')
+    def test_insert_model_when_unknown_error_raises(self, model_insert_mock,
+                                                    engine_factory_mock):
+        model_insert_mock.side_effect = dialect_exc.BaseException(
+            code=0, message="Unknown error")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.UnknownStorageException, model.insert)
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.update')
+    def test_update_model_when_unknown_error_raises(self, model_update_mock,
+                                                    engine_factory_mock):
+        model_update_mock.side_effect = dialect_exc.BaseException(
+            code=0, message="Unknown error")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.UnknownStorageException, model.update)
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.delete')
+    def test_delete_model_when_unknown_error_raises(self, model_delete_mock,
+                                                    engine_factory_mock):
+        model_delete_mock.side_effect = dialect_exc.BaseException(
+            code=1213, message="Unknown error")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.UnknownStorageException, model.delete)
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.insert')
+    def test_insert_model_when_conflict_error_raises(self, model_insert_mock,
+                                                     engine_factory_mock):
+        model_insert_mock.side_effect = dialect_exc.Conflict(
+            code=1062, message="Conflict is found")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.ConflictRecords, model.insert)
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.update')
+    def test_update_model_when_conflict_error_raises(self, model_update_mock,
+                                                     engine_factory_mock):
+        model_update_mock.side_effect = dialect_exc.Conflict(
+            code=1062, message="Conflict is found")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.ConflictRecords, model.update)
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.insert')
+    def test_insert_model_when_deadlock_error_raises(self, model_insert_mock,
+                                                     engine_factory_mock):
+        model_insert_mock.side_effect = dialect_exc.DeadLock(
+            code=1213, message="Deadlock is found")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.DeadLock, model.insert)
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.update')
+    def test_update_model_when_deadlock_error_raises(self, model_update_mock,
+                                                     engine_factory_mock):
+        model_update_mock.side_effect = dialect_exc.DeadLock(
+            code=1213, message="Deadlock is found")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.DeadLock, model.update)
+
+    @mock.patch('restalchemy.storage.sql.tables.SQLTable.delete')
+    def test_delete_model_when_deadlock_error_raises(self, model_delete_mock,
+                                                     engine_factory_mock):
+        model_delete_mock.side_effect = dialect_exc.DeadLock(
+            code=1213, message="Deadlock is found")
+        model = FakeDirtyRestoreModelWithUUID.restore_from_storage(
+            a=FAKE_VALUE_A, b=FAKE_VALUE_B)
+        self.assertRaises(exceptions.DeadLock, model.delete)
