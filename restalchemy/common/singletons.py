@@ -14,24 +14,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import six
+import threading
+
 
 class MetaSingleton(type):
     """Meta Singleton
 
-    For example:
+    For example py2:
 
     >>> class ConcreteSingleton:
     ...     __metaclass__ = MetaSingleton
+
+    For example py3:
+
+    >>> class ConcreteSingleton(metaclass=MetaSingleton):
+    ...     pass
+
+    For example py2 and py3:
+
+    >>> @six.add_metaclass(MetaSingleton)
+        class ConcreteSingleton(object):
+    ...     pass
     """
 
     _instance = None
+    _lock = threading.Lock()
 
     def __call__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(MetaSingleton, cls).__call__(*args, **kwargs)
+        if cls._instance is None:
+            with cls._lock:
+                if not cls._instance:
+                    cls._instance = (super(MetaSingleton, cls)
+                                     .__call__(*args, **kwargs))
         return cls._instance
 
 
+@six.add_metaclass(MetaSingleton)
 class InheritSingleton(object):
     """Inherit Singleton
 
@@ -40,11 +59,4 @@ class InheritSingleton(object):
     >>> class ConcreteSingleton(InheritSingleton):
     ...     pass
     """
-
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = (super(InheritSingleton, cls)
-                             .__new__(cls, *args, **kwargs))
-        return cls._instance
+    pass
