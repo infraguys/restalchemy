@@ -196,6 +196,13 @@ class Controller(object):
             content_type = packers.get_content_type(self._req.headers)
             packer = self.get_packer(content_type)
             kwargs.update(packer.unpack(value=self._req.body))
+            # TODO(v.burygin) We need carefully change params of method update
+            #  in new major version for updating uuid in model
+            if "uuid" in kwargs:
+                if kwargs["uuid"] != parsed_id:
+                    raise exc.NotEqualUuidException(uuid=kwargs["uuid"],
+                                                    parsed_id=parsed_id)
+                kwargs.pop("uuid", None)
             return self.process_result(
                 result=self.update(uuid=parsed_id, **kwargs),
                 add_location=constants.UPDATE in self.__generate_location_for__
