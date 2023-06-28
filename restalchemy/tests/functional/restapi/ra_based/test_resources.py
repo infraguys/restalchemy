@@ -202,6 +202,39 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
 
+    def test_update_vm_resource_uuid_in_body(self):
+        RESOURCE_ID = UUID1
+        self._insert_vm_to_db(uuid=RESOURCE_ID, name="old", state="off")
+        vm_request_body = {
+            "uuid": str(UUID2),
+            "name": "new"
+        }
+
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                            RESOURCE_ID)
+
+        response = requests.put(VM_RES_ENDPOINT, json=vm_request_body)
+
+        self.assertEqual(response.status_code, 400)
+        message = response.json()["message"]
+        expected_message = ("Uuid (%s) in body is not equal to parsed id (%s) "
+                            "from url.") % (UUID2, RESOURCE_ID)
+        self.assertEqual(message, expected_message)
+
+        vm_request_body = {
+            "uuid": str(RESOURCE_ID),
+            "name": "new"
+        }
+        vm_response_body = {
+            "uuid": str(RESOURCE_ID),
+            "name": "new",
+            "state": "off",
+        }
+        response = requests.put(VM_RES_ENDPOINT, json=vm_request_body)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+
     def test_delete_vm_resource_successful(self):
         RESOURCE_ID = UUID1
         self._insert_vm_to_db(uuid=RESOURCE_ID, name="test", state="off")

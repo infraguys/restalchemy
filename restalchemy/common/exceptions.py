@@ -177,3 +177,10 @@ class ValidationErrorException(RestAlchemyException):
 
     message = "Validation error occurred."
     code = 400
+
+
+class NotEqualUuidException(RestAlchemyException):
+
+    message = ("Uuid (%(uuid)s) in body is not equal to "
+               "parsed id (%(parsed_id)s) from url.")
+    code = 400
