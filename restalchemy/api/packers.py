@@ -27,7 +27,7 @@ from restalchemy.common import exceptions
 from restalchemy.common import utils
 
 DEFAULT_VALUE = object()
-CONTENT_TYPE_APPLICATION_JSON = constants.CONTENT_TYPE_APPLICATION_JSON
+CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = constants.CONTENT_TYPE_APPLICATION_JSON  # noqa
 
 LOG = logging.getLogger(__name__)
 
@@ -77,6 +77,8 @@ class BaseResourcePacker(object):
         return prop.parse_value(self._req, value)
 
     def unpack(self, value):
+        if not self._rt:
+            return value
         value = copy.deepcopy(value)
         result = {}
         for name, prop in self._rt.get_fields_by_request(self._req):

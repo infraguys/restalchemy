@@ -184,3 +184,9 @@ class NotEqualUuidException(RestAlchemyException):
     message = ("Uuid (%(uuid)s) in body is not equal to "
                "parsed id (%(parsed_id)s) from url.")
     code = 400
+
+
+class NotExtended(RestAlchemyException):
+
+    message = "Application does not initialized with openapi engine."
+    code = 400

@@ -16,6 +16,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+from wsgiref.simple_server import make_server
+
 from restalchemy.api import applications
 from restalchemy.api import controllers
 from restalchemy.api import middlewares
@@ -23,6 +26,9 @@ from restalchemy.api import routes
 
 from restalchemy.openapi import engines as openapi_engines
 from restalchemy.openapi import structures as openapi_structures
+
+HOST = '0.0.0.0'
+PORT = 8000
 
 
 class RootController(controllers.Controller):
@@ -70,9 +76,28 @@ def get_user_api_application():
     return UserApiApp
 
 
-def build_wsgi_application(metrics_sender):
+def build_wsgi_application():
     return middlewares.attach_middlewares(
         applications.OpenApiApplication(route_class=get_user_api_application(),
                                         openapi_engine=get_openapi_engine()),
         [],
     )
+
+
+def main():
+    """
+
+    After start you can try curl http://127.0.0.1:8000/v1/specifications/3.0.3
+
+    """
+    server = make_server(HOST, PORT, build_wsgi_application())
+
+    try:
+        six.print_("Serve forever on %s:%s" % (HOST, PORT))
+        server.serve_forever()
+    except KeyboardInterrupt:
+        six.print_('Bye')
+
+
+if __name__ == '__main__':
+    main()

@@ -28,7 +28,6 @@ from restalchemy.api import actions
 from restalchemy.api import constants
 from restalchemy.api import controllers
 from restalchemy.common import exceptions as exc
-from restalchemy.common import utils
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import parse
 from restalchemy.openapi import structures
@@ -200,13 +199,14 @@ class Route(BaseRoute):
     def _build_openapi_method_specification(self,
                                             method,
                                             parameters=None,
-                                            current_path='/'):
-        controller = self.get_controller(request=self._req)
+                                            current_path='/',
+                                            controller=None):
+        controller = controller or self.get_controller(request=self._req)
         if isinstance(method, actions.ActionHandler):
             method_name = method.name
         else:
             method = getattr(controller, method.lower())
-            method_name = method.__name__.upper()
+            method_name = getattr(method, "method", method.__name__.upper())
         openapi_schema = getattr(method, "openapi_schema", None)
         if openapi_schema:
             return openapi_schema.result
@@ -284,7 +284,7 @@ class Route(BaseRoute):
 
         # Fill request_body
         if method_name in [constants.CREATE, constants.UPDATE]:
-            result["requestBody"] = oa_c.build_openapi_request_body(
+            result["requestBody"] = oa_c.build_openapi_json_req_body(
                 method_model_name
             )
 
@@ -304,7 +304,6 @@ class Route(BaseRoute):
                     self._build_openapi_method_specification(GET,
                                                              parameters,
                                                              current_path))
-                assert True
 
         openapi_collection_methods = {GET: FILTER, POST: CREATE}
         openapi_resource_methods = {GET: GET, PUT: UPDATE, DELETE: DELETE}
@@ -330,8 +329,11 @@ class Route(BaseRoute):
         resource = self.get_controller(request=self._req).get_resource()
         if resource is not None:
             model = resource.get_model()
-            id_prop_struct = model.get_id_property()
-            id_name = list(id_prop_struct)[0]
+            try:
+                id_prop_struct = model.get_id_property()
+                id_name = list(id_prop_struct)[0]
+            except TypeError:
+                id_name = ""
             id_parameter_name = "{%s%s}" % (model.__name__,
                                             id_name.capitalize())
             resource_path = posixpath.join(current_path, id_parameter_name)
@@ -353,22 +355,22 @@ class Route(BaseRoute):
 
             action_names = [r for r in self.get_action_names()]
             if action_names:
-                route_actions = self.get_actions_by_names(action_names)
+                route_actions = self.get_actions_by_names(
+                    action_names)
                 for route_action in route_actions:
                     is_invoke = getattr(self,
                                         route_action.name).is_invoke()
                     if is_invoke:
-                        action_path = utils.lastslash(
-                            posixpath.join(current_path,
-                                           id_parameter_name,
-                                           "actions",
-                                           route_action.name,
-                                           "invoke"))
+                        action_path = posixpath.join(current_path,
+                                                     id_parameter_name,
+                                                     "actions",
+                                                     route_action.name,
+                                                     "invoke")
                     else:
-                        action_path = utils.lastslash(
-                            posixpath.join(current_path,
-                                           id_parameter_name,
-                                           route_action.name))
+                        action_path = posixpath.join(current_path,
+                                                     id_parameter_name,
+                                                     "actions",
+                                                     route_action.name)
                     paths_result[action_path][route_action.method.lower()] = (
                         self._build_openapi_method_specification(route_action,
                                                                  parameters,
