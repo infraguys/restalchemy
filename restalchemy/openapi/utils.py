@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 
 class ResourceSchemaGenerator(object):
 
@@ -38,6 +42,7 @@ class ResourceSchemaGenerator(object):
 
     def generate_parameter_object(self, request):
         parameters = {}
+        has_id_property = False
         for name, prop in self._resource.get_fields_by_request(request):
             try:
                 prop_kwargs = self.get_prop_kwargs(name)
@@ -49,6 +54,7 @@ class ResourceSchemaGenerator(object):
             except KeyError:
                 is_id = False
             if is_id:
+                has_id_property = True
                 prop_name = self.resource_prop_name(name)
             else:
                 prop_name = prop.api_name
@@ -59,6 +65,27 @@ class ResourceSchemaGenerator(object):
             }
             if is_id:
                 parameters[prop_name]["required"] = True
+        if not has_id_property:
+            try:
+                model = self._resource.get_model()
+                id_prop_struct = model.get_id_property()
+                id_prop = list(id_prop_struct.items())[0]
+                name, prop = id_prop
+                prop = prop(value=prop._kwargs.get("default", 0))
+                try:
+                    prop_kwargs = self.get_prop_kwargs(name)
+                except KeyError:
+                    prop_kwargs = {}
+                schema = prop.get_property_type().to_openapi_spec(prop_kwargs)
+                prop_name = self.resource_prop_name(name)
+                parameters[prop_name] = {
+                    "name": prop_name,
+                    "in": "path",
+                    "schema": schema,
+                }
+                parameters[prop_name]["required"] = True
+            except Exception:
+                LOG.exception("Error on generate_parameter_object:")
         return parameters
 
     def generate_schema_object(self, method):
@@ -89,20 +116,25 @@ class Schema(object):
                  parameters=None,
                  responses=None,
                  tags=None,
+                 request_body=None,
                  ):
         self.summary = summary or ""
         self.parameters = parameters or []
         self.responses = responses or {}
         self.tags = tags or []
+        self.request_body = request_body
 
     @property
     def result(self):
-        return {
+        res = {
             "summary": self.summary,
             "tags": self.tags,
             "parameters": self.parameters,
-            "responses": self.responses
+            "responses": self.responses,
         }
+        if self.request_body is not None:
+            res["requestBody"] = self.request_body
+        return res
 
 
 def extend_schema(
@@ -110,6 +142,7 @@ def extend_schema(
         parameters=None,
         responses=None,
         tags=None,
+        request_body=None,
 ):
     if parameters and not isinstance(parameters, list):
         raise ValueError("parameters type is not list")
@@ -122,7 +155,8 @@ def extend_schema(
         schema = Schema(summary=summary,
                         parameters=parameters,
                         responses=responses,
-                        tags=tags)
+                        tags=tags,
+                        request_body=request_body)
         f.openapi_schema = schema
         return f
 

@@ -170,7 +170,12 @@ class Controller(object):
 
     def get_resource_by_uuid(self, uuid, parent_resource=None):
         kwargs = self._make_kwargs(parent_resource)
-        result = self.get(uuid=uuid, **kwargs)
+
+        parsed_id = self._parse_resource_uuid(
+            "uuid", uuid, self.get_resource().get_id_type()
+        ) if self.__resource__ else uuid
+
+        result = self.get(uuid=parsed_id, **kwargs)
         if isinstance(result, tuple):
             return result[0]
         return result

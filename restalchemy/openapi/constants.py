@@ -172,7 +172,42 @@ def build_openapi_object_response(properties,
     }
 
 
-def build_openapi_request_body(model_name):
+def build_openapi_user_response(code=status.HTTP_200_OK,
+                                description="",
+                                **kwargs):
+    """
+
+    properties - dict as needed in openapi
+    https://swagger.io/docs/specification/describing-responses/
+
+    Ex:
+    {
+    "id": {"type": "integer", "description": "The user ID"}
+    "username": {"type": "string", "description": "The user name"}
+    }
+
+    """
+    if not kwargs:
+        raise ValueError("**kwargs are required.")
+    return {
+        code: {
+            "description": description,
+            "content": {
+                ra_const.CONTENT_TYPE_APPLICATION_JSON: {
+                    "schema": kwargs
+                }
+            }
+        },
+        exc.ValidationErrorException.code: {
+            "description": exc.ValidationErrorException.message,
+        },
+        exc.NotFoundError.code: {
+            "description": exc.NotFoundError.message % {"path": ""},
+        }
+    }
+
+
+def build_openapi_json_req_body(model_name):
     return {
         "description": model_name,
         "required": True,

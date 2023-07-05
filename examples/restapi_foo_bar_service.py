@@ -22,6 +22,7 @@ from wsgiref.simple_server import make_server
 
 from restalchemy.api import applications
 from restalchemy.api import controllers
+from restalchemy.api import middlewares
 from restalchemy.api import resources
 from restalchemy.api import routes
 from restalchemy.dm import models
@@ -63,7 +64,7 @@ class V1Controller(controllers.Controller):
     """Handle http://127.0.0.1:8000/."""
 
     def filter(self, **kwargs):
-        return ['v1']
+        return ["foos", "bars"]
 
 
 class FooController(controllers.Controller):
@@ -98,7 +99,7 @@ class BarController1(controllers.Controller):
 
 
 class BarController2(controllers.Controller):
-    """Handle http://127.0.0.1:8000/bar/<uuid>."""
+    """Handle http://127.0.0.1:8000/bars/<uuid>."""
 
     __resource__ = bar_resource
 
@@ -142,9 +143,33 @@ class V1Route(routes.Route):
     bars = routes.route(BarRoute2)
 
 
+class UserApiApp(routes.Route):
+    __controller__ = controllers.RootController
+    __allow_methods__ = [routes.FILTER]
+
+
+# Route to /v1/ endpoint.
+setattr(
+    UserApiApp,
+    "v1",
+    routes.route(V1Route),
+)
+
+
+def get_user_api_application():
+    return UserApiApp
+
+
+def build_wsgi_application():
+    return middlewares.attach_middlewares(
+        applications.WSGIApp(get_user_api_application()),
+        [],
+    )
+
+
 def main():
     # Create python WSGI server on any interface with 8000 port
-    server = make_server(HOST, PORT, applications.WSGIApp(route_class=V1Route))
+    server = make_server(HOST, PORT, build_wsgi_application())
 
     try:
         six.print_("Serve forever on %s:%s" % (HOST, PORT))

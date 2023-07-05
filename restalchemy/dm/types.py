@@ -582,6 +582,8 @@ class BaseRegExpType(BaseType):
 
 class BaseCompiledRegExpType(BaseRegExpType):
     def __init__(self, pattern, **kwargs):
+        if "openapi_type" not in kwargs:
+            kwargs["openapi_type"] = "string"
         super(BaseRegExpType, self).__init__(**kwargs)
         self._pattern = pattern
 
