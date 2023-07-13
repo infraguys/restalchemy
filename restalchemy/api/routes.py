@@ -103,6 +103,14 @@ class BaseRoute(object):
                         res.append(tag.build())
         return res
 
+    @staticmethod
+    def restore_path_info(req):
+        """Restore initial values for path_info and script_name to not raise
+        UnsupportedHttpMethod exception when RetryOnErrorMiddleware triggers.
+        """
+
+        req.path_info, req.script_name = req.script_name, req.path_info
+
 
 class Route(BaseRoute):
     __controller__ = None
@@ -474,7 +482,7 @@ class Route(BaseRoute):
                            self.get_method_by_route_type(RESOURCE_ROUTE))
             if self.check_allow_methods(ctrl_method):
                 worker = self.get_controller(request=self._req)
-
+                self.restore_path_info(self._req)
                 if name == '':
                     # Collection method
                     return worker.do_collection(parent_resource)
@@ -561,6 +569,7 @@ class Action(BaseRoute):
         if ((method in [GET, POST, PUT] and self.is_invoke() and invoke)
                 or (method == GET and not self.is_invoke() and not invoke)):
             action_method = getattr(action, 'do_%s' % method.lower())
+            self.restore_path_info(self._req)
             return action_method(controller=controller, resource=resource,
                                  **kwargs)
         else:

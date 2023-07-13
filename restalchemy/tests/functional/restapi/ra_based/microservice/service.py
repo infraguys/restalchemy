@@ -21,9 +21,12 @@ from wsgiref.simple_server import make_server
 from wsgiref.simple_server import WSGIServer
 
 from restalchemy.api import applications
+from restalchemy.api.middlewares import (
+    retry_on_error as retry_error_middleware)
 from restalchemy.api.middlewares import errors as errors_middleware
 from restalchemy.openapi import engines as openapi_engines
 from restalchemy.openapi import structures as openapi_structures
+from restalchemy.storage import exceptions as storage_exc
 from restalchemy.storage.sql import engines
 from restalchemy.tests.functional import consts
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
@@ -69,11 +72,15 @@ class RESTService(threading.Thread):
         self._httpd = make_server(
             bind_host, bind_port,
             errors_middleware.ErrorsHandlerMiddleware(
-                middlewares.ContextMiddleware(
-                    application=applications.OpenApiApplication(
-                        route_class=routes.Root,
-                        openapi_engine=openapi_engine,
-                    ),
+                retry_error_middleware.RetryOnErrorsMiddleware(
+                    middlewares.ContextMiddleware(
+                        application=applications.OpenApiApplication(
+                            route_class=routes.Root,
+                            openapi_engine=openapi_engine
+                        ),
+                    ), exceptions=storage_exc.DeadLock,
+                    # set max_retry == 2 to speed up retry tests execution
+                    max_retry=2
                 ),
             ),
             WSGIServer)
