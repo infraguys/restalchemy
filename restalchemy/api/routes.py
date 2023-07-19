@@ -76,7 +76,7 @@ class BaseRoute(object):
         pass
 
     @classmethod
-    def tags(cls, for_paths=False):
+    def openapi_tags(cls, for_paths=False):
         if not cls.__tags__:
             controller = cls.get_controller_class()
             if controller:
@@ -277,7 +277,7 @@ class Route(BaseRoute):
 
         result = {
             'summary': summary,
-            'tags': self.tags(for_paths=True),
+            'tags': self.openapi_tags(for_paths=True),
             'parameters': params,
             'responses': responses
         }

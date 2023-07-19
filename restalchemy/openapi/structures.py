@@ -326,7 +326,7 @@ class OpenApiTags(object):
                                           next_path,
                                           request)
                 )
-                tags = next_route(request).tags()
+                tags = next_route(request).openapi_tags()
                 result_spec.extend(tags)
             elif next_route.is_resource_route():
                 next_path = posixpath.join(current_path,
@@ -336,7 +336,7 @@ class OpenApiTags(object):
                                           next_path,
                                           request)
                 )
-                tags = next_route(request).tags()
+                tags = next_route(request).openapi_tags()
                 result_spec.extend(tags)
 
         return result_spec
