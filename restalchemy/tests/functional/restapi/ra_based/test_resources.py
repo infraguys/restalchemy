@@ -19,11 +19,13 @@
 import random
 import uuid as pyuuid
 
+import collections
 import mock
 import requests
 from six.moves.urllib import parse
 from webob import request
 
+from functools import partial
 from restalchemy.api import constants
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -31,6 +33,7 @@ from restalchemy.common import utils
 from restalchemy.dm import filters
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
+from restalchemy.storage.sql.tables import SQLTable
 from restalchemy.tests.functional import base
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
@@ -732,11 +735,19 @@ class TestNestedResourceForUnpackerTestCase(BaseResourceTestCase):
             }), result)
 
 
+def raise_deadlock_exc_once(counter, original_method, obj, *args, **kwargs):
+    if counter["attempt"] == 0:
+        counter["attempt"] += 1
+        raise DEADLOCK_EXC
+    else:
+        return original_method(obj, *args, **kwargs)
+
+
 class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
 
-    @mock.patch("restalchemy.storage.sql.tables.SQLTable.insert")
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.insert",
+                side_effect=DEADLOCK_EXC)
     def test_create_vm_when_deadlock_raises(self, model_insert_mock):
-        model_insert_mock.side_effect = DEADLOCK_EXC
         response = requests.post(self.get_endpoint(
             TEMPL_VMS_COLLECTION_ENDPOINT), json={"name": "test"})
         self.assertEqual(500, response.status_code)
@@ -744,9 +755,21 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         self.assertEqual(2, model_insert_mock.call_count)
         self.assertEqual(0, len(models.VM.objects.get_all()))
 
-    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update")
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.insert",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.insert),
+                autospec=True)
+    def test_create_vm_when_deadlock_raises_once(self, model_insert_mock):
+        response = requests.post(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT), json={"name": "test"})
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, model_insert_mock.call_count)
+        self.assertIsNotNone(models.VM.objects.get_one(filters={
+            "name": "test"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=DEADLOCK_EXC)
     def test_update_vm_when_deadlock_raises(self, model_update_mock):
-        model_update_mock.side_effect = DEADLOCK_EXC
         models.VM(uuid=UUID1, name="old", state="off").save()
         response = requests.put(
             self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1),
@@ -757,9 +780,23 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         self.assertIsNotNone(models.VM.objects.get_one(filters={
             "uuid": UUID1, "name": "old", "state": "off"}))
 
-    @mock.patch("restalchemy.storage.sql.tables.SQLTable.delete")
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.update),
+                autospec=True)
+    def test_update_vm_when_deadlock_raises_once(self, model_update_mock):
+        models.VM(uuid=UUID1, name="old", state="off").save()
+        response = requests.put(
+            self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1),
+            json={"name": "new"})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, model_update_mock.call_count)
+        self.assertIsNotNone(models.VM.objects.get_one(filters={
+            "uuid": UUID1, "name": "new", "state": "off"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.delete",
+                side_effect=DEADLOCK_EXC)
     def test_delete_vm_when_deadlock_raises(self, model_delete_mock):
-        model_delete_mock.side_effect = DEADLOCK_EXC
         models.VM(uuid=UUID1, name="old", state="off").save()
         response = requests.delete(
             self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1))
@@ -769,9 +806,21 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         self.assertIsNotNone(models.VM.objects.get_one(filters={
             "uuid": UUID1, "name": "old", "state": "off"}))
 
-    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update")
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.delete",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.delete),
+                autospec=True)
+    def test_delete_vm_when_deadlock_raises_once(self, model_delete_mock):
+        models.VM(uuid=UUID1, name="old", state="off").save()
+        response = requests.delete(
+            self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1))
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(2, model_delete_mock.call_count)
+        self.assertEqual(0, len(models.VM.objects.get_all()))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=DEADLOCK_EXC)
     def test_vm_power_on_when_deadlock_raises(self, model_update_mock):
-        model_update_mock.side_effect = DEADLOCK_EXC
         models.VM(uuid=UUID1, name="old", state="off").save()
         response = requests.post(
             self.get_endpoint(TEMPL_POWERON_ACTION_ENDPOINT, UUID1))
@@ -780,6 +829,19 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         self.assertEqual(2, model_update_mock.call_count)
         self.assertIsNotNone(models.VM.objects.get_one(filters={
             "uuid": UUID1, "name": "old", "state": "off"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.update),
+                autospec=True)
+    def test_vm_power_on_when_deadlock_raises_once(self, model_update_mock):
+        models.VM(uuid=UUID1, name="old", state="off").save()
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWERON_ACTION_ENDPOINT, UUID1))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, model_update_mock.call_count)
+        self.assertIsNotNone(models.VM.objects.get_one(filters={
+            "uuid": UUID1, "name": "old", "state": "on"}))
 
     @mock.patch("restalchemy.storage.sql.tables.SQLTable.update")
     def test_vm_power_off_when_deadlock_raises(self, model_update_mock):
@@ -792,6 +854,19 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         self.assertEqual(2, model_update_mock.call_count)
         self.assertIsNotNone(models.VM.objects.get_one(filters={
             "uuid": UUID1, "name": "old", "state": "on"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.update),
+                autospec=True)
+    def test_vm_power_off_when_deadlock_raises_once(self, model_update_mock):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWEROFF_ACTION_ENDPOINT, UUID1))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, model_update_mock.call_count)
+        self.assertIsNotNone(models.VM.objects.get_one(filters={
+            "uuid": UUID1, "name": "old", "state": "off"}))
 
 
 class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):
@@ -807,21 +882,33 @@ class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):
             'uuid': filters.EQ(UUID1)
         })
 
-    @mock.patch("restalchemy.storage.sql.tables.SQLTable.insert")
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.insert",
+                side_effect=DEADLOCK_EXC)
     def test_create_port_when_deadlock_raises(self, model_insert_mock):
-        model_insert_mock.side_effect = DEADLOCK_EXC
         response = requests.post(
             self.get_endpoint(TEMPL_PORTS_COLLECTION_ENDPOINT, UUID1),
             json={"mac": "00:00:00:00:00:01"})
-
         self.assertEqual(500, response.status_code)
         self.assertEqual(DEADLOCK_RESPONSE, response.json())
         self.assertEqual(2, model_insert_mock.call_count)
         self.assertEqual(0, len(models.Port.objects.get_all()))
 
-    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update")
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.insert",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.insert),
+                autospec=True)
+    def test_create_port_when_deadlock_raises_once(self, model_insert_mock):
+        response = requests.post(
+            self.get_endpoint(TEMPL_PORTS_COLLECTION_ENDPOINT, UUID1),
+            json={"mac": "00:00:00:00:00:01"})
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, model_insert_mock.call_count)
+        self.assertIsNotNone(models.Port.objects.get_one(filters={
+            "mac": "00:00:00:00:00:01"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=DEADLOCK_EXC)
     def test_update_port_when_deadlock_raises(self, model_update_mock):
-        model_update_mock.side_effect = DEADLOCK_EXC
         models.Port(uuid=UUID3, mac="00:00:00:00:00:03", vm=self.vm1).save()
         response = requests.put(
             self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT, UUID1, UUID3),
@@ -832,9 +919,23 @@ class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):
         self.assertIsNotNone(models.Port.objects.get_one(filters={
             "uuid": UUID3, "mac": "00:00:00:00:00:03"}))
 
-    @mock.patch("restalchemy.storage.sql.tables.SQLTable.delete")
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.update),
+                autospec=True)
+    def test_update_port_when_deadlock_raises_once(self, model_update_mock):
+        models.Port(uuid=UUID3, mac="00:00:00:00:00:03", vm=self.vm1).save()
+        response = requests.put(
+            self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT, UUID1, UUID3),
+            json={"mac": "00:00:00:00:00:04"})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, model_update_mock.call_count)
+        self.assertIsNotNone(models.Port.objects.get_one(filters={
+            "uuid": UUID3, "mac": "00:00:00:00:00:04"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.delete",
+                side_effect=DEADLOCK_EXC)
     def test_delete_port_when_deadlock_raises(self, model_delete_mock):
-        model_delete_mock.side_effect = DEADLOCK_EXC
         models.Port(uuid=UUID3, mac="00:00:00:00:00:03", vm=self.vm1).save()
         response = requests.delete(
             self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT, UUID1, UUID3))
@@ -843,3 +944,15 @@ class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):
         self.assertEqual(2, model_delete_mock.call_count)
         self.assertIsNotNone(models.Port.objects.get_one(filters={
             "uuid": UUID3, "mac": "00:00:00:00:00:03"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.delete",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.delete),
+                autospec=True)
+    def test_delete_port_when_deadlock_raises_once(self, model_delete_mock):
+        models.Port(uuid=UUID3, mac="00:00:00:00:00:03", vm=self.vm1).save()
+        response = requests.delete(
+            self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT, UUID1, UUID3))
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(2, model_delete_mock.call_count)
+        self.assertEqual(0, len(models.Port.objects.get_all()))
