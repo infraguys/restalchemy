@@ -17,11 +17,14 @@
 #    under the License.
 
 import collections
+import mock
 
+from mysql.connector import errors
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql import tables
 from restalchemy.tests.unit import base
@@ -44,7 +47,38 @@ FAKE_VALUES = [True, 111, "field2", "uuid"]
 FAKE_PK_VALUES = ["uuid"]
 
 
-class MySQLInsertTestCase(base.BaseTestCase):
+class AbstractDialectCommandTestMixin(object):
+    @mock.patch(
+        "restalchemy.storage.sql.dialect.base.AbstractDialectCommand.execute",
+        side_effect=errors.DatabaseError("deadlock", errno=1213,
+                                         sqlstate=1213))
+    def test_execute_when_errno_1213(self, command_mock):
+        with self.assertRaises(dialect_exc.DeadLock) as ctx:
+            self.target.execute(session=None)
+        self.assertEqual(1213, ctx.exception.code)
+        self.assertEqual("deadlock", str(ctx.exception))
+
+    @mock.patch(
+        "restalchemy.storage.sql.dialect.base.AbstractDialectCommand.execute",
+        side_effect=errors.DatabaseError("conflict", errno=1062,
+                                         sqlstate=1062))
+    def test_execute_when_errno_1062(self, command_mock):
+        with self.assertRaises(dialect_exc.Conflict) as ctx:
+            self.target.execute(session=None)
+        self.assertEqual(1062, ctx.exception.code)
+        self.assertEqual("conflict", str(ctx.exception))
+
+    @mock.patch(
+        "restalchemy.storage.sql.dialect.base.AbstractDialectCommand.execute",
+        side_effect=errors.DatabaseError("access denied", errno=1045))
+    def test_execute_when_errno_1045(self, command_mock):
+        with self.assertRaises(errors.DatabaseError) as ctx:
+            self.target.execute(session=None)
+        self.assertEqual(1045, ctx.exception.errno)
+        self.assertEqual("access denied", ctx.exception.msg)
+
+
+class MySQLInsertTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
 
     def setUp(self):
         self.target = mysql.MySQLInsert(FAKE_TABLE, FAKE_VALUES)
@@ -56,7 +90,7 @@ class MySQLInsertTestCase(base.BaseTestCase):
             "`field_str`, `uuid`) VALUES (%s, %s, %s, %s)")
 
 
-class MySQLUpdateTestCase(base.BaseTestCase):
+class MySQLUpdateTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
 
     def setUp(self):
         TABLE = FAKE_TABLE
@@ -70,7 +104,7 @@ class MySQLUpdateTestCase(base.BaseTestCase):
             "`field_str` = %s WHERE `uuid` = %s")
 
 
-class MySQLDeleteTestCase(base.BaseTestCase):
+class MySQLDeleteTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
 
     def setUp(self):
         TABLE = FAKE_TABLE
