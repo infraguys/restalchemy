@@ -117,12 +117,14 @@ class Schema(object):
                  responses=None,
                  tags=None,
                  request_body=None,
+                 operation_id=None,
                  ):
         self.summary = summary or ""
         self.parameters = parameters or []
         self.responses = responses or {}
         self.tags = tags or []
         self.request_body = request_body
+        self.operation_id = operation_id
 
     @property
     def result(self):
@@ -134,6 +136,8 @@ class Schema(object):
         }
         if self.request_body is not None:
             res["requestBody"] = self.request_body
+        if self.operation_id is not None:
+            res["operationId"] = self.operation_id
         return res
 
 
@@ -143,6 +147,7 @@ def extend_schema(
         responses=None,
         tags=None,
         request_body=None,
+        operation_id=None,
 ):
     if parameters and not isinstance(parameters, list):
         raise ValueError("parameters type is not list")
@@ -156,7 +161,8 @@ def extend_schema(
                         parameters=parameters,
                         responses=responses,
                         tags=tags,
-                        request_body=request_body)
+                        request_body=request_body,
+                        operation_id=operation_id)
         f.openapi_schema = schema
         return f
 

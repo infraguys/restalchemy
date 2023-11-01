@@ -168,7 +168,9 @@ class OpenApiPaths(object):
                 if current_path == "/":
                     result_spec[current_path][http_method.lower()] = {
                         "summary": "Base application url",
-                        "responses": oa_c.OPENAPI_FILTER_RESPONSE}
+                        "responses": oa_c.OPENAPI_FILTER_RESPONSE,
+                        "operationId": "Get_urls"
+                    }
                 else:
                     result_spec[current_path][http_method.lower()] = {}
             # process next routes

@@ -47,6 +47,8 @@ POST = constants.POST
 COLLECTION_ROUTE = 1
 RESOURCE_ROUTE = 2
 
+SPECIAL_SYMBOLS = re.compile(r"[/{}!@#$%^&*())\[\]:,./<>?\|`\~\-\=\_\+]+")
+
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseRoute(object):
@@ -196,6 +198,14 @@ class Route(BaseRoute):
             yield next_route.build_openapi_specification(route_path,
                                                          parameters)
 
+    @staticmethod
+    def _build_operation_id(method, current_path):
+        operation_id = "{}_{}".format(method.capitalize(), current_path)
+        operation_id = re.sub(SPECIAL_SYMBOLS, "_", operation_id)
+        operation_id = operation_id.replace("__", "_")
+        operation_id = operation_id.rstrip("_")
+        return operation_id
+
     def _build_openapi_method_specification(self,
                                             method,
                                             parameters=None,
@@ -279,7 +289,9 @@ class Route(BaseRoute):
             'summary': summary,
             'tags': self.openapi_tags(for_paths=True),
             'parameters': params,
-            'responses': responses
+            'responses': responses,
+            'operationId': self._build_operation_id(method_name,
+                                                    current_path)
         }
 
         # Fill request_body

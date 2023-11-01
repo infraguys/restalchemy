@@ -381,7 +381,8 @@ class RootController(Controller):
 class OpenApiSpecificationController(Controller):
 
     @oa_utils.extend_schema(summary="OpenApi specification",
-                            responses=oa_c.build_openapi_object_response({}))
+                            responses=oa_c.build_openapi_object_response({}),
+                            operation_id="Get_OpenApi_specification")
     def get(self, uuid):
         openapi_engine = self.request.application.openapi_engine
         if openapi_engine:
