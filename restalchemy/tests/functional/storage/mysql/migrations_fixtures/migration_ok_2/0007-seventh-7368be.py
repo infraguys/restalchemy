@@ -1,5 +1,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
+# Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
+#
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -20,11 +22,11 @@ from restalchemy.storage.sql import migrations
 class MigrationStep(migrations.AbstarctMigrationStep):
 
     def __init__(self):
-        self._depends = ["a77d58fd-3b3c-49ca-8a36-cff8c8d80289"]
+        self._depends = ["0006-sixth-a405f4.py", "0005-fifth-4705d1.py"]
 
     @property
     def migration_id(self):
-        return "6ee4a887-91bf-4785-b9ad-e312c95c3b63"
+        return "7368be06-8dc8-45a4-9aa2-f1a7ce18afd9"
 
     @property
     def is_manual(self):

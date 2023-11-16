@@ -22,11 +22,11 @@ from restalchemy.storage.sql import migrations
 class MigrationStep(migrations.AbstarctMigrationStep):
 
     def __init__(self):
-        self._depends = ["e31a12-0001-rest-service-tables-migration.py"]
+        self._depends = ["0001-rest-service-tables-migration-e31a12.py"]
 
     @property
     def migration_id(self):
-        return "c17a6066-fd95-4fad-84ed-c8777dff9a08"
+        return "1a911273-3ffd-4e24-8323-b5433b7e1109"
 
     def upgrade(self, session):
         expressions = [
@@ -35,8 +35,22 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                      `uuid`, `name`, `state`
                 ) VALUES (
                     '00000000-0000-0000-0000-000000000001', 'vm1', 'on'
-                ), (
-                    '00000000-0000-0000-0000-000000000002', 'vm2', 'off'
+                );
+            """, """
+                INSERT INTO ports (
+                     `uuid`, `mac`, `vm`
+                ) VALUES (
+                    '00000000-0000-0000-0000-000000000002',
+                    '00:00:00:00:00:00',
+                    '00000000-0000-0000-0000-000000000001'
+                );
+            """, """
+                INSERT INTO ip_addresses (
+                     `uuid`, `ip`, `port`
+                ) VALUES (
+                    '00000000-0000-0000-0000-000000000003',
+                    '192.168.0.1',
+                    '00000000-0000-0000-0000-000000000002'
                 );
             """
         ]
@@ -45,16 +59,10 @@ class MigrationStep(migrations.AbstarctMigrationStep):
             session.execute(expression)
 
     def downgrade(self, session):
-        expressions = [
-            """
-                DELETE FROM ports;
-            """, """
-                DELETE FROM vms;
-            """
-        ]
+        tables = ['ip_addresses', 'ports', 'vms']
 
-        for expression in expressions:
-            session.execute(expression)
+        for table in tables:
+            self._delete_table_if_exists(session, table)
 
 
 migration_step = MigrationStep()

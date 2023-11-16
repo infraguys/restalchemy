@@ -11,6 +11,22 @@ The Python REST HTTP Toolkit and Object Relational Mapper.
 Migration commands
 ------------------
 
+.. warning::
+  New naming scheme is implemented for migration file names. The old naming scheme is supported as well.
+  Recommended new file name format:
+
+::
+
+  <migration number>-<message>-<hash>.py
+
+.. Note::
+
+  In order to rename the migration files for the new naming scheme, please use the following command:
+
+::
+
+  $ ra-rename-migrations  -p <path-to-migrations>
+
 Create migrations:
 
 .. warning::

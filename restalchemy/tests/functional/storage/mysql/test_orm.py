@@ -30,8 +30,8 @@ class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 class TestOrderByTestCase(base.BaseWithDbMigrationsTestCase):
 
-    __LAST_MIGRATION__ = "9e335f-test-batch-migration"
-    __FIRST_MIGRATION__ = "9e335f-test-batch-migration"
+    __LAST_MIGRATION__ = "test-batch-migration-9e335f"
+    __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
 
     def test_without_order_by(self):
         model1 = FakeModel(foo_field1=1, foo_field2="Model1")

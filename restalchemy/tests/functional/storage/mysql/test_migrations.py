@@ -26,10 +26,10 @@ from restalchemy.dm import filters
 from restalchemy.storage.sql import migrations as sql_migrations
 from restalchemy.tests.functional import base
 
-INIT_MIGRATION = "0d06a9-0000-init"
-FIRST_MIGRATION = "fc0c16-0001-first"
-SECOND_MIGRATION = "562b5a-0002-second"
-THIRD_MIGRATION = "bbd5d8-0003-third"
+INIT_MIGRATION = "0000-init-0d06a9"
+FIRST_MIGRATION = "0001-first-fc0c16"
+SECOND_MIGRATION = "0002-second-562b5a"
+THIRD_MIGRATION = "0003-third-bbd5d8"
 
 HEAD_MIGRATION = THIRD_MIGRATION
 
@@ -53,6 +53,27 @@ def ensure_py_extension(filename):
     if filename.endswith(py_extension):
         return filename
     return filename + py_extension
+
+
+def get_filename_hash(filename):
+    _, file = os.path.split(filename)
+    return file.split("-")[-1].split(".")[0]
+
+
+def test_get_filename_hash():
+    testpath = "/very/long/path/with/file/0000-message-0d6a9.py"
+    shortpath = "./0000-message-0d6a9.py"
+    onlyname = "0000-message-0d6a9.py"
+    longfilename = "0000-very-very-long-message-0d6a9.py"
+    wrongname = "0d6a9-0000-message.py"
+
+    expected_hash = "0d6a9"
+
+    assert get_filename_hash(testpath) == expected_hash
+    assert get_filename_hash(shortpath) == expected_hash
+    assert get_filename_hash(onlyname) == expected_hash
+    assert get_filename_hash(longfilename) == expected_hash
+    assert get_filename_hash(wrongname) != expected_hash
 
 
 class BaseMigrationTestCase(base.BaseDBEngineTestCase):
@@ -144,7 +165,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         hash_len = self.migration_engine.FILENAME_HASH_LEN
         self.assertEqual(
             str(m.uuid)[:hash_len],
-            INIT_MIGRATION[:hash_len])
+            INIT_MIGRATION[-hash_len:])
 
     def test_migration_head_is_latest(self):
         expected_uuids = ["0d06a988-90cc-48ab-a842-b979cdf8975d",
@@ -176,7 +197,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         # 0000-init.py <- 0001-first.py
         # 0002-second.py(MANUAL) <- 0003-third.py(MANUAL)
         # Expected last migration: 0001-first.py
-        expected_last_migration = "a8a827-0001-first.py"
+        expected_last_migration = "0001-first-a8a827.py"
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
 
         last_migration = custom_migration_engine.get_latest_migration()
@@ -189,7 +210,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         # migrations dependencies:
         # 0000-init.py  0001-first.py(MANUAL)
         # Expected last migration: 0000-init.py
-        expected_last_migration = "672a1b-0000-init.py"
+        expected_last_migration = "0000-init-672a1b.py"
         custom_migration_engine = self.get_migration_engine("migration_ok_3")
 
         last_migration = custom_migration_engine.get_latest_migration()
@@ -205,7 +226,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         #    ^-- 0005-fifth.py --^        ^-- 0006-sixth.py
         #                ^-- 0007-seventh.py --^
         # Expected last migration: 0007-seventh.py
-        expected_last_migration = "7368be-0007-seventh.py"
+        expected_last_migration = "0007-seventh-7368be.py"
         custom_migration_engine = self.get_migration_engine("migration_ok_2")
 
         last_migration = custom_migration_engine.get_latest_migration()
@@ -231,7 +252,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         # 0000-init.py <- 0001-first.py
         #                      ^--  0002-second.py --> 0003-third.py(MANUAL)
         # Expected: 0002-second.py
-        expected_last_migration = "c9221f-0002-second.py"
+        expected_last_migration = "0002-second-c9221f.py"
         custom_migration_engine = self.get_migration_engine("migration_ok_4")
 
         last_migration = custom_migration_engine.get_latest_migration()
@@ -240,7 +261,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
 
     def test_not_manual_migration_depends_from_manual(self):
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
-        new_migration_depends = ["11f1da-0003-third.py"]
+        new_migration_depends = ["0003-third-11f1da.py"]
         fmdm = custom_migration_engine.validate_auto_migration_dependencies
 
         with mock.patch.object(logging.Logger, "warning") as warning:
@@ -252,7 +273,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
 
     def test_not_manual_migration_depends_from_not_manual(self):
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
-        new_migration_depends = ["a8a827-0001-first.py"]
+        new_migration_depends = ["0001-first-a8a827.py"]
         fmdm = custom_migration_engine.validate_auto_migration_dependencies
 
         with mock.patch.object(logging.Logger, "warning") as warning:
@@ -263,8 +284,8 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
 
     def test_get_unapplied_migrations(self):
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
-        expected_result = ["1711de-0000-init.py",
-                           "a8a827-0001-first.py"
+        expected_result = ["0000-init-1711de.py",
+                           "0001-first-a8a827.py"
                            ]
 
         result = custom_migration_engine.get_unapplied_migrations(
@@ -272,17 +293,17 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
             include_manual=False
         )
         result = list(result.keys())
-        result.sort(key=lambda x: x.split('-')[1])
+        result.sort(key=lambda x: x.split('-')[0])
 
         self.assertListEqual(expected_result, result)
 
     def test_get_unapplied_mixed_migrations(self):
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
-        expected_result = ["a8a827-0001-first.py",
-                           "377e90-0002-second.py",
-                           "11f1da-0003-third.py"
+        expected_result = ["0001-first-a8a827.py",
+                           "0002-second-377e90.py",
+                           "0003-third-11f1da.py"
                            ]
-        migration_to_apply = "1711de-0000-init.py"
+        migration_to_apply = "0000-init-1711de.py"
         custom_migration_engine.apply_migration(
             migration_name=migration_to_apply)
 
@@ -297,7 +318,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
 
     def test_no_unapplied_migrations(self):
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
-        head_migration = "a8a827-0001-first.py"
+        head_migration = "0001-first-a8a827.py"
         custom_migration_engine.apply_migration(migration_name=head_migration)
         expected_result = []
 
@@ -310,10 +331,10 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
 
     def test_get_unapplied_manual_migrations(self):
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
-        head_migration = "a8a827-0001-first.py"
+        head_migration = "0001-first-a8a827.py"
         custom_migration_engine.apply_migration(migration_name=head_migration)
-        expected_result = ["377e90-0002-second.py",
-                           "11f1da-0003-third.py"
+        expected_result = ["0002-second-377e90.py",
+                           "0003-third-11f1da.py"
                            ]
 
         result = custom_migration_engine.get_unapplied_migrations(
@@ -486,9 +507,13 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         self.assertEqual((template_path, "r"), template_read_args)
 
         self.assertEqual("w", migration_write_args[1])
+
         self.assertTrue(migration_write_args[0].endswith(
-            "%s-%s.py" % (NEW_MIGRATION_NUMBER, NEW_MIGRATION_MESSAGE)
-        ))
+            "%s-%s-%s.py" % (NEW_MIGRATION_NUMBER,
+                             NEW_MIGRATION_MESSAGE,
+                             get_filename_hash(migration_write_args[0])
+                             ))
+                        )
 
     @mock.patch("%s.open" % six.moves.builtins.__name__,
                 new_callable=mock.mock_open())
@@ -515,9 +540,11 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         self.assertEqual((template_path, "r"), template_read_args)
 
         self.assertEqual("w", migration_write_args[1])
+
         self.assertTrue(migration_write_args[0].endswith(
-            "%s-%s.py" % (sql_migrations.MANUAL_MIGRATION,
-                          NEW_MIGRATION_MESSAGE)
+            "%s-%s-%s.py" % (sql_migrations.MANUAL_MIGRATION,
+                             NEW_MIGRATION_MESSAGE,
+                             get_filename_hash(migration_write_args[0]))
         ))
 
     @mock.patch("%s.open" % six.moves.builtins.__name__,

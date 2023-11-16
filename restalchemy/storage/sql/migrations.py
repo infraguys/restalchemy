@@ -19,6 +19,7 @@
 import abc
 import logging
 import os
+import re
 import six
 import sys
 import uuid
@@ -31,12 +32,16 @@ from restalchemy.dm import types
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import orm
 
-
 HEAD_MIGRATION = "HEAD"
 MANUAL_MIGRATION = "MANUAL"
 
 RA_MIGRATION_TABLE_NAME = "ra_migrations"
 LOG = logging.getLogger(__name__)
+
+DEFAULT_NEW_MIGRATION_NUMBER = "0000"
+MIGRATION_NUMBER_LENGTH = len(DEFAULT_NEW_MIGRATION_NUMBER)
+OLD_STYLE_NAME_PATTERN = r"[0-9a-z]{6}"
+OLD_STYLE = re.compile(OLD_STYLE_NAME_PATTERN)
 
 
 class HeadMigrationNotFoundException(Exception):
@@ -61,6 +66,14 @@ class AbstarctMigrationStep(object):
     @property
     def is_manual(self):
         return False
+
+    @property
+    def number(self):
+        return self._migration_number
+
+    @number.setter
+    def number(self, value):
+        self._migration_number = value
 
     @abc.abstractmethod
     def upgrade(self, session):
@@ -195,13 +208,15 @@ class MigrationEngine(object):
         return files
 
     def _suggest_new_migration_number(self):
-        suggestion_number = ""
+        suggestion_number = DEFAULT_NEW_MIGRATION_NUMBER
         migrations = self._load_migrations()
         migration_numbers = set()
         for migration in migrations:
             parts = migration.split("-")
             if len(parts) > 1:
-                number_part = parts[1].rstrip(".py")
+                number_part = parts[0].rstrip(".py")
+                if OLD_STYLE.match(number_part):
+                    number_part = parts[1].rstrip("py")
                 if number_part.isdigit():
                     migration_numbers.add(number_part)
 
@@ -224,10 +239,17 @@ class MigrationEngine(object):
                             else self._suggest_new_migration_number())
         message = message.replace(" ", "-")
 
+        first_part_of_message = message.split("-")[0]
+
+        if (first_part_of_message.isdigit()
+                and len(first_part_of_message) == MIGRATION_NUMBER_LENGTH):
+            migration_number = first_part_of_message
+            message = message.lstrip(first_part_of_message + "-")
+
         mfilename = "-".join([
-            filename_hash,
             migration_number,
-            message
+            message,
+            filename_hash
         ]) + ".py"
 
         mpath = os.path.join(self._migrations_path, mfilename)
@@ -311,6 +333,36 @@ class MigrationEngine(object):
                 migrations[filename].rollback(session, migrations,
                                               dry_run=dry_run)
 
+    def _calculate_indexes(self):
+        indexed_migrations = []
+        migrations = self._load_migrations()
+        current_migration = self.get_latest_migration()
+
+        indexed_migrations.append(current_migration)
+
+        while True:
+            if not migrations[current_migration].depends:
+                break
+            for d in migrations[current_migration].depends:
+                indexed_migrations.append(d)
+                current_migration = d
+
+        indexed_migrations.reverse()
+
+        for index, filename in enumerate(indexed_migrations):
+            migrations[filename].number = index
+        return migrations
+
+    def get_all_migrations(self):
+        return {
+            filename: {
+                "is_manual": m.is_manual,
+                "depends": m.depends,
+                "uuid": m.migration_id,
+                "index": m.number if hasattr(m, "number") else 0,
+            } for filename, m in self._calculate_indexes().items()
+        }
+
     def get_latest_migration(self):
         migrations = {
             filename: m
@@ -322,7 +374,6 @@ class MigrationEngine(object):
             for depend in migration._depends:
                 if depend in migrations:
                     migrations.pop(depend, None)
-
         if len(migrations) == 1:
             return migrations.popitem()[0]
 

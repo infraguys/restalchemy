@@ -22,11 +22,11 @@ from restalchemy.storage.sql import migrations
 class MigrationStep(migrations.AbstarctMigrationStep):
 
     def __init__(self):
-        self._depends = ["0d06a9-0000-init.py"]
+        self._depends = ["0000-init-f8d4a9.py"]
 
     @property
     def migration_id(self):
-        return "fc0c165e-9c69-4e47-b7e3-0bc3a2bebfab"
+        return "e566e7c6-94e8-4cb6-b916-f7020ff2c64a"
 
     def upgrade(self, session):
         pass
