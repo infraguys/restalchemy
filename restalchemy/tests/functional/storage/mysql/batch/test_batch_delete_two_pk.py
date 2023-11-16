@@ -39,8 +39,8 @@ class BatchDeleteModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class WithDbMigrationsDeleteTwoPkTestCase(base.BaseWithDbMigrationsTestCase):
-    __LAST_MIGRATION__ = "9e335f-test-batch-migration"
-    __FIRST_MIGRATION__ = "9e335f-test-batch-migration"
+    __LAST_MIGRATION__ = "test-batch-migration-9e335f"
+    __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
 
     def test_correct_batch_delete(self):
         my_models = BatchDeleteModel.objects.get_all()

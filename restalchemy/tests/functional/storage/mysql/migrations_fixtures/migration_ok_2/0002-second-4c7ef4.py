@@ -22,11 +22,11 @@ from restalchemy.storage.sql import migrations
 class MigrationStep(migrations.AbstarctMigrationStep):
 
     def __init__(self):
-        self._depends = ["1711de-0000-init.py"]
+        self._depends = ["0000-init-bf186c.py"]
 
     @property
     def migration_id(self):
-        return "a8a827d4-365b-492a-9c23-d3d4a84bfd1e"
+        return "4c7ef4e1-f84b-4109-9fe3-dce4e646833f"
 
     @property
     def is_manual(self):

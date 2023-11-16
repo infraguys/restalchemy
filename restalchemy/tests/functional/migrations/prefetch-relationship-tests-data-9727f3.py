@@ -24,7 +24,7 @@ from restalchemy.tests.functional.storage.mysql.prefetch import models
 class MigrationStep(migrations.AbstarctMigrationStep):
 
     def __init__(self):
-        self._depends = ["f3841e-prefetch-relationship-tests.py"]
+        self._depends = ["prefetch-relationship-tests-f3841e.py"]
 
     @property
     def migration_id(self):
