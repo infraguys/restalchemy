@@ -72,8 +72,10 @@ class HostnameTest(unittest.TestCase):
         super(HostnameTest, self).setUp()
         self.fqdn = types_network.Hostname()
         self.fqdn_2level = types_network.Hostname(min_levels=2)
-        self.fqdn_with_leading_undersore = types_network.Hostname(
+        self.fqdn_with_leading_underscore = types_network.Hostname(
             allow_leading_underscore=True)
+        self.fqdn_with_middle_underscore = types_network.Hostname(
+            allow_middle_underscore=True)
 
     def test_validate(self):
         data = [
@@ -108,7 +110,7 @@ class HostnameTest(unittest.TestCase):
 
         for fqdn in data:
             self.assertTrue(
-                self.fqdn_with_leading_undersore.validate(fqdn),
+                self.fqdn_with_leading_underscore.validate(fqdn),
                 fqdn)
 
     def test_validate_underscore_negative(self):
@@ -118,7 +120,32 @@ class HostnameTest(unittest.TestCase):
 
         for fqdn in data:
             self.assertFalse(
-                self.fqdn_with_leading_undersore.validate(fqdn),
+                self.fqdn_with_leading_underscore.validate(fqdn),
+                fqdn)
+
+    def test_validate_middle_underscore(self):
+        data = [
+            'abc_def.example.com'
+        ]
+
+        for fqdn in data:
+            self.assertTrue(
+                self.fqdn_with_middle_underscore.validate(fqdn),
+                fqdn)
+
+    def test_validate_middle_underscore_negative(self):
+        data = [
+            'www_.example.com',
+            '_www.example.com',
+            'www.example._com',
+            'www.example.com_',
+            'www.example.co_m',
+            'news.ae_ro',
+        ]
+
+        for fqdn in data:
+            self.assertFalse(
+                self.fqdn_with_middle_underscore.validate(fqdn),
                 fqdn)
 
     def test_validate_negative(self):

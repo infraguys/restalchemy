@@ -28,8 +28,9 @@ FQDN_MIN_LEVELS = 1
 FQDN_TEMPLATE = r"(?=^.{2,%i}$)(^((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-)\.){%i,}$)"
 HOSTNAME_MIN_LEVELS = 1
 LEADING_UNDERSCORE_GROUP = "(_?)"
-HOSTNAME_TEMPLATE = (r"(?=^.{1,%i}$)(^%s((?!-)[a-zA-Z0-9-]{1,%i}(?<!-)\.){%i,}"
-                     r"((?!-)[a-zA-Z0-9-]{1,%i}(?<!-))$)")
+UNDERSCORE = "_"
+HOSTNAME_TEMPLATE = (r"(?=^.{1,%i}$)(^%s((?![-%s])[a-zA-Z0-9-%s]{1,%i}"
+                     r"(?<![-%s])\.){%i,}((?!-)[a-zA-Z0-9-]{1,%i}(?<!-))$)")
 
 
 class IPAddress(types.BaseType):
@@ -154,12 +155,17 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
 
     def __init__(self, min_levels=HOSTNAME_MIN_LEVELS,
                  allow_leading_underscore=False,
+                 allow_middle_underscore=False,
                  **kwargs):
+        underscore_or_empty = UNDERSCORE if allow_middle_underscore else ""
         self.pattern = re.compile(
             HOSTNAME_TEMPLATE % (
                 HOSTNAME_MAX_LEN,
                 LEADING_UNDERSCORE_GROUP if allow_leading_underscore else "",
+                underscore_or_empty,
+                underscore_or_empty,
                 DNS_LABEL_MAX_LEN,
+                underscore_or_empty,
                 max([min_levels, HOSTNAME_MIN_LEVELS]) - 1,
                 DNS_LABEL_MAX_LEN
             )
