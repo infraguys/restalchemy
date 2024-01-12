@@ -68,7 +68,11 @@ def build_prop_kwargs(kwargs):
             elif isinstance(value, datetime.datetime):
                 value = value.strftime(OPENAPI_FMT)
             elif hasattr(value, '__dict__'):
-                value = "{} object".format(value.__class__.__name__)
+                value = {
+                    name: prop.get_property_type().to_simple_type(value[name])
+                    for name, prop in value.properties.properties.items()
+                }
+
             result[v] = value
     return result
 
@@ -537,7 +541,7 @@ class Enum(BaseType):
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
-            "enum": list(self.values),
+            "enum": sorted(list(self.values)),
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
