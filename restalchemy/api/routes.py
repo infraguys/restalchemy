@@ -219,7 +219,14 @@ class Route(BaseRoute):
             method_name = getattr(method, "method", method.__name__.upper())
         openapi_schema = getattr(method, "openapi_schema", None)
         if openapi_schema:
-            return openapi_schema.result
+            summary = openapi_schema.summary
+            responses = openapi_schema.responses
+            params = openapi_schema.parameters
+            operation_id = openapi_schema.operation_id
+            r_body = openapi_schema.request_body
+            tags = openapi_schema.tags
+        else:
+            summary, responses, params, operation_id, r_body, tags = [None] * 6
 
         parsed_doc = parse.parse_docstring(method.__doc__)
         res = controller.get_resource()
@@ -229,14 +236,16 @@ class Route(BaseRoute):
                                        controller.__class__.__name__))
         if method_name == constants.FILTER:
             summary_name += "s"
-        summary = parsed_doc['short_description']
-        summary = summary or "%s %s" % (
-            (method_name.capitalize() if method_name != constants.FILTER
-             else constants.GET.capitalize()),
-            summary_name)
+        if not summary:
+            summary = parsed_doc['short_description']
+            summary = summary or "%s %s" % (
+                (method_name.capitalize() if method_name != constants.FILTER
+                 else constants.GET.capitalize()),
+                summary_name)
 
         # Fill responses
-        responses = parsed_doc['returns']
+        if not responses:
+            responses = parsed_doc['returns']
         method_model_name = "{}_{}".format(model_name,
                                            method_name.capitalize())
         if not responses:
@@ -264,7 +273,8 @@ class Route(BaseRoute):
                 responses = oa_c.OPENAPI_DEFAULT_RESPONSE
 
         # fill url parameters
-        params = parsed_doc['params']
+        if not params:
+            params = parsed_doc['params']
         if not params and parameters:
             path_params = re.findall(r'\{(.*?)\}', current_path)
             for path_param in path_params:
@@ -285,17 +295,21 @@ class Route(BaseRoute):
                     if param:
                         params.append(param)
 
+        if not operation_id:
+            operation_id = self._build_operation_id(method_name,
+                                                    current_path)
         result = {
             'summary': summary,
-            'tags': self.openapi_tags(for_paths=True),
+            'tags': tags or self.openapi_tags(for_paths=True),
             'parameters': params,
             'responses': responses,
-            'operationId': self._build_operation_id(method_name,
-                                                    current_path)
+            'operationId': operation_id
         }
 
         # Fill request_body
-        if method_name in [constants.CREATE, constants.UPDATE]:
+        if r_body:
+            result["requestBody"] = r_body
+        elif method_name in [constants.CREATE, constants.UPDATE]:
             result["requestBody"] = oa_c.build_openapi_json_req_body(
                 method_model_name
             )

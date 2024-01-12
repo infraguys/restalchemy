@@ -89,25 +89,7 @@ class ResourceSchemaGenerator(object):
         return parameters
 
     def generate_schema_object(self, method):
-        properties = {}
-        required = []
-        for name, prop in self._resource.get_fields_by_method(method):
-            try:
-                prop_kwargs = self.get_prop_kwargs(name)
-            except KeyError:
-                prop_kwargs = {}
-            if prop.is_public():
-                properties[prop.api_name] = prop.get_type().to_openapi_spec(
-                    prop_kwargs)
-            if prop_kwargs.get("required"):
-                required.append(name)
-        spec = {
-            "type": "object",
-            "properties": properties,
-        }
-        if required:
-            spec["required"] = required
-        return spec
+        return self._resource.generate_schema_object(method)
 
 
 class Schema(object):
