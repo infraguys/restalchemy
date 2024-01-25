@@ -18,7 +18,6 @@
 
 import abc
 import functools
-import logging
 
 import six
 
@@ -26,9 +25,6 @@ from restalchemy.common import exceptions as common_exc
 from restalchemy.common import utils
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
-
-
-LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -105,7 +101,6 @@ def error_catcher(func):
         except common_exc.RestAlchemyException:
             raise
         except Exception as e:
-            LOG.exception("Some exception has been raised:")
             raise exceptions.UnknownStorageException(caused=e)
 
     return wrapper
