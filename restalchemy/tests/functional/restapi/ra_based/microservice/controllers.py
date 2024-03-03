@@ -114,10 +114,20 @@ class VMController(controllers.BaseResourceController):
                          tags=["VM"],
                          )
     @actions.post
-    def poweroff(self, resource):
+    def poweroff(self, resource, *args, **kwargs):
         resource.state = "off"
         resource.save()
         return resource
+
+    @actions.post
+    def power(self, resource, state, *args, **kwargs):
+        resource.state = state
+        resource.save()
+        return resource
+
+    @actions.get
+    def power_state(self, resource, *args, **kwargs):
+        return {"state": resource.state}
 
 
 class V1Controller(controllers.Controller):

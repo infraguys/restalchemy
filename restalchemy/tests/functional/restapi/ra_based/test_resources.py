@@ -58,6 +58,12 @@ TEMPL_POWERON_ACTION_ENDPOINT = parse.urljoin(
 TEMPL_POWEROFF_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT),
     'actions/poweroff/invoke')
+TEMPL_POWER_ACTION_ENDPOINT = parse.urljoin(
+    utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT),
+    'actions/power/invoke')
+TEMPL_POWER_STATE_ACTION_ENDPOINT = parse.urljoin(
+    utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT),
+    'actions/power_state')
 TEMPL_PORTS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), 'ports'))
 TEMPL_PORTSNONE_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
@@ -867,6 +873,68 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         self.assertEqual(2, model_update_mock.call_count)
         self.assertIsNotNone(models.VM.objects.get_one(filters={
             "uuid": UUID1, "name": "old", "state": "off"}))
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.update),
+                autospec=True)
+    def test_vm_power_off_with_data(self, model_update_mock):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        # requests data
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWER_ACTION_ENDPOINT, UUID1),
+            data={"state": "off"}
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertIsNotNone(models.VM.objects.get_one(filters={
+            "uuid": UUID1, "name": "old", "state": "off"}))
+        self.assertEqual(2, model_update_mock.call_count)
+
+    @mock.patch("restalchemy.storage.sql.tables.SQLTable.update",
+                side_effect=partial(raise_deadlock_exc_once,
+                                    collections.Counter(), SQLTable.update),
+                autospec=True)
+    def test_vm_power_off_with_json(self, model_update_mock):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        # requests json (auto header application/json)
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWER_ACTION_ENDPOINT, UUID1),
+            json={"state": "off"}
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertIsNotNone(models.VM.objects.get_one(filters={
+            "uuid": UUID1, "name": "old", "state": "off"}))
+        self.assertEqual(2, model_update_mock.call_count)
+
+    def test_vm_get_power_state(self):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        # manual header application/json and no body
+        headers = {'Content-type': 'application/json'}
+        response = requests.get(
+            self.get_endpoint(TEMPL_POWER_STATE_ACTION_ENDPOINT, UUID1),
+            headers=headers,
+            json={"state": "off"}
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"state": "on"}, response.json())
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_POWER_STATE_ACTION_ENDPOINT, UUID1),
+            data={"state": "off"}
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"state": "on"}, response.json())
+
+    def test_vm_power_off_with_manual_json(self):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        # manual header application/json and no body
+        headers = {'Content-type': 'application/json'}
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWER_ACTION_ENDPOINT, UUID1),
+            headers=headers,
+
+        )
+        self.assertEqual(500, response.status_code)
 
 
 class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):
