@@ -45,6 +45,14 @@ class PortRouteNone(routes.Route):
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
+class VMPowerStateAction(routes.Action):
+    __controller__ = controllers.VMController
+
+
+class VMPowerAction(routes.Action):
+    __controller__ = controllers.VMController
+
+
 class VMPowerOnAction(routes.Action):
     __controller__ = controllers.VMController
 
@@ -58,6 +66,8 @@ class VMRoute(routes.Route):
     __allow_methods__ = [routes.CREATE, routes.GET, routes.DELETE,
                          routes.FILTER, routes.UPDATE]
 
+    power = routes.action(VMPowerAction, invoke=True)
+    power_state = routes.action(VMPowerStateAction, invoke=False)
     poweron = routes.action(VMPowerOnAction, invoke=True)
     poweroff = routes.action(VMPowerOffAction, invoke=True)
     none_ports = routes.route(PortRouteNone, resource_route=True)

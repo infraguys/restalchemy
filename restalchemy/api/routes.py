@@ -537,7 +537,7 @@ class Route(BaseRoute):
             action_name = self._req.path_info_peek()
             action = self.get_action(action_name)
             worker = action(self._req)
-            return worker.do(resource=resource, **self._req.api_context.params)
+            return worker.do(resource=resource)
 
         elif (name != '' and path is not None):
             # Intermediate resource route
@@ -594,6 +594,15 @@ class Action(BaseRoute):
                                         object_name=action_name)
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
+        # NOTE(v.burygin): update kwargs by request body
+        content_type = self._req.headers.get('Content-Type')
+        if content_type == constants.DEFAULT_CONTENT_TYPE:
+            packer = controller.get_packer(content_type)
+            body = self._req.body
+            if body:
+                kwargs.update(**packer.unpack(value=body))
+        else:
+            kwargs.update(**self._req.api_context.params)
         if ((method in [GET, POST, PUT] and self.is_invoke() and invoke)
                 or (method == GET and not self.is_invoke() and not invoke)):
             action_method = getattr(action, 'do_%s' % method.lower())
