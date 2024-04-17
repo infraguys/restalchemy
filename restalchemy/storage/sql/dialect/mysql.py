@@ -136,7 +136,7 @@ class MySQLUpdate(AbstractDialectCommand):
         return "UPDATE `%s` SET %s WHERE %s" % (
             self._table.name,
             ", ".join(["%s = %s" % (name, "%s") for name in column_names]),
-            ", ".join(["%s = %s" % (name, "%s") for name in pk_names])
+            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names])
         )
 
 
@@ -157,7 +157,7 @@ class MySQLDelete(AbstractDialectCommand):
         pk_names = self._table.get_escaped_pk_names()
         return "DELETE FROM `%s` WHERE %s" % (
             self._table.name,
-            ", ".join(["%s = %s" % (name, "%s") for name in pk_names])
+            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names])
         )
 
 

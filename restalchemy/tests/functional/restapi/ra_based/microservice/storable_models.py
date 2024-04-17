@@ -36,3 +36,9 @@ class IpAddress(models.IpAddress, orm.SQLStorableMixin):
     __tablename__ = "ip_addresses"
 
     port = relationships.relationship(Port, required=True)
+
+
+class Tag(models.Tag, orm.SQLStorableMixin):
+    __tablename__ = "tags"
+
+    vm = relationships.relationship(VM, required=True)

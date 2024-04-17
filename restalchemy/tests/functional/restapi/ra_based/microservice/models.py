@@ -83,3 +83,15 @@ class IpAddress(models.ModelWithUUID):
 
     ip = properties.property(types.String(), default='192.168.0.1')
     port = relationships.relationship(Port, required=True)
+
+
+class Tag(models.ModelWithUUID):
+
+    name = properties.property(types.String(), id_property=True,
+                               required=True)
+    visible = properties.property(types.Boolean(), default=True,
+                                  required=True)
+
+    @classmethod
+    def get_id_property(cls):
+        return {'name': cls.id_properties['name']}

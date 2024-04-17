@@ -59,10 +59,20 @@ class MigrationStep(migrations.AbstarctMigrationStep):
             session.execute(expression)
 
     def downgrade(self, session):
-        tables = ['ip_addresses', 'ports', 'vms']
+        expressions = [
+            """
+                DELETE from tags;
+            """, """
+                DELETE from ip_addresses;
+            """, """
+                DELETE FROM ports;
+            """, """
+                DELETE FROM vms;
+            """
+        ]
 
-        for table in tables:
-            self._delete_table_if_exists(session, table)
+        for expression in expressions:
+            session.execute(expression)
 
 
 migration_step = MigrationStep()

@@ -38,13 +38,28 @@ class BaseModel(models.ModelWithUUID):
     field_bool = properties.property(types.Boolean())
 
 
+class MultipleIdModel(BaseModel):
+    tenant_id = properties.property(types.String(), id_property=True)
+
+    @classmethod
+    def get_id_property(cls):
+        return {'tenant_id': cls.properties['tenant_id']}
+
+
 FAKE_TABLE = tables.SQLTable(engine=None,
                              table_name=BaseModel.__tablename__,
                              model=BaseModel)
 
+EXTENDED_FAKE_TABLE = tables.SQLTable(
+    engine=None,
+    table_name=MultipleIdModel.__tablename__,
+    model=MultipleIdModel)
+
 
 FAKE_VALUES = [True, 111, "field2", "uuid"]
 FAKE_PK_VALUES = ["uuid"]
+EXTENDED_FAKE_VALUES = [True, 111, "field2", "tenant_id", "uuid"]
+EXTENDED_FAKE_PK_VALUES = ["uuid", "tenant_id"]
 
 
 class AbstractDialectCommandTestMixin(object):
@@ -104,6 +119,21 @@ class MySQLUpdateTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
             "`field_str` = %s WHERE `uuid` = %s")
 
 
+class MySQLUpdateMultipleIdTestCase(base.BaseTestCase,
+                                    AbstractDialectCommandTestMixin):
+
+    def setUp(self):
+        TABLE = EXTENDED_FAKE_TABLE
+        self.target = mysql.MySQLUpdate(TABLE, EXTENDED_FAKE_PK_VALUES,
+                                        EXTENDED_FAKE_VALUES)
+
+    def test_statement(self):
+        self.assertEqual(
+            self.target.get_statement(),
+            "UPDATE `FAKE_TABLE` SET `field_bool` = %s, `field_int` = %s, "
+            "`field_str` = %s WHERE `tenant_id` = %s AND `uuid` = %s")
+
+
 class MySQLDeleteTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
 
     def setUp(self):
@@ -115,6 +145,20 @@ class MySQLDeleteTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
         self.assertEqual(
             self.target.get_statement(),
             "DELETE FROM `FAKE_TABLE` WHERE `uuid` = %s")
+
+
+class MySQLDeleteMultipleIdTestCase(base.BaseTestCase,
+                                    AbstractDialectCommandTestMixin):
+
+    def setUp(self):
+        TABLE = EXTENDED_FAKE_TABLE
+
+        self.target = mysql.MySQLDelete(TABLE, EXTENDED_FAKE_VALUES)
+
+    def test_statement(self):
+        self.assertEqual(
+            self.target.get_statement(),
+            "DELETE FROM `FAKE_TABLE` WHERE `tenant_id` = %s AND `uuid` = %s")
 
 
 class MySQLSelectTestCase(base.BaseTestCase):
