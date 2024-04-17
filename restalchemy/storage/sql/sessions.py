@@ -161,12 +161,17 @@ class MySQLSession(object):
                                 operation.get_values())
 
     def execute(self, statement, values=None):
-        self._log.debug(("Execute statement %s"
-                         " with values %s"
-                         " within %s database"),
-                        statement, values, self._engine.db_name)
-        self._cursor.execute(statement, values)
-        return self._cursor
+        try:
+            self._log.debug(("Execute statement %s"
+                             " with values %s"
+                             " within %s database"),
+                            statement, values, self._engine.db_name)
+            self._cursor.execute(statement, values)
+            return self._cursor
+        except errors.DatabaseError as e:
+            if e.errno == 1213:
+                raise exc.DeadLock(msg=e.msg)
+            raise
 
     def execute_many(self, statement, values):
         self._log.debug(("Execute batch statement %s"
