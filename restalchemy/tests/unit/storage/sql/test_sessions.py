@@ -19,6 +19,8 @@
 import mock
 from mock import patch
 
+from mysql.connector import errors
+from restalchemy.storage import exceptions as exc
 from restalchemy.storage.sql import sessions
 from restalchemy.tests.unit import base
 
@@ -80,3 +82,30 @@ class TestLocalThreadStorage(base.BaseTestCase):
 
         self.assertEqual(result, session)
         self.assertIsNone(self._storage._storage.session)
+
+    def test_execute_when_deadlock_raises(self):
+        mock_execute = mock.Mock()
+        mock_execute.execute.side_effect = errors.DatabaseError(
+            "deadlock", errno=1213, sqlstate=1213)
+        mock_cursor = mock.Mock()
+        mock_cursor.cursor.return_value = mock_execute
+        mock_engine = mock.Mock()
+        mock_engine.get_connection.return_value = mock_cursor
+        session = sessions.MySQLSession(mock_engine)
+        with self.assertRaises(exc.DeadLock) as ctx:
+            session.execute("update foo set bar = 'baz'")
+        self.assertEqual("Deadlock found when trying to get lock. "
+                         "Original message: deadlock", str(ctx.exception))
+
+    def test_execute_when_unknown_exc_raises(self):
+        mock_execute = mock.Mock()
+        mock_execute.execute.side_effect = errors.DatabaseError(
+            "error", errno=1062, sqlstate=1062)
+        mock_cursor = mock.Mock()
+        mock_cursor.cursor.return_value = mock_execute
+        mock_engine = mock.Mock()
+        mock_engine.get_connection.return_value = mock_cursor
+        session = sessions.MySQLSession(mock_engine)
+        with self.assertRaises(errors.DatabaseError) as ctx:
+            session.execute("update foo set bar = 'baz'")
+        self.assertEqual("1062 (1062): error", str(ctx.exception))
