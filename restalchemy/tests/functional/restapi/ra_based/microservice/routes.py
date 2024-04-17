@@ -21,6 +21,12 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
     controllers)
 
 
+class TagRoute(routes.Route):
+    __controller__ = controllers.TagController
+    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
+                         routes.UPDATE, routes.DELETE]
+
+
 class IpAddress(routes.Route):
     __controller__ = controllers.IpAddressController
     __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
@@ -72,6 +78,7 @@ class VMRoute(routes.Route):
     poweroff = routes.action(VMPowerOffAction, invoke=True)
     none_ports = routes.route(PortRouteNone, resource_route=True)
     ports = routes.route(PortRoute, resource_route=True)
+    tags = routes.route(TagRoute, resource_route=True)
 
 
 class V1Route(routes.Route):

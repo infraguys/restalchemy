@@ -57,6 +57,16 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     CONSTRAINT FOREIGN KEY ix_ports_uuid (port)
                     REFERENCES ports (uuid)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+            """, """
+                CREATE TABLE IF NOT EXISTS tags (
+                    uuid CHAR(36) NOT NULL,
+                    vm CHAR(36) NOT NULL,
+                    name CHAR(40) NOT NULL,
+                    visible BOOL NOT NULL,
+                    PRIMARY KEY (uuid),
+                    CONSTRAINT FOREIGN KEY ix_tags__vms_uuid (vm)
+                    REFERENCES vms (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             """
         ]
 
@@ -64,7 +74,7 @@ class MigrationStep(migrations.AbstarctMigrationStep):
             session.execute(expression)
 
     def downgrade(self, session):
-        tables = ['ip_addresses', 'ports', 'vms']
+        tables = ['tags', 'ip_addresses', 'ports', 'vms']
 
         for table in tables:
             self._delete_table_if_exists(session, table)

@@ -27,6 +27,20 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
 
 
+class TagController(controllers.BaseNestedResourceController):
+    """Tag controller
+
+    Handle POST http://127.0.0.1:8000/v1/vms/<vm_uuid>/tags/
+    Handle GET http://127.0.0.1:8000/v1/vms/<vm_uuid>/tags/
+    Handle GET http://127.0.0.1:8000/v1/vms/<vm_uuid>/tags/<tag_name>
+    Handle PUT http://127.0.0.1:8000/v1/vms/<vm_uuid>/tags/<tag_name>
+    Handle DELETE http://127.0.0.1:8000/v1/vms/<vm_uuid>/tags/<tag_name>
+    """
+
+    __resource__ = resources.ResourceByRAModel(models.Tag)
+    __pr_name__ = "vm"
+
+
 class IpAddressController(controllers.BaseNestedResourceController):
     """Port controller
 

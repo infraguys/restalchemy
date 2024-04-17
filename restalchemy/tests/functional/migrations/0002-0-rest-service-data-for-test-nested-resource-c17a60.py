@@ -47,6 +47,9 @@ class MigrationStep(migrations.AbstarctMigrationStep):
     def downgrade(self, session):
         expressions = [
             """
+                DELETE from tags;
+            """,
+            """
                 DELETE FROM ports;
             """, """
                 DELETE FROM vms;

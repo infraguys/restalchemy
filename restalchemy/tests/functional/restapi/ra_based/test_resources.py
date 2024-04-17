@@ -72,6 +72,10 @@ TEMPL_PORT_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_PORTS_COLLECTION_ENDPOINT,
                                              '%s')
 TEMPL_PORTNONE_RESOURCE_ENDPOINT = parse.urljoin(
     TEMPL_PORTSNONE_COLLECTION_ENDPOINT, '%s')
+TEMPL_TAGS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
+    utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), 'tags'))
+TEMPL_TAG_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_TAGS_COLLECTION_ENDPOINT,
+                                            '%s')
 
 UUID1 = pyuuid.UUID('00000000-0000-0000-0000-000000000001')
 UUID2 = pyuuid.UUID('00000000-0000-0000-0000-000000000002')
@@ -673,6 +677,49 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
         self.assertRaises(exceptions.RecordNotFound,
                           models.Port.objects.get_one,
                           filters={'uuid': PORT_RESOURCE_ID})
+
+
+class TestMultipleIdProperties(BaseResourceTestCase):
+
+    __LAST_MIGRATION__ = (
+        "0002-0-rest-service-data-for-test-nested-resource-c17a60"
+    )
+
+    def setUp(self):
+        super(TestMultipleIdProperties, self).setUp()
+
+        self.vm1 = models.VM.objects.get_one(filters={
+            'uuid': filters.EQ(UUID1)
+        })
+        self.vm2 = models.VM.objects.get_one(filters={
+            'uuid': filters.EQ(UUID2)
+        })
+
+    def _swap_tag_visibility(self, vm_uuid, tag_uuid, new_visible):
+        tag_response_body = {
+            "uuid": str(tag_uuid),
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  vm_uuid)).path,
+            "name": "tagname",
+            "visible": new_visible,
+        }
+
+        response = requests.put(
+            self.get_endpoint(TEMPL_TAG_RESOURCE_ENDPOINT, vm_uuid,
+                              "tagname"),
+            json={"visible": new_visible})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.json(), tag_response_body)
+
+    def test_update_same_name_uuid(self):
+        models.Tag(uuid=UUID3, vm=self.vm1, name="tagname",
+                   visible=True).save()
+        models.Tag(uuid=UUID4, vm=self.vm2, name="tagname",
+                   visible=False).save()
+
+        self._swap_tag_visibility(UUID1, UUID3, False)
+        self._swap_tag_visibility(UUID2, UUID4, True)
 
 
 class ResourceExceptionsTestCase(BaseResourceTestCase):
