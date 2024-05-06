@@ -594,12 +594,14 @@ class Action(BaseRoute):
                                         object_name=action_name)
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
-        # NOTE(v.burygin): update kwargs by request body
         content_type = self._req.headers.get('Content-Type')
         if content_type == constants.DEFAULT_CONTENT_TYPE:
-            packer = controller.get_packer(content_type)
             body = self._req.body
             if body:
+                # NOTE(v.burygin): update kwargs by request body
+                packer = controller.get_packer(content_type)
+                # set packer _rt None for sending any fields to action method
+                packer._rt = None
                 kwargs.update(**packer.unpack(value=body))
         else:
             kwargs.update(**self._req.api_context.params)

@@ -930,7 +930,7 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         # requests data
         response = requests.post(
             self.get_endpoint(TEMPL_POWER_ACTION_ENDPOINT, UUID1),
-            data={"state": "off"}
+            data={"state": "off", "my_field": "test_value"}
         )
         self.assertEqual(200, response.status_code)
         self.assertIsNotNone(models.VM.objects.get_one(filters={
@@ -946,7 +946,7 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         # requests json (auto header application/json)
         response = requests.post(
             self.get_endpoint(TEMPL_POWER_ACTION_ENDPOINT, UUID1),
-            json={"state": "off"}
+            json={"state": "off", "my_field": "test_value"}
         )
         self.assertEqual(200, response.status_code)
         self.assertIsNotNone(models.VM.objects.get_one(filters={
@@ -960,14 +960,14 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         response = requests.get(
             self.get_endpoint(TEMPL_POWER_STATE_ACTION_ENDPOINT, UUID1),
             headers=headers,
-            json={"state": "off"}
+            json={"state": "off", "my_field": "test_value"}
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual({"state": "on"}, response.json())
 
         response = requests.get(
             self.get_endpoint(TEMPL_POWER_STATE_ACTION_ENDPOINT, UUID1),
-            data={"state": "off"}
+            data={"state": "off", "my_field": "test_value"}
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual({"state": "on"}, response.json())
