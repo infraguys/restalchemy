@@ -1,3 +1,4 @@
+# coding=utf-8
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 #    Copyright 2021 Eugene Frolov.
@@ -15,6 +16,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
@@ -67,3 +69,93 @@ class TestOrderByTestCase(base.BaseWithDbMigrationsTestCase):
             order_by={'foo_field1': 'DESC'})
 
         self.assertEqual([model2, model1], all_models)
+
+
+class TestLikeTestCase(base.BaseWithDbMigrationsTestCase):
+
+    __LAST_MIGRATION__ = "test-batch-migration-9e335f"
+    __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
+
+    def test_filter_like_not_like(self):
+        model1 = FakeModel(foo_field1=1, foo_field2="Model1")
+        model2 = FakeModel(foo_field1=2, foo_field2="Model2")
+        model3 = FakeModel(foo_field1=3, foo_field2="FooModel3")
+        model4 = FakeModel(foo_field1=4, foo_field2="TestMod-4")
+        model5 = FakeModel(foo_field1=5, foo_field2="Mod'el")
+
+        with self.engine.session_manager() as session:
+            session.batch_insert([model1, model2, model3, model4, model5])
+
+        # Like: Startswith Model
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.Like("Model%")})
+        )
+
+        self.assertEqual({model1, model2}, all_models)
+
+        # Like: del in center
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.Like("%del%")})
+        )
+
+        self.assertEqual({model1, model2, model3}, all_models)
+
+        # Like: Endswith 3
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.Like("%3")})
+        )
+
+        self.assertEqual({model3, }, all_models)
+
+        # Like: TestMod + random symbol + 4
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.Like("TestMod_4")})
+        )
+
+        self.assertEqual({model4, }, all_models)
+
+        # Like: Endswith 5
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.Like("%5")})
+        )
+
+        self.assertEqual(set(), all_models)
+
+        # Like: Startswith Foo or Test
+        # TODO(v.burygin) Зачем тут AND, - неизвестно, надо разбираться
+        filter_list = dm_filters.AND(dm_filters.OR(
+            {'foo_field2': dm_filters.Like("Foo%")},
+            {'foo_field2': dm_filters.Like("Test%")}))
+        all_models = set(FakeModel.objects.get_all(
+            filters=filter_list)
+        )
+
+        self.assertEqual({model3, model4}, all_models)
+
+        # Like: ' in center with escape symbol
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.Like(r"Mod\'el")})
+        )
+
+        self.assertEqual({model5, }, all_models)
+
+        # NotLike: Not startswith Foo
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.NotLike("Foo%")})
+        )
+
+        self.assertEqual({model1, model2, model4, model5}, all_models)
+
+        # NotLike: Mod in center
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.NotLike("%Mod%")})
+        )
+
+        self.assertEqual(set(), all_models)
+
+        # NotLike: ' in center with escape symbol
+        all_models = set(FakeModel.objects.get_all(
+            filters={"foo_field2": dm_filters.NotLike(r"Mod\'el")})
+        )
+
+        self.assertEqual({model1, model2, model3, model4}, all_models)

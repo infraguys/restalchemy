@@ -82,6 +82,14 @@ class NotIn(AbstractClause):
     pass
 
 
+class Like(AbstractClause):
+    pass
+
+
+class NotLike(AbstractClause):
+    pass
+
+
 @six.add_metaclass(abc.ABCMeta)
 class AbstractExpression(object):
 
