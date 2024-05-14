@@ -121,6 +121,18 @@ class NotIn(In):
         return ("%s NOT IN " % self.column) + "%s"
 
 
+class Like(AbstractClause):
+
+    def construct_expression(self):
+        return ("%s LIKE " % self.column) + "%s"
+
+
+class NotLike(AbstractClause):
+
+    def construct_expression(self):
+        return ("%s NOT LIKE " % self.column) + "%s"
+
+
 @six.add_metaclass(abc.ABCMeta)
 class AbstractExpression(object):
 
@@ -187,6 +199,8 @@ FILTER_MAPPING = {
     filters.IsNot: IsNot,
     filters.In: In,
     filters.NotIn: NotIn,
+    filters.Like: Like,
+    filters.NotLike: NotLike,
 }
 
 FILTER_EXPR_MAPPING = {

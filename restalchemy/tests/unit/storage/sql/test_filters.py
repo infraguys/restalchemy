@@ -242,6 +242,40 @@ class IsNotTestCase(base.BaseTestCase):
         self.assertEqual(self._expr.value, TEST_VALUE)
 
 
+class LikeTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._expr = filters.Like(column=TEST_NAME,
+                                  value_type=common.AsIsType(),
+                                  value=TEST_VALUE)
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression()
+
+        self.assertEqual(TEST_NAME + ' LIKE %s', result)
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, TEST_VALUE)
+
+
+class NotLikeTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._expr = filters.NotLike(column=TEST_NAME,
+                                     value_type=common.AsIsType(),
+                                     value=TEST_VALUE)
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression()
+
+        self.assertEqual(TEST_NAME + ' NOT LIKE %s', result)
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, TEST_VALUE)
+
+
 class ConvertFiltersTestCase(base.BaseTestCase):
 
     def test_convert_filters_new(self):
