@@ -369,6 +369,14 @@ class TypedList(List):
         value = self._nested_type.from_unicode(value)
         return [value]
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "items": self._nested_type.to_openapi_spec(prop_kwargs)
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
 
 class Dict(ComplexPythonType):
 
@@ -378,6 +386,18 @@ class Dict(ComplexPythonType):
     def validate(self, value):
         return (super(Dict, self).validate(value)
                 and all(isinstance(k, six.string_types) for k in value))
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": "object",
+            "additionalProperties": {"oneOf": [{"type": "string"},
+                                               {"type": "integer"},
+                                               {"type": "boolean"},
+                                               {"type": "object"},
+                                               {"type": "array"}]}
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
 
 
 def _validate_scheme(scheme):
@@ -424,6 +444,16 @@ class SoftSchemeDict(Dict):
         return {k: self._scheme[k].from_simple_type(v)
                 for k, v in six.iteritems(value)}
 
+    def to_openapi_spec(self,
+                        prop_kwargs):
+        spec = {
+            "type": "object",
+            "properties": {}
+        }
+        for k, v in self.__scheme__.items():
+            spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
+        return spec
+
 
 class SchemeDict(Dict):
 
@@ -446,6 +476,16 @@ class SchemeDict(Dict):
         value = super(SchemeDict, self).from_simple_type(value)
         return {key: scheme.from_simple_type(value[key])
                 for key, scheme in six.iteritems(self._scheme)}
+
+    def to_openapi_spec(self,
+                        prop_kwargs):
+        spec = {
+            "type": "object",
+            "properties": {}
+        }
+        for k, v in self.__scheme__.items():
+            spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
+        return spec
 
 
 class TypedDict(Dict):
@@ -470,6 +510,18 @@ class TypedDict(Dict):
         value = super(TypedDict, self).from_simple_type(value)
         return {k: self._nested_type.from_simple_type(v)
                 for k, v in six.iteritems(value)}
+
+    def to_openapi_spec(self,
+                        prop_kwargs):
+        spec = {
+            "type": self._openapi_type,
+            "additionalProperties": self._nested_type.to_openapi_spec(
+                prop_kwargs)
+        }
+        if self._openapi_format is not None:
+            spec["format"] = self._openapi_format
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
 
 
 class UTCDateTime(BasePythonType):
@@ -672,9 +724,8 @@ class AllowNone(BaseType):
             return self._nested_type.from_unicode(value)
 
     def to_openapi_spec(self, prop_kwargs):
-        spec = {
-            "type": self.openapi_type,
-            "nullable": True
-        }
-        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        if "default" in prop_kwargs and prop_kwargs["default"] is None:
+            del prop_kwargs["default"]
+        spec = self._nested_type.to_openapi_spec(prop_kwargs)
+        spec["nullable"] = True
         return spec

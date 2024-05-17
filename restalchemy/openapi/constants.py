@@ -24,11 +24,7 @@ API_VERSION_V1 = "v1"
 
 OPENAPI_DELETE_RESPONSE = {
     status.HTTP_204_NO_CONTENT: {
-        "description": "",
-        "content": {
-            ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-            }
-        }
+        "description": "Delete entity",
     },
     exc.NotFoundError.code: {
         "description": exc.NotFoundError.message,
@@ -49,7 +45,8 @@ OPENAPI_FILTER_RESPONSE = {
             }
         }
     },
-    exc.IncorrectRouteAttribute.code: {
+    # exc.IncorrectRouteAttribute.code
+    "default": {
         "description": exc.IncorrectRouteAttribute.message,
     },
 }
@@ -131,6 +128,17 @@ def build_openapi_list_model_response(ref_name):
         },
         exc.NotFoundError.code: {
             "description": exc.NotFoundError.message % {"path": ""},
+        }
+    }
+
+
+def build_openapi_delete_response(ref_name):
+    return {
+        status.HTTP_204_NO_CONTENT: {
+            "description": ref_name,
+        },
+        exc.NotFoundError.code: {
+            "description": exc.NotFoundError.message,
         }
     }
 
