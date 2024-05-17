@@ -268,7 +268,9 @@ class Route(BaseRoute):
                     method_model_name
                 )
             elif method_name == constants.DELETE:
-                responses = oa_c.OPENAPI_DELETE_RESPONSE
+                responses = oa_c.build_openapi_delete_response(
+                    method_model_name
+                )
             else:
                 responses = oa_c.OPENAPI_DEFAULT_RESPONSE
 
@@ -292,6 +294,15 @@ class Route(BaseRoute):
                                            {}).get("parameters",
                                                    {}).get(prop.api_name,
                                                            {})
+                    # array or object not supported in query
+                    if param.get("schema", {}).get("type", "") in ["array",
+                                                                   "object"]:
+                        continue
+                    # sum type parameter not implemented in Go client
+                    # NOTE(v.burygin): maybe in openapi spec somewhere
+                    # we should make options
+                    # if param.get("schema", {}).get("oneOf"):
+                    #     continue
                     if param:
                         params.append(param)
 

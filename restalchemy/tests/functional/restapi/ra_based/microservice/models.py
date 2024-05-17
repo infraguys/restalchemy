@@ -28,7 +28,7 @@ class VM(models.ModelWithUUID):
                                 default="off")
     name = properties.property(types.String(max_length=255), required=True,
                                example="testname")
-    just_none = properties.property(types.AllowNone(types.String),
+    just_none = properties.property(types.AllowNone(types.String()),
                                     required=False, default=None)
     status = properties.property(types.Enum(["active", "disabled"]),
                                  default="active",
@@ -44,7 +44,7 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
         "some_field2": types.String(),
         "some_field3": types.String(),
         "some_field4": types.String(),
-        "some_field5": types.AllowNone(types.String),
+        "some_field5": types.AllowNone(types.String()),
     }
 
     mac = properties.property(types.Mac(), default='00:00:00:00:00:00')
