@@ -81,7 +81,6 @@ class MetaModel(abc.ABCMeta):
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": "string",
-            "format": "uuid",
         }
         spec.update(types.build_prop_kwargs(kwargs=prop_kwargs))
         return spec
