@@ -61,6 +61,18 @@ class Controller(object):
         rt = resource_type or self.get_resource()
         return packer(rt, request=self._req)
 
+    def _create_response(self, body, status, headers):
+        if body is not None:
+            headers['Content-Type'] = packers.get_content_type(headers)
+            packer = self.get_packer(headers['Content-Type'])
+            body = packer.pack(body)
+
+        return webob.Response(
+            body=six.b(body or ''),
+            status=status,
+            content_type=headers.get('Content-Type', None),
+            headerlist=[(k, v) for k, v in headers.items()])
+
     def process_result(self, result, status_code=200, headers=None,
                        add_location=False):
         headers = headers or {}
@@ -80,22 +92,10 @@ class Controller(object):
             headers.update(h)
             return body, c, headers
 
-        def create_response(body, status, headers):
-            if body is not None:
-                headers['Content-Type'] = packers.get_content_type(headers)
-                packer = self.get_packer(headers['Content-Type'])
-                body = packer.pack(body)
-
-            return webob.Response(
-                body=six.b(body or ''),
-                status=status,
-                content_type=headers.get('Content-Type', None),
-                headerlist=[(k, v) for k, v in headers.items()])
-
         if isinstance(result, tuple):
-            return create_response(*correct(*result))
+            return self._create_response(*correct(*result))
         else:
-            return create_response(*correct(result))
+            return self._create_response(*correct(result))
 
     def _make_kwargs(self, parent_resource, **kwargs):
         if parent_resource:
