@@ -401,16 +401,21 @@ class Dict(ComplexPythonType):
 
 
 def _validate_scheme(scheme):
-    non_string_keys = [key for key in scheme.keys()
-                       if not isinstance(key, six.string_types)]
-    if non_string_keys:
-        raise ValueError("Keys '%s' are not strings" % non_string_keys)
+    non_string_keys = []
+    invalid_types = []
 
-    invalid_types = [value for value in scheme.values()
-                     if not isinstance(value, BaseType)]
+    for key, val in six.iteritems(scheme):
+        if not isinstance(key, six.string_types):
+            non_string_keys.append(key)
+        if not isinstance(val, BaseType):
+            invalid_types.append(val)
+
+    if non_string_keys:
+        raise ValueError("Scheme keys %r are not strings" % non_string_keys)
     if invalid_types:
-        raise ValueError("Values '%s' are not %s"
-                         % (non_string_keys, BaseType))
+        raise ValueError(
+            "Scheme values %r are not %s instances" % (invalid_types, BaseType)
+        )
 
 
 # TODO(d.burmistrov): we have to make this group of Dict Schemers:
@@ -469,7 +474,7 @@ class SchemeDict(Dict):
                         for key, scheme in six.iteritems(self._scheme)))
 
     def to_simple_type(self, value):
-        return {value[key]: scheme.to_simple_type(value[key])
+        return {key: scheme.to_simple_type(value[key])
                 for key, scheme in self._scheme.items()}
 
     def from_simple_type(self, value):

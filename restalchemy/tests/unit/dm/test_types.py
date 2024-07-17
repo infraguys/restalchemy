@@ -529,6 +529,29 @@ class TypedDictTestCase(base.BaseTestCase):
                                 },
                                 }))
 
+    def test_scheme_dict_to_simple_type(self):
+        val = 7
+        ret_val = 9
+        test_obj = self
+
+        class TestType(types.Integer):
+            def to_simple_type(self, data_val):
+                test_obj.assertIs(val, data_val)
+                return ret_val
+
+        scheme = {
+            'key': TestType(),
+        }
+        data = {
+            'key': val,
+        }
+        expect_data = {
+            'key': ret_val
+        }
+
+        res = types.SchemeDict(scheme=scheme).to_simple_type(data)
+        self.assertEqual(expect_data, res)
+
 
 class UTCDateTimeTestCase(base.BaseTestCase):
 
@@ -635,3 +658,112 @@ class UrlTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance.validate('x.y.z'))
         self.assertFalse(self.test_instance.validate(532))
         self.assertFalse(self.test_instance.validate('google.com.55'))
+
+
+class SoftSchemeDictTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(SoftSchemeDictTestCase, self).setUp()
+
+        self.scheme = {
+            'sub_str': types.String(),
+            'sub_int': types.Integer(),
+        }
+        self.correct_simple_data = {
+            'sub_str': 'substr',
+            'sub_int': 7,
+        }
+        self.test_instance = types.SoftSchemeDict(scheme=self.scheme)
+
+    def test_from_simple_type(self):
+        self._test_from_simple_type(
+            self.test_instance, self.scheme, self.correct_simple_data
+        )
+
+    def test_from_simple_type_keys_missing(self):
+        data = self.correct_simple_data.copy()
+        del data[next(iter(data.keys()))]
+
+        self._test_from_simple_type(self.test_instance, self.scheme, data)
+
+    def test_from_simple_type_empty_data(self):
+        self._test_from_simple_type(self.test_instance, self.scheme, {})
+
+    def test_from_simple_type_extra_keys(self):
+        data = self.correct_simple_data.copy()
+        data['some_key'] = object()
+
+        self.assertRaises(
+            KeyError,
+            self._test_from_simple_type,
+            self.test_instance,
+            self.scheme,
+            data,
+        )
+
+    def test_validate_correct_value(self):
+        value = self.test_instance.from_simple_type(self.correct_simple_data)
+
+        self.assertTrue(
+            self._test_validate(self.test_instance, self.scheme, value)
+        )
+
+    def test_validate_incorrect_value(self):
+        value = self.test_instance.from_simple_type(self.correct_simple_data)
+        value[next(iter(value.keys()))] = object()
+
+        self.assertFalse(
+            self._test_validate(self.test_instance, self.scheme, value)
+        )
+
+    def test_validate_keys_missing(self):
+        data = self.correct_simple_data.copy()
+        del data[next(iter(data.keys()))]
+        value = self.test_instance.from_simple_type(data)
+
+        self.assertTrue(
+            self._test_validate(self.test_instance, self.scheme, value)
+        )
+
+    def test_validate_soft_scheme_dict_empty(self):
+        value = self.test_instance.from_simple_type({})
+
+        self.assertTrue(
+            self._test_validate(self.test_instance, self.scheme, value)
+        )
+
+    def test_validate_wrong_key(self):
+        value = self.test_instance.from_simple_type(self.correct_simple_data)
+        first_key = next(iter(value.keys()))
+        value[first_key + 'something'] = value.pop(first_key)
+
+        self.assertFalse(
+            self._test_validate(self.test_instance, self.scheme, value)
+        )
+
+    def _test_from_simple_type(self, typ_obj, scheme, data):
+        arg_data = data.copy()
+
+        with mock.patch.object(
+            types.Dict, 'from_simple_type', return_value=arg_data
+        ) as dict_from_simple_type:
+            val = typ_obj.from_simple_type(arg_data)
+
+        self.assertEqual(data, arg_data)
+        dict_from_simple_type.assert_called_once_with(arg_data)
+        self.assertEqual(data, val)
+        for key, data_item in data.items():
+            self.assertIsInstance(val[key], type(data_item))
+
+    def _test_validate(self, typ_obj, scheme, value):
+        arg_value = value.copy()
+
+        with mock.patch.object(
+            types.Dict, 'validate', return_value=True
+        ) as dict_validate:
+            ret = typ_obj.validate(arg_value)
+
+        self.assertEqual(value, arg_value)
+        dict_validate.assert_called_once_with(arg_value)
+
+        return ret
