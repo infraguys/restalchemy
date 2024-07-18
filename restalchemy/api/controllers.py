@@ -377,6 +377,141 @@ class BaseNestedResourceController(BaseResourceController):
         return dm
 
 
+class BasePaginationMixin(object):
+    """Pagination mixin, marker based, not offset based!
+
+    Contract:
+    - Works via headers only
+    - All results are sorted by `order by id ASC`
+    - X-Pagination-Limit: sets limit of each "page"
+    - X-Pagination-Marker: sets marker of last ID in previous batch,
+      next batch will by filtered by `where id > MARKER`
+    - There are next "pages" while X-Pagination-Marker exists in response
+
+    Example:
+    # get first "page"
+    curl '..' -H 'X-Pagination-Limit: 5' -i
+    HTTP/1.1 200 OK
+    X-Pagination-Limit: 5
+    X-Pagination-Marker: XXX_UUID1
+
+    # get next "page" by marker
+    curl '..' -H 'X-Pagination-Limit: 5' -H 'X-Pagination-Marker: XXX_UUID1' -i
+    HTTP/1.1 200 OK
+    X-Pagination-Limit: 5
+    X-Pagination-Marker: XXX_UUID2
+
+    # get last "page" by marker
+    curl '..' -H 'X-Pagination-Limit: 5' -H 'X-Pagination-Marker: XXX_UUID2' -i
+    HTTP/1.1 200 OK
+    X-Pagination-Limit: 5
+    (Last page won't have Marker)
+    """
+
+    _pagination_limit = 0
+    _header_page_limit = "X-Pagination-Limit"
+    _header_page_marker = "X-Pagination-Marker"
+
+    def _create_response(self, body, status, headers):
+        if self._pagination_limit:
+            headers[self._header_page_limit] = str(self._pagination_limit)
+            if len(body) == self._pagination_limit:
+                headers[self._header_page_marker] = str(
+                    getattr(body[-1], self.model.get_id_property_name()))
+
+        return super(BasePaginationMixin, self)._create_response(
+            body, status, headers)
+
+    def _prepare_pagination_meta(self):
+        try:
+            self._pagination_limit = int(self._req.headers.get(
+                self._header_page_limit, 0))
+            if self._pagination_limit < 0:
+                raise ValueError()
+        except ValueError:
+            raise exc.ParseError(
+                value="%s=%s" % (
+                    self._header_page_limit,
+                    self._req.headers.get(self._header_page_limit)))
+        # TODO(g.melikov): do we need to validate if marker ID record exists?
+        self._pagination_marker = self._req.headers.get(
+            self._header_page_marker)
+        if self._pagination_marker:
+            self._pagination_marker = self._parse_resource_uuid(
+                "uuid", self._pagination_marker,
+                self.get_resource().get_id_type()
+            ) if self.__resource__ else self._pagination_marker
+
+    def do_collection(self, parent_resource=None):
+        self._prepare_pagination_meta()
+
+        return super(BasePaginationMixin, self
+                     ).do_collection(parent_resource=parent_resource)
+
+    def _process_storage_filters(self, filters):
+        if not self._pagination_limit:
+            return super(BasePaginationMixin, self)._process_storage_filters(
+                filters)
+
+        id_name = self.model.get_id_property_name()
+        if self._pagination_marker:
+            filters = dm_filters.AND(
+                {id_name: dm_filters.GT(self._pagination_marker)}, filters)
+        return self.model.objects.get_all(
+            filters=filters, limit=self._pagination_limit,
+            order_by={id_name: "asc"})
+
+    def paginated_filter(self, filters):
+        custom_filters, storage_filters = self._split_filters(filters)
+
+        cleaned_results = []
+
+        # Get additional data from DB if some was filtered by custom props
+        while (len(cleaned_results) < self._pagination_limit):
+            result = self._process_storage_filters(storage_filters)
+
+            if not len(result):
+                break
+
+            self._pagination_marker = getattr(
+                result[-1], self.model.get_id_property_name())
+
+            cleaned_results.extend(
+                self._process_custom_filters(result, custom_filters))
+
+        if len(cleaned_results) > self._pagination_limit:
+            cleaned_results = cleaned_results[:self._pagination_limit]
+
+        return cleaned_results
+
+
+class BaseResourceControllerPaginated(
+    BasePaginationMixin, BaseResourceController):
+
+    def filter(self, filters):
+        # NOTE(g.melikov): if you want to add pagination and you need to
+        #  override `filter` method - it's better to add custom filters into
+        #  `_process_custom_filters`.
+        if self._pagination_limit:
+            return self.paginated_filter(filters)
+
+        return super(BasePaginationMixin, self).filter(filters)
+
+
+class BaseNestedResourceControllerPaginated(
+    BasePaginationMixin, BaseNestedResourceController):
+
+    def filter(self, parent_resource, filters):
+        filters = filters.copy()
+        filters[self.__pr_name__] = dm_filters.EQ(parent_resource)
+
+        if self._pagination_limit:
+            return self.paginated_filter(filters)
+
+        return super(BaseNestedResourceController, self).filter(
+            filters)
+
+
 class RootController(Controller):
 
     def filter(self, filters):
