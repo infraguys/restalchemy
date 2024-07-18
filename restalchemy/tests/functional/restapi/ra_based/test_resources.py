@@ -537,6 +537,208 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
 
+    def test_get_collection_non_paginated(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID1),
+            "name": "test1",
+            "state": "off",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }, {
+            "uuid": str(RESOURCE_ID2),
+            "name": "test2",
+            "state": "on",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }]
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertTrue('X-Pagination-Limit' not in response.headers)
+        self.assertTrue('X-Pagination-Marker' not in response.headers)
+
+    def test_get_collection_paginated(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID1),
+            "name": "test1",
+            "state": "off",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }]
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT),
+            headers={
+                'X-Pagination-Limit': '1',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertEqual(response.headers['X-Pagination-Limit'], '1')
+        self.assertEqual(
+            response.headers['X-Pagination-Marker'], str(RESOURCE_ID1))
+
+    def test_get_collection_paginated_with_marker(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        RESOURCE_ID3 = UUID3
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="on")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID2),
+            "name": "test2",
+            "state": "on",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }, {
+            "uuid": str(RESOURCE_ID3),
+            "name": "test3",
+            "state": "on",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }]
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT),
+            headers={
+                'X-Pagination-Limit': '2',
+                'X-Pagination-Marker': str(RESOURCE_ID1)
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertEqual(response.headers['X-Pagination-Limit'], '2')
+        self.assertEqual(
+            response.headers['X-Pagination-Marker'], str(RESOURCE_ID3))
+
+    def test_get_collection_paginated_with_marker_last(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        RESOURCE_ID3 = UUID3
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="on")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID2),
+            "name": "test2",
+            "state": "on",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }, {
+            "uuid": str(RESOURCE_ID3),
+            "name": "test3",
+            "state": "on",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }]
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT),
+            headers={
+                'X-Pagination-Limit': '3',
+                'X-Pagination-Marker': str(RESOURCE_ID1)
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertEqual(response.headers['X-Pagination-Limit'], '3')
+        self.assertTrue('X-Pagination-Marker' not in response.headers)
+
+    def test_get_collection_paginated_with_filter(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        RESOURCE_ID3 = UUID3
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="on")
+        vm_response_body = [{
+            "uuid": str(RESOURCE_ID2),
+            "name": "test2",
+            "state": "on",
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+        }]
+
+        response = requests.get(
+            self.get_endpoint("%s?state=on" %
+                              (TEMPL_VMS_COLLECTION_ENDPOINT, )),
+            headers={
+                'X-Pagination-Limit': '1',
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertEqual(response.headers['X-Pagination-Limit'], '1')
+        self.assertEqual(
+            response.headers['X-Pagination-Marker'], str(RESOURCE_ID2))
+
+    def test_get_collection_paginated_limit_nonnumeric_negative(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT),
+            headers={
+                'X-Pagination-Limit': 'a',
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['type'], 'ParseError')
+
+    def test_get_collection_paginated_limit_number_negative(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT),
+            headers={
+                'X-Pagination-Limit': '-1',
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['type'], 'ParseError')
+
+    def test_get_collection_paginated_marker_negative(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT),
+            headers={
+                'X-Pagination-Limit': '1',
+                'X-Pagination-Marker': 'a',
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['type'], 'ParseError')
+
 
 class TestNestedResourceTestCase(BaseResourceTestCase):
 
@@ -721,6 +923,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field1": "some_field1",
             "some-field3": "some_field3",
             "some-field4": "some_field4",
+            "unique-field": str(PORT1_RESOURCE_ID),
         }, {
             "uuid": str(PORT2_RESOURCE_ID),
             "mac": "00:00:00:00:00:04",
@@ -730,6 +933,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field1": "some_field1",
             "some-field3": "some_field3",
             "some-field4": "some_field4",
+            "unique-field": str(PORT2_RESOURCE_ID),
         }]
 
         response = requests.get(
@@ -755,6 +959,50 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
         self.assertRaises(exceptions.RecordNotFound,
                           models.Port.objects.get_one,
                           filters={'uuid': PORT_RESOURCE_ID})
+
+    def test_get_ports_collection_pagination_custom_props_iterator(self):
+        VM_RESOURCE_ID = UUID1
+        PORT1_RESOURCE_ID = UUID3
+        PORT2_RESOURCE_ID = UUID4
+        PORT3_RESOURCE_ID = UUID5
+        port1 = models.Port(uuid=PORT1_RESOURCE_ID,
+                            mac="00:00:00:00:00:03",
+                            vm=self.vm1)
+        port1.save()
+        port2 = models.Port(uuid=PORT2_RESOURCE_ID,
+                            mac="00:00:00:00:00:04",
+                            vm=self.vm1)
+        port2.save()
+        port3 = models.Port(uuid=PORT3_RESOURCE_ID,
+                            mac="00:00:00:00:00:05",
+                            vm=self.vm2)
+        port3.save()
+        ports_response_body = [{
+            "uuid": str(PORT2_RESOURCE_ID),
+            "mac": "00:00:00:00:00:04",
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path,
+            "some-field1": "some_field1",
+            "some-field3": "some_field3",
+            "some-field4": "some_field4",
+            "unique-field": str(PORT2_RESOURCE_ID)
+        }]
+
+        response = requests.get(
+            self.get_endpoint(
+                TEMPL_PORTS_COLLECTION_ENDPOINT, VM_RESOURCE_ID
+            ) + '?unique-field=%s' % str(PORT2_RESOURCE_ID),
+            headers={
+                'X-Pagination-Limit': '1',
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ports_response_body, response.json())
+        self.assertEqual(response.headers['X-Pagination-Limit'], '1')
+        self.assertEqual(
+            response.headers['X-Pagination-Marker'], str(PORT2_RESOURCE_ID))
 
 
 class TestMultipleIdProperties(BaseResourceTestCase):

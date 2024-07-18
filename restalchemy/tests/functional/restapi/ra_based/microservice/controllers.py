@@ -55,7 +55,7 @@ class IpAddressController(controllers.BaseNestedResourceController):
     __pr_name__ = "port"
 
 
-class PortController(controllers.BaseNestedResourceController):
+class PortController(controllers.BaseNestedResourceControllerPaginated):
     """Port controller
 
     Handle POST http://127.0.0.1:8000/v1/vms/<vm_uuid>/ports/
@@ -66,11 +66,12 @@ class PortController(controllers.BaseNestedResourceController):
 
     __resource__ = resources.ResourceByModelWithCustomProps(
         models.Port,
+        process_filters=True,
         hidden_fields=resources.HiddenFieldMap(
-            create=['never_call', 'some_field1'],
+            create=['never_call', 'some_field1', 'unique_field'],
             filter=['never_call', 'some_field2'],
-            get=['never_call', 'some_field3'],
-            update=['never_call', 'some_field4'],
+            get=['never_call', 'some_field3', 'unique_field'],
+            update=['never_call', 'some_field4', 'unique_field'],
         )
     )
     __pr_name__ = "vm"
@@ -86,7 +87,7 @@ class PortControllerNone(PortController):
                      self).get_packer(content_type, resource_type)
 
 
-class VMController(controllers.BaseResourceController):
+class VMController(controllers.BaseResourceControllerPaginated):
     """VM controller
 
     Handle POST http://127.0.0.1:8000/v1/vms/
