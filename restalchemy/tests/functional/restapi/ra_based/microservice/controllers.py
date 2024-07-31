@@ -21,6 +21,7 @@ from restalchemy.api import constants
 from restalchemy.api import controllers
 from restalchemy.api import packers
 from restalchemy.api import resources
+from restalchemy.common import exceptions as exc
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import utils
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
@@ -148,3 +149,18 @@ class V1Controller(controllers.Controller):
 
     def filter(self, filters):
         return ["vms"]
+
+
+class NotImplementedMethodsController(controllers.Controller):
+
+    def filter(self, filters):
+        """
+        method filter was implemented for testing base error message
+        """
+        raise exc.NotImplementedError()
+
+    def get(self, uuid):
+        """
+        method get was implemented for Action testing
+        """
+        return uuid

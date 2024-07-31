@@ -51,6 +51,17 @@ class PortRouteNone(routes.Route):
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
+class NotImplementedAction(routes.Action):
+    __controller__ = controllers.NotImplementedMethodsController
+
+
+class NotImplementedMethodsRoute(routes.Route):
+    __controller__ = controllers.NotImplementedMethodsController
+    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
+                         routes.UPDATE, routes.DELETE]
+    not_implemented_action = routes.action(NotImplementedAction, invoke=True)
+
+
 class VMPowerStateAction(routes.Action):
     __controller__ = controllers.VMController
 
@@ -86,6 +97,7 @@ class V1Route(routes.Route):
     __allow_methods__ = [routes.FILTER]
 
     vms = routes.route(VMRoute)
+    notimplementedmethods = routes.route(NotImplementedMethodsRoute)
 
 
 class Root(routes.RootRoute):

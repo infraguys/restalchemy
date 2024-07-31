@@ -49,6 +49,9 @@ TEMPL_V1_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
     TEMPL_SERVICE_ENDPOINT, 'v1'))
 TEMPL_VMS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
     TEMPL_V1_COLLECTION_ENDPOINT, 'vms'))
+TEMPL_NOT_IMPLEMENTED_METHODS_COLLECTION_ENDPOINT = utils.lastslash(
+    parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, 'notimplementedmethods')
+)
 TEMPL_VM_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_VMS_COLLECTION_ENDPOINT, '%s')
 TEMPL_VMS_COLLECTION_ENDPOINT_WITH_FILTER = parse.urljoin(
     TEMPL_VMS_COLLECTION_ENDPOINT, '?%s=%s')
@@ -188,6 +191,54 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             return True
         except exceptions.RecordNotFound:
             return False
+
+    def test_not_implemented_error(self):
+        endpoint = self.get_endpoint(
+            TEMPL_NOT_IMPLEMENTED_METHODS_COLLECTION_ENDPOINT
+        )
+        response = requests.post(endpoint, json={})
+
+        self.assertEqual(response.status_code, 404)
+        resp = response.json()
+        # Not implemented (method create in NotImplementedMethodsController).
+        self.assertIn("create", resp["message"])
+
+        response = requests.get(endpoint)
+
+        self.assertEqual(response.status_code, 404)
+        resp = response.json()
+        self.assertEqual(resp["message"], "Not implemented.")
+
+        uuid_endpoint = parse.urljoin(endpoint, str(UUID1))
+
+        response = requests.put(uuid_endpoint, json={})
+
+        self.assertEqual(response.status_code, 404)
+        resp = response.json()
+
+        # Not implemented (method update in NotImplementedMethodsController).
+        self.assertIn("update", resp["message"])
+
+        response = requests.delete(uuid_endpoint)
+
+        self.assertEqual(response.status_code, 404)
+        resp = response.json()
+
+        # Not implemented (method delete in NotImplementedMethodsController).
+        self.assertIn("delete", resp["message"])
+
+        action_name = "not_implemented_action"
+        action_path = "actions/%s/invoke" % action_name
+        action_endpoint = parse.urljoin(utils.lastslash(uuid_endpoint),
+                                        action_path)
+        response = requests.post(action_endpoint, json={})
+
+        self.assertEqual(response.status_code, 500)
+
+        resp = response.json()
+        # 'NotImplementedMethodsController' object has
+        # no attribute 'not_implemented_action'
+        self.assertIn(action_name, resp["message"])
 
     @mock.patch('uuid.uuid4')
     def test_create_vm_resource_successful(self, uuid4_mock):
