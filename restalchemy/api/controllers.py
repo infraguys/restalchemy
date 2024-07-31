@@ -235,19 +235,29 @@ class Controller(object):
         return self.get_resource().get_model()
 
     def create(self, **kwargs):
-        raise exc.NotImplementedError()
+        raise exc.NotImplementedError(
+            msg="method create in %s" % self.__class__.__name__
+        )
 
     def get(self, uuid):
-        raise exc.NotImplementedError()
+        raise exc.NotImplementedError(
+            msg="method get in %s" % self.__class__.__name__
+        )
 
     def filter(self, filters):
-        raise exc.NotImplementedError()
+        raise exc.NotImplementedError(
+            msg="method filter in %s" % self.__class__.__name__
+        )
 
     def delete(self, uuid):
-        raise exc.NotImplementedError()
+        raise exc.NotImplementedError(
+            msg="method delete in %s" % self.__class__.__name__
+        )
 
     def update(self, uuid, **kwargs):
-        raise exc.NotImplementedError()
+        raise exc.NotImplementedError(
+            msg="method update in %s" % self.__class__.__name__
+        )
 
     def get_context(self):
         try:

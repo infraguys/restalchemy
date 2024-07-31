@@ -50,7 +50,13 @@ class NotFoundError(RestAlchemyException):
 
 class NotImplementedError(NotFoundError):
 
-    message = "Not implemented."
+    base_message = "Not implemented."
+    message = "Not implemented ('%(msg)s')."
+
+    def __init__(self, **kwargs):
+        if "msg" not in kwargs:
+            self.message = self.base_message
+        super(NotImplementedError, self).__init__(**kwargs)
 
 
 class UnsupportedHttpMethod(RestAlchemyException):
