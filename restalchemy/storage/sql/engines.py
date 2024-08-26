@@ -31,6 +31,7 @@ from restalchemy.storage.sql import sessions
 
 
 DEFAULT_NAME = 'default'
+DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)
 
 
@@ -70,6 +71,8 @@ class MySQLEngine(AbstractEngine):
                              "127.0.0.1:3306/database_name")
         config = config or {}
         self._db_name = self._db_url.path[1:]
+        if 'connection_timeout' not in config:
+            config['connection_timeout'] = DEFAULT_CONNECTION_TIMEOUT
         config.update({
             'user': self.db_username,
             'password': self.db_password,
