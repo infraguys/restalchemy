@@ -767,3 +767,134 @@ class SoftSchemeDictTestCase(base.BaseTestCase):
         dict_validate.assert_called_once_with(arg_value)
 
         return ret
+
+
+class SchemaDictTestCase(base.BaseTestCase):
+    def test_from_simple_type(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        self.assertEqual(
+            test_instance.from_simple_type({}),
+            {
+                "sub_str": None,
+                "sub_int": None,
+            },
+        )
+
+    def test_to_simple_type(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        self.assertEqual(
+            test_instance.to_simple_type(
+                {
+                    "sub_str": None,
+                    "sub_int": None,
+                }
+            ),
+            {
+                "sub_str": None,
+                "sub_int": None,
+            },
+        )
+
+    def test_validate_wrong(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        value = test_instance.from_simple_type({})
+        self.assertFalse(test_instance.validate(value))
+
+    def test_validate_correct_value_allow_none(self):
+        scheme = {
+            "sub_str": types.AllowNone(types.String()),
+            "sub_int": types.AllowNone(types.Integer()),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        value = test_instance.from_simple_type({})
+        self.assertTrue(test_instance.validate(value))
+
+    def test_validate_with_correct_value(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        value = test_instance.from_simple_type(
+            {
+                "sub_int": 1,
+                "sub_str": "Test",
+            }
+        )
+        self.assertTrue(test_instance.validate(value))
+
+    def test_validate_with_incorrect_value(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        value = test_instance.from_simple_type(
+            {
+                "sub_int": "Test",
+                "sub_str": "Test",
+            }
+        )
+        self.assertFalse(test_instance.validate(value))
+
+    def test_validate_with_wrong_key(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+
+        self.assertFalse(
+            test_instance.validate(
+                {"sub_int": 1, "sub_str": "Test", "sub_wrong": "wrong_key"}
+            )
+        )
+
+    def test_validate_with_wrong_key_after_from_simple_type(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        value = test_instance.from_simple_type(
+            {
+                "sub_int": 1,
+                "sub_str": "Test",
+                "sub_wrong": "wrong_key",
+            }
+        )
+        self.assertTrue(test_instance.validate(value))
+
+    def test_validate_with_key_missing_after_from_simple_type(self):
+        scheme = {
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
+        }
+
+        test_instance = types.SchemeDict(scheme=scheme)
+        value = test_instance.from_simple_type(
+            {
+                "sub_int": 1,
+            }
+        )
+        self.assertFalse(test_instance.validate(value))

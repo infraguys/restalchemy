@@ -479,7 +479,7 @@ class SchemeDict(Dict):
 
     def from_simple_type(self, value):
         value = super(SchemeDict, self).from_simple_type(value)
-        return {key: scheme.from_simple_type(value[key])
+        return {key: scheme.from_simple_type(value.get(key, None))
                 for key, scheme in six.iteritems(self._scheme)}
 
     def to_openapi_spec(self,
