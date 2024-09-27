@@ -33,6 +33,14 @@ class VM(models.ModelWithUUID):
     status = properties.property(types.Enum(["active", "disabled"]),
                                  default="active",
                                  required=True)
+    created = properties.property(
+        types.UTCDateTime(),
+        default=lambda: types.DEFAULT_DATE,
+    )
+    updated = properties.property(
+        types.UTCDateTime(),
+        default=lambda: types.DEFAULT_DATE,
+    )
 
 
 class Port(models.CustomPropertiesMixin, models.ModelWithUUID):

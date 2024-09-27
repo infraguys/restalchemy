@@ -55,7 +55,13 @@ KWARGS_OPENAPI_MAP = {
     "default": "default",
     "example": "example",
 }
-OPENAPI_FMT = "%Y-%m-%dT%H:%M:%SZ"
+MYSQL_DATETIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
+DEFAULT_DATE = datetime.datetime.strptime("2006-01-02 15:04:05.000576",
+                                          MYSQL_DATETIME_FMT)
+# RFC3339
+# python's datetime doesn't support nanosecond precision
+# + now without timezone, example "2006-01-02T15:04:05.999999999Z07:00"
+OPENAPI_DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 def build_prop_kwargs(kwargs):
@@ -64,9 +70,10 @@ def build_prop_kwargs(kwargs):
         if k in kwargs.keys():
             value = kwargs[k]() if callable(kwargs[k]) else kwargs[k]
             if isinstance(value, (UUID, uuid.UUID)):
-                value = "uuid"
+                # No default value for uuid
+                continue
             elif isinstance(value, datetime.datetime):
-                value = value.strftime(OPENAPI_FMT)
+                value = DEFAULT_DATE.strftime(OPENAPI_DATETIME_FMT)
             elif hasattr(value, '__dict__'):
                 value = {
                     name: prop.get_property_type().to_simple_type(value[name])
@@ -94,6 +101,9 @@ class BaseType(object):
     @abc.abstractmethod
     def to_simple_type(self, value):
         pass
+
+    def dump_value(self, value):
+        return self.to_simple_type(value)
 
     @abc.abstractmethod
     def from_simple_type(self, value):
@@ -372,7 +382,7 @@ class TypedList(List):
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
-            "items": self._nested_type.to_openapi_spec(prop_kwargs)
+            "items": self._nested_type.to_openapi_spec({})
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
@@ -531,8 +541,6 @@ class TypedDict(Dict):
 
 class UTCDateTime(BasePythonType):
 
-    _FORMAT = "%Y-%m-%d %H:%M:%S.%f"
-
     def __init__(self):
         super(UTCDateTime, self).__init__(python_type=datetime.datetime,
                                           openapi_type="string",
@@ -542,15 +550,35 @@ class UTCDateTime(BasePythonType):
         return isinstance(value, datetime.datetime) and value.tzinfo is None
 
     def to_simple_type(self, value):
-        return value.strftime(self._FORMAT)
+        return value.strftime(MYSQL_DATETIME_FMT)
+
+    def dump_value(self, value):
+        # Converting value in api response
+        return value.strftime(OPENAPI_DATETIME_FMT)
 
     def from_simple_type(self, value):
         if isinstance(value, datetime.datetime):
             return value
-        return datetime.datetime.strptime(value, self._FORMAT)
+        return datetime.datetime.strptime(value, MYSQL_DATETIME_FMT)
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
+
+    def to_openapi_spec(self,
+                        prop_kwargs):
+        spec = {
+            "type": self._openapi_type,
+            # https://github.com/ogen-go/ogen/blob/main/_testdata/positive/time_extension.yml#L29
+            "x-ogen-time-format": self.dump_value(DEFAULT_DATE)
+        }
+        if self._openapi_format is not None:
+            spec["format"] = self._openapi_format
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        if "default" in prop_kwargs and (
+                self.validate(prop_kwargs["default"])
+                or callable(prop_kwargs["default"])):
+            spec["default"] = self.dump_value(prop_kwargs["default"]())
+        return spec
 
 
 class DateTime(BasePythonType):

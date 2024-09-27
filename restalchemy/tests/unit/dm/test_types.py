@@ -581,6 +581,16 @@ class UTCDateTimeTestCase(base.BaseTestCase):
 
         self.assertEqual(result, expected)
 
+    def test_openapi_format(self):
+        dt = datetime.datetime(2020, 3, 13, 11, 3, 25, 123)
+
+        expected = '2020-03-13T11:03:25.000123Z'
+        dt_type = types.UTCDateTime()
+
+        result = dt_type.dump_value(dt)
+
+        self.assertEqual(result, expected)
+
 
 class EnumTestCase(base.BaseTestCase):
 

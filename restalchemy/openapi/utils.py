@@ -135,7 +135,7 @@ def extend_schema(
         raise ValueError("parameters type is not list")
     if responses and not isinstance(responses, dict):
         raise ValueError("responses type is not dict")
-    if tags and not isinstance(parameters, list):
+    if tags and not isinstance(tags, list):
         raise ValueError("tags type is not list")
 
     def decorator(f):

@@ -1,0 +1,1737 @@
+components:
+  parameters:
+    -hidden-field:
+      in: query
+      name: -hidden-field
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    IpAddressUuid:
+      in: path
+      name: IpAddressUuid
+      required: true
+      schema:
+        format: uuid
+        readOnly: true
+        type: string
+    PortUuid:
+      in: path
+      name: PortUuid
+      required: true
+      schema:
+        format: uuid
+        readOnly: true
+        type: string
+    TagName:
+      in: path
+      name: TagName
+      required: true
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    TagUuid:
+      in: path
+      name: TagUuid
+      required: true
+      schema:
+        format: uuid
+        readOnly: true
+        type: string
+    VMUuid:
+      in: path
+      name: VMUuid
+      required: true
+      schema:
+        format: uuid
+        readOnly: true
+        type: string
+    created:
+      in: query
+      name: created
+      schema:
+        default: '2006-01-02T15:04:05.000576Z'
+        format: date-time
+        type: string
+        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    ip:
+      in: query
+      name: ip
+      schema:
+        default: 192.168.0.1
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    just-none:
+      in: query
+      name: just-none
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        nullable: true
+        type: string
+    mac:
+      in: query
+      name: mac
+      schema:
+        default: 00:00:00:00:00:00
+        pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
+        type: string
+    name:
+      in: query
+      name: name
+      schema:
+        example: testname
+        maxLength: 255
+        minLength: 0
+        type: string
+    never-call:
+      in: query
+      name: never-call
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    port:
+      in: query
+      name: port
+      schema:
+        type: string
+    some-field1:
+      in: query
+      name: some-field1
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    some-field2:
+      in: query
+      name: some-field2
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    some-field3:
+      in: query
+      name: some-field3
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    some-field4:
+      in: query
+      name: some-field4
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    some-field5:
+      in: query
+      name: some-field5
+      schema:
+        maxLength: 9223372036854775807
+        minLength: 0
+        nullable: true
+        type: string
+    state:
+      in: query
+      name: state
+      schema:
+        default: 'off'
+        maxLength: 10
+        minLength: 0
+        type: string
+    status:
+      in: query
+      name: status
+      schema:
+        default: active
+        enum:
+        - active
+        - disabled
+        type: string
+    updated:
+      in: query
+      name: updated
+      schema:
+        default: '2006-01-02T15:04:05.000576Z'
+        format: date-time
+        type: string
+        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    visible:
+      in: query
+      name: visible
+      schema:
+        default: true
+        type: boolean
+    vm:
+      in: query
+      name: vm
+      schema:
+        type: string
+  responses:
+    Error:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Error response.
+  schemas:
+    Error:
+      description: Error occurred while processing request
+      example:
+        code: 400
+        json:
+          code: 400
+          message: Validation error occurred.
+          type: ValidationErrorException
+      properties:
+        json:
+          description: Detail error map
+          properties:
+            code:
+              description: The HTTP status code
+              example: 503
+              exclusiveMaximum: true
+              minimum: 400
+              type: integer
+            message:
+              description: Error message
+              example: A human-readable explanation of problem
+              type: string
+            type:
+              description: Error class name
+              example: OSError
+              type: string
+          required:
+          - code
+          - type
+          - message
+          type: object
+        status:
+          description: The HTTP status code
+          example: 503
+          exclusiveMaximum: true
+          minimum: 400
+          type: integer
+      required:
+      - status
+      - json
+      title: error
+      type: object
+    IpAddress_Create:
+      properties:
+        ip:
+          default: 192.168.0.1
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        port:
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - port
+      type: object
+    IpAddress_Filter:
+      properties:
+        ip:
+          default: 192.168.0.1
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        port:
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - port
+      type: object
+    IpAddress_Get:
+      properties:
+        ip:
+          default: 192.168.0.1
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        port:
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - port
+      type: object
+    Port_Create:
+      properties:
+        mac:
+          default: 00:00:00:00:00:00
+          pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
+          type: string
+        some-field2:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field3:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field4:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field5:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        vm:
+          type: string
+      required:
+      - vm
+      type: object
+    Port_Filter:
+      properties:
+        mac:
+          default: 00:00:00:00:00:00
+          pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
+          type: string
+        some-field1:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field3:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field4:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field5:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        vm:
+          type: string
+      required:
+      - vm
+      type: object
+    Port_Get:
+      properties:
+        mac:
+          default: 00:00:00:00:00:00
+          pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
+          type: string
+        some-field1:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field2:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field4:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field5:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        vm:
+          type: string
+      required:
+      - vm
+      type: object
+    Port_Update:
+      properties:
+        mac:
+          default: 00:00:00:00:00:00
+          pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
+          type: string
+        some-field1:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field2:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field3:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        some-field5:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        vm:
+          type: string
+      required:
+      - vm
+      type: object
+    Tag_Create:
+      properties:
+        name:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        visible:
+          default: true
+          type: boolean
+        vm:
+          type: string
+      required:
+      - visible
+      - vm
+      - name
+      type: object
+    Tag_Filter:
+      properties:
+        name:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        visible:
+          default: true
+          type: boolean
+        vm:
+          type: string
+      required:
+      - visible
+      - vm
+      - name
+      type: object
+    Tag_Get:
+      properties:
+        name:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        visible:
+          default: true
+          type: boolean
+        vm:
+          type: string
+      required:
+      - visible
+      - vm
+      - name
+      type: object
+    Tag_Update:
+      properties:
+        name:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+        visible:
+          default: true
+          type: boolean
+        vm:
+          type: string
+      required:
+      - visible
+      - vm
+      - name
+      type: object
+    VM_Create:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - status
+      - state
+      - name
+      type: object
+    VM_Filter:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - status
+      - state
+      - name
+      type: object
+    VM_Get:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - status
+      - state
+      - name
+      type: object
+    VM_Update:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - status
+      - state
+      - name
+      type: object
+info:
+  contact:
+    email: functional@tests.local
+    name: Functional Tests
+    url: https://functional.tests/
+  description: REST API Microservice for tests
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://functional.tests/terms/
+  title: REST API Microservice
+  version: 1.2.3
+openapi: 3.0.3
+paths:
+  /:
+    get:
+      operationId: Get_urls
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: Get nested urls
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Base application url
+  /specifications/:
+    get:
+      operationId: Filter_specifications
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: Get nested urls
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get OpenApiSpecificationRoute OpenApiSpecificationControllers
+      tags: []
+  /specifications/3.0.3:
+    get:
+      operationId: Get_OpenApi_specification
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties: {}
+                type: object
+          description: OpenApi specification
+        default:
+          $ref: '#/components/responses/Error'
+      summary: OpenApi specification
+      tags: []
+  /v1/:
+    get:
+      operationId: Filter_v1
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: Get nested urls
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get V1Route V1Controllers
+      tags: []
+  /v1/notimplementedmethods/:
+    get:
+      operationId: Filter_v1_notimplementedmethods
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: Get nested urls
+        default:
+          $ref: '#/components/responses/Error'
+      summary: method filter was implemented for testing base error message
+      tags: []
+    post:
+      operationId: Create_v1_notimplementedmethods
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Unknown_Create'
+        description: Unknown_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unknown_Create'
+          description: Unknown_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create NotImplementedMethodsRoute NotImplementedMethodsController
+      tags: []
+  /v1/vms/:
+    get:
+      operationId: Filter_v1_vms
+      parameters:
+      - in: query
+        name: status
+        schema:
+          default: active
+          enum:
+          - active
+          - disabled
+          type: string
+      - in: query
+        name: updated
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      - in: query
+        name: just-none
+        schema:
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+      - in: query
+        name: created
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      - in: query
+        name: state
+        schema:
+          default: 'off'
+          maxLength: 10
+          minLength: 0
+          type: string
+      - in: query
+        name: name
+        schema:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VM_Filter'
+                type: array
+          description: VM_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VMs
+      tags:
+      - VM
+    post:
+      operationId: Create_v1_vms
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VM_Create'
+        description: VM_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM_Create'
+          description: VM_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create VM resource
+      tags:
+      - VM
+  /v1/vms/{VMUuid}:
+    delete:
+      operationId: Delete_v1_vms_VMUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '204':
+          description: VM_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete VM
+      tags:
+      - VM
+    get:
+      operationId: Get_v1_vms_VMUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM_Get'
+          description: VM_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VM
+      tags:
+      - VM
+    put:
+      operationId: Update_v1_vms_VMUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VM_Update'
+        description: VM_Update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM_Update'
+          description: VM_Update
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Update VM
+      tags:
+      - VM
+  /v1/vms/{VMUuid}/actions/power/invoke:
+    post:
+      operationId: Power_v1_vms_VMUuid_actions_power_invoke
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Get nested urls
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Power VM
+      tags:
+      - VM
+  /v1/vms/{VMUuid}/actions/power_state:
+    get:
+      operationId: Power_state_v1_vms_VMUuid_actions_power_state
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Get nested urls
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Power_state VM
+      tags:
+      - VM
+  /v1/vms/{VMUuid}/actions/poweroff/invoke:
+    post:
+      operationId: Poweroff_v1_vms_VMUuid_actions_poweroff_invoke
+      parameters:
+      - description: ''
+        in: path
+        name: VMUuid
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM_Create'
+          description: VM_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Power off virtual machine
+      tags:
+      - VM
+  /v1/vms/{VMUuid}/actions/poweron/invoke:
+    post:
+      operationId: Poweron_v1_vms_VMUuid_actions_poweron_invoke
+      parameters:
+      - description: ''
+        in: path
+        name: VMUuid
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM_Create'
+          description: VM_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Power on virtual machine
+      tags:
+      - VM
+  /v1/vms/{VMUuid}/none_ports/:
+    get:
+      operationId: Filter_v1_vms_VMUuid_none_ports
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Port_Filter'
+                type: array
+          description: Port_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get Ports
+      tags:
+      - Port
+    post:
+      operationId: Create_v1_vms_VMUuid_none_ports
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Port_Create'
+        description: Port_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port_Create'
+          description: Port_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create Port
+      tags:
+      - Port
+  /v1/vms/{VMUuid}/none_ports/{PortUuid}:
+    delete:
+      operationId: Delete_v1_vms_VMUuid_none_ports_PortUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '204':
+          description: Port_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete Port
+      tags:
+      - Port
+    get:
+      operationId: Get_v1_vms_VMUuid_none_ports_PortUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port_Get'
+          description: Port_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get Port
+      tags:
+      - Port
+    put:
+      operationId: Update_v1_vms_VMUuid_none_ports_PortUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Port_Update'
+        description: Port_Update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port_Update'
+          description: Port_Update
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Update Port
+      tags:
+      - Port
+  /v1/vms/{VMUuid}/none_ports/{PortUuid}/ip_addresses/:
+    get:
+      operationId: Filter_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/IpAddress_Filter'
+                type: array
+          description: IpAddress_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get IpAddresss
+      tags:
+      - IpAddress_tag
+    post:
+      operationId: Create_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpAddress_Create'
+        description: IpAddress_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpAddress_Create'
+          description: IpAddress_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create IpAddress
+      tags:
+      - IpAddress_tag
+  /v1/vms/{VMUuid}/none_ports/{PortUuid}/ip_addresses/{IpAddressUuid}:
+    delete:
+      operationId: Delete_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses_IpAddressUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: IpAddressUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '204':
+          description: IpAddress_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete IpAddress
+      tags:
+      - IpAddress_tag
+    get:
+      operationId: Get_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses_IpAddressUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: IpAddressUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpAddress_Get'
+          description: IpAddress_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get IpAddress
+      tags:
+      - IpAddress_tag
+  /v1/vms/{VMUuid}/ports/:
+    get:
+      operationId: Filter_v1_vms_VMUuid_ports
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Port_Filter'
+                type: array
+          description: Port_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get Ports
+      tags:
+      - PortTestTag
+    post:
+      operationId: Create_v1_vms_VMUuid_ports
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Port_Create'
+        description: Port_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port_Create'
+          description: Port_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create Port
+      tags:
+      - PortTestTag
+  /v1/vms/{VMUuid}/ports/{PortUuid}:
+    delete:
+      operationId: Delete_v1_vms_VMUuid_ports_PortUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '204':
+          description: Port_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete Port
+      tags:
+      - PortTestTag
+    get:
+      operationId: Get_v1_vms_VMUuid_ports_PortUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port_Get'
+          description: Port_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get Port
+      tags:
+      - PortTestTag
+    put:
+      operationId: Update_v1_vms_VMUuid_ports_PortUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Port_Update'
+        description: Port_Update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port_Update'
+          description: Port_Update
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Update Port
+      tags:
+      - PortTestTag
+  /v1/vms/{VMUuid}/ports/{PortUuid}/ip_addresses/:
+    get:
+      operationId: Filter_v1_vms_VMUuid_ports_PortUuid_ip_addresses
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/IpAddress_Filter'
+                type: array
+          description: IpAddress_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get IpAddresss
+      tags:
+      - IpAddress_tag
+    post:
+      operationId: Create_v1_vms_VMUuid_ports_PortUuid_ip_addresses
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpAddress_Create'
+        description: IpAddress_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpAddress_Create'
+          description: IpAddress_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create IpAddress
+      tags:
+      - IpAddress_tag
+  /v1/vms/{VMUuid}/ports/{PortUuid}/ip_addresses/{IpAddressUuid}:
+    delete:
+      operationId: Delete_v1_vms_VMUuid_ports_PortUuid_ip_addresses_IpAddressUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: IpAddressUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '204':
+          description: IpAddress_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete IpAddress
+      tags:
+      - IpAddress_tag
+    get:
+      operationId: Get_v1_vms_VMUuid_ports_PortUuid_ip_addresses_IpAddressUuid
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: PortUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: IpAddressUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpAddress_Get'
+          description: IpAddress_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get IpAddress
+      tags:
+      - IpAddress_tag
+  /v1/vms/{VMUuid}/tags/:
+    get:
+      operationId: Filter_v1_vms_VMUuid_tags
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Tag_Filter'
+                type: array
+          description: Tag_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get Tags
+      tags:
+      - Tag
+    post:
+      operationId: Create_v1_vms_VMUuid_tags
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag_Create'
+        description: Tag_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag_Create'
+          description: Tag_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create Tag
+      tags:
+      - Tag
+  /v1/vms/{VMUuid}/tags/{TagName}:
+    delete:
+      operationId: Delete_v1_vms_VMUuid_tags_TagName
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: TagName
+        required: true
+        schema:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+      responses:
+        '204':
+          description: Tag_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete Tag
+      tags:
+      - Tag
+    get:
+      operationId: Get_v1_vms_VMUuid_tags_TagName
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: TagName
+        required: true
+        schema:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag_Get'
+          description: Tag_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get Tag
+      tags:
+      - Tag
+    put:
+      operationId: Update_v1_vms_VMUuid_tags_TagName
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          format: uuid
+          readOnly: true
+          type: string
+      - in: path
+        name: TagName
+        required: true
+        schema:
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag_Update'
+        description: Tag_Update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag_Update'
+          description: Tag_Update
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Update Tag
+      tags:
+      - Tag
+servers:
+- description: ''
+  url: http://127.0.0.1:5973
+  variables:
+    version:
+      default: v1
+      enum:
+      - v1
+tags:
+- description: Just functional tests
+  externalDocs:
+    description: Functional tests external documentation
+    url: https://https://functional.tests/docs/
+  name: functional-test
+- description: ''
+  name: Port
+- description: ''
+  name: IpAddress_tag
+- description: port_descr
+  name: PortTestTag
+- description: ''
+  name: Tag
+- description: ''
+  name: VM
