@@ -15,20 +15,85 @@
 #    under the License.
 
 from restalchemy.api import constants as ra_const
-from restalchemy.common import exceptions as exc
 from restalchemy.common import status
 
 OPENAPI_SPECIFICATION_3_0_3 = "3.0.3"
 
 API_VERSION_V1 = "v1"
 
+ERROR_SCHEMA = {
+    "title": "error",
+    "description": "Error occurred while processing request",
+    "type": "object",
+    "required": [
+        "status",
+        "json",
+    ],
+    "properties": {
+        "status": {
+            "type": "integer",
+            "description": "The HTTP status code",
+            "minimum": 400,
+            "exclusiveMaximum": True,
+            "example": 503,
+        },
+        "json": {
+            "type": "object",
+            "description": "Detail error map",
+            "required": [
+                "code",
+                "type",
+                "message",
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "description": "The HTTP status code",
+                    "minimum": 400,
+                    "exclusiveMaximum": True,
+                    "example": 503,
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Error class name",
+                    "example": "OSError",
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Error message",
+                    "example": "A human-readable explanation of problem"
+                }
+            }
+        }
+    },
+    "example": {
+        "code": 400,
+        "json": {
+            "code": 400,
+            "type": "ValidationErrorException",
+            "message": "Validation error occurred."
+        }
+    }
+}
+
+ERROR_RESPONSE = {
+    "description": "Error response.",
+    "content": {
+        ra_const.CONTENT_TYPE_APPLICATION_JSON: {
+            "schema": {
+                "$ref": "#/components/schemas/Error"
+            }
+        }
+    }
+}
+
+DEFAULT_RESPONSE = {"$ref": "#/components/responses/Error"}
+
 OPENAPI_DELETE_RESPONSE = {
     status.HTTP_204_NO_CONTENT: {
         "description": "Delete entity",
     },
-    exc.NotFoundError.code: {
-        "description": exc.NotFoundError.message,
-    }
+    "default": DEFAULT_RESPONSE
 }
 
 OPENAPI_FILTER_RESPONSE = {
@@ -45,10 +110,7 @@ OPENAPI_FILTER_RESPONSE = {
             }
         }
     },
-    # exc.IncorrectRouteAttribute.code
-    "default": {
-        "description": exc.IncorrectRouteAttribute.message,
-    },
+    "default": DEFAULT_RESPONSE
 }
 
 OPENAPI_DEFAULT_RESPONSE = {
@@ -59,7 +121,8 @@ OPENAPI_DEFAULT_RESPONSE = {
                 "schema": {}
             }
         }
-    }
+    },
+    "default": DEFAULT_RESPONSE
 }
 
 
@@ -76,12 +139,7 @@ def build_openapi_create_response(ref_name):
                 }
             }
         },
-        exc.ValidationErrorException.code: {
-            "description": exc.ValidationErrorException.message,
-        },
-        exc.NotFoundError.code: {
-            "description": exc.NotFoundError.message % {"path": ""},
-        }
+        "default": DEFAULT_RESPONSE
     }
 
 
@@ -98,12 +156,7 @@ def build_openapi_get_update_response(ref_name):
                 }
             }
         },
-        exc.ValidationErrorException.code: {
-            "description": exc.ValidationErrorException.message,
-        },
-        exc.NotFoundError.code: {
-            "description": exc.NotFoundError.message % {"path": ""},
-        }
+        "default": DEFAULT_RESPONSE
     }
 
 
@@ -123,12 +176,7 @@ def build_openapi_list_model_response(ref_name):
                 }
             }
         },
-        exc.ValidationErrorException.code: {
-            "description": exc.ValidationErrorException.message,
-        },
-        exc.NotFoundError.code: {
-            "description": exc.NotFoundError.message % {"path": ""},
-        }
+        "default": DEFAULT_RESPONSE
     }
 
 
@@ -137,9 +185,7 @@ def build_openapi_delete_response(ref_name):
         status.HTTP_204_NO_CONTENT: {
             "description": ref_name,
         },
-        exc.NotFoundError.code: {
-            "description": exc.NotFoundError.message,
-        }
+        "default": DEFAULT_RESPONSE
     }
 
 
@@ -171,12 +217,7 @@ def build_openapi_object_response(properties,
                 }
             }
         },
-        exc.ValidationErrorException.code: {
-            "description": exc.ValidationErrorException.message,
-        },
-        exc.NotFoundError.code: {
-            "description": exc.NotFoundError.message % {"path": ""},
-        }
+        "default": DEFAULT_RESPONSE
     }
 
 
@@ -206,12 +247,7 @@ def build_openapi_user_response(code=status.HTTP_200_OK,
                 }
             }
         },
-        exc.ValidationErrorException.code: {
-            "description": exc.ValidationErrorException.message,
-        },
-        exc.NotFoundError.code: {
-            "description": exc.NotFoundError.message % {"path": ""},
-        }
+        "default": DEFAULT_RESPONSE
     }
 
 

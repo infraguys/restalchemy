@@ -207,8 +207,9 @@ class OpenApiComponents(object):
     def __init__(self):
         super(OpenApiComponents, self).__init__()
 
-    def _build_schemas_by_resources(self, route, schema_generator):
-        schemas = {"schemas": {}}
+    @staticmethod
+    def _build_schemas_by_resources(route, schema_generator):
+        schemas = {"schemas": {"Error": oa_c.ERROR_SCHEMA}}
         for method in route.get_allow_methods():
             if method == c.DELETE:
                 continue
@@ -217,20 +218,28 @@ class OpenApiComponents(object):
                 schema_generator.generate_schema_object(method))
         return schemas
 
-    def _build_parameters_by_resources(self, schema_generator, request):
+    @staticmethod
+    def _build_parameters_by_resources(schema_generator, request):
         return {
             "parameters": schema_generator.generate_parameter_object(
                 request
             ),
         }
 
-    def _merge_specs(self, in_spec, from_spec):
+    @staticmethod
+    def _build_responses():
+        return {"responses": {"Error": oa_c.ERROR_RESPONSE}}
+
+    @staticmethod
+    def _merge_specs(in_spec, from_spec):
         for key, value in from_spec.items():
             in_spec[key].update(value)
         return in_spec
 
     def _build_api_resources(self, route, request):
         resources_spec = collections.defaultdict(dict)
+
+        self._merge_specs(resources_spec, self._build_responses())
 
         resource = route.get_controller(request).get_resource()
         schema_generator = oa_utils.ResourceSchemaGenerator(

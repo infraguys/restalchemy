@@ -31,6 +31,7 @@ from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import utils
 from restalchemy.dm import filters
+from restalchemy.dm import types
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.tables import SQLTable
@@ -158,7 +159,10 @@ class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
         self.assertEqual(200, response.status_code)
 
         res = response.json()
-
+        # NOTE(v.burygin): to save openapi.yaml
+        # import yaml
+        # with open("microservice/openapi.yaml", "w") as f:
+        #     yaml.safe_dump(res, f, encoding='utf-8', allow_unicode=True)
         self.assertEqual(res["openapi"], '3.0.3')
         self.assertEqual(res["info"], info)
 
@@ -251,7 +255,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID),
             "name": "test",
             "state": "off",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
         LOCATION = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
 
@@ -269,7 +275,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID),
             "name": "test",
             "state": "off",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
         VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
                                             RESOURCE_ID)
@@ -287,7 +295,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "name": "test",
             "state": "off",
             "just-none": None,
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
         VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
                                             RESOURCE_ID)
@@ -309,7 +319,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID),
             "name": "new",
             "state": "off",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
         VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
                                             RESOURCE_ID)
@@ -347,6 +359,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "name": "new",
             "state": "off",
             "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
         response = requests.put(VM_RES_ENDPOINT, json=vm_request_body)
 
@@ -372,7 +386,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID),
             "name": "test",
             "state": "on",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
         POWERON_ACT_ENDPOINT = self.get_endpoint(TEMPL_POWERON_ACTION_ENDPOINT,
                                                  RESOURCE_ID)
@@ -391,12 +407,16 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID1),
             "name": "test1",
             "state": "off",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }, {
             "uuid": str(RESOURCE_ID2),
             "name": "test2",
             "state": "on",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }]
 
         response = requests.get(self.get_endpoint(
@@ -452,7 +472,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID2),
             "name": "test2",
             "state": "on",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }]
 
         response = requests.get(self.get_endpoint("%s?uuid=%s" % (
@@ -495,12 +517,16 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "uuid": str(RESOURCE_ID1),
             "name": "test1",
             "state": "off",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }, {
             "uuid": str(RESOURCE_ID3),
             "name": "test3",
             "state": "off",
-            "status": "active"
+            "status": "active",
+            "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+            "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }]
 
         response = requests.get(self.get_endpoint("%s?uuid=%s&uuid=%s" % (

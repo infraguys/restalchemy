@@ -167,7 +167,7 @@ class ResourceRAProperty(ResourceProperty):
         return self._prop_type.from_unicode(value)
 
     def dump_value(self, value):
-        return self._prop_type.to_simple_type(value)
+        return self._prop_type.dump_value(value)
 
 
 class ResourceRelationship(AbstractResourceProperty):
