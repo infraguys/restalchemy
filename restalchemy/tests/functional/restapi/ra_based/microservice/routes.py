@@ -57,8 +57,11 @@ class NotImplementedAction(routes.Action):
 
 class NotImplementedMethodsRoute(routes.Route):
     __controller__ = controllers.NotImplementedMethodsController
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
-                         routes.UPDATE, routes.DELETE]
+    __allow_methods__ = [routes.CREATE,
+                         routes.FILTER,
+                         routes.GET,
+                         # routes.UPDATE,  not allowed
+                         routes.DELETE]
     not_implemented_action = routes.action(NotImplementedAction, invoke=True)
 
 

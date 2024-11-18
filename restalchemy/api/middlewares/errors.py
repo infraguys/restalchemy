@@ -32,8 +32,9 @@ LOG = logging.getLogger(__name__)
 
 
 def exception2dict(exception):
-    code = (UNKNOWN_ERROR_CODE if not hasattr(exception, 'get_code') else
-            exception.get_code())
+    code = (exception.get_code() if hasattr(exception, 'get_code') else
+            exception.code if hasattr(exception, 'code') else
+            UNKNOWN_ERROR_CODE)
     message = (exception.msg if hasattr(exception, 'msg') else
                exception.message if hasattr(exception, 'message') else
                str(exception))

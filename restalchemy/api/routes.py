@@ -529,8 +529,7 @@ class Route(BaseRoute):
                 # Resource method
                 return worker.do_resource(name, parent_resource)
             else:
-                raise exc.UnsupportedMethod(method=ctrl_method,
-                                            object_name=name)
+                raise exc.UnsupportedHttpMethod(method=ctrl_method)
 
         elif (name != '' and path is not None and self.is_route(name)):
             # Next route

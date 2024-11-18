@@ -94,7 +94,7 @@ DEADLOCK_RESPONSE = {
     "type": "DeadLock",
     "message": "Deadlock found when trying to get lock. Original message: "
                "fake deadlock",
-    "code": 10000001,
+    "code": 500,
 }
 
 
@@ -202,14 +202,14 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         )
         response = requests.post(endpoint, json={})
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 501)
         resp = response.json()
         # Not implemented (method create in NotImplementedMethodsController).
         self.assertIn("create", resp["message"])
 
         response = requests.get(endpoint)
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 501)
         resp = response.json()
         self.assertEqual(resp["message"], "Not implemented.")
 
@@ -217,15 +217,16 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         response = requests.put(uuid_endpoint, json={})
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 405)
         resp = response.json()
 
-        # Not implemented (method update in NotImplementedMethodsController).
-        self.assertIn("update", resp["message"])
+        # Not allowed (method update in NotImplementedMethodsController).
+        self.assertEqual("HTTP method 'UPDATE' is not supported.",
+                         resp["message"])
 
         response = requests.delete(uuid_endpoint)
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 501)
         resp = response.json()
 
         # Not implemented (method delete in NotImplementedMethodsController).
