@@ -35,6 +35,12 @@ class RestAlchemyException(Exception):
     def __repr__(self):
         return "Code: %s, Message: %s" % (self.code, self.msg)
 
+    def get_code(self):
+        """
+        This method is used in exception2dict function
+        """
+        return self.code
+
 
 class PropertyNotFoundError(RestAlchemyException):
 
@@ -48,10 +54,11 @@ class NotFoundError(RestAlchemyException):
     code = 404
 
 
-class NotImplementedError(NotFoundError):
+class NotImplementedError(RestAlchemyException):
 
     base_message = "Not implemented."
     message = "Not implemented ('%(msg)s')."
+    code = 501
 
     def __init__(self, **kwargs):
         if "msg" not in kwargs:
