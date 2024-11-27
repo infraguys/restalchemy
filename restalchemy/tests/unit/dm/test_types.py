@@ -591,6 +591,9 @@ class UTCDateTimeTestCase(base.BaseTestCase):
 
         self.assertEqual(result, expected)
 
+        result = dt_type.from_simple_type(expected)
+        self.assertEqual(result, dt)
+
 
 class EnumTestCase(base.BaseTestCase):
 
