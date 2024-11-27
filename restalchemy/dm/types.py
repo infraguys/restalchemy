@@ -530,8 +530,7 @@ class TypedDict(Dict):
                         prop_kwargs):
         spec = {
             "type": self._openapi_type,
-            "additionalProperties": self._nested_type.to_openapi_spec(
-                prop_kwargs)
+            "additionalProperties": self._nested_type.to_openapi_spec({})
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
@@ -559,7 +558,16 @@ class UTCDateTime(BasePythonType):
     def from_simple_type(self, value):
         if isinstance(value, datetime.datetime):
             return value
-        return datetime.datetime.strptime(value, MYSQL_DATETIME_FMT)
+        try:
+            return datetime.datetime.strptime(value, MYSQL_DATETIME_FMT)
+        except ValueError:
+            # Used in cases, than we manually convert openapi string in
+            # http response to ra type in model
+            return datetime.datetime.strptime(
+                datetime.datetime.strptime(
+                    value, OPENAPI_DATETIME_FMT).strftime(MYSQL_DATETIME_FMT),
+                MYSQL_DATETIME_FMT
+            )
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
