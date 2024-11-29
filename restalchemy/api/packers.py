@@ -86,7 +86,8 @@ class BaseResourcePacker(object):
             prop_value = value.pop(api_name, DEFAULT_VALUE)
             if prop_value is not DEFAULT_VALUE:
                 if not prop.is_public():
-                    raise ValueError("Property %s is private" % api_name)
+                    raise exceptions.ValidationPropertyPrivateError(
+                        property=api_name)
 
                 if self._rt._fields_permissions.is_readonly(self._req, name):
                     raise exceptions.FieldPermissionError(

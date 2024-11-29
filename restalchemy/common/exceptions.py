@@ -192,6 +192,11 @@ class ValidationErrorException(RestAlchemyException):
     code = 400
 
 
+class ValidationPropertyPrivateError(ValidationErrorException):
+
+    message = "Property %(property)s is private"
+
+
 class NotEqualUuidException(RestAlchemyException):
 
     message = ("Uuid (%(uuid)s) in body is not equal to "
