@@ -1,8 +1,8 @@
 REST Alchemy
 ============
 
-.. image:: https://travis-ci.org/phantomii/restalchemy.svg?branch=master
-    :target: https://travis-ci.org/phantomii/restalchemy
+.. image:: https://github.com/infraguys/restalchemy/actions/workflows/tests.yml/badge.svg
+    :target: https://github.com/infraguys/restalchemy/actions/workflows/tests.yml
 
 The Python REST HTTP Toolkit and Object Relational Mapper.
 
