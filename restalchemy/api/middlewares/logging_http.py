@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2022 George Melikov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,14 +39,19 @@ class LoggingHttpMiddleware(middlewares.Middleware):
 
     @staticmethod
     def _make_message(start, req, res):
-        referer = req.referer or '-'
+        referer = req.referer or "-"
         duration = datetime.datetime.now() - start
         td_ms = int(duration.total_seconds() * 1000)
 
         return '%s "%s %s" %s %s "%s" "%s" %s' % (
-            req.client_addr, req.method, req.url,
-            res.status_code, res.content_length,
-            referer, req.user_agent, td_ms
+            req.client_addr,
+            req.method,
+            req.url,
+            res.status_code,
+            res.content_length,
+            referer,
+            req.user_agent,
+            td_ms,
         )
 
     def process_request(self, req):

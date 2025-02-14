@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2018 Eugene Frolov
 #
 # All Rights Reserved.

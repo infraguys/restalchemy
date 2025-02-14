@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2021 George Melikov.
 #
 #
@@ -70,12 +68,16 @@ class TableAlias(BaseAlias):
         return ColumnAlias(column, "%s_%s" % (self.name, column.name))
 
     def get_columns(self, with_prefetch=True, wrap_alias=True):
-        return [self.get_column_by_name(col.name, wrap_alias)
-                for col in self._clause.get_columns(with_prefetch)]
+        return [
+            self.get_column_by_name(col.name, wrap_alias)
+            for col in self._clause.get_columns(with_prefetch)
+        ]
 
     def get_prefetch_columns(self, wrap_alias=True):
-        return [self.get_column_by_name(col.name, wrap_alias)
-                for col in self._clause.get_prefetch_columns()]
+        return [
+            self.get_column_by_name(col.name, wrap_alias)
+            for col in self._clause.get_prefetch_columns()
+        ]
 
     def get_column_by_name(self, name, wrap_alias=True):
         result = ColumnFullPath(self, self._clause.get_column_by_name(name))
@@ -125,5 +127,7 @@ class ColumnFullPath(AbstractClause):
         return self.name
 
     def compile(self):
-        return "%s.%s" % (utils.escape(self._table.name),
-                          self._column.compile())
+        return "%s.%s" % (
+            utils.escape(self._table.name),
+            self._column.compile(),
+        )

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2021 Eugene Frolov.
 #
 #
@@ -51,12 +49,18 @@ class Table(common.AbstractClause):
         return ordered_result
 
     def get_columns(self, with_prefetch=True):
-        return [column for column in self._columns.values()
-                if not column.model_property.is_prefetch() or with_prefetch]
+        return [
+            column
+            for column in self._columns.values()
+            if not column.model_property.is_prefetch() or with_prefetch
+        ]
 
     def get_prefetch_columns(self):
-        return [column for column in self._columns.values()
-                if column.model_property.is_prefetch()]
+        return [
+            column
+            for column in self._columns.values()
+            if column.model_property.is_prefetch()
+        ]
 
     def get_column_by_name(self, name):
         return self._columns[name]
@@ -82,7 +86,7 @@ class For(common.AbstractClause):
         self._is_share = share
 
     def compile(self):
-        return "FOR %s" % ('SHARE' if self._is_share else 'UPDATE')
+        return "FOR %s" % ("SHARE" if self._is_share else "UPDATE")
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -97,8 +101,10 @@ class Criteria(common.AbstractClause):
 class EQCriteria(Criteria):
 
     def compile(self):
-        return "%s = %s" % (self._clause1.original.compile(),
-                            self._clause2.original.compile())
+        return "%s = %s" % (
+            self._clause1.original.compile(),
+            self._clause2.original.compile(),
+        )
 
 
 class On(common.AbstractClause):
@@ -127,13 +133,13 @@ class LeftJoin(common.AbstractClause):
 
 
 class OrderByValue(common.AbstractClause):
-    SORT_TYPES = frozenset(('ASC', 'DESC'))
+    SORT_TYPES = frozenset(("ASC", "DESC"))
 
     def __init__(self, column, sort_type=None):
         super(OrderByValue, self).__init__()
         self._column = column
         if not sort_type:
-            self._sort_type = 'ASC'
+            self._sort_type = "ASC"
         else:
             self._sort_type = sort_type.upper()
             if self._sort_type not in self.SORT_TYPES:
@@ -192,7 +198,8 @@ class SelectQ(common.AbstractClause):
         self._autoinc_lock = threading.RLock()
         self._result_parser = ResultParser()
         self._model_table = common.TableAlias(
-            Table(model), self._build_table_alias_name(),
+            Table(model),
+            self._build_table_alias_name(),
         )
         self._select_expressions = []
         self._table_references = [self._model_table]  # type: list
@@ -217,14 +224,15 @@ class SelectQ(common.AbstractClause):
             # Search primary key column
             id_properties = dep_model.get_id_property()
             if len(id_properties) != 1:
-                msg = ("Can't automatic resolve dependency for %s table"
-                       " because the number of fields for primary keys (%r)"
-                       " of model (%r) is not equal to 1.") % (table.name,
-                                                               id_properties,
-                                                               dep_model)
+                msg = (
+                    "Can't automatic resolve dependency for %s table"
+                    " because the number of fields for primary keys (%r)"
+                    " of model (%r) is not equal to 1."
+                ) % (table.name, id_properties, dep_model)
                 raise ValueError(msg)
             alias = common.TableAlias(
-                Table(dep_model), self._build_table_alias_name(),
+                Table(dep_model),
+                self._build_table_alias_name(),
             )
             id_column = alias.get_column_by_name(list(id_properties.keys())[0])
 
@@ -243,21 +251,25 @@ class SelectQ(common.AbstractClause):
 
             # Processing parent model to resolve dependencies
             self._resolve_model_dependency(
-                table=alias, result_parser_node=node,
+                table=alias,
+                result_parser_node=node,
             )
 
     def _add_column_to_select_expressions(self, result_parser_node, columns):
         for column in columns:
             result_parser_node.add_child_field(
-                column.original_name, column.name,
+                column.original_name,
+                column.name,
             )
             self._select_expressions.append(column)
         return self._select_expressions
 
     @staticmethod
     def _wrap_alias(table, fields):
-        return [common.ColumnAlias(field, "%s_%s" % (table.name, field.name))
-                for field in fields]
+        return [
+            common.ColumnAlias(field, "%s_%s" % (table.name, field.name))
+            for field in fields
+        ]
 
     def where(self, filters=None):
         self._where_expression.extend_clauses(
@@ -273,7 +285,7 @@ class SelectQ(common.AbstractClause):
         self._for_expression = For(share)
         return self
 
-    def order_by(self, property_name, sort_type='ASC'):
+    def order_by(self, property_name, sort_type="ASC"):
         column = self._model_table.get_column_by_name(property_name)
         self._order_by_expressions.append(OrderByValue(column, sort_type))
         return self
@@ -294,10 +306,9 @@ class SelectQ(common.AbstractClause):
         )
         where_expressions = self._where_expression.construct_expression()
         if where_expressions:
-            expression += (
-                " WHERE " + where_expressions)
+            expression += " WHERE " + where_expressions
         if self._order_by_expressions:
-            expression += " ORDER BY %s" % ", ". join(
+            expression += " ORDER BY %s" % ", ".join(
                 [exp.compile() for exp in self._order_by_expressions]
             )
         if self._limit_condition:

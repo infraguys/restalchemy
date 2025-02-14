@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2021 Eugene Frolov.
 #
 # All Rights Reserved.
@@ -26,7 +24,7 @@ from restalchemy.storage.sql.dialect.query_builder import q
 
 
 class SimpleModel(models.ModelWithUUID):
-    __tablename__ = 'simple_table'
+    __tablename__ = "simple_table"
 
     field_str = properties.property(types.String())
     field_int = properties.property(types.Integer())
@@ -43,9 +41,9 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         super(MySQLQueryBuilderTestCase, self).setUp()
         self.Q = q.Q
         self.flt = filters.AND(
-            {'field_bool': filters.EQ(True)},
-            {'field_int': filters.EQ(0)},
-            {'field_str': filters.EQ('FAKE_STR')},
+            {"field_bool": filters.EQ(True)},
+            {"field_int": filters.EQ(0)},
+            {"field_str": filters.EQ("FAKE_STR")},
         )
 
     def tearDown(self):
@@ -63,7 +61,7 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " `t1`.`uuid` AS `t1_uuid`"
             " FROM"
             " `simple_table` AS `t1`",
-            result
+            result,
         )
 
     def test_select_with_filters(self):
@@ -84,15 +82,12 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " (`t1`.`field_bool` = %s AND"
             " `t1`.`field_int` = %s AND"
             " `t1`.`field_str` = %s)",
-            result_expression
+            result_expression,
         )
-        self.assertEqual(
-            [True, 0, 'FAKE_STR'],
-            result_values
-        )
+        self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
     def test_select_two_where_clause(self):
-        second_filter = filters.AND({'field_str': filters.EQ('FAKE_STR_TWO')})
+        second_filter = filters.AND({"field_str": filters.EQ("FAKE_STR_TWO")})
         query = self.Q.select(SimpleModel).where(self.flt).where(second_filter)
 
         result_expression = query.compile()
@@ -111,12 +106,9 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " `t1`.`field_int` = %s AND"
             " `t1`.`field_str` = %s AND"
             " `t1`.`field_str` = %s)",
-            result_expression
+            result_expression,
         )
-        self.assertEqual(
-            [True, 0, 'FAKE_STR', 'FAKE_STR_TWO'],
-            result_values
-        )
+        self.assertEqual([True, 0, "FAKE_STR", "FAKE_STR_TWO"], result_values)
 
     def test_select_with_filters_and_limit(self):
         query = self.Q.select(SimpleModel).where(self.flt).limit(2)
@@ -137,12 +129,9 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " `t1`.`field_int` = %s AND"
             " `t1`.`field_str` = %s) "
             "LIMIT 2",
-            result_expression
+            result_expression,
         )
-        self.assertEqual(
-            [True, 0, 'FAKE_STR'],
-            result_values
-        )
+        self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
     def test_select_lock_with_filters(self):
         query = self.Q.select(SimpleModel).where(self.flt).for_()
@@ -163,12 +152,9 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " `t1`.`field_int` = %s AND"
             " `t1`.`field_str` = %s) "
             "FOR UPDATE",
-            result_expression
+            result_expression,
         )
-        self.assertEqual(
-            [True, 0, 'FAKE_STR'],
-            result_values
-        )
+        self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
     def test_select_lock_with_filters_and_limit(self):
         query = self.Q.select(SimpleModel).where(self.flt).for_().limit(2)
@@ -190,17 +176,15 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " `t1`.`field_str` = %s) "
             "LIMIT 2 "
             "FOR UPDATE",
-            result_expression
+            result_expression,
         )
-        self.assertEqual(
-            [True, 0, 'FAKE_STR'],
-            result_values
-        )
+        self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
     def test_select_order_by_with_filters(self):
-        query = self.Q.select(SimpleModel).where(self.flt).order_by(
-            'field_str')
-        query = query.order_by('field_int', 'DESC')
+        query = (
+            self.Q.select(SimpleModel).where(self.flt).order_by("field_str")
+        )
+        query = query.order_by("field_int", "DESC")
 
         result_expression = query.compile()
         result_values = query.values()
@@ -220,12 +204,9 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             "ORDER BY"
             " `t1_field_str` ASC,"
             " `t1_field_int` DESC",
-            result_expression
+            result_expression,
         )
-        self.assertEqual(
-            [True, 0, 'FAKE_STR'],
-            result_values
-        )
+        self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
 
 class MySQLResultParserTestCase(unittest.TestCase):

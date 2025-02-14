@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2021 Eugene Frolov.
 #
 #
@@ -44,13 +42,13 @@ class WithDbMigrationsCountTestCase(base.BaseWithDbMigrationsTestCase):
     def test_count_filter_single_row(self):
         target_cnt = 1
 
-        cnt = CountModel.objects.count(filters={'foo_field2': 'value2'})
+        cnt = CountModel.objects.count(filters={"foo_field2": "value2"})
 
         self.assertEqual(target_cnt, cnt)
 
     def test_count_filter_many_rows(self):
         target_cnt = 2
 
-        cnt = CountModel.objects.count(filters={'foo_field1': filters.GT(2)})
+        cnt = CountModel.objects.count(filters={"foo_field1": filters.GT(2)})
 
         self.assertEqual(target_cnt, cnt)

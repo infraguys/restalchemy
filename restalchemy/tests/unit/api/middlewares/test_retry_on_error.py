@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2023 Aleksandr Bochkarev
 #
 # All Rights Reserved.
@@ -40,7 +38,8 @@ class RetryOnErrorMiddlewareTestCase(base.BaseTestCase):
 
     def get_middlew(self, exc=FakeDeadLock, call_count=None):
         return retry_on_error.RetryOnErrorsMiddleware(
-            self.app, exc, call_count or self.call_count)
+            self.app, exc, call_count or self.call_count
+        )
 
     def test_retry_on_deadlock_exc(self):
         request_mock = mock.Mock(spec=request.Request)

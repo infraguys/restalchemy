@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,24 +22,24 @@ from restalchemy.dm import properties
 
 
 def relationship(property_type, *args, **kwargs):
-    prefetch = kwargs.get('prefetch', False)
+    prefetch = kwargs.get("prefetch", False)
     for arg in args:
         if not issubclass(arg, models.Model):
             raise exc.RelationshipModelError(model=arg)
-    kwargs['property_class'] = kwargs.get(
-        'property_class',
+    kwargs["property_class"] = kwargs.get(
+        "property_class",
         PrefetchRelationship if prefetch else Relationship,
     )
     return properties.property(property_type=property_type, *args, **kwargs)
 
 
 def required_relationship(property_type, *args, **kwargs):
-    kwargs['required'] = True
+    kwargs["required"] = True
     return relationship(property_type, *args, **kwargs)
 
 
 def readonly_relationship(property_type, *args, **kwargs):
-    kwargs['read_only'] = True
+    kwargs["read_only"] = True
     return required_relationship(property_type, *args, **kwargs)
 
 
@@ -51,19 +50,27 @@ class BaseRelationship(properties.AbstractProperty):
 
 class Relationship(BaseRelationship):
 
-    def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None):
+    def __init__(
+        self,
+        property_type,
+        default=None,
+        required=False,
+        read_only=False,
+        value=None,
+    ):
         if value and not isinstance(value, property_type):
-            raise TypeError("Expected '%s' type; value: %r"
-                            % (property_type, value))
+            raise TypeError(
+                "Expected '%s' type; value: %r" % (property_type, value)
+            )
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
         self._default = None
         if default:
             default = default() if callable(default) else default
-            self._default = (default()) if callable(
-                default) else self._safe_value(default)
+            self._default = (
+                (default()) if callable(default) else self._safe_value(default)
+            )
         self._value = value
         self.__first_value = self.value
 

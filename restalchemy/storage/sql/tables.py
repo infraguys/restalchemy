@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2020 Eugene Frolov.
 #
 #
@@ -18,7 +16,7 @@
 from restalchemy.storage.sql import utils
 
 
-OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = 'table'
+OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = "table"
 
 
 class SQLTable(object):
@@ -43,8 +41,12 @@ class SQLTable(object):
         return result
 
     def get_escaped_column_names(self, with_pk=True, do_sort=True):
-        return [utils.escape(column_name) for column_name in
-                self.get_column_names(with_pk=with_pk, do_sort=do_sort)]
+        return [
+            utils.escape(column_name)
+            for column_name in self.get_column_names(
+                with_pk=with_pk, do_sort=do_sort
+            )
+        ]
 
     def get_pk_names(self, do_sort=True):
         result = []
@@ -56,8 +58,10 @@ class SQLTable(object):
         return result
 
     def get_escaped_pk_names(self, do_sort=True):
-        return [utils.escape(column_name) for column_name in self.get_pk_names(
-            do_sort=do_sort)]
+        return [
+            utils.escape(column_name)
+            for column_name in self.get_pk_names(do_sort=do_sort)
+        ]
 
     @property
     def name(self):
@@ -75,8 +79,9 @@ class SQLTable(object):
         cmd = engine.dialect.delete(table=self, ids=ids)
         return cmd.execute(session=session)
 
-    def select(self, engine, filters, session,
-               limit=None, order_by=None, locked=False):
+    def select(
+        self, engine, filters, session, limit=None, order_by=None, locked=False
+    ):
         """
 
         Warning: query with and w/o (limit or group_by) won't flush each other
@@ -96,8 +101,16 @@ class SQLTable(object):
         cmd = engine.dialect.orm_command(table=self, query=q)
         return cmd.execute(session=session)
 
-    def custom_select(self, engine, where_conditions, where_values,
-                      session, limit=None, order_by=None, locked=False):
+    def custom_select(
+        self,
+        engine,
+        where_conditions,
+        where_values,
+        session,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
         cmd = engine.dialect.custom_select(
             table=self,
             where_conditions=where_conditions,

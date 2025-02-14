@@ -40,7 +40,7 @@ class FooModel(models.ModelWithUUID, orm.SQLStorableMixin):
 # storage operations without session parameter.
 engines.engine_factory.configure_factory(
     db_url="mysql://user:password@127.0.0.1:3306/test",
-    name='default',  # name argument by default is 'default' and can be skipped
+    name="default",  # name argument by default is 'default' and can be skipped
 )
 
 # db_one engine is not equal default engine because it has separate connection
@@ -49,15 +49,15 @@ engines.engine_factory.configure_factory(
 # will working with session from thread storage by default.
 engines.engine_factory.configure_factory(
     db_url="mysql://user:password@127.0.0.1:3306/test",
-    name='db_one',  # by default name is 'default'
+    name="db_one",  # by default name is 'default'
 )
 engines.engine_factory.configure_factory(
     db_url="mysql://user:password@127.0.0.1:3307/test",
-    name='db_two',  # by default name is 'default'
+    name="db_two",  # by default name is 'default'
 )
 
-engine_one = engines.engine_factory.get_engine('db_one')
-engine_two = engines.engine_factory.get_engine('db_two')
+engine_one = engines.engine_factory.get_engine("db_one")
+engine_two = engines.engine_factory.get_engine("db_two")
 
 session_one = engine_one.get_session()
 session_two = engine_two.get_session()
@@ -92,14 +92,14 @@ with engine_two.session_manager() as session:
 
 
 # The next expressions is correct
-context_two = contexts.Context(engine_name='db_two')
+context_two = contexts.Context(engine_name="db_two")
 with context_two.session_manager() as session:
     six.print_("Correct input for storage two for context session:")
     six.print_(FooModel.objects.get_all())
 
 
 # But you can not create two active session from context
-context_one = contexts.Context(engine_name='db_one')
+context_one = contexts.Context(engine_name="db_one")
 with context_two.session_manager() as session_2:
 
     try:

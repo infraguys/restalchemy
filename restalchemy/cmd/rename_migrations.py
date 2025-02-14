@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2023 George Melikov
 #
 # All Rights Reserved.
@@ -30,7 +28,7 @@ from restalchemy.storage.sql import migrations
 def suggest_filename(file, migration_files):
     index = "{:04d}".format(migration_files["index"])
     filename = file.rstrip(".py")
-    uuid = migration_files["uuid"].split('-')[0][:6]
+    uuid = migration_files["uuid"].split("-")[0][:6]
 
     if not migration_files["is_manual"]:
         result = "{}-{}-{}.py".format(index, filename, uuid)
@@ -41,8 +39,12 @@ def suggest_filename(file, migration_files):
 
 
 cmd_opts = [
-    cfg.StrOpt('path', required=True, short="p",
-               help="Path to migrations folder"),
+    cfg.StrOpt(
+        "path",
+        required=True,
+        short="p",
+        help="Path to migrations folder",
+    ),
 ]
 
 CONF = cfg.CONF
@@ -64,23 +66,28 @@ def main():
 
         logging.info("Renaming %s to %s", file, suggested_name)
 
-        os.rename(os.path.join(CONF.path, file),
-                  os.path.join(CONF.path, suggested_name))
+        os.rename(
+            os.path.join(CONF.path, file),
+            os.path.join(CONF.path, suggested_name),
+        )
 
         if not migration_files[file]["depends"]:
             continue
 
-        with open(os.path.join(CONF.path,
-                               suggested_name), "r+") as f:
+        with open(os.path.join(CONF.path, suggested_name), "r+") as f:
             content = f.read()
 
             for d in migration_files[file]["depends"]:
-                suggested_depends_name = suggest_filename(d,
-                                                          migration_files[d])
-                logging.info("Renaming depends %s to %s", d,
-                             suggested_depends_name)
-                content = content.replace(
-                    d, suggested_depends_name)
+                suggested_depends_name = suggest_filename(
+                    d,
+                    migration_files[d],
+                )
+                logging.info(
+                    "Renaming depends %s to %s",
+                    d,
+                    suggested_depends_name,
+                )
+                content = content.replace(d, suggested_depends_name)
 
             f.seek(0)
 

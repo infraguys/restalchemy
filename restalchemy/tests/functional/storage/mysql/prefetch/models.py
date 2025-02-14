@@ -24,47 +24,47 @@ from restalchemy.storage.sql import orm
 
 # root table
 FAKE_ROOT_INT = 0
-FAKE_ROOT_STR = 'root'
+FAKE_ROOT_STR = "root"
 FAKE_ROOT_BOOL = True
 
 # lnp1_1 table
 FAKE_LNP1_1_INT = 11
-FAKE_LNP1_1_STR = 'lnp1_1'
+FAKE_LNP1_1_STR = "lnp1_1"
 FAKE_LNP1_1_BOOL = True
 
 # lnp1_2 table
 FAKE_LNP1_2_INT = 12
-FAKE_LNP1_2_STR = 'lnp1_2'
+FAKE_LNP1_2_STR = "lnp1_2"
 FAKE_LNP1_2_BOOL = True
 
 # lwp1_1 table
 FAKE_LWP1_1_INT = 111
-FAKE_LWP1_1_STR = 'lwp1_1'
+FAKE_LWP1_1_STR = "lwp1_1"
 FAKE_LWP1_1_BOOL = True
 
 # lwp1_2 table
 FAKE_LWP1_2_INT = 112
-FAKE_LWP1_2_STR = 'lwp1_2'
+FAKE_LWP1_2_STR = "lwp1_2"
 FAKE_LWP1_2_BOOL = True
 
 # lwp2_1 table
 FAKE_LWP2_1_INT = 21
-FAKE_LWP2_1_STR = 'lwp2_1'
+FAKE_LWP2_1_STR = "lwp2_1"
 FAKE_LWP2_1_BOOL = True
 
 # lwp2_2 table
 FAKE_LWP2_2_INT = 22
-FAKE_LWP2_2_STR = 'lwp2_2'
+FAKE_LWP2_2_STR = "lwp2_2"
 FAKE_LWP2_2_BOOL = True
 
 # lwp2_3 table
 FAKE_LWP2_3_INT = 23
-FAKE_LWP2_3_STR = 'lwp2_3'
+FAKE_LWP2_3_STR = "lwp2_3"
 FAKE_LWP2_3_BOOL = True
 
 # lwp2_4 table
 FAKE_LWP2_4_INT = 24
-FAKE_LWP2_4_STR = 'lwp2_4'
+FAKE_LWP2_4_STR = "lwp2_4"
 FAKE_LWP2_4_BOOL = True
 
 
@@ -74,13 +74,28 @@ OBJECT_COLLECTION_MOCK = mock.Mock(spec=orm.ObjectCollection)
 
 class ObjectCollection(orm.ObjectCollection):
 
-    def get_all(self, filters=None, session=None, cache=False, limit=None,
-                order_by=None, locked=False):
-        OBJECT_COLLECTION_MOCK.get_all(filters=filters, session=session,
-                                       cache=cache, limit=limit,
-                                       order_by=order_by, locked=locked)
+    def get_all(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
+        OBJECT_COLLECTION_MOCK.get_all(
+            filters=filters,
+            session=session,
+            cache=cache,
+            limit=limit,
+            order_by=order_by,
+            locked=locked,
+        )
         return super(ObjectCollection, self).get_all(
-            filters=filters, session=session, limit=limit, order_by=order_by,
+            filters=filters,
+            session=session,
+            limit=limit,
+            order_by=order_by,
             locked=locked,
         )
 

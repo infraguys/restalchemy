@@ -23,12 +23,12 @@ from restalchemy.storage.sql import orm
 from restalchemy.tests.functional import base
 
 
-FAKE_UUID_1 = uuid.UUID('63cf2e1a-4f1f-11ec-8f05-1bfa6ad82a13')
-FAKE_UUID_2 = uuid.UUID('78e4a492-4f1f-11ec-abd3-c362c434cef3')
+FAKE_UUID_1 = uuid.UUID("63cf2e1a-4f1f-11ec-8f05-1bfa6ad82a13")
+FAKE_UUID_2 = uuid.UUID("78e4a492-4f1f-11ec-abd3-c362c434cef3")
 
 
 class BinaryField(models.ModelWithUUID, orm.SQLStorableMixin):
-    __tablename__ = 'binary_data'
+    __tablename__ = "binary_data"
 
     data = properties.property(ra_types.String(), required=True)
 
@@ -41,7 +41,7 @@ class Bug29808262TestCase(base.BaseWithDbMigrationsTestCase):
     def test_blob_like_string(self):
         target = BinaryField(
             uuid=FAKE_UUID_1,
-            data='aaa' * 1024,
+            data="aaa" * 1024,
         )
         target.insert()
 
@@ -52,7 +52,7 @@ class Bug29808262TestCase(base.BaseWithDbMigrationsTestCase):
     def test_blob_like_float_bug29808262(self):
         target = BinaryField(
             uuid=FAKE_UUID_1,
-            data='2' * 1024,
+            data="2" * 1024,
         )
         target.insert()
 

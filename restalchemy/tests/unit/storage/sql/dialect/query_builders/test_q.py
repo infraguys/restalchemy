@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2021 George Melikov.
 #
 # All Rights Reserved.
@@ -24,23 +22,23 @@ from restalchemy.storage.sql.dialect.query_builder import q
 
 class TestOrderByValue(unittest.TestCase):
     def setUp(self):
-        self.column = common.Column('1', None)
+        self.column = common.Column("1", None)
 
     def test_empty_type(self):
         order = q.OrderByValue(self.column)
 
-        self.assertEqual('`1` ASC', order.compile())
+        self.assertEqual("`1` ASC", order.compile())
 
     def test_valid_type(self):
-        order = q.OrderByValue(self.column, sort_type='DESC')
+        order = q.OrderByValue(self.column, sort_type="DESC")
 
-        self.assertEqual('`1` DESC', order.compile())
+        self.assertEqual("`1` DESC", order.compile())
 
     def test_invalid_type(self):
         with self.assertRaises(ValueError):
-            q.OrderByValue(self.column, sort_type='WRONG')
+            q.OrderByValue(self.column, sort_type="WRONG")
 
     def test_valid_type_lowercase(self):
-        order = q.OrderByValue(self.column, sort_type='desc')
+        order = q.OrderByValue(self.column, sort_type="desc")
 
-        self.assertEqual('`1` DESC', order.compile())
+        self.assertEqual("`1` DESC", order.compile())

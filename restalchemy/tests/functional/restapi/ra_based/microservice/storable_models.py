@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -18,8 +16,7 @@
 
 from restalchemy.dm import relationships
 from restalchemy.storage.sql import orm
-from restalchemy.tests.functional.restapi.ra_based.microservice import (
-    models)
+from restalchemy.tests.functional.restapi.ra_based.microservice import models
 
 
 class VM(models.VM, orm.SQLStorableMixin):

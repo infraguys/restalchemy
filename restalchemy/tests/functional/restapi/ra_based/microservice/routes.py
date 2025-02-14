@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -18,35 +16,56 @@
 from restalchemy.api import routes
 from restalchemy.openapi import structures
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
-    controllers)
+    controllers,
+)
 
 
 class TagRoute(routes.Route):
     __controller__ = controllers.TagController
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
-                         routes.UPDATE, routes.DELETE]
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.FILTER,
+        routes.GET,
+        routes.UPDATE,
+        routes.DELETE,
+    ]
 
 
 class IpAddress(routes.Route):
     __controller__ = controllers.IpAddressController
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
-                         routes.DELETE]
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.FILTER,
+        routes.GET,
+        routes.DELETE,
+    ]
     __tags__ = ["IpAddress_tag"]
 
 
 class PortRoute(routes.Route):
     __controller__ = controllers.PortController
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
-                         routes.UPDATE, routes.DELETE]
-    __tags__ = [structures.OpenApiTag(name="PortTestTag",
-                                      description="port_descr")]
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.FILTER,
+        routes.GET,
+        routes.UPDATE,
+        routes.DELETE,
+    ]
+    __tags__ = [
+        structures.OpenApiTag(name="PortTestTag", description="port_descr")
+    ]
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
 class PortRouteNone(routes.Route):
     __controller__ = controllers.PortControllerNone
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
-                         routes.UPDATE, routes.DELETE]
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.FILTER,
+        routes.GET,
+        routes.UPDATE,
+        routes.DELETE,
+    ]
 
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
@@ -57,11 +76,13 @@ class NotImplementedAction(routes.Action):
 
 class NotImplementedMethodsRoute(routes.Route):
     __controller__ = controllers.NotImplementedMethodsController
-    __allow_methods__ = [routes.CREATE,
-                         routes.FILTER,
-                         routes.GET,
-                         # routes.UPDATE,  not allowed
-                         routes.DELETE]
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.FILTER,
+        routes.GET,
+        # routes.UPDATE,  not allowed
+        routes.DELETE,
+    ]
     not_implemented_action = routes.action(NotImplementedAction, invoke=True)
 
 
@@ -83,8 +104,13 @@ class VMPowerOffAction(routes.Action):
 
 class VMRoute(routes.Route):
     __controller__ = controllers.VMController
-    __allow_methods__ = [routes.CREATE, routes.GET, routes.DELETE,
-                         routes.FILTER, routes.UPDATE]
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.GET,
+        routes.DELETE,
+        routes.FILTER,
+        routes.UPDATE,
+    ]
 
     power = routes.action(VMPowerAction, invoke=True)
     power_state = routes.action(VMPowerStateAction, invoke=False)

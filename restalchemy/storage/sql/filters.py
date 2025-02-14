@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2018 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -47,9 +45,11 @@ class AbstractClause(object):
 
     @property
     def column(self):
-        return (self._column.compile()
-                if isinstance(self._column, common.ColumnFullPath)
-                else self._column)
+        return (
+            self._column.compile()
+            if isinstance(self._column, common.ColumnFullPath)
+            else self._column
+        )
 
     @abc.abstractmethod
     def construct_expression(self):
@@ -173,11 +173,16 @@ class ClauseList(AbstractExpression):
 
     def construct_expression(self):
         return (
-            "("
-            + (" " + self.operator + " ").join(
-                val.construct_expression() for val in self._clauses)
-            + ")"
-        ) if self._clauses else ""
+            (
+                "("
+                + (" " + self.operator + " ").join(
+                    val.construct_expression() for val in self._clauses
+                )
+                + ")"
+            )
+            if self._clauses
+            else ""
+        )
 
 
 class AND(ClauseList):
@@ -253,28 +258,38 @@ def iterate_filters(model, filter_list):
         clauses = []
         for name, filt in filter_list.items():
             if isinstance(model, common.TableAlias):
-                value_type = (model.original.model.properties.properties[name]
-                              .get_property_type()) or AsIsType()
+                value_type = (
+                    model.original.model.properties.properties[
+                        name
+                    ].get_property_type()
+                ) or AsIsType()
                 column = model.get_column_by_name(
-                    name, wrap_alias=False,
+                    name,
+                    wrap_alias=False,
                 )
             else:
-                value_type = (model.properties.properties[name]
-                              .get_property_type()) or AsIsType()
+                value_type = (
+                    model.properties.properties[name].get_property_type()
+                ) or AsIsType()
                 column = utils.escape(name)
             # Make API compatible with previous versions.
             if not isinstance(filt, filters.AbstractClause):
-                LOG.warning("DEPRECATED: pleases use %s wrapper for filter "
-                            "value", filters.EQ)
+                LOG.warning(
+                    "DEPRECATED: pleases use %s wrapper for filter " "value",
+                    filters.EQ,
+                )
                 clauses.append(EQ(column, value_type, filt))
                 continue
 
             try:
-                clauses.append(FILTER_MAPPING[type(filt)](
-                    column, value_type, filt.value))
+                clauses.append(
+                    FILTER_MAPPING[type(filt)](column, value_type, filt.value)
+                )
             except KeyError:
-                raise ValueError("Can't convert API filter to SQL storage "
-                                 "filter. Unknown filter %s" % filt)
+                raise ValueError(
+                    "Can't convert API filter to SQL storage "
+                    "filter. Unknown filter %s" % filt
+                )
         return clauses
 
     raise ValueError("Unknown type of filters: %s" % filter_list)

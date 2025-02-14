@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2019 Eugene Frolov
 #
 # All Rights Reserved.
@@ -45,12 +43,11 @@ class TestLocalThreadStorage(base.BaseTestCase):
     def test_store_session_conflict_exception(self):
         session = mock.Mock()
 
-        with patch.object(self._storage, 'get_session',
-                          return_value=session):
+        with patch.object(self._storage, "get_session", return_value=session):
 
-            self.assertRaises(sessions.SessionConflict,
-                              self._storage.store_session,
-                              session)
+            self.assertRaises(
+                sessions.SessionConflict, self._storage.store_session, session
+            )
 
     def test_store_session_conflict_exception_with_two_instance(self):
         instance_one = sessions.SessionThreadStorage()
@@ -65,8 +62,7 @@ class TestLocalThreadStorage(base.BaseTestCase):
 
     def test_get_session_not_found_exception(self):
 
-        self.assertRaises(sessions.SessionNotFound,
-                          self._storage.get_session)
+        self.assertRaises(sessions.SessionNotFound, self._storage.get_session)
 
     def test_get_session(self):
         session = mock.Mock()
@@ -86,7 +82,8 @@ class TestLocalThreadStorage(base.BaseTestCase):
     def test_execute_when_deadlock_raises(self):
         mock_execute = mock.Mock()
         mock_execute.execute.side_effect = errors.DatabaseError(
-            "deadlock", errno=1213, sqlstate=1213)
+            "deadlock", errno=1213, sqlstate=1213
+        )
         mock_cursor = mock.Mock()
         mock_cursor.cursor.return_value = mock_execute
         mock_engine = mock.Mock()
@@ -94,13 +91,17 @@ class TestLocalThreadStorage(base.BaseTestCase):
         session = sessions.MySQLSession(mock_engine)
         with self.assertRaises(exc.DeadLock) as ctx:
             session.execute("update foo set bar = 'baz'")
-        self.assertEqual("Deadlock found when trying to get lock. "
-                         "Original message: deadlock", str(ctx.exception))
+        self.assertEqual(
+            "Deadlock found when trying to get lock. "
+            "Original message: deadlock",
+            str(ctx.exception),
+        )
 
     def test_execute_when_unknown_exc_raises(self):
         mock_execute = mock.Mock()
         mock_execute.execute.side_effect = errors.DatabaseError(
-            "error", errno=1062, sqlstate=1062)
+            "error", errno=1062, sqlstate=1062
+        )
         mock_cursor = mock.Mock()
         mock_cursor.cursor.return_value = mock_execute
         mock_engine = mock.Mock()

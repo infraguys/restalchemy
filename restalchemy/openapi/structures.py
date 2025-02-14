@@ -48,7 +48,7 @@ class OpenApiContact(object):
         contact_spec = {
             "name": self._name,
             "url": self._url,
-            "email": self._email
+            "email": self._email,
         }
 
         return {"contact": {k: v for k, v in contact_spec.items()}}
@@ -118,14 +118,15 @@ class OpenApiInfo(object):
 
     """
 
-    def __init__(self,
-                 title=None,
-                 version=None,
-                 description=None,
-                 license=None,
-                 terms_of_service=None,
-                 contact=None,
-                 ):
+    def __init__(
+        self,
+        title=None,
+        version=None,
+        description=None,
+        license=None,
+        terms_of_service=None,
+        contact=None,
+    ):
         super(OpenApiInfo, self).__init__()
         self._title = title or "OpenAPI service schema"
         self._version = version or "1.0.0"
@@ -169,7 +170,7 @@ class OpenApiPaths(object):
                     result_spec[current_path][http_method.lower()] = {
                         "summary": "Base application url",
                         "responses": oa_c.OPENAPI_FILTER_RESPONSE,
-                        "operationId": "Get_urls"
+                        "operationId": "Get_urls",
                     }
                 else:
                     result_spec[current_path][http_method.lower()] = {}
@@ -177,17 +178,17 @@ class OpenApiPaths(object):
             for route_name in route.get_routes():
                 next_route = route.get_route(route_name)
                 if next_route.is_collection_route():
-                    next_path = utils.lastslash(posixpath.join(current_path,
-                                                               route_name))
+                    next_path = utils.lastslash(
+                        posixpath.join(current_path, route_name)
+                    )
                     result_spec.update(
-                        self._build_api_paths(next_route,
-                                              next_path,
-                                              request,
-                                              parameters)
+                        self._build_api_paths(
+                            next_route, next_path, request, parameters
+                        )
                     )
                     paths, schemas = next_route(
-                        request).build_openapi_specification(
-                        next_path, parameters)
+                        request
+                    ).build_openapi_specification(next_path, parameters)
                     result_spec.update(paths)
 
         return result_spec
@@ -196,8 +197,9 @@ class OpenApiPaths(object):
         paths_spec = {}
 
         main_route = request.application.main_route
-        paths_spec.update(self._build_api_paths(main_route, "/",
-                                                request, parameters))
+        paths_spec.update(
+            self._build_api_paths(main_route, "/", request, parameters)
+        )
 
         return {"paths": paths_spec}
 
@@ -215,15 +217,14 @@ class OpenApiComponents(object):
                 continue
             schema_name = schema_generator.resource_method_name(method)
             schemas["schemas"][schema_name] = (
-                schema_generator.generate_schema_object(method))
+                schema_generator.generate_schema_object(method)
+            )
         return schemas
 
     @staticmethod
     def _build_parameters_by_resources(schema_generator, request):
         return {
-            "parameters": schema_generator.generate_parameter_object(
-                request
-            ),
+            "parameters": schema_generator.generate_parameter_object(request),
         }
 
     @staticmethod
@@ -242,9 +243,7 @@ class OpenApiComponents(object):
         self._merge_specs(resources_spec, self._build_responses())
 
         resource = route.get_controller(request).get_resource()
-        schema_generator = oa_utils.ResourceSchemaGenerator(
-            resource, route
-        )
+        schema_generator = oa_utils.ResourceSchemaGenerator(resource, route)
         if resource:
             resources_spec = self._merge_specs(
                 in_spec=resources_spec,
@@ -256,8 +255,7 @@ class OpenApiComponents(object):
             resources_spec = self._merge_specs(
                 in_spec=resources_spec,
                 from_spec=self._build_parameters_by_resources(
-                    schema_generator=schema_generator,
-                    request=request
+                    schema_generator=schema_generator, request=request
                 ),
             )
 
@@ -307,10 +305,7 @@ class OpenApiTag(object):
         return self._name
 
     def build(self, request=None):
-        value = {
-            "name": self._name,
-            "description": self._description
-        }
+        value = {"name": self._name, "description": self._description}
         if self._external_docs:
             if isinstance(self._external_docs, OpenApiExternalDocs):
                 value["externalDocs"] = self._external_docs.build(request)
@@ -333,19 +328,14 @@ class OpenApiTags(object):
             if next_route.is_collection_route():
                 next_path = posixpath.join(current_path, route_name)
                 result_spec.extend(
-                    self._build_route_tag(next_route,
-                                          next_path,
-                                          request)
+                    self._build_route_tag(next_route, next_path, request)
                 )
                 tags = next_route(request).openapi_tags()
                 result_spec.extend(tags)
             elif next_route.is_resource_route():
-                next_path = posixpath.join(current_path,
-                                           route_name)
+                next_path = posixpath.join(current_path, route_name)
                 result_spec.extend(
-                    self._build_route_tag(next_route,
-                                          next_path,
-                                          request)
+                    self._build_route_tag(next_route, next_path, request)
                 )
                 tags = next_route(request).openapi_tags()
                 result_spec.extend(tags)
@@ -359,11 +349,12 @@ class OpenApiTags(object):
                 tags["tags"].append(tag.build(request))
 
         main_route = request.application.main_route
-        tags["tags"].extend(self._build_route_tag(main_route,
-                                                  "/",
-                                                  request))
-        tags["tags"] = [i for n, i in enumerate(tags["tags"])
-                        if i not in tags["tags"][n + 1:]]
+        tags["tags"].extend(self._build_route_tag(main_route, "/", request))
+        tags["tags"] = [
+            i
+            for n, i in enumerate(tags["tags"])
+            if i not in tags["tags"][n + 1 :]
+        ]
         return tags
 
 
@@ -375,18 +366,14 @@ class OpenApiExternalDocs(object):
         self._description = description
 
     def build(self, request=None):
-        return {
-            "url": self._url,
-            "description": self._description
-        }
+        return {"url": self._url, "description": self._description}
 
 
 class OpenApiServers(object):
 
-    def __init__(self, url=None,
-                 description=None,
-                 variables=None,
-                 versions=None):
+    def __init__(
+        self, url=None, description=None, variables=None, versions=None
+    ):
         super(OpenApiServers, self).__init__()
         self._url = url
         self._description = description
@@ -401,8 +388,10 @@ class OpenApiServers(object):
 
     def build(self, request):
         servers = [
-            {"url": self._url or request.host_url,
-             "description": self._description or "",
-             "variables": self.build_variables()}
+            {
+                "url": self._url or request.host_url,
+                "description": self._description or "",
+                "variables": self.build_variables(),
+            }
         ]
         return {"servers": servers}

@@ -48,6 +48,7 @@ class FooModel(models.ModelWithUUID, orm.SQLStorableMixin):
 # INDEX `rlfoo` (`foo`(36)) USING HASH)
 # ENGINE = InnoDB;
 
+
 # ALTER TABLE `bars` ADD CONSTRAINT `_idx_foo` FOREIGN KEY (`foo`)
 # REFERENCES `foos`(`uuid`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 class BarModel(models.ModelWithUUID, orm.SQLStorableMixin):
@@ -57,7 +58,8 @@ class BarModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 engines.engine_factory.configure_factory(
-    db_url="mysql://test:test@127.0.0.1/test")
+    db_url="mysql://test:test@127.0.0.1/test"
+)
 
 
 # Create new foo object and store it
@@ -74,17 +76,16 @@ six.print_(bar1.as_plain_dict())
 
 bar1.delete()
 
-foo2 = FooModel(foo_field1=11,
-                foo_field2="some text")
+foo2 = FooModel(foo_field1=11, foo_field2="some text")
 foo2.save()
 
 foos = list(FooModel.objects.get_all())
 six.print_(foos)
 
-six.print_(FooModel.objects.get_one(filters={'foo_field1': filters.EQ(10)}))
+six.print_(FooModel.objects.get_one(filters={"foo_field1": filters.EQ(10)}))
 
 # Modify foo_field2 and update it in storage
-foo2.foo_field2 = 'xxx2 asdad asdasd'
+foo2.foo_field2 = "xxx2 asdad asdasd"
 foo2.save()
 
 # Delete foo object from storage
@@ -97,12 +98,14 @@ for num in range(10):
     foo = FooModel(foo_field1=num)
     foo.save()
 
-six.print_(list(FooModel.objects.get_all(filters={
-    'foo_field1': filters.GT(5)})))
+six.print_(
+    list(FooModel.objects.get_all(filters={"foo_field1": filters.GT(5)}))
+)
 
 six.print_("foo_field1 in equal 5 or 6")
-six.print_(FooModel.objects.get_all(filters={
-    'foo_field1': filters.In([5, 6])}))
+six.print_(
+    FooModel.objects.get_all(filters={"foo_field1": filters.In([5, 6])})
+)
 
 for model in FooModel.objects.get_all():
     model.delete()
@@ -110,9 +113,8 @@ for model in FooModel.objects.get_all():
 # Complex filters
 # WHERE ((`name1` = 1 AND `name2` = 2) OR (`name2` = 3))
 filter_list = filters.OR(
-    filters.AND(
-        {'name1': filters.EQ(1), 'name2': filters.EQ(2)}),
-    filters.AND(
-        {'name2': filters.EQ(3)}))
+    filters.AND({"name1": filters.EQ(1), "name2": filters.EQ(2)}),
+    filters.AND({"name2": filters.EQ(3)}),
+)
 
 six.print_(FooModel.objects.get_one(filters=filter_list))

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2021 Eugene Frolov.
 #
 #
@@ -50,11 +48,13 @@ class InsertTestCase(base.BaseWithDbMigrationsTestCase):
 
     def test_duplicate_primary_key_batch_insert(self):
         dup_uuid = uuid.uuid4()
-        model1 = BatchInsertModel(uuid=dup_uuid, foo_field1=1,
-                                  foo_field2="Model1")
+        model1 = BatchInsertModel(
+            uuid=dup_uuid, foo_field1=1, foo_field2="Model1"
+        )
         model2 = BatchInsertModel(foo_field1=2, foo_field2="Model2")
-        model3 = BatchInsertModel(uuid=dup_uuid, foo_field1=3,
-                                  foo_field2="Model3")
+        model3 = BatchInsertModel(
+            uuid=dup_uuid, foo_field1=3, foo_field2="Model3"
+        )
 
         with self.engine.session_manager() as session:
             with self.assertRaises(exc.ConflictRecords):

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +16,4 @@
 import setuptools
 
 
-setuptools.setup(
-    setup_requires=['pbr'],
-    pbr=True)
+setuptools.setup(setup_requires=["pbr"], pbr=True)

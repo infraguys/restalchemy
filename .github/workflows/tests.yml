@@ -18,9 +18,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install tox
         run: pip install tox
-      - name: Flake8
+      - name: Black
         run: |
-          tox -e pep8
+          tox -e black-check
   tests:
     runs-on: ubuntu-24.04
     strategy:

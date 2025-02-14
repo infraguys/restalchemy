@@ -25,14 +25,10 @@ import six
 # -----------------------------------------------------------------------------
 
 url = "http://127.0.0.1:8000/"
-headers = {
-    'cache-control': "no-cache"
-}
+headers = {"cache-control": "no-cache"}
 six.print_("Make GET request to %s" % url)
 response = requests.request("GET", url, headers=headers)
-six.print_("Response is %s. Headers is %s" % (
-    response.text,
-    response.headers))
+six.print_("Response is %s. Headers is %s" % (response.text, response.headers))
 
 
 # -----------------------------------------------------------------------------
@@ -40,21 +36,13 @@ six.print_("Response is %s. Headers is %s" % (
 # -----------------------------------------------------------------------------
 
 url = "http://127.0.0.1:8000/foos/"
-payload = {
-    "foo-field1": 999,
-    "foo-field2": "foo obj"
-}
-headers = {
-    'content-type': "application/json",
-    'cache-control': "no-cache"
-}
+payload = {"foo-field1": 999, "foo-field2": "foo obj"}
+headers = {"content-type": "application/json", "cache-control": "no-cache"}
 six.print_("Make POST request to %s with payload %s" % (url, payload))
 response = requests.request("POST", url, json=payload, headers=headers)
-six.print_("Response is %s. Headers is %s" % (
-    response.text,
-    response.headers))
+six.print_("Response is %s. Headers is %s" % (response.text, response.headers))
 
-foo_uuid = response.json()['uuid']
+foo_uuid = response.json()["uuid"]
 
 
 # -----------------------------------------------------------------------------
@@ -62,14 +50,10 @@ foo_uuid = response.json()['uuid']
 # -----------------------------------------------------------------------------
 
 url = "http://127.0.0.1:8000/foos/"
-headers = {
-    'cache-control': "no-cache"
-}
+headers = {"cache-control": "no-cache"}
 six.print_("Make GET (list on collection) request to %s" % url)
 response = requests.request("GET", url, headers=headers)
-six.print_("Response is %s. Headers is %s" % (
-    response.text,
-    response.headers))
+six.print_("Response is %s. Headers is %s" % (response.text, response.headers))
 
 
 # -----------------------------------------------------------------------------
@@ -77,15 +61,11 @@ six.print_("Response is %s. Headers is %s" % (
 # -----------------------------------------------------------------------------
 
 url = "http://127.0.0.1:8000/foos/%s" % foo_uuid
-headers = {
-    'cache-control': "no-cache"
-}
+headers = {"cache-control": "no-cache"}
 six.print_("Make GET request to foo resource %s" % url)
 response = requests.request("GET", url, headers=headers)
 
-six.print_("Response is %s. Headers is %s" % (
-    response.text,
-    response.headers))
+six.print_("Response is %s. Headers is %s" % (response.text, response.headers))
 
 
 # -----------------------------------------------------------------------------
@@ -94,21 +74,17 @@ six.print_("Response is %s. Headers is %s" % (
 
 url = "http://127.0.0.1:8000/foos/%s/bars/" % foo_uuid
 
-payload = {
-    "bar-field1": "test bar"
-}
+payload = {"bar-field1": "test bar"}
 headers = {
-    'content-type': "application/json",
-    'cache-control': "no-cache",
+    "content-type": "application/json",
+    "cache-control": "no-cache",
 }
 six.print_("Make POST request to %s with payload %s" % (url, payload))
 response = requests.request("POST", url, json=payload, headers=headers)
-six.print_("Response is %s. Headers is %s" % (
-    response.text,
-    response.headers))
+six.print_("Response is %s. Headers is %s" % (response.text, response.headers))
 
 
-bar_uuid = response.json()['uuid']
+bar_uuid = response.json()["uuid"]
 
 
 # -----------------------------------------------------------------------------
@@ -116,9 +92,7 @@ bar_uuid = response.json()['uuid']
 # -----------------------------------------------------------------------------
 
 url = "http://127.0.0.1:8000/bars/%s" % bar_uuid
-headers = {
-    'cache-control': "no-cache"
-}
+headers = {"cache-control": "no-cache"}
 six.print_("Make DELETE request to %s" % url)
 response = requests.request("DELETE", url, headers=headers)
 six.print_("Done!")

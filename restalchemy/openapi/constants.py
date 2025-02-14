@@ -61,30 +61,28 @@ ERROR_SCHEMA = {
                 "message": {
                     "type": "string",
                     "description": "Error message",
-                    "example": "A human-readable explanation of problem"
-                }
-            }
-        }
+                    "example": "A human-readable explanation of problem",
+                },
+            },
+        },
     },
     "example": {
         "code": 400,
         "json": {
             "code": 400,
             "type": "ValidationErrorException",
-            "message": "Validation error occurred."
-        }
-    }
+            "message": "Validation error occurred.",
+        },
+    },
 }
 
 ERROR_RESPONSE = {
     "description": "Error response.",
     "content": {
         ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-            "schema": {
-                "$ref": "#/components/schemas/Error"
-            }
+            "schema": {"$ref": "#/components/schemas/Error"}
         }
-    }
+    },
 }
 
 DEFAULT_RESPONSE = {"$ref": "#/components/responses/Error"}
@@ -93,7 +91,7 @@ OPENAPI_DELETE_RESPONSE = {
     status.HTTP_204_NO_CONTENT: {
         "description": "Delete entity",
     },
-    "default": DEFAULT_RESPONSE
+    "default": DEFAULT_RESPONSE,
 }
 
 OPENAPI_FILTER_RESPONSE = {
@@ -101,28 +99,19 @@ OPENAPI_FILTER_RESPONSE = {
         "description": "Get nested urls",
         "content": {
             ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                "schema": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
+                "schema": {"type": "array", "items": {"type": "string"}}
             }
-        }
+        },
     },
-    "default": DEFAULT_RESPONSE
+    "default": DEFAULT_RESPONSE,
 }
 
 OPENAPI_DEFAULT_RESPONSE = {
     status.HTTP_200_OK: {
         "description": "Get nested urls",
-        "content": {
-            ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                "schema": {}
-            }
-        }
+        "content": {ra_const.CONTENT_TYPE_APPLICATION_JSON: {"schema": {}}},
     },
-    "default": DEFAULT_RESPONSE
+    "default": DEFAULT_RESPONSE,
 }
 
 
@@ -133,13 +122,12 @@ def build_openapi_create_response(ref_name):
             "content": {
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
                     "schema": {
-                        "$ref": "#/components/schemas/{}".format(
-                            ref_name)
+                        "$ref": "#/components/schemas/{}".format(ref_name)
                     }
                 }
-            }
+            },
         },
-        "default": DEFAULT_RESPONSE
+        "default": DEFAULT_RESPONSE,
     }
 
 
@@ -150,13 +138,12 @@ def build_openapi_get_update_response(ref_name):
             "content": {
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
                     "schema": {
-                        "$ref": "#/components/schemas/{}".format(
-                            ref_name)
+                        "$ref": "#/components/schemas/{}".format(ref_name)
                     }
                 }
-            }
+            },
         },
-        "default": DEFAULT_RESPONSE
+        "default": DEFAULT_RESPONSE,
     }
 
 
@@ -169,14 +156,13 @@ def build_openapi_list_model_response(ref_name):
                     "schema": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/{}".format(
-                                ref_name)
-                        }
+                            "$ref": "#/components/schemas/{}".format(ref_name)
+                        },
                     }
                 }
-            }
+            },
         },
-        "default": DEFAULT_RESPONSE
+        "default": DEFAULT_RESPONSE,
     }
 
 
@@ -185,14 +171,15 @@ def build_openapi_delete_response(ref_name):
         status.HTTP_204_NO_CONTENT: {
             "description": ref_name,
         },
-        "default": DEFAULT_RESPONSE
+        "default": DEFAULT_RESPONSE,
     }
 
 
-def build_openapi_object_response(properties,
-                                  code=200,
-                                  description="",
-                                  ):
+def build_openapi_object_response(
+    properties,
+    code=200,
+    description="",
+):
     """
 
     properties - dict as needed in openapi
@@ -210,20 +197,17 @@ def build_openapi_object_response(properties,
             "description": description,
             "content": {
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                    "schema": {
-                        "type": "object",
-                        "properties": properties
-                    }
+                    "schema": {"type": "object", "properties": properties}
                 }
-            }
+            },
         },
-        "default": DEFAULT_RESPONSE
+        "default": DEFAULT_RESPONSE,
     }
 
 
-def build_openapi_user_response(code=status.HTTP_200_OK,
-                                description="",
-                                **kwargs):
+def build_openapi_user_response(
+    code=status.HTTP_200_OK, description="", **kwargs
+):
     """
 
     properties - dict as needed in openapi
@@ -242,12 +226,10 @@ def build_openapi_user_response(code=status.HTTP_200_OK,
         code: {
             "description": description,
             "content": {
-                ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                    "schema": kwargs
-                }
-            }
+                ra_const.CONTENT_TYPE_APPLICATION_JSON: {"schema": kwargs}
+            },
         },
-        "default": DEFAULT_RESPONSE
+        "default": DEFAULT_RESPONSE,
     }
 
 
@@ -258,25 +240,26 @@ def build_openapi_json_req_body(model_name):
         "content": {
             ra_const.CONTENT_TYPE_APPLICATION_JSON: {
                 "schema": {
-                    "$ref": "#/components/schemas/{}".format(
-                        model_name)
+                    "$ref": "#/components/schemas/{}".format(model_name)
                 }
             }
-        }
+        },
     }
 
 
-def build_openapi_parameter(name,
-                            description="",
-                            required=True,
-                            openapi_type='string',
-                            param_type="path",
-                            schema=None):
+def build_openapi_parameter(
+    name,
+    description="",
+    required=True,
+    openapi_type="string",
+    param_type="path",
+    schema=None,
+):
     param = {
-        'name': name,
-        'description': description,
-        'in': param_type,
-        'schema': schema or {'type': openapi_type},
+        "name": name,
+        "description": description,
+        "in": param_type,
+        "schema": schema or {"type": openapi_type},
     }
     if param_type == "path" and required is not None:
         param["required"] = required

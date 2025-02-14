@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2023 v.burygin
 #
 # All Rights Reserved.
@@ -55,8 +53,9 @@ class ErrorsHandlerMiddlewareTestCase(base.BaseTestCase):
 
     def test_response_validation_error(self):
         request_mock = mock.Mock(spec=request.Request)
-        request_mock.get_response.side_effect = \
+        request_mock.get_response.side_effect = (
             comm_exc.ValidationErrorException
+        )
         request_mock.ResponseClass = FakeResponse
         response = self.middlew.process_request(request_mock)
 

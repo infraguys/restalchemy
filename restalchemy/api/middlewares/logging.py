@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2014 Eugene Frolov <efrolov@mirantis.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +31,7 @@ class LoggingMiddleware(middlewares.Middleware):
     """API logging middleware."""
 
     SENSITIVE_HEADERS = {
-        'AUTHORIZATION',
+        "AUTHORIZATION",
     }
 
     def __init__(self, application, logger_name=__name__):
@@ -42,10 +41,12 @@ class LoggingMiddleware(middlewares.Middleware):
     def process_request(self, req):
         req_chunk = self._request_chunk(req)
         sanitized_headers = self._sanitize_headers(req.headers)
-        self.logger.debug('API > %s headers=%s body=%r',
-                          req_chunk,
-                          self._headers_chunk(sanitized_headers),
-                          req.body)
+        self.logger.debug(
+            "API > %s headers=%s body=%r",
+            req_chunk,
+            self._headers_chunk(sanitized_headers),
+            req.body,
+        )
         try:
             res = req.get_response(self.application)
             # XXX(Eugeny Flolov):
@@ -53,34 +54,41 @@ class LoggingMiddleware(middlewares.Middleware):
             # unreachable if
             # :py:method:`middlewares.ContextMiddleware#process_request`
             # returns response.
-            self.logger.debug('API < %s %s headers=%s body=%r',
-                              res.status_code,
-                              self._request_chunk(req),
-                              self._headers_chunk(res.headers),
-                              res.body)
+            self.logger.debug(
+                "API < %s %s headers=%s body=%r",
+                res.status_code,
+                self._request_chunk(req),
+                self._headers_chunk(res.headers),
+                res.body,
+            )
             return res
         except Exception:
             e_type, e_value, e_tb = sys.exc_info()
             e_file, e_lineno, e_fn, e_line = traceback.extract_tb(e_tb)[-1]
-            self.logger.error('API Error %s %s %s %s:%s:%s> %s',
-                              req_chunk,
-                              e_type,
-                              e_value,
-                              e_file, e_lineno, e_fn, e_line)
+            self.logger.error(
+                "API Error %s %s %s %s:%s:%s> %s",
+                req_chunk,
+                e_type,
+                e_value,
+                e_file,
+                e_lineno,
+                e_fn,
+                e_line,
+            )
             six.reraise(e_type, e_value, e_tb)
 
     @staticmethod
     def _request_chunk(req):
-        return '%s %s' % (req.method, req.url)
+        return "%s %s" % (req.method, req.url)
 
     @staticmethod
     def _headers_chunk(headers):
-        return ['%s: %s' % (h, headers[h]) for h in headers]
+        return ["%s: %s" % (h, headers[h]) for h in headers]
 
     def _sanitize_headers(self, headers):
         def _sanitized(header, header_value):
             if str(header).upper() in self.SENSITIVE_HEADERS:
-                return '***'
+                return "***"
             return header_value
 
         return {k: _sanitized(k, v) for k, v in headers.items()}

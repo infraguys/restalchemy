@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 # Copyright 2019 Eugene Frolov
 #
@@ -41,8 +39,8 @@ FAKE_URI1 = "/fake/00000000-0000-0000-0000-700000000001"
 FAKE_URI2 = "/fake/00000000-0000-0000-0000-700000000002"
 FAKE_MAC1 = "00:01:02:03:04:05"
 FAKE_MAC2 = "10:11:12:13:14:15"
-FAKE_TABLE_NAME1 = 'Fake-table-name1'
-FAKE_TABLE_NAME2 = 'Fake-table-name2'
+FAKE_TABLE_NAME1 = "Fake-table-name1"
+FAKE_TABLE_NAME2 = "Fake-table-name2"
 FAKE_UUID1 = uuid.UUID("00000000-0000-0000-0000-700000000003")
 FAKE_UUID2 = uuid.UUID("00000000-0000-0000-0000-700000000004")
 FAKE_UUID1_STR = str(FAKE_UUID1)
@@ -83,16 +81,17 @@ class FakeModelWithValidate(FakeModel):
 
 
 ROW = {
-    'test_str_field1': FAKE_STR1,
-    'test_str_field2': FAKE_STR2,
-    'test_int_field1': FAKE_INT1,
-    'test_int_field2': FAKE_INT2,
-    'test_uri_field1': FAKE_URI1,
-    'test_uri_field2': FAKE_URI2,
-    'test_mac_field1': FAKE_MAC1,
-    'test_mac_field2': FAKE_MAC2,
-    'uuid': FAKE_UUID1_STR,
-    'test_parent_relationship': FAKE_UUID2_STR}
+    "test_str_field1": FAKE_STR1,
+    "test_str_field2": FAKE_STR2,
+    "test_int_field1": FAKE_INT1,
+    "test_int_field2": FAKE_INT2,
+    "test_uri_field1": FAKE_URI1,
+    "test_uri_field2": FAKE_URI2,
+    "test_mac_field1": FAKE_MAC1,
+    "test_mac_field2": FAKE_MAC2,
+    "uuid": FAKE_UUID1_STR,
+    "test_parent_relationship": FAKE_UUID2_STR,
+}
 
 
 COLUMNS_NAME = sorted(ROW.keys())
@@ -107,17 +106,16 @@ def escape(list_of_fields):
 
 class InsertCaseTestCase(base.BaseFunctionalTestCase):
 
-    @mock.patch('mysql.connector.pooling.MySQLConnectionPool')
+    @mock.patch("mysql.connector.pooling.MySQLConnectionPool")
     def setUp(self, mysql_pool_mock):
         super(InsertCaseTestCase, self).setUp()
 
         # configure engine factory
-        engines.engine_factory.configure_factory(
-            db_url=URL_TO_DB)
+        engines.engine_factory.configure_factory(db_url=URL_TO_DB)
         self.parent_model = FakeParentModel(uuid=FAKE_UUID2)
         self.target_model = FakeModel(
-            uuid=FAKE_UUID1,
-            test_parent_relationship=self.parent_model)
+            uuid=FAKE_UUID1, test_parent_relationship=self.parent_model
+        )
 
     def tearDown(self):
         super(InsertCaseTestCase, self).tearDown()
@@ -128,32 +126,35 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         #                from MySQL
         engines.engine_factory.destroy_engine()
 
-    @mock.patch('restalchemy.storage.sql.sessions.MySQLSession')
+    @mock.patch("restalchemy.storage.sql.sessions.MySQLSession")
     def test_insert_new_model_session_is_none(self, session_mock):
 
         self.target_model.insert()
 
         session_mock().execute.assert_called_once_with(
-            "INSERT INTO `%s` (%s) VALUES (%s)" % (
-                FAKE_TABLE_NAME1, ", ".join(escape(COLUMNS_NAME)),
-                ", ".join(["%s"] * len(VALUES))),
-            VALUES
+            "INSERT INTO `%s` (%s) VALUES (%s)"
+            % (
+                FAKE_TABLE_NAME1,
+                ", ".join(escape(COLUMNS_NAME)),
+                ", ".join(["%s"] * len(VALUES)),
+            ),
+            VALUES,
         )
         self.assertTrue(session_mock().commit.called)
         self.assertFalse(session_mock().rollback.called)
         self.assertTrue(session_mock().close.called)
 
-    @mock.patch('restalchemy.storage.sql.sessions.MySQLSession')
-    def test_insert_new_model_session_is_none_and_db_error(
-            self, session_mock):
+    @mock.patch("restalchemy.storage.sql.sessions.MySQLSession")
+    def test_insert_new_model_session_is_none_and_db_error(self, session_mock):
 
         class CustomException(Exception):
             pass
 
         session_mock().execute.side_effect = CustomException
 
-        self.assertRaises(exceptions.UnknownStorageException,
-                          self.target_model.insert)
+        self.assertRaises(
+            exceptions.UnknownStorageException, self.target_model.insert
+        )
 
         self.assertFalse(session_mock().commit.called)
         self.assertTrue(session_mock().rollback.called)
@@ -165,10 +166,13 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         self.target_model.insert(session=session_mock)
 
         session_mock.execute.assert_called_once_with(
-            "INSERT INTO `%s` (%s) VALUES (%s)" % (
-                FAKE_TABLE_NAME1, ", ".join(escape(COLUMNS_NAME)),
-                ", ".join(["%s"] * len(VALUES))),
-            VALUES
+            "INSERT INTO `%s` (%s) VALUES (%s)"
+            % (
+                FAKE_TABLE_NAME1,
+                ", ".join(escape(COLUMNS_NAME)),
+                ", ".join(["%s"] * len(VALUES)),
+            ),
+            VALUES,
         )
         self.assertFalse(session_mock.commit.called)
         self.assertFalse(session_mock.rollback.called)
@@ -183,9 +187,11 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
 
         session_mock.execute.side_effect = CustomException
 
-        self.assertRaises(exceptions.UnknownStorageException,
-                          self.target_model.insert,
-                          session=session_mock)
+        self.assertRaises(
+            exceptions.UnknownStorageException,
+            self.target_model.insert,
+            session=session_mock,
+        )
 
         self.assertFalse(session_mock.commit.called)
         self.assertFalse(session_mock.rollback.called)
@@ -216,12 +222,15 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
         engines.engine_factory.configure_factory(consts.DATABASE_URI)
         engine = engines.engine_factory.get_engine()
         self.session = engine.get_session()
-        self.session.execute("""CREATE TABLE IF NOT EXISTS test_update (
+        self.session.execute(
+            """CREATE TABLE IF NOT EXISTS test_update (
             uuid CHAR(36) NOT NULL,
             field1 VARCHAR(255) NOT NULL,
             field2 VARCHAR(255) NOT NULL,
             PRIMARY KEY (uuid)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""", None)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""",
+            None,
+        )
 
     def tearDown(self):
         super(UpdateTestCase, self).tearDown()

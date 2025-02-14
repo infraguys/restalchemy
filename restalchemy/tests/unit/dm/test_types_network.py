@@ -1,5 +1,3 @@
-# coding=utf-8
-#
 #    Copyright 2021 George Melikov.
 #
 #
@@ -27,30 +25,30 @@ class RecordNameTestCase(unittest.TestCase):
         self.test_instance = types_network.RecordName()
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate('ns1.ra.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('ns1.55.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('n_s1.55.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('n-1.55.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('a.b.c.d.1.2.3'))
-        self.assertTrue(self.test_instance.validate('qa-auto-dnsidxbs'))
+        self.assertTrue(self.test_instance.validate("ns1.ra.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("ns1.55.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("n_s1.55.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("n-1.55.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("a.b.c.d.1.2.3"))
+        self.assertTrue(self.test_instance.validate("qa-auto-dnsidxbs"))
 
     def test_from_simple_type(self):
-        self.assertEqual(self.test_instance.from_simple_type('.x.'), '.x')
-        self.assertEqual(self.test_instance.from_simple_type('.x.x.'), '.x.x')
-        self.assertEqual(self.test_instance.from_simple_type('@'), '')
+        self.assertEqual(self.test_instance.from_simple_type(".x."), ".x")
+        self.assertEqual(self.test_instance.from_simple_type(".x.x."), ".x.x")
+        self.assertEqual(self.test_instance.from_simple_type("@"), "")
 
     def test_to_simple_type(self):
-        self.assertEqual(self.test_instance.to_simple_type(''), '@')
-        self.assertEqual(self.test_instance.to_simple_type('xxx'), 'xxx')
+        self.assertEqual(self.test_instance.to_simple_type(""), "@")
+        self.assertEqual(self.test_instance.to_simple_type("xxx"), "xxx")
 
     def test_validate_incorrect_value(self):
-        self.assertFalse(self.test_instance.validate('a..b.s'))
-        self.assertFalse(self.test_instance.validate('.a.b.s'))
-        self.assertFalse(self.test_instance.validate('a.b.s..'))
-        self.assertFalse(self.test_instance.validate(u'my.москва.рф'))
-        self.assertFalse(self.test_instance.validate(u'москва.рф'))
-        self.assertFalse(self.test_instance.validate(u'ee.ёёё.ЕЁ'))
+        self.assertFalse(self.test_instance.validate("a..b.s"))
+        self.assertFalse(self.test_instance.validate(".a.b.s"))
+        self.assertFalse(self.test_instance.validate("a.b.s.."))
+        self.assertFalse(self.test_instance.validate("my.москва.рф"))
+        self.assertFalse(self.test_instance.validate("москва.рф"))
+        self.assertFalse(self.test_instance.validate("ee.ёёё.ЕЁ"))
 
 
 class SrvNameTest(unittest.TestCase):
@@ -73,124 +71,119 @@ class HostnameTest(unittest.TestCase):
         self.fqdn = types_network.Hostname()
         self.fqdn_2level = types_network.Hostname(min_levels=2)
         self.fqdn_with_leading_underscore = types_network.Hostname(
-            allow_leading_underscore=True)
+            allow_leading_underscore=True
+        )
         self.fqdn_with_middle_underscore = types_network.Hostname(
-            allow_middle_underscore=True)
+            allow_middle_underscore=True
+        )
 
     def test_validate(self):
         data = [
-            'first-level',
-            'test-me.me',
-            'fe.fe',
-            'aa',
-            'a.bc',
-            '1.2.3.4.com',
-            'xn--kxae4bafwg.xn--pxaix.gr',
-            'a23456789-123456789-123456789-123456789-123456789-123456789-123.'
-            'b23.com',
-            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a234567.com',
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde.'
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
-            'com',
+            "first-level",
+            "test-me.me",
+            "fe.fe",
+            "aa",
+            "a.bc",
+            "1.2.3.4.com",
+            "xn--kxae4bafwg.xn--pxaix.gr",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-123."
+            "b23.com",
+            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a234567.com",
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde."
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+            "com",
         ]
         for fqdn in data:
             self.assertTrue(self.fqdn.validate(fqdn), fqdn)
 
     def test_validate_underscore(self):
-        data = [
-            '_acme-challenge.example.com',
-            '_acme-challenge'
-        ]
+        data = ["_acme-challenge.example.com", "_acme-challenge"]
 
         for fqdn in data:
             self.assertTrue(
-                self.fqdn_with_leading_underscore.validate(fqdn),
-                fqdn)
+                self.fqdn_with_leading_underscore.validate(fqdn), fqdn
+            )
 
     def test_validate_underscore_negative(self):
-        data = [
-            '_acme-challenge._example.com'
-        ]
+        data = ["_acme-challenge._example.com"]
 
         for fqdn in data:
             self.assertFalse(
-                self.fqdn_with_leading_underscore.validate(fqdn),
-                fqdn)
+                self.fqdn_with_leading_underscore.validate(fqdn), fqdn
+            )
 
     def test_validate_middle_underscore(self):
-        data = [
-            'abc_def.example.com'
-        ]
+        data = ["abc_def.example.com"]
 
         for fqdn in data:
             self.assertTrue(
-                self.fqdn_with_middle_underscore.validate(fqdn),
-                fqdn)
+                self.fqdn_with_middle_underscore.validate(fqdn), fqdn
+            )
 
     def test_validate_middle_underscore_negative(self):
         data = [
-            'www_.example.com',
-            '_www.example.com',
-            'www.example._com',
-            'www.example.com_',
-            'www.example.co_m',
-            'news.ae_ro',
+            "www_.example.com",
+            "_www.example.com",
+            "www.example._com",
+            "www.example.com_",
+            "www.example.co_m",
+            "news.ae_ro",
         ]
 
         for fqdn in data:
             self.assertFalse(
-                self.fqdn_with_middle_underscore.validate(fqdn),
-                fqdn)
+                self.fqdn_with_middle_underscore.validate(fqdn), fqdn
+            )
 
     def test_validate_negative(self):
         data = [
-            'тест.ру',
-            '-fe.fe',
-            'fe-.fe',
-            '_fe.fe',
-            'f_e.fe',
-            'fe_.fe',
-            'a..bc',
-            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com',
-            '-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com',
-            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com',
-            'a23456789-123456789-123456789-123456789-123456789-123456789-1234.'
-            'b23.com',
-            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.com',
-            'mx.gmail.com.',
-            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.com',
+            "тест.ру",
+            "-fe.fe",
+            "fe-.fe",
+            "_fe.fe",
+            "f_e.fe",
+            "fe_.fe",
+            "a..bc",
+            "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com",
+            "-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com",
+            "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-1234."
+            "b23.com",
+            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.com",
+            "mx.gmail.com.",
+            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.com",
         ]
         for fqdn in data:
             self.assertFalse(self.fqdn.validate(fqdn), fqdn)
 
     def test_min_levels(self):
         data = [
-            'test-me.me',
-            'fe.fe',
-            'a.bc',
-            '1.2.3.4.com',
+            "test-me.me",
+            "fe.fe",
+            "a.bc",
+            "1.2.3.4.com",
         ]
         for fqdn in data:
             self.assertTrue(self.fqdn_2level.validate(fqdn), fqdn)
 
     def test_min_levels_negative(self):
         data = [
-            'first-level',
-            'aa',
+            "first-level",
+            "aa",
         ]
         for fqdn in data:
             self.assertFalse(self.fqdn_2level.validate(fqdn), fqdn)
@@ -204,68 +197,68 @@ class FQDNTest(unittest.TestCase):
 
     def test_validate(self):
         data = [
-            'first_level.',
-            'test_me.me.',
-            'fe.fe.',
-            'aa.',
-            'a.bc.',
-            '1.2.3.4.com.',
-            'xn--kxae4bafwg.xn--pxaix.gr.',
-            'a23456789-123456789-123456789-123456789-123456789-123456789-123.'
-            'b23.com.',
-            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a234567.com.',
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde.'
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
-            'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk.'
-            'com.',
+            "first_level.",
+            "test_me.me.",
+            "fe.fe.",
+            "aa.",
+            "a.bc.",
+            "1.2.3.4.com.",
+            "xn--kxae4bafwg.xn--pxaix.gr.",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-123."
+            "b23.com.",
+            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a234567.com.",
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde."
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+            "com.",
         ]
         for fqdn in data:
             self.assertTrue(self.fqdn.validate(fqdn), fqdn)
 
     def test_validate_negative(self):
         data = [
-            'тест.ру.',
-            '-fe.fe.',
-            'a..bc.',
-            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.',
-            '-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com.',
-            'ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.',
-            'a23456789-123456789-123456789-123456789-123456789-123456789-1234.'
-            'b23.com.',
-            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.com.',
-            'mx.gmail.com',
-            'a23456789-a23456789-a234567890.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.a23456789.a23456789.a23456789.a23456789.a23456789.'
-            'a23456789.com.',
+            "тест.ру.",
+            "-fe.fe.",
+            "a..bc.",
+            "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.",
+            "-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com.",
+            "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-1234."
+            "b23.com.",
+            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.com.",
+            "mx.gmail.com",
+            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+            "a23456789.com.",
         ]
         for fqdn in data:
             self.assertFalse(self.fqdn.validate(fqdn), fqdn)
 
     def test_min_levels(self):
         data = [
-            'test_me.me.',
-            'fe.fe.',
-            'a.bc.',
-            '1.2.3.4.com.',
+            "test_me.me.",
+            "fe.fe.",
+            "a.bc.",
+            "1.2.3.4.com.",
         ]
         for fqdn in data:
             self.assertTrue(self.fqdn_2level.validate(fqdn), fqdn)
 
     def test_min_levels_negative(self):
         data = [
-            'first_level.',
-            'aa.',
+            "first_level.",
+            "aa.",
         ]
         for fqdn in data:
             self.assertFalse(self.fqdn_2level.validate(fqdn), fqdn)

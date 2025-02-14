@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -38,7 +36,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lnp1_1 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36) NOT NULL,
@@ -51,7 +50,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lnp1_2 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36),
@@ -64,7 +64,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lwp1_1 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36) NOT NULL,
@@ -77,7 +78,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lwp1_2 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36),
@@ -90,7 +92,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lwp2_1 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_1 CHAR(36) NOT NULL,
@@ -103,7 +106,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lwp2_2 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_1 CHAR(36),
@@ -116,7 +120,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lwp2_3 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_2 CHAR(36) NOT NULL,
@@ -129,7 +134,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS lwp2_4 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_2 CHAR(36),
@@ -142,15 +148,24 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """
+            """,
         ]
 
         for expression in expressions:
             session.execute(expression)
 
     def downgrade(self, session):
-        tables = ['lwp2_4', 'lwp2_3', 'lwp2_2', 'lwp2_1', 'lwp1_2', 'lwp1_1',
-                  'lnp1_2', 'lnp1_1', 'root']
+        tables = [
+            "lwp2_4",
+            "lwp2_3",
+            "lwp2_2",
+            "lwp2_1",
+            "lwp1_2",
+            "lwp1_1",
+            "lnp1_2",
+            "lnp1_1",
+            "root",
+        ]
 
         for table in tables:
             self._delete_table_if_exists(session, table)

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -21,7 +19,7 @@ import unittest
 
 class BaseTestCase(unittest.TestCase):
 
-    FAKE_STRING = 'FakeString'
+    FAKE_STRING = "FakeString"
 
     def string_generator(self, size=6):
         return (self.FAKE_STRING * (size / len(self.FAKE_STRING) + 1))[:size]

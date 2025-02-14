@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -23,12 +21,14 @@ from restalchemy.tests.unit import base
 class ReadOnlyDictProxyTestCase(base.BaseTestCase):
 
     def test_is(self):
-        self.assertFalse(utils.ReadOnlyDictProxy({1: 2}) is
-                         utils.ReadOnlyDictProxy({1: 2}))
+        self.assertFalse(
+            utils.ReadOnlyDictProxy({1: 2}) is utils.ReadOnlyDictProxy({1: 2})
+        )
 
     def test_equal(self):
-        self.assertEqual(utils.ReadOnlyDictProxy({1: 2}),
-                         utils.ReadOnlyDictProxy({1: 2}))
+        self.assertEqual(
+            utils.ReadOnlyDictProxy({1: 2}), utils.ReadOnlyDictProxy({1: 2})
+        )
 
     def test_len(self):
         self.assertEqual(len(utils.ReadOnlyDictProxy({1: 2, 2: 4})), 2)

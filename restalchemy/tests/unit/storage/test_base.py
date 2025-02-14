@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2020 Eugene Frolov.
 #
 #
@@ -27,37 +25,47 @@ class TestErrorCatcherTestCase(base.BaseTestCase):
 
     @sbase.error_catcher
     def my_func(self, *args, **kwargs):
-        if args[0] == 'test_arg' and kwargs.get('kwarg0') == 'test_kwarg':
-            raise RuntimeError("Some Error!!!",)
-        elif args[0] == 'test_arg' and kwargs.get('kwarg0') == 'RA_EXCEPTION':
-            raise exceptions.RecordNotFound(model='FAKE', filters='FAKE')
+        if args[0] == "test_arg" and kwargs.get("kwarg0") == "test_kwarg":
+            raise RuntimeError(
+                "Some Error!!!",
+            )
+        elif args[0] == "test_arg" and kwargs.get("kwarg0") == "RA_EXCEPTION":
+            raise exceptions.RecordNotFound(model="FAKE", filters="FAKE")
 
     def test_catcher(self):
-        self.assertRaises(exceptions.UnknownStorageException, self.my_func,
-                          'test_arg', kwarg0='test_kwarg')
+        self.assertRaises(
+            exceptions.UnknownStorageException,
+            self.my_func,
+            "test_arg",
+            kwarg0="test_kwarg",
+        )
 
     def test_catcher_ra_exception(self):
-        self.assertRaises(exceptions.RecordNotFound, self.my_func,
-                          'test_arg', kwarg0='RA_EXCEPTION')
+        self.assertRaises(
+            exceptions.RecordNotFound,
+            self.my_func,
+            "test_arg",
+            kwarg0="RA_EXCEPTION",
+        )
 
     @pytest.mark.skipif(sys.version_info > (3, 6), reason="python > 3.6")
     def test_catcher_message_error_lt_36(self):
         try:
-            self.my_func('test_arg', kwarg0='test_kwarg')
+            self.my_func("test_arg", kwarg0="test_kwarg")
             raise AssertionError("The exception is't raised")
         except exceptions.UnknownStorageException as e:
             self.assertEqual(
                 str(e),
-                "Unknown storage exception: RuntimeError('Some Error!!!',)"
+                "Unknown storage exception: RuntimeError('Some Error!!!',)",
             )
 
     @pytest.mark.skipif(sys.version_info < (3, 7), reason="python < 3.7")
     def test_catcher_message_error_gt_36(self):
         try:
-            self.my_func('test_arg', kwarg0='test_kwarg')
+            self.my_func("test_arg", kwarg0="test_kwarg")
             raise AssertionError("The exception is't raised")
         except exceptions.UnknownStorageException as e:
             self.assertEqual(
                 str(e),
-                "Unknown storage exception: RuntimeError('Some Error!!!')"
+                "Unknown storage exception: RuntimeError('Some Error!!!')",
             )

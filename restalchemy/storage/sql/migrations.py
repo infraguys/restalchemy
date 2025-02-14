@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -99,8 +97,9 @@ class AbstarctMigrationStep(object):
 class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = RA_MIGRATION_TABLE_NAME
 
-    applied = properties.property(types.Boolean(), required=True,
-                                  default=False)
+    applied = properties.property(
+        types.Boolean(), required=True, default=False
+    )
 
 
 class MigrationStepController(object):
@@ -111,11 +110,12 @@ class MigrationStepController(object):
         migr_uuid = uuid.UUID(self._migration_step.migration_id)
         try:
             self._migration_model = MigrationModel.objects.get_one(
-                filters={"uuid": filters.EQ(migr_uuid)},
-                session=session)
+                filters={"uuid": filters.EQ(migr_uuid)}, session=session
+            )
         except exceptions.RecordNotFound:
             self._migration_model = MigrationModel(
-                uuid=uuid.UUID(self._migration_step.migration_id))
+                uuid=uuid.UUID(self._migration_step.migration_id)
+            )
 
     def is_applied(self):
         return self._migration_model.applied
@@ -131,9 +131,11 @@ class MigrationStepController(object):
             LOG.warning("Migration '%s' is already applied", self.name)
             return
 
-        LOG.info("Migration '%s' depends on %r",
-                 self.name,
-                 self._migration_step.depends)
+        LOG.info(
+            "Migration '%s' depends on %r",
+            self.name,
+            self._migration_step.depends,
+        )
 
         for depend in self._migration_step.depends:
             migrations[depend].apply(session, migrations, dry_run=dry_run)
@@ -153,8 +155,9 @@ class MigrationStepController(object):
 
         for migration in migrations.values():
             if self._filename in migration.depends_from():
-                LOG.info("Migration '%s' dependent %r",
-                         self.name, migration.name)
+                LOG.info(
+                    "Migration '%s' dependent %r", self.name, migration.name
+                )
                 migration.rollback(session, migrations, dry_run=dry_run)
 
         if dry_run:
@@ -167,9 +170,7 @@ class MigrationStepController(object):
 
     @property
     def name(self):
-        return os.path.splitext(
-            os.path.basename(self._filename)
-        )[0]
+        return os.path.splitext(os.path.basename(self._filename))[0]
 
 
 class MigrationEngine(object):
@@ -181,7 +182,7 @@ class MigrationEngine(object):
     def get_file_name(self, part_of_name):
         candidates = []
         for filename in os.listdir(self._migrations_path):
-            if part_of_name in filename and filename.endswith('.py'):
+            if part_of_name in filename and filename.endswith(".py"):
                 candidates.append(filename)
 
         candidates_count = len(candidates)
@@ -190,11 +191,14 @@ class MigrationEngine(object):
             return candidates[0]
 
         if candidates_count > 1:
-            raise ValueError("Multiple file found for name '%s': %s." %
-                             (part_of_name, candidates))
+            raise ValueError(
+                "Multiple file found for name '%s': %s."
+                % (part_of_name, candidates)
+            )
 
-        raise ValueError("Migration file for dependency %s not found" %
-                         part_of_name)
+        raise ValueError(
+            "Migration file for dependency %s not found" % part_of_name
+        )
 
     def _calculate_depends(self, depends):
         files = []
@@ -231,54 +235,70 @@ class MigrationEngine(object):
 
     def new_migration(self, depends, message, dry_run=False, is_manual=False):
         files = self._calculate_depends(depends)
-        depends = '"{}"'.format('", "'.join(files)) if files else ''
+        depends = '"{}"'.format('", "'.join(files)) if files else ""
 
         migration_id = str(uuid.uuid4())
-        filename_hash = migration_id[:self.FILENAME_HASH_LEN]
-        migration_number = (MANUAL_MIGRATION if is_manual
-                            else self._suggest_new_migration_number())
+        filename_hash = migration_id[: self.FILENAME_HASH_LEN]
+        migration_number = (
+            MANUAL_MIGRATION
+            if is_manual
+            else self._suggest_new_migration_number()
+        )
         message = message.replace(" ", "-")
 
         first_part_of_message = message.split("-")[0]
 
-        if (first_part_of_message.isdigit()
-                and len(first_part_of_message) == MIGRATION_NUMBER_LENGTH):
+        if (
+            first_part_of_message.isdigit()
+            and len(first_part_of_message) == MIGRATION_NUMBER_LENGTH
+        ):
             migration_number = first_part_of_message
             message = message.lstrip(first_part_of_message + "-")
 
-        mfilename = "-".join([
-            migration_number,
-            message,
-            filename_hash
-        ]) + ".py"
+        mfilename = (
+            "-".join([migration_number, message, filename_hash]) + ".py"
+        )
 
         mpath = os.path.join(self._migrations_path, mfilename)
 
         if dry_run:
-            LOG.info("Dry run create migration '%s'. File: %s, path: %s",
-                     message, mfilename, mpath)
+            LOG.info(
+                "Dry run create migration '%s'. File: %s, path: %s",
+                message,
+                mfilename,
+                mpath,
+            )
             return
 
         with open(mpath, "w") as fp_output:
-            template_path = os.path.join(os.path.dirname(__file__),
-                                         'migration_templ.tmpl')
+            template_path = os.path.join(
+                os.path.dirname(__file__), "migration_templ.tmpl"
+            )
             with open(template_path, "r") as fp_input:
-                fp_output.write(fp_input.read() % {
-                    "migration_id": migration_id,
-                    "depends": depends,
-                    "is_manual": is_manual
-                })
+                fp_output.write(
+                    fp_input.read()
+                    % {
+                        "migration_id": migration_id,
+                        "depends": depends,
+                        "is_manual": is_manual,
+                    }
+                )
 
         LOG.info("New migration '%s' has been created: %s", mfilename, mpath)
 
     @staticmethod
     def _init_migration_table(session):
-        statement = ("""CREATE TABLE IF NOT EXISTS %s (
+        statement = (
+            (
+                """CREATE TABLE IF NOT EXISTS %s (
             uuid CHAR(36) NOT NULL,
             applied BIT(1) NOT NULL,
             PRIMARY KEY (uuid)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-        """) % RA_MIGRATION_TABLE_NAME
+        """
+            )
+            % RA_MIGRATION_TABLE_NAME
+        )
         session.execute(statement, None)
 
     def _load_migrations(self):
@@ -286,9 +306,9 @@ class MigrationEngine(object):
         sys.path.insert(0, self._migrations_path)
         try:
             for filename in os.listdir(self._migrations_path):
-                if filename.endswith('.py'):
+                if filename.endswith(".py"):
                     migration = __import__(filename[:-3])
-                    if not hasattr(migration, 'migration_step'):
+                    if not hasattr(migration, "migration_step"):
                         continue
                     migrations[filename] = migration.migration_step
             return migrations
@@ -301,7 +321,8 @@ class MigrationEngine(object):
                 migration_step=step,
                 filename=filename,
                 session=session,
-            ) for filename, step in self._load_migrations().items()
+            )
+            for filename, step in self._load_migrations().items()
         }
 
     def apply_migration(self, migration_name, dry_run=False):
@@ -312,12 +333,14 @@ class MigrationEngine(object):
 
             migration = migrations[filename]
             if migration.is_applied():
-                LOG.warning("Migration '%s' is already applied",
-                            migration.name)
+                LOG.warning(
+                    "Migration '%s' is already applied", migration.name
+                )
             else:
                 LOG.info("Applying migration '%s'", migration.name)
-                migrations[filename].apply(session, migrations,
-                                           dry_run=dry_run)
+                migrations[filename].apply(
+                    session, migrations, dry_run=dry_run
+                )
 
     def rollback_migration(self, migration_name, dry_run=False):
         filename = self.get_file_name(migration_name)
@@ -326,12 +349,12 @@ class MigrationEngine(object):
             migrations = self._load_migration_controllers(session)
             migration = migrations[filename]
             if not migration.is_applied():
-                LOG.warning("Migration '%s' is not applied",
-                            migration.name)
+                LOG.warning("Migration '%s' is not applied", migration.name)
             else:
                 LOG.info("Rolling back migration '%s'", migration.name)
-                migrations[filename].rollback(session, migrations,
-                                              dry_run=dry_run)
+                migrations[filename].rollback(
+                    session, migrations, dry_run=dry_run
+                )
 
     def _calculate_indexes(self):
         indexed_migrations = []
@@ -360,7 +383,8 @@ class MigrationEngine(object):
                 "depends": m.depends,
                 "uuid": m.migration_id,
                 "index": m.number if hasattr(m, "number") else 0,
-            } for filename, m in self._calculate_indexes().items()
+            }
+            for filename, m in self._calculate_indexes().items()
         }
 
     def get_latest_migration(self):
@@ -378,7 +402,8 @@ class MigrationEngine(object):
             return migrations.popitem()[0]
 
         raise HeadMigrationNotFoundException(
-            "Head migration for current migrations couldn't be found")
+            "Head migration for current migrations couldn't be found"
+        )
 
     def validate_auto_migration_dependencies(self, depends):
         depends = self._calculate_depends(depends)
@@ -387,8 +412,7 @@ class MigrationEngine(object):
 
         for filename in depends:
             if migrations[filename].is_manual:
-                LOG.warning(
-                    "Manual migration(s) is(are) in dependencies!")
+                LOG.warning("Manual migration(s) is(are) in dependencies!")
                 return False
         return True
 

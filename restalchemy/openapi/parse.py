@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2023 v.burygin
 #
 # All Rights Reserved.
@@ -21,8 +19,11 @@ import sys
 
 PARAM_OR_RETURNS_REGEX = re.compile(":(?:param|returns)")
 RETURNS_REGEX = re.compile(":returns: (?P<doc>.*)", re.S)
-PARAM_REGEX = re.compile(r":param (?P<name>[\*\w]+): (?P<doc>.*?)"
-                         r"(?:(?=:param)|(?=:return)|(?=:raises)|\Z)", re.S)
+PARAM_REGEX = re.compile(
+    r":param (?P<name>[\*\w]+): (?P<doc>.*?)"
+    r"(?:(?=:param)|(?=:return)|(?=:raises)|\Z)",
+    re.S,
+)
 
 
 def trim(docstring):
@@ -109,11 +110,12 @@ def parse_docstring(docstring):
         "short_description": short_description,
         "long_description": long_description,
         "params": params,
-        "returns": returns
+        "returns": returns,
     }
 
 
 if __name__ == "__main__":
+
     def sample(task, deployment=None):
         """Start benchmark task.
 

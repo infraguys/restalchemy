@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -88,7 +86,8 @@ class AbstractDialectCommand(base.AbstractDialectCommand):
     def execute(self, session):
         try:
             return MySQLProcessResult(
-                super(AbstractDialectCommand, self).execute(session))
+                super(AbstractDialectCommand, self).execute(session)
+            )
         except errors.DatabaseError as e:
             if e.errno == 1213:
                 raise exc.DeadLock(code=e.sqlstate, message=e.msg)
@@ -110,7 +109,7 @@ class MySQLInsert(AbstractDialectCommand):
         return "INSERT INTO `%s` (%s) VALUES (%s)" % (
             self._table.name,
             ", ".join(column_names),
-            ", ".join(['%s'] * len(column_names))
+            ", ".join(["%s"] * len(column_names)),
         )
 
 
@@ -136,7 +135,7 @@ class MySQLUpdate(AbstractDialectCommand):
         return "UPDATE `%s` SET %s WHERE %s" % (
             self._table.name,
             ", ".join(["%s = %s" % (name, "%s") for name in column_names]),
-            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names])
+            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names]),
         )
 
 
@@ -157,7 +156,7 @@ class MySQLDelete(AbstractDialectCommand):
         pk_names = self._table.get_escaped_pk_names()
         return "DELETE FROM `%s` WHERE %s" % (
             self._table.name,
-            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names])
+            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names]),
         )
 
 
@@ -173,8 +172,9 @@ class MySQLBatchDelete(AbstractDialectCommand):
         elif keys_count > 1:
             self._is_multiple_primary_key = True
         else:
-            raise ValueError("The model with table %r has 0 primary keys" %
-                             table)
+            raise ValueError(
+                "The model with table %r has 0 primary keys" % table
+            )
 
     def _get_values(self):
         values = []
@@ -191,20 +191,22 @@ class MySQLBatchDelete(AbstractDialectCommand):
         return [self._get_multiple_primary_key_values()]
 
     def get_values(self):
-        return (self._get_multiple_primary_key_values()
-                if self._is_multiple_primary_key else
-                self._get_single_primary_key_values())
+        return (
+            self._get_multiple_primary_key_values()
+            if self._is_multiple_primary_key
+            else self._get_single_primary_key_values()
+        )
 
     def _get_single_primary_key_statement(self):
         return "DELETE FROM `%s` WHERE %s in %s" % (
             self._table.name,
             self._pk_keys[0],
-            "%s"
+            "%s",
         )
 
     def _get_multiple_primary_key_statement(self):
         where_part = " AND ".join(
-            [("%s = %s" % (key, '%s')) for key in self._pk_keys]
+            [("%s = %s" % (key, "%s")) for key in self._pk_keys]
         )
         where_condition = " OR ".join(
             [where_part for _ in range(len(self._snapshot))]
@@ -215,9 +217,11 @@ class MySQLBatchDelete(AbstractDialectCommand):
         )
 
     def get_statement(self):
-        return (self._get_multiple_primary_key_statement()
-                if self._is_multiple_primary_key else
-                self._get_single_primary_key_statement())
+        return (
+            self._get_multiple_primary_key_statement()
+            if self._is_multiple_primary_key
+            else self._get_single_primary_key_statement()
+        )
 
 
 class MySQLBasicSelect(AbstractDialectCommand):
@@ -242,19 +246,21 @@ class MySQLBasicSelect(AbstractDialectCommand):
             res = []
             for name, sorttype in self._order_by.items():
                 sorttype = sorttype.upper()
-                if sorttype not in ['ASC', 'DESC', '', None]:
+                if sorttype not in ["ASC", "DESC", "", None]:
                     raise ValueError("Unknown order: %s." % sorttype)
-                res.append('%s %s' % (utils.escape(name), sorttype or 'ASC'))
+                res.append("%s %s" % (utils.escape(name), sorttype or "ASC"))
             return " ORDER BY " + ", ".join(res)
         return ""
 
 
 class MySQLSelect(MySQLBasicSelect):
 
-    def __init__(self, table, filters=None, limit=None,
-                 order_by=None, locked=False):
+    def __init__(
+        self, table, filters=None, limit=None, order_by=None, locked=False
+    ):
         super(MySQLSelect, self).__init__(
-            table=table, limit=limit, order_by=order_by, locked=locked)
+            table=table, limit=limit, order_by=order_by, locked=locked
+        )
         self._filters = sql_filters.convert_filters(self._table.model, filters)
 
     def get_values(self):
@@ -266,22 +272,33 @@ class MySQLSelect(MySQLBasicSelect):
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
             ", ".join(self._table.get_escaped_column_names()),
-            self._table.name
+            self._table.name,
         )
         filt = self.construct_where()
 
-        return (sql + (" WHERE %s" % filt if filt else "")
-                + self.construct_order_by()
-                + self.construct_limit()
-                + self.construct_locked())
+        return (
+            sql
+            + (" WHERE %s" % filt if filt else "")
+            + self.construct_order_by()
+            + self.construct_limit()
+            + self.construct_locked()
+        )
 
 
 class MySQLCustomSelect(MySQLBasicSelect):
 
-    def __init__(self, table, where_conditions, where_values, limit=None,
-                 order_by=None, locked=False):
+    def __init__(
+        self,
+        table,
+        where_conditions,
+        where_values,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
         super(MySQLCustomSelect, self).__init__(
-            table=table, limit=limit, order_by=order_by, locked=locked)
+            table=table, limit=limit, order_by=order_by, locked=locked
+        )
         self._where_conditions = where_conditions
         self._where_values = where_values
 
@@ -294,11 +311,16 @@ class MySQLCustomSelect(MySQLBasicSelect):
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
             ", ".join(self._table.get_escaped_column_names()),
-            self._table.name
+            self._table.name,
         )
-        return sql + " WHERE " + self.construct_where() \
-            + self.construct_order_by() + self.construct_limit() \
+        return (
+            sql
+            + " WHERE "
+            + self.construct_where()
+            + self.construct_order_by()
+            + self.construct_limit()
             + self.construct_locked()
+        )
 
 
 class MySQLCount(MySQLSelect):
@@ -307,9 +329,7 @@ class MySQLCount(MySQLSelect):
         super(MySQLCount, self).__init__(table=table, filters=filters)
 
     def get_statement(self):
-        sql = "SELECT COUNT(*) as COUNT FROM `%s`" % (
-            self._table.name
-        )
+        sql = "SELECT COUNT(*) as COUNT FROM `%s`" % (self._table.name)
         filt = self.construct_where()
 
         return sql + (" WHERE %s" % filt if filt else "")
@@ -318,8 +338,7 @@ class MySQLCount(MySQLSelect):
 class MySqlOrmDialectCommand(base.AbstractDialectCommand):
 
     def __init__(self, table, query):
-        super(MySqlOrmDialectCommand, self).__init__(table=table,
-                                                     data=None)
+        super(MySqlOrmDialectCommand, self).__init__(table=table, data=None)
         self._query = query
 
     def get_statement(self):
@@ -374,10 +393,18 @@ class MySQLDialect(base.AbstractDialect):
     def select(self, table, filters, limit=None, order_by=None, locked=False):
         return MySQLSelect(table, filters, limit, order_by, locked)
 
-    def custom_select(self, table, where_conditions, where_values, limit=None,
-                      order_by=None, locked=False):
-        return MySQLCustomSelect(table, where_conditions, where_values, limit,
-                                 order_by, locked)
+    def custom_select(
+        self,
+        table,
+        where_conditions,
+        where_values,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
+        return MySQLCustomSelect(
+            table, where_conditions, where_values, limit, order_by, locked
+        )
 
     def count(self, table, filters):
         return MySQLCount(table, filters)

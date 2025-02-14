@@ -33,13 +33,17 @@ from restalchemy.storage.sql import orm
 # ENGINE = InnoDB;
 class FooModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = "foos"
-    foo_field1 = properties.property(types.Integer(), required=True,
-                                     id_property=True)
+    foo_field1 = properties.property(
+        types.Integer(),
+        required=True,
+        id_property=True,
+    )
     foo_field2 = properties.property(types.String(), default="foo_str")
 
 
 engines.engine_factory.configure_factory(
-    db_url="mysql://root:21070809d@127.0.0.1/test")
+    db_url="mysql://root:21070809d@127.0.0.1/test",
+)
 
 
 model_uuid = uuid.uuid4()

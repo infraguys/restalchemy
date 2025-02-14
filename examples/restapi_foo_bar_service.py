@@ -30,7 +30,7 @@ from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
 
-HOST = '0.0.0.0'
+HOST = "0.0.0.0"
 PORT = 8000
 
 
@@ -44,6 +44,7 @@ bar_storage = {}
 # Models section
 # -----------------------------------------------------------------------------
 # BarModel 1--->n FooModel
+
 
 class FooModel(models.ModelWithUUID):
     foo_field1 = properties.property(types.Integer(), required=True)
@@ -134,6 +135,7 @@ class FooRoute(routes.Route):
 
 class V1Route(routes.Route):
     """Router for / path."""
+
     __controller__ = V1Controller
     __allow_methods__ = [routes.FILTER]
 
@@ -175,8 +177,8 @@ def main():
         six.print_("Serve forever on %s:%s" % (HOST, PORT))
         server.serve_forever()
     except KeyboardInterrupt:
-        six.print_('Bye')
+        six.print_("Bye")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

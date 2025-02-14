@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -30,7 +28,7 @@ from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql import sessions
 
 
-DEFAULT_NAME = 'default'
+DEFAULT_NAME = "default"
 DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)
 
@@ -61,34 +59,37 @@ class AbstractEngine(object):
 
 class MySQLEngine(AbstractEngine):
 
-    URL_SCHEMA = 'mysql'
+    URL_SCHEMA = "mysql"
 
     def __init__(self, db_url, config=None, query_cache=False):
         super(MySQLEngine, self).__init__(db_url)
         if self._db_url.scheme != self.URL_SCHEMA:
-            raise ValueError("Database url should be starts with mysql://. "
-                             "For example: mysql://username:password@"
-                             "127.0.0.1:3306/database_name")
+            raise ValueError(
+                "Database url should be starts with mysql://. "
+                "For example: mysql://username:password@"
+                "127.0.0.1:3306/database_name"
+            )
         config = config or {}
         self._db_name = self._db_url.path[1:]
-        if 'connection_timeout' not in config:
-            config['connection_timeout'] = DEFAULT_CONNECTION_TIMEOUT
-        config.update({
-            'user': self.db_username,
-            'password': self.db_password,
-            'database': self.db_name,
-            'host': self.db_host,
-            'port': self.db_port,
-            'converter_class': adapters.MySQLConverter
-        })
+        if "connection_timeout" not in config:
+            config["connection_timeout"] = DEFAULT_CONNECTION_TIMEOUT
+        config.update(
+            {
+                "user": self.db_username,
+                "password": self.db_password,
+                "database": self.db_name,
+                "host": self.db_host,
+                "port": self.db_port,
+                "converter_class": adapters.MySQLConverter,
+            }
+        )
 
         try:
             self._pool = pooling.MySQLConnectionPool(**config)
         except AttributeError as e:
             pool_name = e.args[0].split("'")[1]
             new_name = str(hash(pool_name))
-            LOG.warning("Changing '%s' pool name to '%s'",
-                        pool_name, new_name)
+            LOG.warning("Changing '%s' pool name to '%s'", pool_name, new_name)
             config["pool_name"] = new_name
             self._pool = pooling.MySQLConnectionPool(**config)
 
@@ -97,7 +98,7 @@ class MySQLEngine(AbstractEngine):
         self._query_cache = query_cache
 
     def __del__(self):
-        pool = getattr(self, '_pool', None)
+        pool = getattr(self, "_pool", None)
         if pool is not None:
             self._pool._remove_connections()
 
@@ -166,22 +167,19 @@ class EngineFactory(singletons.InheritSingleton):
     def __init__(self):
         super(EngineFactory, self).__init__()
         self._engines = {}
-        self._engines_map = {
-            MySQLEngine.URL_SCHEMA: MySQLEngine
-        }
+        self._engines_map = {MySQLEngine.URL_SCHEMA: MySQLEngine}
 
-    def configure_factory(self, db_url, config=None, query_cache=False,
-                          name=DEFAULT_NAME):
+    def configure_factory(
+        self, db_url, config=None, query_cache=False, name=DEFAULT_NAME
+    ):
         """Configure_factory
 
         @property db_url: str. For example driver://user:passwd@host:port/db
         """
-        schema = db_url.split(':')[0]
+        schema = db_url.split(":")[0]
         try:
             self._engines[name] = self._engines_map[schema.lower()](
-                db_url=db_url,
-                config=config,
-                query_cache=query_cache
+                db_url=db_url, config=config, query_cache=query_cache
             )
         except KeyError:
             raise ValueError("Can not find driver for schema %s" % schema)
@@ -190,8 +188,10 @@ class EngineFactory(singletons.InheritSingleton):
         engine = self._engines.get(name, None)
         if engine:
             return engine
-        raise ValueError(("Can not return %s engine. Please configure"
-                         " EngineFactory") % name)
+        raise ValueError(
+            ("Can not return %s engine. Please configure" " EngineFactory")
+            % name
+        )
 
     def destroy_engine(self, name=DEFAULT_NAME):
         try:
@@ -205,7 +205,7 @@ class EngineFactory(singletons.InheritSingleton):
 
 class DBConnectionUrl(object):
 
-    _CENSORED = ':<censored>@'
+    _CENSORED = ":<censored>@"
 
     def __init__(self, db_url):
         super(DBConnectionUrl, self).__init__()

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -27,14 +25,29 @@ from restalchemy.storage.sql import migrations
 
 cmd_opts = [
     cfg.StrOpt("message", default="", short="m", help="message to migration"),
-    cfg.MultiOpt("depend", item_type=str, short="d", required=False,
-                 help="depends from"),
-    cfg.StrOpt('path', required=True, short="p",
-               help="Path to migrations folder"),
-    cfg.BoolOpt('dry-run', default=False,
-                help="Dry run migration create w/o any changes."),
-    cfg.BoolOpt('manual', default=False,
-                help="Is migration manual")
+    cfg.MultiOpt(
+        "depend",
+        item_type=str,
+        short="d",
+        required=False,
+        help="depends from",
+    ),
+    cfg.StrOpt(
+        "path",
+        required=True,
+        short="p",
+        help="Path to migrations folder",
+    ),
+    cfg.BoolOpt(
+        "dry-run",
+        default=False,
+        help="Dry run migration create w/o any changes.",
+    ),
+    cfg.BoolOpt(
+        "manual",
+        default=False,
+        help="Is migration manual",
+    ),
 ]
 
 CONF = cfg.CONF
@@ -48,12 +61,15 @@ def main():
 
     depends = set(CONF.depend or [])
 
-    if (CONF.manual is False
-            and not engine.validate_auto_migration_dependencies(depends)):
+    if (
+        CONF.manual is False
+        and not engine.validate_auto_migration_dependencies(depends)
+    ):
         sys.exit(1)
 
-    engine.new_migration(depends=depends,
-                         message=CONF.message,
-                         dry_run=CONF.dry_run,
-                         is_manual=CONF.manual
-                         )
+    engine.new_migration(
+        depends=depends,
+        message=CONF.message,
+        dry_run=CONF.dry_run,
+        is_manual=CONF.manual,
+    )

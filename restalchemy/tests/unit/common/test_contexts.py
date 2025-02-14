@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2019 George Melikov.
 #
 #
@@ -28,7 +26,7 @@ class SomeError(Exception):
     pass
 
 
-@mock.patch('restalchemy.storage.sql.engines.engine_factory')
+@mock.patch("restalchemy.storage.sql.engines.engine_factory")
 class TestContext(unittest.TestCase):
 
     def _configure_mocks(self, engine_factory_mock):
@@ -36,16 +34,22 @@ class TestContext(unittest.TestCase):
         self._storage = mock.Mock(spec=sessions.SessionThreadStorage)
         self._session = mock.Mock(spec=sessions.MySQLSession)
         # Configure mocks
-        engine_factory_mock.configure_mock(**{
-            'get_engine.return_value': self._engine,
-        })
-        self._engine.configure_mock(**{
-            'get_session.return_value': self._session,
-            'get_session_storage.return_value': self._storage,
-        })
-        self._storage.configure_mock(**{
-            'get_session.return_value': self._session,
-        })
+        engine_factory_mock.configure_mock(
+            **{
+                "get_engine.return_value": self._engine,
+            }
+        )
+        self._engine.configure_mock(
+            **{
+                "get_session.return_value": self._session,
+                "get_session_storage.return_value": self._storage,
+            }
+        )
+        self._storage.configure_mock(
+            **{
+                "get_session.return_value": self._session,
+            }
+        )
 
     def test_context_manager_no_exceptions(self, engine_factory_mock):
         self._configure_mocks(engine_factory_mock)
@@ -98,12 +102,15 @@ class TestContext(unittest.TestCase):
         self._storage.remove_session.assert_called_once()
 
     def test_context_manager_commit_and_rollback_exception(
-            self, engine_factory_mock):
+        self, engine_factory_mock
+    ):
         self._configure_mocks(engine_factory_mock)
-        self._session.configure_mock(**{
-            'commit.side_effect': SomeError,
-            'rollback.side_effect': SomeError,
-        })
+        self._session.configure_mock(
+            **{
+                "commit.side_effect": SomeError,
+                "rollback.side_effect": SomeError,
+            }
+        )
         context = contexts.Context()
 
         with self.assertRaises(SomeError):

@@ -27,7 +27,7 @@ class RequestContext(object):
     def __init__(self, request):
         super(RequestContext, self).__init__()
         self._req = request
-        self._fields_to_show = request.params.getall('fields')
+        self._fields_to_show = request.params.getall("fields")
         self._method = None
 
     def set_active_method(self, method):
@@ -41,8 +41,9 @@ class RequestContext(object):
     @property
     def params(self):
         result_multi_dict_items = [
-            (name, value) for name, value in self._req.params.items()
-            if name != 'fields'
+            (name, value)
+            for name, value in self._req.params.items()
+            if name != "fields"
         ]
         return multidict.MultiDict(result_multi_dict_items)
 

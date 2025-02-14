@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -31,8 +29,9 @@ from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import tables
 
 
-class ObjectCollection(base.AbstractObjectCollection,
-                       base.AbstractObjectCollectionCountMixin):
+class ObjectCollection(
+    base.AbstractObjectCollection, base.AbstractObjectCollectionCountMixin
+):
 
     @property
     def _table(self):
@@ -43,8 +42,15 @@ class ObjectCollection(base.AbstractObjectCollection,
         return engines.engine_factory.get_engine()
 
     @base.error_catcher
-    def get_all(self, filters=None, session=None, cache=False, limit=None,
-                order_by=None, locked=False):
+    def get_all(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
         with self._engine.session_manager(session=session) as s:
             if cache is True:
                 return s.cache.get_all(
@@ -57,15 +63,27 @@ class ObjectCollection(base.AbstractObjectCollection,
                     locked=locked,
                 )
 
-            return self._get_all(filters=filters, session=s, limit=limit,
-                                 order_by=order_by, locked=locked)
+            return self._get_all(
+                filters=filters,
+                session=s,
+                limit=limit,
+                order_by=order_by,
+                locked=locked,
+            )
 
     def _get_all(self, filters, session, limit, order_by=None, locked=False):
         result = self._table.select(
-            engine=self._engine, filters=filters, limit=limit,
-            order_by=order_by, session=session, locked=locked)
-        return [self.model_cls.restore_from_storage(**params)
-                for params in result.rows]
+            engine=self._engine,
+            filters=filters,
+            limit=limit,
+            order_by=order_by,
+            session=session,
+            locked=locked,
+        )
+        return [
+            self.model_cls.restore_from_storage(**params)
+            for params in result.rows
+        ]
 
     @base.error_catcher
     def get_one(self, filters=None, session=None, cache=False, locked=False):
@@ -80,14 +98,17 @@ class ObjectCollection(base.AbstractObjectCollection,
         if result_len == 1:
             return result[0]
         elif result_len == 0:
-            raise exceptions.RecordNotFound(model=self.model_cls,
-                                            filters=filters)
+            raise exceptions.RecordNotFound(
+                model=self.model_cls, filters=filters
+            )
         else:
-            raise exceptions.HasManyRecords(model=self.model_cls,
-                                            filters=filters)
+            raise exceptions.HasManyRecords(
+                model=self.model_cls, filters=filters
+            )
 
-    def _query(self, where_conditions, where_values,
-               session, limit, order_by, locked):
+    def _query(
+        self, where_conditions, where_values, session, limit, order_by, locked
+    ):
         result = self._table.custom_select(
             engine=self._engine,
             where_conditions=where_conditions,
@@ -97,12 +118,22 @@ class ObjectCollection(base.AbstractObjectCollection,
             order_by=order_by,
             locked=locked,
         )
-        return [self.model_cls.restore_from_storage(**params)
-                for params in list(result.fetchall())]
+        return [
+            self.model_cls.restore_from_storage(**params)
+            for params in list(result.fetchall())
+        ]
 
     @base.error_catcher
-    def query(self, where_conditions, where_values, session=None,
-              cache=False, limit=None, order_by=None, locked=False):
+    def query(
+        self,
+        where_conditions,
+        where_values,
+        session=None,
+        cache=False,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
         """
 
         :param where_conditions: "NOT (bala < %s)"
@@ -121,20 +152,23 @@ class ObjectCollection(base.AbstractObjectCollection,
                     locked=locked,
                 )
 
-            return self._query(where_conditions=where_conditions,
-                               where_values=where_values,
-                               session=s,
-                               limit=limit,
-                               order_by=order_by,
-                               locked=locked)
+            return self._query(
+                where_conditions=where_conditions,
+                where_values=where_values,
+                session=s,
+                limit=limit,
+                order_by=order_by,
+                locked=locked,
+            )
 
     @base.error_catcher
     def count(self, session=None, filters=None):
         with self._engine.session_manager(session=session) as s:
             result = self._table.count(
-                engine=self._engine, session=s, filters=filters)
+                engine=self._engine, session=s, filters=filters
+            )
             data = list(result.fetchall())
-            return data[0]['COUNT']
+            return data[0]["COUNT"]
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):
@@ -159,10 +193,12 @@ class SQLStorableMixin(base.AbstractStorableMixin):
             )
         except common_exc.NotFoundOperationalStorageError:
             if cls.__tablename__ is None:
-                raise UndefinedAttribute(attr_name='__tablename__')
-            table = tables.SQLTable(engine=cls._get_engine(),
-                                    table_name=cls.__tablename__,
-                                    model=cls)
+                raise UndefinedAttribute(attr_name="__tablename__")
+            table = tables.SQLTable(
+                engine=cls._get_engine(),
+                table_name=cls.__tablename__,
+                model=cls,
+            )
             cls.__operational_storage__.store(
                 tables.OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY,
                 table,
@@ -177,9 +213,11 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def restore_from_storage(cls, **kwargs):
         model_format = {}
         for name, value in kwargs.items():
-            model_format[name] = (cls.properties.properties[name]
-                                  .get_property_type()
-                                  .from_simple_type(value))
+            model_format[name] = (
+                cls.properties.properties[name]
+                .get_property_type()
+                .from_simple_type(value)
+            )
         obj = cls.restore(**model_format)
         obj._saved = True
         return obj
@@ -190,9 +228,11 @@ class SQLStorableMixin(base.AbstractStorableMixin):
         # TODO(efrolov): Add filters parameters.
         with self._get_engine().session_manager(session=session) as s:
             try:
-                self.get_table().insert(engine=self._get_engine(),
-                                        data=self._get_prepared_data(),
-                                        session=s)
+                self.get_table().insert(
+                    engine=self._get_engine(),
+                    data=self._get_prepared_data(),
+                    session=s,
+                )
                 # TODO(efrolov): Check result
             except exc.Conflict as e:
                 raise exceptions.ConflictRecords(model=self, msg=str(e))
@@ -214,18 +254,22 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                         engine=self._get_engine(),
                         ids=self._get_prepared_data(self.get_id_properties()),
                         data=self._get_prepared_data(
-                            self.get_data_properties()),
-                        session=s)
+                            self.get_data_properties()
+                        ),
+                        session=s,
+                    )
                 except exc.Conflict as e:
                     raise exceptions.ConflictRecords(model=self, msg=str(e))
                 if result.get_count() == 0:
                     _filters = {
                         name: dm_filters.EQ(prop.value)
-                        for name, prop in self.get_id_properties().items()}
+                        for name, prop in self.get_id_properties().items()
+                    }
                     type(self).objects.get_one(filters=_filters, session=s)
                 if result.get_count() > 1:
-                    raise exceptions.MultipleUpdatesDetected(model=self,
-                                                             filters={})
+                    raise exceptions.MultipleUpdatesDetected(
+                        model=self, filters={}
+                    )
 
     @base.error_catcher
     @base.dead_lock_catcher
@@ -235,7 +279,8 @@ class SQLStorableMixin(base.AbstractStorableMixin):
             result = self.get_table().delete(
                 engine=self._get_engine(),
                 ids=self._get_prepared_data(self.get_id_properties()),
-                session=s)
+                session=s,
+            )
             # TODO(efrolov): Check result
             return result
 
@@ -262,11 +307,15 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                 return None
             return cls.restore_from_storage(**value)
         for name in cls.id_properties:
-            value = (cls.properties.properties[name].get_property_type()
-                        .from_simple_type(value))
+            value = (
+                cls.properties.properties[name]
+                .get_property_type()
+                .from_simple_type(value)
+            )
             engine = engines.engine_factory.get_engine()
-            return cls.objects.get_one(filters={name: dm_filters.EQ(value)},
-                                       cache=engine.query_cache)
+            return cls.objects.get_one(
+                filters={name: dm_filters.EQ(value)}, cache=engine.query_cache
+            )
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -277,23 +326,26 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin):
     @classmethod
     def restore_from_storage(cls, **kwargs):
         if cls.__jsonfields__ is None:
-            raise UndefinedAttribute(attr_name='__jsonfields__')
+            raise UndefinedAttribute(attr_name="__jsonfields__")
         kwargs = kwargs.copy()
         for field in cls.__jsonfields__:
             kwargs[field] = json.loads(kwargs[field])
-        return super(SQLStorableWithJSONFieldsMixin, cls
-                     ).restore_from_storage(**kwargs)
+        return super(SQLStorableWithJSONFieldsMixin, cls).restore_from_storage(
+            **kwargs
+        )
 
     def _get_prepared_data(self, properties=None):
         if self.__jsonfields__ is None:
-            raise UndefinedAttribute(attr_name='__jsonfields__')
-        result = super(SQLStorableWithJSONFieldsMixin, self
-                       )._get_prepared_data(properties)
+            raise UndefinedAttribute(attr_name="__jsonfields__")
+        result = super(
+            SQLStorableWithJSONFieldsMixin, self
+        )._get_prepared_data(properties)
         if properties is None:
             json_properties = self.__jsonfields__
         else:
             json_properties = set(self.__jsonfields__).intersection(
-                set(properties.keys()))
+                set(properties.keys())
+            )
         for field in json_properties:
             result[field] = json.dumps(result[field])
         return result

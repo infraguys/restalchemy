@@ -1,5 +1,3 @@
-# coding=utf-8
-#
 # Copyright 2021 George Melikov
 #
 # All Rights Reserved.
@@ -29,16 +27,16 @@ FQDN_TEMPLATE = r"(?=^.{2,%i}$)(^((?!-)[a-zA-Z0-9-_]{1,%i}(?<!-)\.){%i,}$)"
 HOSTNAME_MIN_LEVELS = 1
 LEADING_UNDERSCORE_GROUP = "(_?)"
 UNDERSCORE = "_"
-HOSTNAME_TEMPLATE = (r"(?=^.{1,%i}$)(^%s((?![-%s])[a-zA-Z0-9-%s]{1,%i}"
-                     r"(?<![-%s])\.){%i,}((?!-)[a-zA-Z0-9-]{1,%i}(?<!-))$)")
+HOSTNAME_TEMPLATE = (
+    r"(?=^.{1,%i}$)(^%s((?![-%s])[a-zA-Z0-9-%s]{1,%i}"
+    r"(?<![-%s])\.){%i,}((?!-)[a-zA-Z0-9-]{1,%i}(?<!-))$)"
+)
 
 
 class IPAddress(types.BaseType):
 
     def __init__(self, **kwargs):
-        super(IPAddress, self).__init__(
-            openapi_type="string", **kwargs
-        )
+        super(IPAddress, self).__init__(openapi_type="string", **kwargs)
 
     def validate(self, value):
         return isinstance(value, netaddr.IPAddress)
@@ -54,8 +52,8 @@ class IPAddress(types.BaseType):
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
-            'type': self.openapi_type,
-            'anyOf': [{"format": "ipv4"}, {"format": "ipv6"}]
+            "type": self.openapi_type,
+            "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
         }
         spec.update(types.build_prop_kwargs(kwargs=prop_kwargs))
         return spec
@@ -64,9 +62,7 @@ class IPAddress(types.BaseType):
 class Network(types.BaseType):
 
     def __init__(self, **kwargs):
-        super(Network, self).__init__(
-            openapi_type="string", **kwargs
-        )
+        super(Network, self).__init__(openapi_type="string", **kwargs)
 
     def validate(self, value):
         return isinstance(value, netaddr.IPNetwork)
@@ -105,11 +101,11 @@ class RecordName(types.BaseCompiledRegExpTypeFromAttr):
 
     def from_simple_type(self, value):
         converted_value = super(RecordName, self).from_simple_type(value)
-        return converted_value.rstrip('.').rstrip('@')
+        return converted_value.rstrip(".").rstrip("@")
 
     def to_simple_type(self, value):
         converted_value = super(RecordName, self).to_simple_type(value)
-        return converted_value if len(converted_value) > 0 else '@'
+        return converted_value if len(converted_value) > 0 else "@"
 
 
 class SrvName(RecordName):
@@ -138,28 +134,33 @@ class FQDN(types.BaseCompiledRegExpTypeFromAttr):
     See https://github.com/powerdns/pdns/blob/master/pdns/dnsname.cc#L44
     and https://github.com/powerdns/pdns/blob/master/pdns/ws-api.cc#L387
     """
+
     pattern = re.compile(
-        FQDN_TEMPLATE %
-        (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, FQDN_MIN_LEVELS))
+        FQDN_TEMPLATE % (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, FQDN_MIN_LEVELS)
+    )
 
     def __init__(self, min_levels=FQDN_MIN_LEVELS, **kwargs):
         if min_levels > FQDN_MIN_LEVELS:
             self.pattern = re.compile(
-                FQDN_TEMPLATE %
-                (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, min_levels))
+                FQDN_TEMPLATE % (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, min_levels)
+            )
         super(FQDN, self).__init__(**kwargs)
 
 
 class Hostname(types.BaseCompiledRegExpTypeFromAttr):
-    """Same as FQDN but without root dot. Allows 1 level too. """
+    """Same as FQDN but without root dot. Allows 1 level too."""
 
-    def __init__(self, min_levels=HOSTNAME_MIN_LEVELS,
-                 allow_leading_underscore=False,
-                 allow_middle_underscore=False,
-                 **kwargs):
+    def __init__(
+        self,
+        min_levels=HOSTNAME_MIN_LEVELS,
+        allow_leading_underscore=False,
+        allow_middle_underscore=False,
+        **kwargs
+    ):
         underscore_or_empty = UNDERSCORE if allow_middle_underscore else ""
         self.pattern = re.compile(
-            HOSTNAME_TEMPLATE % (
+            HOSTNAME_TEMPLATE
+            % (
                 HOSTNAME_MAX_LEN,
                 LEADING_UNDERSCORE_GROUP if allow_leading_underscore else "",
                 underscore_or_empty,
@@ -167,7 +168,7 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
                 DNS_LABEL_MAX_LEN,
                 underscore_or_empty,
                 max([min_levels, HOSTNAME_MIN_LEVELS]) - 1,
-                DNS_LABEL_MAX_LEN
+                DNS_LABEL_MAX_LEN,
             )
         )
         super(Hostname, self).__init__(**kwargs)

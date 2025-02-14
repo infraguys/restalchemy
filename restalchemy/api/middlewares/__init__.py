@@ -19,8 +19,8 @@ from webob import dec
 from restalchemy.common import contexts as common_contexts
 
 
-SUCCESS_HTTP_METRIC_NAME = 'http.all.success'
-ERROR_HTTP_METRIC_NAME = 'http.all.errors'
+SUCCESS_HTTP_METRIC_NAME = "http.all.success"
+ERROR_HTTP_METRIC_NAME = "http.all.errors"
 
 
 def attach_middlewares(app, middlewares_list):

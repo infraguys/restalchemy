@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -62,7 +60,7 @@ class ResourceMap(object):
         :return: The resource which controller returns
         """
         resource_locator = cls.get_locator(uri)
-        uri_stack = uri.split('/')
+        uri_stack = uri.split("/")
 
         # has parent resource?
         pstack = resource_locator.path_stack
@@ -73,10 +71,11 @@ class ResourceMap(object):
             if not isinstance(pstack[num], six.string_types):
                 # NOTE(efrolov): pstack is shorter than uri_stack by 1
                 #                element. And I have to grab the ID, so +2.
-                parent_uri = '/'.join(uri_stack[0:num + 2])
+                parent_uri = "/".join(uri_stack[0 : num + 2])
                 parent_locator = cls.get_locator(parent_uri)
                 parent_resource = parent_locator.get_resource(
-                    request, parent_uri, parent_resource=parent_resource)
+                    request, parent_uri, parent_resource=parent_resource
+                )
 
         return resource_locator.get_resource(request, uri, parent_resource)
 
@@ -88,8 +87,9 @@ class ResourceMap(object):
     def add_model_to_resource_mapping(cls, model_class, resource):
         if model_class in cls.model_type_to_resource:
             raise ValueError(
-                "model (%s) for resource (%s) already added. %s" % (
-                    model_class, resource, cls.model_type_to_resource))
+                "model (%s) for resource (%s) already added. %s"
+                % (model_class, resource, cls.model_type_to_resource)
+            )
         cls.model_type_to_resource[model_class] = resource
 
     @classmethod
@@ -114,7 +114,9 @@ class AbstractResourceProperty(object):
     def is_public(self):
         return self._public
 
-    def get_type(self,):
+    def get_type(
+        self,
+    ):
         return self._resource.get_property_type(
             property_name=self._model_property_name,
         )
@@ -127,7 +129,8 @@ class AbstractResourceProperty(object):
     @property
     def api_name(self):
         return self._resource.get_resource_field_name(
-            self._model_property_name)
+            self._model_property_name
+        )
 
     @property
     def name(self):
@@ -156,9 +159,11 @@ class ResourceRAProperty(ResourceProperty):
         super(ResourceRAProperty, self).__init__(
             resource=resource,
             model_property_name=model_property_name,
-            public=public)
+            public=public,
+        )
         self._prop_type = (
-            prop_type() if inspect.isclass(prop_type) else prop_type)
+            prop_type() if inspect.isclass(prop_type) else prop_type
+        )
 
     def parse_value(self, req, value):
         return self._prop_type.from_simple_type(value)
@@ -244,7 +249,7 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
             params[method] = value_arg
             all_values += value_arg
         if kwargs:
-            raise TypeError('Got an unexpected keyword arguments %r' % kwargs)
+            raise TypeError("Got an unexpected keyword arguments %r" % kwargs)
         super(HiddenFieldMap, self).__init__(hidden_fields=all_values)
         self._method_map = {m: set(v) for m, v in params.items()}
 
@@ -323,7 +328,7 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
         """
         roles = []
 
-        if hasattr(req, 'context') and hasattr(req.context, 'roles'):
+        if hasattr(req, "context") and hasattr(req.context, "roles"):
             roles = req.context.roles
 
         return roles
@@ -346,8 +351,9 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
                 req,
             ):
                 return False
-        return self._default_hidden_fields.is_hidden_field(model_field_name,
-                                                           req)
+        return self._default_hidden_fields.is_hidden_field(
+            model_field_name, req
+        )
 
     def is_hidden_field_by_method(self, model_field_name, method):
         return True
@@ -356,9 +362,16 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
 @six.add_metaclass(abc.ABCMeta)
 class AbstractResource(object):
 
-    def __init__(self, model_class, name_map=None, hidden_fields=None,
-                 convert_underscore=True, process_filters=False,
-                 model_subclasses=None, fields_permissions=None):
+    def __init__(
+        self,
+        model_class,
+        name_map=None,
+        hidden_fields=None,
+        convert_underscore=True,
+        process_filters=False,
+        model_subclasses=None,
+        fields_permissions=None,
+    ):
         """Resource constructor
 
         :param model_class: The model class that is the source of the fields
@@ -411,13 +424,17 @@ class AbstractResource(object):
             fields_permissions
             if fields_permissions is not None
             else field_permissions.UniversalPermissions(
-                permission=field_permissions.Permissions.RW))
+                permission=field_permissions.Permissions.RW
+            )
+        )
 
-        if not isinstance(self._fields_permissions,
-                          field_permissions.BasePermissions):
-            raise ValueError('Fields_permissions should inherit'
-                             'from BasePermissions, not {%s}' %
-                             (type(fields_permissions)))
+        if not isinstance(
+            self._fields_permissions, field_permissions.BasePermissions
+        ):
+            raise ValueError(
+                "Fields_permissions should inherit"
+                "from BasePermissions, not {%s}" % (type(fields_permissions))
+            )
 
     def is_process_filters(self):
         return self._process_filters
@@ -432,6 +449,7 @@ class AbstractResource(object):
         :param req: the webob request
         :return: A dict of fields for specific method
         """
+
         def is_public_field(model_field_name):
             return self.is_public_field_by_request(
                 req=req,
@@ -466,17 +484,18 @@ class AbstractResource(object):
         return self._hidden_fields
 
     def get_resource_field_name(self, model_field_name):
-        name = self._m2r_name_map.get(
-            model_field_name, model_field_name)
-        return name.replace('_', '-') if self._convert_underscore else name
+        name = self._m2r_name_map.get(model_field_name, model_field_name)
+        return name.replace("_", "-") if self._convert_underscore else name
 
     def is_public_field(self, model_field_name):
-        return not (model_field_name.startswith('_')
-                    or model_field_name in self._hidden_model_fields)
+        return not (
+            model_field_name.startswith("_")
+            or model_field_name in self._hidden_model_fields
+        )
 
     def is_public_field_by_request(self, req, model_field_name):
         return not (
-            model_field_name.startswith('_')
+            model_field_name.startswith("_")
             or self._hidden_fields.is_hidden_field(
                 model_field_name=model_field_name,
                 req=req,
@@ -485,7 +504,7 @@ class AbstractResource(object):
 
     def is_public_field_by_method(self, method, model_field_name):
         return not (
-            model_field_name.startswith('_')
+            model_field_name.startswith("_")
             or self._hidden_fields.is_hidden_field_by_method(
                 model_field_name=model_field_name,
                 method=method,
@@ -504,18 +523,21 @@ class AbstractResource(object):
         return self._model_class
 
     def __repr__(self):
-        return ("<%s[model=%r], name_map=%r, convert_underscore=%s, "
-                "process_filters=%s, fields=%r>" % (
-                    self.__class__.__name__,
-                    self._model_class,
-                    self._name_map,
-                    self._convert_underscore,
-                    self._process_filters,
-                    self._model_class.properties.properties.keys()))
+        return (
+            "<%s[model=%r], name_map=%r, convert_underscore=%s, "
+            "process_filters=%s, fields=%r>"
+            % (
+                self.__class__.__name__,
+                self._model_class,
+                self._name_map,
+                self._convert_underscore,
+                self._process_filters,
+                self._model_class.properties.properties.keys(),
+            )
+        )
 
     def get_prop_kwargs(self, name):
-        return self.get_model().properties.properties[
-            name].get_kwargs()
+        return self.get_model().properties.properties[name].get_kwargs()
 
     def generate_schema_object(self, method):
         properties = {}
@@ -527,7 +549,8 @@ class AbstractResource(object):
                 prop_kwargs = {}
             if prop.is_public():
                 properties[prop.api_name] = prop.get_type().to_openapi_spec(
-                    prop_kwargs)
+                    prop_kwargs
+                )
                 if prop_kwargs.get("required"):
                     required.append(name)
         spec = {
@@ -546,21 +569,23 @@ class ResourceByRAModel(AbstractResource):
 
         :return: The dict of resource fields.
         """
-        is_public_field = (
-            override_is_public_field_func or self.is_public_field
-        )
+        is_public_field = override_is_public_field_func or self.is_public_field
         for name, prop in self._model_class.properties.items():
             if issubclass(prop, ra_properties.BaseProperty):
                 prop = ResourceRAProperty(
                     resource=self,
-                    prop_type=(self._model_class.properties.properties[name]
-                               .get_property_type()),
+                    prop_type=(
+                        self._model_class.properties.properties[
+                            name
+                        ].get_property_type()
+                    ),
                     model_property_name=name,
                     public=is_public_field(name),
                 )
             elif issubclass(prop, ra_relationsips.BaseRelationship):
                 prop = ResourceRelationship(
-                    self, model_property_name=name,
+                    self,
+                    model_property_name=name,
                     public=is_public_field(name),
                 )
             else:
@@ -569,23 +594,28 @@ class ResourceByRAModel(AbstractResource):
 
     def get_resource_id(self, model):
         # TODO(efrolov): Write code to convert value to simple value.
-        if hasattr(model, 'get_id'):
+        if hasattr(model, "get_id"):
             return str(model.get_id())
         else:
             # TODO(efrolov): Add autosearch resource id by model
-            raise ValueError("Can't find resource ID for %s. Please implement "
-                             "get_id method in your model (%s)" % (
-                                 model, self._model_class))
+            raise ValueError(
+                "Can't find resource ID for %s. Please implement "
+                "get_id method in your model (%s)" % (model, self._model_class)
+            )
 
     def get_id_type(self):
         id_property = self._model_class.get_id_property()
         if len(id_property) != 1:
-            raise TypeError("Model %s returns %s properties which marked as "
-                            "id_property. Please implement get_id_type "
-                            "method on your resource %r."
-                            % (self._model_class,
-                               'many' if id_property else 'no',
-                               type(self)))
+            raise TypeError(
+                "Model %s returns %s properties which marked as "
+                "id_property. Please implement get_id_type "
+                "method on your resource %r."
+                % (
+                    self._model_class,
+                    "many" if id_property else "no",
+                    type(self),
+                )
+            )
         return id_property.popitem()[-1].get_property_type()
 
 
@@ -596,9 +626,7 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
 
         :return: The dict of resource fields.
         """
-        is_public_field = (
-            override_is_public_field_func or self.is_public_field
-        )
+        is_public_field = override_is_public_field_func or self.is_public_field
 
         fields = super(ResourceByModelWithCustomProps, self).get_fields(
             override_is_public_field_func=override_is_public_field_func,

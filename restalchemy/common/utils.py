@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 # Copyright 2014 Mirantis Inc
 #
@@ -80,8 +78,8 @@ class classproperty(property):
 
 
 def lastslash(url):
-    if url and url[-1] != '/':
-        return url + '/'
+    if url and url[-1] != "/":
+        return url + "/"
     else:
         return url
 
@@ -93,6 +91,7 @@ def raise_parse_error_on_fail(func):
         except Exception:
             value = "%s=%s" % (name, value)
             raise ra_exc.ParseError(value=value)
+
     return wrapper
 
 

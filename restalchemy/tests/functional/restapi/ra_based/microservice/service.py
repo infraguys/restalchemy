@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -22,7 +20,8 @@ from wsgiref.simple_server import WSGIServer
 
 from restalchemy.api import applications
 from restalchemy.api.middlewares import (
-    retry_on_error as retry_error_middleware)
+    retry_on_error as retry_error_middleware,
+)
 from restalchemy.api.middlewares import errors as errors_middleware
 from restalchemy.openapi import engines as openapi_engines
 from restalchemy.openapi import structures as openapi_structures
@@ -30,7 +29,8 @@ from restalchemy.storage import exceptions as storage_exc
 from restalchemy.storage.sql import engines
 from restalchemy.tests.functional import consts
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
-    middlewares)
+    middlewares,
+)
 from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 
 
@@ -41,49 +41,58 @@ class RESTService(threading.Thread):
 
         openapi_engine = openapi_engines.OpenApiEngine(
             info=openapi_structures.OpenApiInfo(
-                title='REST API Microservice',
-                description='REST API Microservice for tests',
-                version='1.2.3',
+                title="REST API Microservice",
+                description="REST API Microservice for tests",
+                version="1.2.3",
                 contact=openapi_structures.OpenApiContact(
-                    name='Functional Tests',
-                    url='https://functional.tests/',
-                    email='functional@tests.local',
+                    name="Functional Tests",
+                    url="https://functional.tests/",
+                    email="functional@tests.local",
                 ),
                 license=openapi_structures.OpenApiApacheLicense(),
-                terms_of_service='https://functional.tests/terms/',
+                terms_of_service="https://functional.tests/terms/",
             ),
             paths=openapi_structures.OpenApiPaths(),
             components=openapi_structures.OpenApiComponents(),
             security=[openapi_structures.OpenApiSecurity()],
-            tags=openapi_structures.OpenApiTags([openapi_structures.OpenApiTag(
-                name='functional-test',
-                description='Just functional tests',
-                external_docs=openapi_structures.OpenApiExternalDocs(
-                    url='https://https://functional.tests/docs/',
-                    description='Functional tests external documentation'
-                ),
-            )]),
+            tags=openapi_structures.OpenApiTags(
+                [
+                    openapi_structures.OpenApiTag(
+                        name="functional-test",
+                        description="Just functional tests",
+                        external_docs=openapi_structures.OpenApiExternalDocs(
+                            url="https://https://functional.tests/docs/",
+                            description=(
+                                "Functional tests external documentation"
+                            ),
+                        ),
+                    )
+                ]
+            ),
             external_docs=openapi_structures.OpenApiExternalDocs(
-                url='https://https://functional.tests/docs/',
-                description='Functional tests external documentation'
+                url="https://https://functional.tests/docs/",
+                description="Functional tests external documentation",
             ),
         )
 
         self._httpd = make_server(
-            bind_host, bind_port,
+            bind_host,
+            bind_port,
             errors_middleware.ErrorsHandlerMiddleware(
                 retry_error_middleware.RetryOnErrorsMiddleware(
                     middlewares.ContextMiddleware(
                         application=applications.OpenApiApplication(
                             route_class=routes.Root,
-                            openapi_engine=openapi_engine
+                            openapi_engine=openapi_engine,
                         ),
-                    ), exceptions=storage_exc.DeadLock,
+                    ),
+                    exceptions=storage_exc.DeadLock,
                     # set max_retry == 2 to speed up retry tests execution
-                    max_retry=2
+                    max_retry=2,
                 ),
             ),
-            WSGIServer)
+            WSGIServer,
+        )
 
     def run(self):
         self._httpd.serve_forever()

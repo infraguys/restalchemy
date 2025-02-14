@@ -29,8 +29,7 @@ class DBEngineMixin(object):
 
     @classmethod
     def init_engine(cls):
-        engines.engine_factory.configure_factory(
-            db_url=consts.DATABASE_URI)
+        engines.engine_factory.configure_factory(db_url=consts.DATABASE_URI)
         cls.__ENGINE__ = engines.engine_factory.get_engine()
 
     @classmethod
@@ -44,12 +43,14 @@ class DBEngineMixin(object):
     @classmethod
     def get_all_tables(cls, session=None):
         with cls.engine.session_manager(session=session) as s:
-            res = s.execute("""
+            res = s.execute(
+                """
                 select
                     table_name as table_name
                 from information_schema.tables
                 where table_schema = database();
-            """).fetchall()
+            """
+            ).fetchall()
         tables = {row["table_name"] for row in res}
         return tables
 

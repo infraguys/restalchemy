@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2021 Eugene Frolov.
 #
 #
@@ -24,8 +22,9 @@ from restalchemy.tests.functional import base
 
 class BatchDeleteModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = "batch_delete_two_pk"
-    foo_field1 = properties.property(types.Integer(), required=True,
-                                     id_property=True)
+    foo_field1 = properties.property(
+        types.Integer(), required=True, id_property=True
+    )
     foo_field2 = properties.property(types.String(), default="foo_str")
 
     @property
@@ -34,8 +33,12 @@ class BatchDeleteModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
     @classmethod
     def get_id_property(cls):
-        return {'super_id': (cls.properties['uuid'],
-                             cls.properties['foo_field1'],)}
+        return {
+            "super_id": (
+                cls.properties["uuid"],
+                cls.properties["foo_field1"],
+            )
+        }
 
 
 class WithDbMigrationsDeleteTwoPkTestCase(base.BaseWithDbMigrationsTestCase):
