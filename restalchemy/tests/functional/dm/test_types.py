@@ -1,5 +1,3 @@
-# coding=utf-8
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -36,7 +34,8 @@ class ThreadImportTestCase(base.BaseFunctionalTestCase):
                 for _ in range(1, 13):
                     for _ in range(1, 29):
                         types.UTCDateTime().from_simple_type(
-                            '2013-01-01 00:00:00.0')
+                            "2013-01-01 00:00:00.0"
+                        )
             except AttributeError:
                 exc_raised[0] += 1
 

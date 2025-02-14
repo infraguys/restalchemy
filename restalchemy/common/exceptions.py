@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -72,18 +70,21 @@ class UnsupportedHttpMethod(RestAlchemyException):
 
 
 class UnsupportedMethod(NotFoundError):
-    message = "Method '%(method)s' is not supported " \
-              "for %(object_name)s."
+    message = "Method '%(method)s' is not supported " "for %(object_name)s."
 
 
 class LocatorNotFound(NotFoundError):
-    message = ("Locator is not found for URI %(uri)s. "
-               "Thus resource could not be found.")
+    message = (
+        "Locator is not found for URI %(uri)s. "
+        "Thus resource could not be found."
+    )
 
 
 class UnknownResourceLocation(NotFoundError):
-    message = ("Can not construct resource location for resource %(resource)r "
-               "because the resource can't be got using REST API.")
+    message = (
+        "Can not construct resource location for resource %(resource)r "
+        "because the resource can't be got using REST API."
+    )
 
 
 class CanNotFindResourceByModel(NotFoundError):
@@ -99,8 +100,10 @@ class IncorrectRouteAttribute(NotFoundError):
 
 
 class IncorrectActionCall(NotFoundError):
-    message = "Action %(action)s is incorrectly called with HTTP method %(" \
-              "method)s."
+    message = (
+        "Action %(action)s is incorrectly called with HTTP method %("
+        "method)s."
+    )
 
 
 class ResourceNotFoundError(NotFoundError):
@@ -116,23 +119,24 @@ class CollectionNotFoundError(NotFoundError):
 class PropertyException(RestAlchemyException, ValueError):
 
     def __init__(self, name=None, model=None):
-        self.name = name or 'Unknown'
-        self.model = model or 'Unknown'
+        self.name = name or "Unknown"
+        self.model = model or "Unknown"
         super(PropertyException, self).__init__(
-            name=self.name,
-            model=self.model
+            name=self.name, model=self.model
         )
 
 
 class PropertyRequired(PropertyException):
 
-    message = ("Value for property '%(name)s' for model %(model)s "
-               "is required! Property should not be None value.")
+    message = (
+        "Value for property '%(name)s' for model %(model)s "
+        "is required! Property should not be None value."
+    )
 
 
 class ReadOnlyProperty(PropertyException):
 
-    message = ("Property '%(name)s' of model %(model)s is read only.")
+    message = "Property '%(name)s' of model %(model)s is read only."
 
 
 class TypeError(RestAlchemyException, TypeError):
@@ -143,7 +147,8 @@ class TypeError(RestAlchemyException, TypeError):
         self._value = value
         self._property_type = property_type
         super(TypeError, self).__init__(
-            value=value, property_type=type(property_type).__name__)
+            value=value, property_type=type(property_type).__name__
+        )
 
     def get_value(self):
         return self._value
@@ -154,21 +159,27 @@ class TypeError(RestAlchemyException, TypeError):
 
 class ModelTypeError(TypeError):
 
-    message = ("Invalid type value '%(value)s'(%(value_type)s) for "
-               "'%(model_name)s.%(property_name)s'(%(property_type)s).")
+    message = (
+        "Invalid type value '%(value)s'(%(value_type)s) for "
+        "'%(model_name)s.%(property_name)s'(%(property_type)s)."
+    )
 
     def __init__(self, value, property_name, property_type, model):
         super(TypeError, self).__init__(
-            value=value, value_type=type(value),
+            value=value,
+            value_type=type(value),
             property_type=type(property_type).__name__,
             model_name=type(model).__name__,
-            property_name=property_name)
+            property_name=property_name,
+        )
 
 
 class RelationshipModelError(RestAlchemyException):
 
-    message = ("Invalid model %(model)s for relationship. Must be inherited "
-               "from dm.core.models.Model.")
+    message = (
+        "Invalid model %(model)s for relationship. Must be inherited "
+        "from dm.core.models.Model."
+    )
 
 
 class NotFoundOperationalStorageError(RestAlchemyException):
@@ -199,8 +210,10 @@ class ValidationPropertyPrivateError(ValidationErrorException):
 
 class NotEqualUuidException(RestAlchemyException):
 
-    message = ("Uuid (%(uuid)s) in body is not equal to "
-               "parsed id (%(parsed_id)s) from url.")
+    message = (
+        "Uuid (%(uuid)s) in body is not equal to "
+        "parsed id (%(parsed_id)s) from url."
+    )
     code = 400
 
 

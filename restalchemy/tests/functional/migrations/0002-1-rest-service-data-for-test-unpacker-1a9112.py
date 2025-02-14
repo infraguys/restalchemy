@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -36,7 +34,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                 ) VALUES (
                     '00000000-0000-0000-0000-000000000001', 'vm1', 'on'
                 );
-            """, """
+            """,
+            """
                 INSERT INTO ports (
                      `uuid`, `mac`, `vm`
                 ) VALUES (
@@ -44,7 +43,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     '00:00:00:00:00:00',
                     '00000000-0000-0000-0000-000000000001'
                 );
-            """, """
+            """,
+            """
                 INSERT INTO ip_addresses (
                      `uuid`, `ip`, `port`
                 ) VALUES (
@@ -52,7 +52,7 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     '192.168.0.1',
                     '00000000-0000-0000-0000-000000000002'
                 );
-            """
+            """,
         ]
 
         for expression in expressions:
@@ -62,13 +62,16 @@ class MigrationStep(migrations.AbstarctMigrationStep):
         expressions = [
             """
                 DELETE from tags;
-            """, """
-                DELETE from ip_addresses;
-            """, """
-                DELETE FROM ports;
-            """, """
-                DELETE FROM vms;
+            """,
             """
+                DELETE from ip_addresses;
+            """,
+            """
+                DELETE FROM ports;
+            """,
+            """
+                DELETE FROM vms;
+            """,
         ]
 
         for expression in expressions:

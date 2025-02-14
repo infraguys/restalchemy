@@ -37,7 +37,8 @@ class FooModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 engines.engine_factory.configure_factory(
-    db_url="mysql://root:21070809d@127.0.0.1/test")
+    db_url="mysql://root:21070809d@127.0.0.1/test",
+)
 
 
 model1 = FooModel(foo_field1=1, foo_field2="Model1")

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2024 George Melikov
 #
 #
@@ -37,9 +35,10 @@ class BasePackerTestCase(base.BaseTestCase):
         super(BasePackerTestCase, self).setUp()
         self._test_instance = packers.BaseResourcePacker(
             resources.ResourceByRAModel(
-                FakeModel, hidden_fields=['_hidden'],
-                convert_underscore=False),
-            mock.Mock())
+                FakeModel, hidden_fields=["_hidden"], convert_underscore=False
+            ),
+            mock.Mock(),
+        )
 
     def tearDown(self):
         super(BasePackerTestCase, self).tearDown()
@@ -47,12 +46,12 @@ class BasePackerTestCase(base.BaseTestCase):
         del self._test_instance
 
     def test_public_field(self):
-        data = {'public': None}
+        data = {"public": None}
 
         self._test_instance.unpack(data)
 
     def test_hidden_field(self):
-        data = {'_hidden': None}
+        data = {"_hidden": None}
 
         with self.assertRaises(exceptions.ValidationPropertyPrivateError):
             self._test_instance.unpack(data)

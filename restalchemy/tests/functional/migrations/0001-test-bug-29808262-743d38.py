@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -46,7 +44,7 @@ class MigrationStep(migrations.AbstarctMigrationStep):
             session.execute(expression)
 
     def downgrade(self, session):
-        tables_to_delete = ['binary_data']
+        tables_to_delete = ["binary_data"]
 
         for table in tables_to_delete:
             self._delete_table_if_exists(session, table)

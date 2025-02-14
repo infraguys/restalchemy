@@ -27,7 +27,7 @@ from restalchemy.api import routes
 from restalchemy.openapi import engines as openapi_engines
 from restalchemy.openapi import structures as openapi_structures
 
-HOST = '0.0.0.0'
+HOST = "0.0.0.0"
 PORT = 8000
 
 
@@ -78,8 +78,10 @@ def get_user_api_application():
 
 def build_wsgi_application():
     return middlewares.attach_middlewares(
-        applications.OpenApiApplication(route_class=get_user_api_application(),
-                                        openapi_engine=get_openapi_engine()),
+        applications.OpenApiApplication(
+            route_class=get_user_api_application(),
+            openapi_engine=get_openapi_engine(),
+        ),
         [],
     )
 
@@ -96,8 +98,8 @@ def main():
         six.print_("Serve forever on %s:%s" % (HOST, PORT))
         server.serve_forever()
     except KeyboardInterrupt:
-        six.print_('Bye')
+        six.print_("Bye")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

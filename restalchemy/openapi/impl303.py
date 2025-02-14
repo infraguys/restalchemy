@@ -60,8 +60,16 @@ class OpenApi303(object):
     :param external_docs: Additional external documentation.
     """
 
-    def __init__(self, info, paths=None, servers=None, components=None,
-                 security=None, tags=None, external_docs=None):
+    def __init__(
+        self,
+        info,
+        paths=None,
+        servers=None,
+        components=None,
+        security=None,
+        tags=None,
+        external_docs=None,
+    ):
         super(OpenApi303, self).__init__()
         self._info = info or structures.OpenApiInfo()
         self._paths = paths or structures.OpenApiPaths()
@@ -73,7 +81,7 @@ class OpenApi303(object):
 
     def build_openapi_specification(self, request):
         specification = {
-            'openapi': constants.OPENAPI_SPECIFICATION_3_0_3,
+            "openapi": constants.OPENAPI_SPECIFICATION_3_0_3,
         }
 
         specification.update(self._info.build(request))

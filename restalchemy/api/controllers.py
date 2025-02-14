@@ -63,32 +63,38 @@ class Controller(object):
 
     def _create_response(self, body, status, headers):
         if body is not None:
-            headers['Content-Type'] = packers.get_content_type(headers)
-            packer = self.get_packer(headers['Content-Type'])
+            headers["Content-Type"] = packers.get_content_type(headers)
+            packer = self.get_packer(headers["Content-Type"])
             body = packer.pack(body)
 
         return webob.Response(
-            body=six.b(body or ''),
+            body=six.b(body or ""),
             status=status,
-            content_type=headers.get('Content-Type', None),
-            headerlist=[(k, v) for k, v in headers.items()])
+            content_type=headers.get("Content-Type", None),
+            headerlist=[(k, v) for k, v in headers.items()],
+        )
 
-    def process_result(self, result, status_code=200, headers=None,
-                       add_location=False):
+    def process_result(
+        self, result, status_code=200, headers=None, add_location=False
+    ):
         headers = headers or {}
 
-        def correct(body, c=status_code, h=None, h_location=add_location,
-                    *args):
+        def correct(
+            body, c=status_code, h=None, h_location=add_location, *args
+        ):
             h = h or {}
             if h_location:
                 try:
-                    headers['Location'] = resources.ResourceMap.get_location(
-                        body)
-                except (exc.UnknownResourceLocation,
-                        exc.CanNotFindResourceByModel) as e:
+                    headers["Location"] = resources.ResourceMap.get_location(
+                        body
+                    )
+                except (
+                    exc.UnknownResourceLocation,
+                    exc.CanNotFindResourceByModel,
+                ) as e:
                     LOG.warning(
-                        "Can't construct location header by reason: %r",
-                        e)
+                        "Can't construct location header by reason: %r", e
+                    )
             headers.update(h)
             return body, c, headers
 
@@ -99,7 +105,7 @@ class Controller(object):
 
     def _make_kwargs(self, parent_resource, **kwargs):
         if parent_resource:
-            kwargs['parent_resource'] = parent_resource
+            kwargs["parent_resource"] = parent_resource
         return kwargs
 
     @utils.raise_parse_error_on_fail
@@ -114,10 +120,10 @@ class Controller(object):
                 for name, prop in self.__resource__.get_fields()
             }
         if param_name not in resource_fields:
-            raise ValueError("Unknown filter '%s' with value %r for "
-                             "resource %r" % (param_name,
-                                              value,
-                                              self.__resource__))
+            raise ValueError(
+                "Unknown filter '%s' with value %r for "
+                "resource %r" % (param_name, value, self.__resource__)
+            )
         resource_field = resource_fields[param_name]
         value = self._parse_field_value(param_name, value, resource_field)
 
@@ -132,9 +138,11 @@ class Controller(object):
             if filter_name not in result:
                 result[filter_name] = dm_filters.EQ(filter_value)
             else:
-                values = ([result[filter_name].value]
-                          if not isinstance(result[filter_name], dm_filters.In)
-                          else result[filter_name].value)
+                values = (
+                    [result[filter_name].value]
+                    if not isinstance(result[filter_name], dm_filters.In)
+                    else result[filter_name].value
+                )
                 values.append(filter_value)
                 result[filter_name] = dm_filters.In(values)
 
@@ -144,26 +152,26 @@ class Controller(object):
         method = self._req.method
 
         api_context = self._req.api_context
-        if method == 'GET':
+        if method == "GET":
             api_context.set_active_method(constants.FILTER)
             filters = self._prepare_filters(
                 params=self._req.api_context.params,
             )
             kwargs = self._make_kwargs(parent_resource, filters=filters)
             return self.process_result(result=self.filter(**kwargs))
-        elif method == 'POST':
+        elif method == "POST":
             api_context.set_active_method(constants.CREATE)
             content_type = packers.get_content_type(self._req.headers)
             packer = self.get_packer(content_type)
             kwargs = self._make_kwargs(
-                parent_resource,
-                **packer.unpack(value=self._req.body)
+                parent_resource, **packer.unpack(value=self._req.body)
             )
 
             return self.process_result(
                 result=self.create(**kwargs),
                 status_code=201,
-                add_location=constants.CREATE in self.__generate_location_for__
+                add_location=constants.CREATE
+                in self.__generate_location_for__,
             )
         else:
             raise exc.UnsupportedHttpMethod(method=method)
@@ -171,9 +179,13 @@ class Controller(object):
     def get_resource_by_uuid(self, uuid, parent_resource=None):
         kwargs = self._make_kwargs(parent_resource)
 
-        parsed_id = self._parse_resource_uuid(
-            "uuid", uuid, self.get_resource().get_id_type()
-        ) if self.__resource__ else uuid
+        parsed_id = (
+            self._parse_resource_uuid(
+                "uuid", uuid, self.get_resource().get_id_type()
+            )
+            if self.__resource__
+            else uuid
+        )
 
         result = self.get(uuid=parsed_id, **kwargs)
         if isinstance(result, tuple):
@@ -188,19 +200,23 @@ class Controller(object):
         method = self._req.method
         kwargs = self._make_kwargs(parent_resource)
 
-        parsed_id = self._parse_resource_uuid(
-            "uuid", uuid, self.get_resource().get_id_type()
-        ) if self.__resource__ else uuid
+        parsed_id = (
+            self._parse_resource_uuid(
+                "uuid", uuid, self.get_resource().get_id_type()
+            )
+            if self.__resource__
+            else uuid
+        )
 
         api_context = self._req.api_context
 
-        if method == 'GET':
+        if method == "GET":
             api_context.set_active_method(constants.GET)
             return self.process_result(
                 result=self.get(uuid=parsed_id, **kwargs),
-                add_location=constants.GET in self.__generate_location_for__
+                add_location=constants.GET in self.__generate_location_for__,
             )
-        elif method == 'PUT':
+        elif method == "PUT":
             api_context.set_active_method(constants.UPDATE)
             content_type = packers.get_content_type(self._req.headers)
             packer = self.get_packer(content_type)
@@ -209,14 +225,16 @@ class Controller(object):
             #  in new major version for updating uuid in model
             if "uuid" in kwargs:
                 if kwargs["uuid"] != parsed_id:
-                    raise exc.NotEqualUuidException(uuid=kwargs["uuid"],
-                                                    parsed_id=parsed_id)
+                    raise exc.NotEqualUuidException(
+                        uuid=kwargs["uuid"], parsed_id=parsed_id
+                    )
                 kwargs.pop("uuid", None)
             return self.process_result(
                 result=self.update(uuid=parsed_id, **kwargs),
-                add_location=constants.UPDATE in self.__generate_location_for__
+                add_location=constants.UPDATE
+                in self.__generate_location_for__,
             )
-        elif method == 'DELETE':
+        elif method == "DELETE":
             api_context.set_active_method(constants.DELETE)
             result = self.delete(uuid=parsed_id, **kwargs)
             return self.process_result(
@@ -279,7 +297,7 @@ class BaseResourceController(Controller):
         return self.model.objects.get_one(filters=kwargs)
 
     def _split_filters(self, filters):
-        if hasattr(self.model, 'get_custom_properties'):
+        if hasattr(self.model, "get_custom_properties"):
             custom_filters = {}
             storage_filters = {}
             custom_properties = dict(self.model.get_custom_properties())
@@ -311,8 +329,9 @@ class BaseResourceController(Controller):
                         result.remove(item)
                         continue
                 else:
-                    raise ValueError("Unknown filter %s<%s>" % (field_name,
-                                                                filter_value))
+                    raise ValueError(
+                        "Unknown filter %s<%s>" % (field_name, filter_value)
+                    )
         return result
 
     def _process_storage_filters(self, filters):
@@ -354,17 +373,20 @@ class BaseNestedResourceController(BaseResourceController):
 
     def create(self, **kwargs):
         return super(BaseNestedResourceController, self).create(
-            **self._prepare_kwargs(**kwargs))
+            **self._prepare_kwargs(**kwargs)
+        )
 
     def get(self, **kwargs):
         return super(BaseNestedResourceController, self).get(
-            **self._prepare_kwargs(**kwargs))
+            **self._prepare_kwargs(**kwargs)
+        )
 
     def filter(self, parent_resource, filters):
         filters = filters.copy()
         filters[self.__pr_name__] = dm_filters.EQ(parent_resource)
         return super(BaseNestedResourceController, self).filter(
-            filters=filters)
+            filters=filters
+        )
 
     def delete(self, parent_resource, uuid):
         dm = self.get(parent_resource=parent_resource, uuid=uuid)
@@ -417,49 +439,66 @@ class BasePaginationMixin(object):
             headers[self._header_page_limit] = str(self._pagination_limit)
             if len(body) == self._pagination_limit:
                 headers[self._header_page_marker] = str(
-                    getattr(body[-1], self.model.get_id_property_name()))
+                    getattr(body[-1], self.model.get_id_property_name())
+                )
 
         return super(BasePaginationMixin, self)._create_response(
-            body, status, headers)
+            body, status, headers
+        )
 
     def _prepare_pagination_meta(self):
         try:
-            self._pagination_limit = int(self._req.headers.get(
-                self._header_page_limit, 0))
+            self._pagination_limit = int(
+                self._req.headers.get(self._header_page_limit, 0)
+            )
             if self._pagination_limit < 0:
                 raise ValueError()
         except ValueError:
             raise exc.ParseError(
-                value="%s=%s" % (
+                value="%s=%s"
+                % (
                     self._header_page_limit,
-                    self._req.headers.get(self._header_page_limit)))
+                    self._req.headers.get(self._header_page_limit),
+                )
+            )
         # TODO(g.melikov): do we need to validate if marker ID record exists?
         self._pagination_marker = self._req.headers.get(
-            self._header_page_marker)
+            self._header_page_marker
+        )
         if self._pagination_marker:
-            self._pagination_marker = self._parse_resource_uuid(
-                "uuid", self._pagination_marker,
-                self.get_resource().get_id_type()
-            ) if self.__resource__ else self._pagination_marker
+            self._pagination_marker = (
+                self._parse_resource_uuid(
+                    "uuid",
+                    self._pagination_marker,
+                    self.get_resource().get_id_type(),
+                )
+                if self.__resource__
+                else self._pagination_marker
+            )
 
     def do_collection(self, parent_resource=None):
         self._prepare_pagination_meta()
 
-        return super(BasePaginationMixin, self
-                     ).do_collection(parent_resource=parent_resource)
+        return super(BasePaginationMixin, self).do_collection(
+            parent_resource=parent_resource
+        )
 
     def _process_storage_filters(self, filters):
         if not self._pagination_limit:
             return super(BasePaginationMixin, self)._process_storage_filters(
-                filters)
+                filters
+            )
 
         id_name = self.model.get_id_property_name()
         if self._pagination_marker:
             filters = dm_filters.AND(
-                {id_name: dm_filters.GT(self._pagination_marker)}, filters)
+                {id_name: dm_filters.GT(self._pagination_marker)}, filters
+            )
         return self.model.objects.get_all(
-            filters=filters, limit=self._pagination_limit,
-            order_by={id_name: "asc"})
+            filters=filters,
+            limit=self._pagination_limit,
+            order_by={id_name: "asc"},
+        )
 
     def paginated_filter(self, filters):
         custom_filters, storage_filters = self._split_filters(filters)
@@ -467,26 +506,29 @@ class BasePaginationMixin(object):
         cleaned_results = []
 
         # Get additional data from DB if some was filtered by custom props
-        while (len(cleaned_results) < self._pagination_limit):
+        while len(cleaned_results) < self._pagination_limit:
             result = self._process_storage_filters(storage_filters)
 
             if not len(result):
                 break
 
             self._pagination_marker = getattr(
-                result[-1], self.model.get_id_property_name())
+                result[-1], self.model.get_id_property_name()
+            )
 
             cleaned_results.extend(
-                self._process_custom_filters(result, custom_filters))
+                self._process_custom_filters(result, custom_filters)
+            )
 
         if len(cleaned_results) > self._pagination_limit:
-            cleaned_results = cleaned_results[:self._pagination_limit]
+            cleaned_results = cleaned_results[: self._pagination_limit]
 
         return cleaned_results
 
 
 class BaseResourceControllerPaginated(
-    BasePaginationMixin, BaseResourceController):
+    BasePaginationMixin, BaseResourceController
+):
 
     def filter(self, filters):
         # NOTE(g.melikov): if you want to add pagination and you need to
@@ -499,7 +541,8 @@ class BaseResourceControllerPaginated(
 
 
 class BaseNestedResourceControllerPaginated(
-    BasePaginationMixin, BaseNestedResourceController):
+    BasePaginationMixin, BaseNestedResourceController
+):
 
     def filter(self, parent_resource, filters):
         filters = filters.copy()
@@ -508,8 +551,7 @@ class BaseNestedResourceControllerPaginated(
         if self._pagination_limit:
             return self.paginated_filter(filters)
 
-        return super(BaseNestedResourceController, self).filter(
-            filters)
+        return super(BaseNestedResourceController, self).filter(filters)
 
 
 class RootController(Controller):
@@ -518,24 +560,27 @@ class RootController(Controller):
         main_route = self.request.application.main_route
         req = self.request
         return [
-            route_name for route_name in main_route.get_routes()
+            route_name
+            for route_name in main_route.get_routes()
             if main_route.get_route(route_name)(req).is_collection_route()
         ]
 
 
 class OpenApiSpecificationController(Controller):
 
-    @oa_utils.extend_schema(summary="OpenApi specification",
-                            responses=oa_c.build_openapi_object_response(
-                                properties={},
-                                description="OpenApi specification"
-                            ),
-                            operation_id="Get_OpenApi_specification")
+    @oa_utils.extend_schema(
+        summary="OpenApi specification",
+        responses=oa_c.build_openapi_object_response(
+            properties={}, description="OpenApi specification"
+        ),
+        operation_id="Get_OpenApi_specification",
+    )
     def get(self, uuid):
         openapi_engine = self.request.application.openapi_engine
         if openapi_engine:
             return openapi_engine.build_openapi_specification(
-                version=uuid, request=self._req,
+                version=uuid,
+                request=self._req,
             )
         raise exc.NotExtended()
 

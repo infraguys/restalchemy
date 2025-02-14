@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2022 George Melikov
 #
 # All Rights Reserved.
@@ -27,7 +25,7 @@ from webob import request
 
 
 class LoggingHttpMiddlewareTestCase(base.BaseTestCase):
-    middlew = logging_http.LoggingHttpMiddleware('application')
+    middlew = logging_http.LoggingHttpMiddleware("application")
 
     def test_response_with_exception(self):
         request_mock = mock.Mock(spec=request.Request)

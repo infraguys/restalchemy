@@ -38,7 +38,8 @@ class FooModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 engines.engine_factory.configure_factory(
-    db_url="mysql://root:21070809d@127.0.0.1/test")
+    db_url="mysql://root:21070809d@127.0.0.1/test",
+)
 
 
 model1 = FooModel(foo_field1=10, foo_field2="Value1")
@@ -49,8 +50,8 @@ model2.save()
 model3.save()
 
 six.print_(FooModel.objects.count())
-six.print_(FooModel.objects.count(filters={'foo_field1': filters.GT(10)}))
-six.print_(FooModel.objects.count(filters={'foo_field2': 'TypeA'}))
+six.print_(FooModel.objects.count(filters={"foo_field1": filters.GT(10)}))
+six.print_(FooModel.objects.count(filters={"foo_field2": "TypeA"}))
 
 for model in FooModel.objects.get_all():
     model.delete()

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (c) 2020 Eugene Frolov
 # Copyright (c) 2018 Eugene Frolov
 # Copyright (c) 2014 Eugene Frolov <eugene@frolov.net.ru>
@@ -25,38 +23,38 @@ import yaml
 
 
 DEFAULT_CONFIG = {
-    'version': 1,
-    'formatters': {
-        'aardvark': {
-            'datefmt': '%Y-%m-%d,%H:%M:%S',
-            'format': "%(asctime)15s.%(msecs)03d %(processName)s"
-                      " pid:%(process)d tid:%(thread)d %(levelname)s"
-                      " %(name)s:%(lineno)d %(message)s"
+    "version": 1,
+    "formatters": {
+        "aardvark": {
+            "datefmt": "%Y-%m-%d,%H:%M:%S",
+            "format": "%(asctime)15s.%(msecs)03d %(processName)s"
+            " pid:%(process)d tid:%(thread)d %(levelname)s"
+            " %(name)s:%(lineno)d %(message)s",
         }
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'aardvark',
-            'stream': 'ext://sys.stderr'
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "aardvark",
+            "stream": "ext://sys.stderr",
         },
     },
-    'loggers': {
-        'restalchemy': {},
+    "loggers": {
+        "restalchemy": {},
     },
-    'root': {
-        'level': 'DEBUG',
-        'handlers': ['console']
-    }
+    "root": {"level": "DEBUG", "handlers": ["console"]},
 }
 
 
 logging_opts = [
-    cfg.StrOpt('config', default='logging.yaml',
-               help="Logging subsystem configuration YAML file")
+    cfg.StrOpt(
+        "config",
+        default="logging.yaml",
+        help="Logging subsystem configuration YAML file",
+    )
 ]
 
-cfg.CONF.register_cli_opts(logging_opts, 'logging')
+cfg.CONF.register_cli_opts(logging_opts, "logging")
 
 
 class ConfigNotFound(Exception):
@@ -77,5 +75,5 @@ def configure():
 
     if config_data == DEFAULT_CONFIG:
         logging.getLogger(__name__).warning(
-            'Logging configuration %s not found - using defaults',
-            config)
+            "Logging configuration %s not found - using defaults", config
+        )

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -25,7 +23,8 @@ from restalchemy.common import exceptions as exc
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import utils
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
-    storable_models as models)
+    storable_models as models,
+)
 
 
 class TagController(controllers.BaseNestedResourceController):
@@ -68,11 +67,11 @@ class PortController(controllers.BaseNestedResourceControllerPaginated):
         models.Port,
         process_filters=True,
         hidden_fields=resources.HiddenFieldMap(
-            create=['never_call', 'some_field1', 'unique_field'],
-            filter=['never_call', 'some_field2'],
-            get=['never_call', 'some_field3', 'unique_field'],
-            update=['never_call', 'some_field4', 'unique_field'],
-        )
+            create=["never_call", "some_field1", "unique_field"],
+            filter=["never_call", "some_field2"],
+            get=["never_call", "some_field3", "unique_field"],
+            update=["never_call", "some_field4", "unique_field"],
+        ),
     )
     __pr_name__ = "vm"
 
@@ -83,8 +82,9 @@ class PortControllerNone(PortController):
         if content_type == constants.CONTENT_TYPE_APPLICATION_JSON:
             rt = resource_type or self.get_resource()
             return packers.JSONPackerIncludeNullFields(rt, request=self._req)
-        return super(PortControllerNone,
-                     self).get_packer(content_type, resource_type)
+        return super(PortControllerNone, self).get_packer(
+            content_type, resource_type
+        )
 
 
 class VMController(controllers.BaseResourceControllerPaginated):
@@ -109,26 +109,28 @@ class VMController(controllers.BaseResourceControllerPaginated):
         """
         return super(VMController, self).create(**kwargs)
 
-    @utils.extend_schema(summary="Power on virtual machine",
-                         parameters=[oa_c.build_openapi_parameter("VMUuid")],
-                         responses=oa_c.build_openapi_get_update_response(
-                             "{}_{}".format(models.VM.__name__,
-                                            constants.CREATE.capitalize())),
-                         tags=["VM"],
-                         )
+    @utils.extend_schema(
+        summary="Power on virtual machine",
+        parameters=[oa_c.build_openapi_parameter("VMUuid")],
+        responses=oa_c.build_openapi_get_update_response(
+            "{}_{}".format(models.VM.__name__, constants.CREATE.capitalize())
+        ),
+        tags=["VM"],
+    )
     @actions.post
     def poweron(self, resource):
         resource.state = "on"
         resource.save()
         return resource
 
-    @utils.extend_schema(summary="Power off virtual machine",
-                         parameters=[oa_c.build_openapi_parameter("VMUuid")],
-                         responses=oa_c.build_openapi_get_update_response(
-                             "{}_{}".format(models.VM.__name__,
-                                            constants.CREATE.capitalize())),
-                         tags=["VM"],
-                         )
+    @utils.extend_schema(
+        summary="Power off virtual machine",
+        parameters=[oa_c.build_openapi_parameter("VMUuid")],
+        responses=oa_c.build_openapi_get_update_response(
+            "{}_{}".format(models.VM.__name__, constants.CREATE.capitalize())
+        ),
+        tags=["VM"],
+    )
     @actions.post
     def poweroff(self, resource, *args, **kwargs):
         resource.state = "off"

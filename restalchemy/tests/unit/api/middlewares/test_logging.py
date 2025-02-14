@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2021 George Melikov
 #
 # All Rights Reserved.
@@ -27,33 +25,34 @@ class LoggingMiddlewareTestCase(base.BaseTestCase):
     def test_sanitize_authorization_header(self):
         request_mock = mock.MagicMock()
         request_mock.headers = {
-            'fake_header': 'fake_header_value',
-            'Authorization': 'basic something'}
-        middlew = LoggingMiddleware('application')
+            "fake_header": "fake_header_value",
+            "Authorization": "basic something",
+        }
+        middlew = LoggingMiddleware("application")
         checks = {}
 
         def _check_sanitized_header(msg, *args, **kwargs):
-            if 'API > ' in msg:  # test only request logs
-                checks['check_run'] = True
+            if "API > " in msg:  # test only request logs
+                checks["check_run"] = True
                 for header in args[1]:
-                    if header.startswith('Authorization'):
-                        if 'something' not in header:
-                            checks['Authorization'] = True
-                    if header.startswith('fake_header'):
-                        if 'fake_header_value' in header:
-                            checks['fake_header'] = True
+                    if header.startswith("Authorization"):
+                        if "something" not in header:
+                            checks["Authorization"] = True
+                    if header.startswith("fake_header"):
+                        if "fake_header_value" in header:
+                            checks["fake_header"] = True
 
         middlew.logger.debug = mock.Mock(side_effect=_check_sanitized_header)
 
         middlew.process_request(request_mock)
 
-        self.assertTrue(checks['check_run'])
-        self.assertTrue(checks['Authorization'])
-        self.assertTrue(checks['fake_header'])
+        self.assertTrue(checks["check_run"])
+        self.assertTrue(checks["Authorization"])
+        self.assertTrue(checks["fake_header"])
         self.assertDictEqual(
             {
-                'fake_header': 'fake_header_value',
-                'Authorization': 'basic something'
+                "fake_header": "fake_header_value",
+                "Authorization": "basic something",
             },
-            request_mock.headers
+            request_mock.headers,
         )

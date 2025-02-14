@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -35,12 +33,12 @@ class FakeProperty(mock.Mock):
 
 FAKE_PROPERTY1 = FakeProperty()
 FAKE_PROPERTY2 = FakeProperty()
-FAKE_VALUE1 = 'Fake value 1'
+FAKE_VALUE1 = "Fake value 1"
 
 
 class MetaModelTestCase(base.BaseTestCase):
 
-    with mock.patch('restalchemy.dm.properties.PropertyCreator', FakeProperty):
+    with mock.patch("restalchemy.dm.properties.PropertyCreator", FakeProperty):
 
         @six.add_metaclass(models.MetaModel)
         class Model(object):
@@ -49,8 +47,9 @@ class MetaModelTestCase(base.BaseTestCase):
             fake_prop2 = FAKE_PROPERTY2
 
     def test_model_class(self):
-        self.assertIsInstance(self.Model.properties,
-                              properties.PropertyCollection)
+        self.assertIsInstance(
+            self.Model.properties, properties.PropertyCollection
+        )
 
     def test_metamodel_getattr(self):
         self.assertNotEqual(self.Model.fake_prop1, FAKE_PROPERTY1)
@@ -62,16 +61,17 @@ class MetaModelTestCase(base.BaseTestCase):
 
 class ModelTestCase(base.BaseTestCase):
 
-    PM_MOCK = mock.MagicMock(name='PropertyManager object')
+    PM_MOCK = mock.MagicMock(name="PropertyManager object")
 
-    @mock.patch('restalchemy.dm.properties.PropertyManager',
-                return_value=PM_MOCK)
+    @mock.patch(
+        "restalchemy.dm.properties.PropertyManager", return_value=PM_MOCK
+    )
     def setUp(self, pm_mock):
         super(ModelTestCase, self).setUp()
         self.PM_MOCK.__getitem__.side_effect = None
         self.PM_MOCK.reset_mock()
         self.pm_mock = pm_mock
-        self.kwargs = {'kwarg1': 1, 'kwarg2': 2}
+        self.kwargs = {"kwarg1": 1, "kwarg2": 2}
         self.test_instance = models.Model(**self.kwargs)
         self.test_instance.validate = mock.MagicMock()
 
@@ -82,18 +82,21 @@ class ModelTestCase(base.BaseTestCase):
 
     def test_obj(self):
         self.assertEqual(self.test_instance.properties, self.PM_MOCK)
-        self.pm_mock.assert_called_once_with(models.Model.properties,
-                                             **self.kwargs)
+        self.pm_mock.assert_called_once_with(
+            models.Model.properties, **self.kwargs
+        )
 
     def test_obj_getattr(self):
-        self.assertEqual(self.test_instance.fake_prop1,
-                         self.PM_MOCK['fake_prop1'].value)
+        self.assertEqual(
+            self.test_instance.fake_prop1, self.PM_MOCK["fake_prop1"].value
+        )
 
     def test_obj_getattr_raise_attribute_error(self):
         self.PM_MOCK.__getitem__.side_effect = KeyError
 
-        self.assertRaises(AttributeError,
-                          lambda: self.test_instance.fake_prop1)
+        self.assertRaises(
+            AttributeError, lambda: self.test_instance.fake_prop1
+        )
 
     def test_obj_setattr(self):
         self.test_instance.fake_prop1 = FAKE_VALUE1
@@ -131,18 +134,18 @@ class InheritModelTestCase(base.BaseTestCase):
     def test_correct_type_in_base_model(self):
         props = BaseModel.properties.properties
 
-        self.assertIsInstance(props['property1']._property_type, types.Integer)
-        self.assertIsInstance(props['property2']._property_type, types.Integer)
-        self.assertEqual(props['property3']._property_type, Model1)
-        self.assertEqual(props['property4']._property_type, Model2)
+        self.assertIsInstance(props["property1"]._property_type, types.Integer)
+        self.assertIsInstance(props["property2"]._property_type, types.Integer)
+        self.assertEqual(props["property3"]._property_type, Model1)
+        self.assertEqual(props["property4"]._property_type, Model2)
 
     def test_correct_type_in_inherit_model(self):
         props = FakeModel.properties.properties
 
-        self.assertIsInstance(props['property1']._property_type, types.String)
-        self.assertIsInstance(props['property2']._property_type, types.Integer)
-        self.assertEqual(props['property3']._property_type, Model3)
-        self.assertEqual(props['property4']._property_type, Model2)
+        self.assertIsInstance(props["property1"]._property_type, types.String)
+        self.assertIsInstance(props["property2"]._property_type, types.Integer)
+        self.assertEqual(props["property3"]._property_type, Model3)
+        self.assertEqual(props["property4"]._property_type, Model2)
 
 
 class DirtyModelTestCase(base.BaseTestCase):
@@ -153,7 +156,8 @@ class DirtyModelTestCase(base.BaseTestCase):
             property1="fake_string",
             property2=2,
             property3=Model3(),
-            property4=Model2())
+            property4=Model2(),
+        )
 
     def test_dirty_is_false(self):
         self.assertFalse(self._model.is_dirty())
@@ -196,13 +200,14 @@ class ModelWithIDsTestCase(base.BaseTestCase):
     def test_get_id_property(self):
         props = FakeModelWithID.properties.properties
 
-        self.assertEqual(FakeModelWithID.get_id_property(),
-                         {'uuid': props['uuid']})
+        self.assertEqual(
+            FakeModelWithID.get_id_property(), {"uuid": props["uuid"]}
+        )
         with self.assertRaises(TypeError):
             FakeModelWithSeveralIDs.get_id_property()
 
     def test_get_id_property_name(self):
-        self.assertEqual(FakeModelWithID.get_id_property_name(), 'uuid')
+        self.assertEqual(FakeModelWithID.get_id_property_name(), "uuid")
         with self.assertRaises(TypeError):
             FakeModelWithSeveralIDs.get_id_property_name()
 
@@ -217,7 +222,7 @@ class ModelWithIDsTestCase(base.BaseTestCase):
             property1=fakeInt,
             property2=fakeInt,
             property3=Model3(uuid=fakeUUID2),
-            property4=Model2()
+            property4=Model2(),
         )
 
         expected = {
@@ -246,8 +251,9 @@ class ModelWithRequiredUUIDTestCase(base.BaseTestCase):
         self.assertEqual(model_uuid, model.uuid)
 
     def test_uuid_not_provided(self):
-        self.assertRaises(exceptions.PropertyRequired,
-                          models.ModelWithRequiredUUID)
+        self.assertRaises(
+            exceptions.PropertyRequired, models.ModelWithRequiredUUID
+        )
 
     def test_uuid_is_readonly(self):
         uuid_1 = uuid.uuid4()

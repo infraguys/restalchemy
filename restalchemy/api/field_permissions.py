@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2022 George Melikov
 #
 # All Rights Reserved.
@@ -36,23 +34,24 @@ class BasePermissions(object):
     def __init__(self, permission=Permissions.RW):
         self._permission = permission
 
-    def meets_field_permission(self,
-                               model_field_name,
-                               req,
-                               current_permission):
+    def meets_field_permission(
+        self, model_field_name, req, current_permission
+    ):
         raise NotImplementedError()
 
     def is_readonly(self, model_field_name, req):
         return self.meets_field_permission(
             model_field_name=model_field_name,
             req=req,
-            current_permission=Permissions.RO)
+            current_permission=Permissions.RO,
+        )
 
     def is_hidden(self, model_field_name, req):
         return self.meets_field_permission(
             model_field_name=model_field_name,
             req=req,
-            current_permission=Permissions.HIDDEN)
+            current_permission=Permissions.HIDDEN,
+        )
 
 
 class UniversalPermissions(BasePermissions):
@@ -73,10 +72,9 @@ class UniversalPermissions(BasePermissions):
         """
         super(UniversalPermissions, self).__init__(permission)
 
-    def meets_field_permission(self,
-                               model_field_name,
-                               req,
-                               current_permission):
+    def meets_field_permission(
+        self, model_field_name, req, current_permission
+    ):
         return self._permission <= current_permission
 
 
@@ -118,24 +116,26 @@ class FieldsPermissions(BasePermissions):
         """
         for method_permission in fields.values():
             for method, permission in method_permission.items():
-                assert (method.upper() in constants.ALL_RA_METHODS
-                        and permission in Permissions.ALL_PERMISSIONS)
+                assert (
+                    method.upper() in constants.ALL_RA_METHODS
+                    and permission in Permissions.ALL_PERMISSIONS
+                )
         super(FieldsPermissions, self).__init__(permission=default)
         self.fields = fields
 
-    def meets_field_permission(self,
-                               model_field_name,
-                               req,
-                               current_permission):
+    def meets_field_permission(
+        self, model_field_name, req, current_permission
+    ):
 
         method = req.api_context.get_active_method()
         field_permission = self.fields.get(model_field_name, {})
 
         # NOTE(g.melikov): By DEFAULT permission is Permissions.RW
-        permission = (field_permission.get(method)
-                      or field_permission.get(constants.ALL)
-                      or self._permission
-                      )
+        permission = (
+            field_permission.get(method)
+            or field_permission.get(constants.ALL)
+            or self._permission
+        )
 
         return permission <= current_permission
 
@@ -182,7 +182,8 @@ class FieldsPermissionsByRole(BasePermissions):
             if not isinstance(permissions, BasePermissions):
                 raise NotImplementedError(
                     "Permissions for %s must be "
-                    "inherited BasePermissions class" % role)
+                    "inherited BasePermissions class" % role
+                )
         self.default = default
         self.role_fields = kwargs
 
@@ -190,24 +191,23 @@ class FieldsPermissionsByRole(BasePermissions):
 
     @staticmethod
     def _get_roles(req):
-        return (req.context.roles
-                if hasattr(req, 'context') and hasattr(req.context, 'roles')
-                else [])
+        return (
+            req.context.roles
+            if hasattr(req, "context") and hasattr(req.context, "roles")
+            else []
+        )
 
-    def meets_field_permission(self,
-                               model_field_name,
-                               req,
-                               current_permission):
+    def meets_field_permission(
+        self, model_field_name, req, current_permission
+    ):
 
         for current_role in self._get_roles(req):
             if current_role in self.role_fields:
                 fields = self.role_fields[current_role]
-                return fields.meets_field_permission(model_field_name,
-                                                     req,
-                                                     current_permission)
+                return fields.meets_field_permission(
+                    model_field_name, req, current_permission
+                )
 
         return self.default.meets_field_permission(
-            model_field_name,
-            req,
-            current_permission
+            model_field_name, req, current_permission
         )

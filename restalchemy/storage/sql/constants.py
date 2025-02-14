@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2020 Dima Burmistrov
 #
 # All Rights Reserved.
@@ -17,5 +15,5 @@
 #    under the License.
 
 
-SQL_ASC = 'ASC'
-SQL_DESC = 'DESC'
+SQL_ASC = "ASC"
+SQL_DESC = "DESC"

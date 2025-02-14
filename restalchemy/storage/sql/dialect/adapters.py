@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2019 Eugene Frolov
 #
 # All Rights Reserved.
@@ -54,7 +52,7 @@ class MySQLConverter(conversion.MySQLConverter):
         """
         if isinstance(buf, list):
             tmp_list_buf = [six.binary_type(self.quote(item)) for item in buf]
-            tmp_str_buf = b'(%s)' % (b', '.join(tmp_list_buf))
+            tmp_str_buf = b"(%s)" % (b", ".join(tmp_list_buf))
             return bytearray(tmp_str_buf)
         return super(MySQLConverter, self).quote(buf)
 
@@ -64,8 +62,8 @@ class MySQLConverter(conversion.MySQLConverter):
         """Convert BLOB data type to Python."""
         if dsc is not None:
             if (
-                    dsc[7] & conversion.FieldFlag.BLOB
-                    and dsc[7] & conversion.FieldFlag.BINARY
+                dsc[7] & conversion.FieldFlag.BLOB
+                and dsc[7] & conversion.FieldFlag.BINARY
             ):
                 return bytes(value)
         return self._string_to_python(value, dsc)

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -27,22 +25,36 @@ from restalchemy.storage.sql import migrations
 
 
 cmd_opts = [
-    cfg.StrOpt("migration", short="m", required=True,
-               help="migrate to"),
-    cfg.StrOpt('path', required=True, short="p",
-               help="Path to migrations folder"),
-    cfg.BoolOpt('dry-run', default=False,
-                help="Dry run downgrade migration w/o any real changes.")
+    cfg.StrOpt(
+        "migration",
+        short="m",
+        required=True,
+        help="migrate to",
+    ),
+    cfg.StrOpt(
+        "path",
+        required=True,
+        short="p",
+        help="Path to migrations folder",
+    ),
+    cfg.BoolOpt(
+        "dry-run",
+        default=False,
+        help="Dry run downgrade migration w/o any real changes.",
+    ),
 ]
 
 cmd_db_opts = [
-    cfg.StrOpt("connection", required=True,
-               help="connection string to database"),
+    cfg.StrOpt(
+        "connection",
+        required=True,
+        help="connection string to database",
+    ),
 ]
 
 CONF = cfg.CONF
 CONF.register_cli_opts(cmd_opts)
-CONF.register_cli_opts(cmd_db_opts, 'db')
+CONF.register_cli_opts(cmd_db_opts, "db")
 
 
 def main():
@@ -50,5 +62,6 @@ def main():
     ra_log.configure()
     engines.engine_factory.configure_factory(db_url=CONF.db.connection)
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
-    engine.rollback_migration(migration_name=CONF.migration,
-                              dry_run=CONF.dry_run)
+    engine.rollback_migration(
+        migration_name=CONF.migration, dry_run=CONF.dry_run
+    )

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -37,8 +35,9 @@ class SessionQueryCache(object):
         self.__query_cache = {}
 
     @staticmethod
-    def _get_hash(engine, table, filters, limit=None,
-                  order_by=None, locked=False):
+    def _get_hash(
+        engine, table, filters, limit=None, order_by=None, locked=False
+    ):
         query = engine.dialect.select(table, filters, limit, order_by, locked)
         values = query.get_values()
         statement = query.get_statement()
@@ -46,8 +45,14 @@ class SessionQueryCache(object):
 
     @staticmethod
     def _get_hash_by_query(
-            engine, table, where_conditions, where_values, limit=None,
-            order_by=None, locked=False):
+        engine,
+        table,
+        where_conditions,
+        where_values,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
         query = engine.dialect.custom_select(
             table=table,
             where_conditions=where_conditions,
@@ -60,21 +65,41 @@ class SessionQueryCache(object):
         statement = query.get_statement()
         return hash(tuple([statement] + values))
 
-    def get_all(self, engine, table, filters, fallback, limit=None,
-                order_by=None, locked=False):
+    def get_all(
+        self,
+        engine,
+        table,
+        filters,
+        fallback,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
         query_hash = self._get_hash(engine, table, filters, limit, locked)
         if query_hash not in self.__query_cache:
-            self.__query_cache[query_hash] = fallback(filters=filters,
-                                                      session=self._session,
-                                                      limit=limit,
-                                                      order_by=order_by,
-                                                      locked=locked)
+            self.__query_cache[query_hash] = fallback(
+                filters=filters,
+                session=self._session,
+                limit=limit,
+                order_by=order_by,
+                locked=locked,
+            )
         return self.__query_cache[query_hash]
 
-    def query(self, engine, table, where_conditions, where_values, fallback,
-              limit=None, order_by=None, locked=False):
+    def query(
+        self,
+        engine,
+        table,
+        where_conditions,
+        where_values,
+        fallback,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
         query_hash = self._get_hash_by_query(
-            engine, table, where_conditions, where_values, limit, locked)
+            engine, table, where_conditions, where_values, limit, locked
+        )
         if query_hash not in self.__query_cache:
             self.__query_cache[query_hash] = fallback(
                 where_conditions=where_conditions,
@@ -100,9 +125,7 @@ class MySQLSession(object):
     def _all_model_is_same_type(target_model, models):
         model_type = type(target_model)
         if not min(map(lambda m: isinstance(m, model_type), models)):
-            raise TypeError(
-                'All models in the list must be of the same type'
-            )
+            raise TypeError("All models in the list must be of the same type")
 
     def batch_insert(self, models):
         if models:
@@ -128,7 +151,7 @@ class MySQLSession(object):
                 # Error codes from Maria DB documentation. See more on website
                 # https://mariadb.com/kb/en/mariadb-error-codes/
                 # Errno: 1062 and sqlstate: 23000 is "Duplicate entry" error.
-                if e.errno == 1062 and e.sqlstate == '23000':
+                if e.errno == 1062 and e.sqlstate == "23000":
                     raise exc.ConflictRecords(
                         model=type(first_model).__name__,
                         msg=e.msg,
@@ -148,8 +171,8 @@ class MySQLSession(object):
             for model in models:
                 pk_values = {}
                 for name, prop in model.get_id_properties().items():
-                    pk_values[name] = (
-                        prop.property_type.to_simple_type(prop.value)
+                    pk_values[name] = prop.property_type.to_simple_type(
+                        prop.value
                     )
                 values.append(pk_values)
             operation = mysql.MySQLBatchDelete(
@@ -157,15 +180,22 @@ class MySQLSession(object):
                 values,
             )
 
-            return self.execute(operation.get_statement(),
-                                operation.get_values())
+            return self.execute(
+                operation.get_statement(), operation.get_values()
+            )
 
     def execute(self, statement, values=None):
         try:
-            self._log.debug(("Execute statement %s"
-                             " with values %s"
-                             " within %s database"),
-                            statement, values, self._engine.db_name)
+            self._log.debug(
+                (
+                    "Execute statement %s"
+                    " with values %s"
+                    " within %s database"
+                ),
+                statement,
+                values,
+                self._engine.db_name,
+            )
             self._cursor.execute(statement, values)
             return self._cursor
         except errors.DatabaseError as e:
@@ -174,10 +204,16 @@ class MySQLSession(object):
             raise
 
     def execute_many(self, statement, values):
-        self._log.debug(("Execute batch statement %s"
-                         " with values %s"
-                         " within %s database"),
-                        statement, values, self._engine.db_name)
+        self._log.debug(
+            (
+                "Execute batch statement %s"
+                " with values %s"
+                " within %s database"
+            ),
+            statement,
+            values,
+            self._engine.db_name,
+        )
         self._cursor.executemany(statement, values)
         return self._cursor
 
@@ -223,9 +259,9 @@ class SessionThreadStorage(object):
         super(SessionThreadStorage, self).__init__()
 
     def get_session(self):
-        thread_session = getattr(self._storage, 'session', None)
+        thread_session = getattr(self._storage, "session", None)
         if thread_session is None:
-            raise SessionNotFound('A session is not exists for this thread')
+            raise SessionNotFound("A session is not exists for this thread")
         return thread_session
 
     def pop_session(self):
@@ -240,8 +276,9 @@ class SessionThreadStorage(object):
     def store_session(self, session):
         try:
             thread_session = self.get_session()
-            raise SessionConflict("Another session %r is already stored!",
-                                  thread_session)
+            raise SessionConflict(
+                "Another session %r is already stored!", thread_session
+            )
         except SessionNotFound:
             self._storage.session = session
             return self._storage.session

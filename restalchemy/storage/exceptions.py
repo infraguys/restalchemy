@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -23,8 +21,10 @@ from restalchemy.common import exceptions
 
 class RecordNotFound(exceptions.RestAlchemyException):
 
-    message = ("Can't found record in storage for model (%(model)s) and "
-               "filters (%(filters)s).")
+    message = (
+        "Can't found record in storage for model (%(model)s) and "
+        "filters (%(filters)s)."
+    )
 
 
 class MultipleUpdatesDetected(exceptions.RestAlchemyException):
@@ -34,14 +34,17 @@ class MultipleUpdatesDetected(exceptions.RestAlchemyException):
 
 class HasManyRecords(exceptions.RestAlchemyException):
 
-    message = ("Has many records in storage for model (%(model)s) and filters "
-               "(%(filters)s).")
+    message = (
+        "Has many records in storage for model (%(model)s) and filters "
+        "(%(filters)s)."
+    )
 
 
 class DeadLock(exceptions.RestAlchemyException):
 
-    message = ("Deadlock found when trying to get lock. "
-               "Original message: %(msg)s")
+    message = (
+        "Deadlock found when trying to get lock. " "Original message: %(msg)s"
+    )
 
 
 class ConflictRecords(exceptions.RestAlchemyException):
@@ -57,10 +60,12 @@ class ConflictRecords(exceptions.RestAlchemyException):
         result = re.search(re_template, msg)
         if result is None:
             raise ValueError(
-                'Incorrect message for parsing. %s but should be %s' % (
+                "Incorrect message for parsing. %s but should be %s"
+                % (
                     msg,
                     re_template,
-                ))
+                )
+            )
         return result.groups()
 
     @property

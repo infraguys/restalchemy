@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -55,11 +53,17 @@ class MigrationStep(migrations.AbstarctMigrationStep):
         lwp2_4.insert()
 
     def downgrade(self, session):
-        for Model in [models.LWP2_1, models.LWP2_2,
-                      models.LWP2_3, models.LWP2_4,
-                      models.LWP1_1, models.LWP1_2,
-                      models.LNP1_1, models.LNP1_2,
-                      models.Root]:
+        for Model in [
+            models.LWP2_1,
+            models.LWP2_2,
+            models.LWP2_3,
+            models.LWP2_4,
+            models.LWP1_1,
+            models.LWP1_2,
+            models.LNP1_1,
+            models.LNP1_2,
+            models.Root,
+        ]:
             for model in Model.objects.get_all():
                 model.delete()
 

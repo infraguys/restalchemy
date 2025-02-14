@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2019 Eugene Frolov
 #
 # All Rights Reserved.
@@ -52,8 +50,9 @@ class Context(object):
             LOG.debug("Session %r has been committed", session)
         except Exception:
             session.rollback()
-            LOG.exception("Session %r has been rolled back by reason:",
-                          session)
+            LOG.exception(
+                "Session %r has been rolled back by reason:", session
+            )
             raise
         finally:
             self.session_close()
@@ -74,5 +73,6 @@ class Context(object):
             LOG.exception("Can't close session by reason:")
         finally:
             self._get_storage().remove_session()
-            LOG.debug("Session %r has been removed from thread storage",
-                      session)
+            LOG.debug(
+                "Session %r has been removed from thread storage", session
+            )

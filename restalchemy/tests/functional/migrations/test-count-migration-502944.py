@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -36,7 +34,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     `foo_field1` INT NOT NULL,
                     `foo_field2` VARCHAR(255) NOT NULL,
                 PRIMARY KEY (`uuid`));
-            """, """
+            """,
+            """
                     INSERT INTO test_count (
                          `uuid`, `foo_field1`, `foo_field2`
                     ) VALUES (
@@ -48,13 +47,13 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     ), (
                         '00000000-0000-0000-0000-000000000003', 4, 'other1'
                     )
-                """
+                """,
         ]
 
         [session.execute(expr) for expr in sql_expr_list]
 
     def downgrade(self, session):
-        self._delete_table_if_exists(session, 'test_count')
+        self._delete_table_if_exists(session, "test_count")
 
 
 migration_step = MigrationStep()

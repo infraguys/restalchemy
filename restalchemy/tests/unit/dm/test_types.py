@@ -1,5 +1,3 @@
-# coding=utf-8
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -27,20 +25,21 @@ from restalchemy.dm import types
 from restalchemy.tests.unit import base
 
 
-TEST_STR_VALUE = 'test_value :)'
-TEST_INT_AS_STR_VALUE = '1234'
+TEST_STR_VALUE = "test_value :)"
+TEST_INT_AS_STR_VALUE = "1234"
 TEST_INT_VALUE = 5
-TEST_TYPE = 'FAKE TYPE'
-INCORECT_UUID = '4a775g98-eg85-4a0e-a0g0-639f0a16f4c3'
-INCORECT_INT_AS_STR = '123abc'
+TEST_TYPE = "FAKE TYPE"
+INCORECT_UUID = "4a775g98-eg85-4a0e-a0g0-639f0a16f4c3"
+INCORECT_INT_AS_STR = "123abc"
 
 
 @mock.patch("re.compile", return_value=mock.MagicMock(), autospec=True)
 class BaseRegExpTypeTestCase(base.BaseTestCase):
 
     def _prepare_mock(self, re_mock, return_value):
-        self.re_match_mock = mock.MagicMock(**{
-            'match': mock.MagicMock(return_value=return_value)})
+        self.re_match_mock = mock.MagicMock(
+            **{"match": mock.MagicMock(return_value=return_value)}
+        )
         re_mock.return_value = self.re_match_mock
 
     def test_correct_value_if_value_is_not_none(self, re_mock):
@@ -87,6 +86,7 @@ class BaseCompiledRegExpTypeTestCase(base.BaseTestCase):
     def test_get_pattern_from_attribute(self):
         class TestType(types.BaseCompiledRegExpTypeFromAttr):
             pattern = re.compile(r"t")
+
         test_instance = TestType()
 
         self.assertTrue(test_instance.validate(TEST_STR_VALUE))
@@ -97,7 +97,7 @@ class BaseTestCase(base.BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.test_instance = mock.MagicMock()
-        self.test_instance.validate.configure_mock(**{'return_value': False})
+        self.test_instance.validate.configure_mock(**{"return_value": False})
 
     def test_correct_none_value(self):
         self.assertFalse(self.test_instance.validate(None))
@@ -113,30 +113,29 @@ class UUIDTestCase(base.BaseTestCase):
         self.assertTrue(self.test_instance.validate(uuid.uuid4()))
 
     def test_uuid_incorrect_value(self):
-        INCORECT_UUID = '4a775g98-eg85-4a0e-a0g0-639f0a16f4c3'
+        INCORECT_UUID = "4a775g98-eg85-4a0e-a0g0-639f0a16f4c3"
 
-        self.assertFalse(self.test_instance.validate(
-            INCORECT_UUID))
+        self.assertFalse(self.test_instance.validate(INCORECT_UUID))
 
     def test_to_simple_type(self):
         TEST_UUID = uuid.uuid4()
 
         self.assertEqual(
-            self.test_instance.to_simple_type(TEST_UUID),
-            str(TEST_UUID))
+            self.test_instance.to_simple_type(TEST_UUID), str(TEST_UUID)
+        )
 
     def test_from_simple_type(self):
         TEST_UUID = uuid.uuid4()
 
         self.assertEqual(
-            self.test_instance.from_simple_type(str(TEST_UUID)),
-            TEST_UUID)
+            self.test_instance.from_simple_type(str(TEST_UUID)), TEST_UUID
+        )
 
 
 class StringTestCase(base.BaseTestCase):
 
-    FAKE_STRING1 = 'fake!!!'
-    FAKE_STRING2 = six.u('fake!!!')
+    FAKE_STRING1 = "fake!!!"
+    FAKE_STRING2 = six.u("fake!!!")
 
     def setUp(self):
         super(StringTestCase, self).setUp()
@@ -156,12 +155,14 @@ class StringTestCase(base.BaseTestCase):
         self.assertTrue(self.test_instance1.validate(self.FAKE_STRING2[:5]))
 
     def test_correct_max_value(self):
-        self.assertTrue(self.test_instance1.validate(
-            (self.FAKE_STRING1 * 2)[:8]))
+        self.assertTrue(
+            self.test_instance1.validate((self.FAKE_STRING1 * 2)[:8])
+        )
 
     def test_correct_max_unicode_value(self):
-        self.assertTrue(self.test_instance1.validate(
-            (self.FAKE_STRING2 * 2)[:8]))
+        self.assertTrue(
+            self.test_instance1.validate((self.FAKE_STRING2 * 2)[:8])
+        )
 
     def test_incorrect_min_value(self):
         self.assertFalse(self.test_instance1.validate(self.FAKE_STRING1[:4]))
@@ -170,16 +171,19 @@ class StringTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance1.validate(self.FAKE_STRING1[:4]))
 
     def test_incorrect_max_value(self):
-        self.assertFalse(self.test_instance1.validate(
-            (self.FAKE_STRING1 * 2)[:9]))
+        self.assertFalse(
+            self.test_instance1.validate((self.FAKE_STRING1 * 2)[:9])
+        )
 
     def test_incorrect_max_unicode_value(self):
-        self.assertFalse(self.test_instance1.validate(
-            (self.FAKE_STRING1 * 2)[:9]))
+        self.assertFalse(
+            self.test_instance1.validate((self.FAKE_STRING1 * 2)[:9])
+        )
 
     def test_correct_infinity_value(self):
-        self.assertTrue(self.test_instance2.validate(
-            self.FAKE_STRING1 * 100500))
+        self.assertTrue(
+            self.test_instance2.validate(self.FAKE_STRING1 * 100500)
+        )
 
     def test_incorrect_type_validate(self):
         self.assertFalse(self.test_instance1.validate(5))
@@ -264,20 +268,24 @@ class UriTestCase(BaseTestCase):
         self.test_instance = types.Uri()
 
     def test_correct_value(self):
-        self.assertTrue(self.test_instance.validate(
-            '/fake/fake/' + str(uuid.uuid4())))
+        self.assertTrue(
+            self.test_instance.validate("/fake/fake/" + str(uuid.uuid4()))
+        )
 
     def test_incorect_uuid_value(self):
-        self.assertFalse(self.test_instance.validate(
-            '/fake/fake/' + INCORECT_UUID))
+        self.assertFalse(
+            self.test_instance.validate("/fake/fake/" + INCORECT_UUID)
+        )
 
     def test_incorect_start_char_value(self):
-        self.assertFalse(self.test_instance.validate(
-            'fake/fake/' + str(uuid.uuid4())))
+        self.assertFalse(
+            self.test_instance.validate("fake/fake/" + str(uuid.uuid4()))
+        )
 
     def test_incorect_start_end_value(self):
-        self.assertFalse(self.test_instance.validate(
-            '/fake/fake' + str(uuid.uuid4())))
+        self.assertFalse(
+            self.test_instance.validate("/fake/fake" + str(uuid.uuid4()))
+        )
 
 
 class MacTestCase(BaseTestCase):
@@ -343,23 +351,19 @@ class TypedListTestCase(base.BaseTestCase):
         self.assertTrue(self.test_instance_int.validate([1, 2, 3]))
 
     def test_validate_incorrect_value(self):
-        self.assertFalse(self.test_instance_int.validate([1, 2, '3', 4]))
+        self.assertFalse(self.test_instance_int.validate([1, 2, "3", 4]))
 
     def test_incorrect_nested_type(self):
         self.assertRaises(TypeError, types.TypedList, int)
 
     def test_from_unicode(self):
-        payload = (
-            (TEST_INT_AS_STR_VALUE, [int(TEST_INT_AS_STR_VALUE)]),
-        )
+        payload = ((TEST_INT_AS_STR_VALUE, [int(TEST_INT_AS_STR_VALUE)]),)
 
         for value, expectedResult in payload:
             result = self.test_instance_int.from_unicode(value)
             self.assertEqual(expectedResult, result)
 
-        payload = (
-            (TEST_STR_VALUE, [TEST_STR_VALUE]),
-        )
+        payload = ((TEST_STR_VALUE, [TEST_STR_VALUE]),)
 
         for value, expectedResult in payload:
             result = self.test_instance_str.from_unicode(value)
@@ -390,84 +394,96 @@ class TypedDictTestCase(base.BaseTestCase):
         super(TypedDictTestCase, self).setUp()
 
         self.scheme_simple_types = {
-            'int': types.Integer(),
-            'str': types.String(),
+            "int": types.Integer(),
+            "str": types.String(),
         }
         self.scheme_lists = {
-            'list': types.List(),
-            'typed_list': types.TypedList(types.Integer()),
+            "list": types.List(),
+            "typed_list": types.TypedList(types.Integer()),
         }
         self.scheme_dicts = {
-            'dict': types.Dict(),
-            'typed_dict': types.SchemeDict({
-                'sub_str': types.String(),
-                'sub_int': types.Integer(),
-            }),
+            "dict": types.Dict(),
+            "typed_dict": types.SchemeDict(
+                {
+                    "sub_str": types.String(),
+                    "sub_int": types.Integer(),
+                }
+            ),
         }
         self.scheme_dict_sublist = {
-            'typed_dict_with_typed_list': types.SchemeDict(
-                {'sub_list_typed': types.TypedList(types.String())}),
+            "typed_dict_with_typed_list": types.SchemeDict(
+                {"sub_list_typed": types.TypedList(types.String())}
+            ),
         }
         self.scheme_dict_subdict = {
-            'typed_dict_with_typed_dict': types.SchemeDict(
-                {'sub_dict_typed': types.SchemeDict(
-                    {
-                        'sub_str': types.String(),
-                        'sub_int': types.Integer(),
-                    })}),
+            "typed_dict_with_typed_dict": types.SchemeDict(
+                {
+                    "sub_dict_typed": types.SchemeDict(
+                        {
+                            "sub_str": types.String(),
+                            "sub_int": types.Integer(),
+                        }
+                    )
+                }
+            ),
         }
 
     def test_schema_keys_not_string(self):
         self.assertRaises(ValueError, types.SchemeDict, {1: types.Integer()})
 
     def test_schema_values_not_types(self):
-        self.assertRaises(ValueError, types.SchemeDict, {'1': int})
+        self.assertRaises(ValueError, types.SchemeDict, {"1": int})
 
     def test_validate_simple_schema(self):
         dict_type = types.SchemeDict(scheme=self.scheme_simple_types)
 
-        self.assertTrue(dict_type.validate({'int': 1, 'str': 'string'}))
+        self.assertTrue(dict_type.validate({"int": 1, "str": "string"}))
 
     def test_validate_simple_schema_missing_item(self):
         dict_type = types.SchemeDict(scheme=self.scheme_simple_types)
 
-        self.assertFalse(dict_type.validate({'int': 1}))
-        self.assertFalse(dict_type.validate({'str': 'string'}))
+        self.assertFalse(dict_type.validate({"int": 1}))
+        self.assertFalse(dict_type.validate({"str": "string"}))
 
     def test_validate_simple_schema_extra_item(self):
-        dict_type = types.SchemeDict(scheme={'int': types.Integer()})
+        dict_type = types.SchemeDict(scheme={"int": types.Integer()})
 
-        self.assertFalse(dict_type.validate({'int': 1, 'str': 'string'}))
+        self.assertFalse(dict_type.validate({"int": 1, "str": "string"}))
 
     def test_validate_simple_schema_invalid_value(self):
-        dict_type_1 = types.SchemeDict(scheme={'int': types.Integer()})
-        dict_type_2 = types.SchemeDict(scheme={'str': types.String()})
+        dict_type_1 = types.SchemeDict(scheme={"int": types.Integer()})
+        dict_type_2 = types.SchemeDict(scheme={"str": types.String()})
 
-        self.assertFalse(dict_type_1.validate({'int': '1'}))
-        self.assertFalse(dict_type_2.validate({'str': None}))
+        self.assertFalse(dict_type_1.validate({"int": "1"}))
+        self.assertFalse(dict_type_2.validate({"str": None}))
 
     def test_validate_schema_with_lists(self):
-        schema = {'mixed_list': types.List()}
+        schema = {"mixed_list": types.List()}
         schema.update(self.scheme_simple_types)
         schema.update(self.scheme_lists)
 
         dict_type = types.SchemeDict(scheme=schema)
 
         self.assertTrue(
-            dict_type.validate({'int': 1,
-                                'str': 'string',
-                                'list': [1, 2, 3],
-                                'mixed_list': [1, 'a', None],
-                                'typed_list': [1, 2, 3]}))
+            dict_type.validate(
+                {
+                    "int": 1,
+                    "str": "string",
+                    "list": [1, 2, 3],
+                    "mixed_list": [1, "a", None],
+                    "typed_list": [1, 2, 3],
+                }
+            )
+        )
 
     def test_validate_schema_incorrect_typed_list_value(self):
-        schema = {'typed_list': types.TypedList(types.Integer())}
+        schema = {"typed_list": types.TypedList(types.Integer())}
 
         dict_type = types.SchemeDict(scheme=schema)
 
-        self.assertFalse(dict_type.validate({'typed_list': [1, '2', 3]}))
-        self.assertFalse(dict_type.validate({'typed_list': [None, 2, 3]}))
-        self.assertFalse(dict_type.validate({'typed_list': [1, 2, {}]}))
+        self.assertFalse(dict_type.validate({"typed_list": [1, "2", 3]}))
+        self.assertFalse(dict_type.validate({"typed_list": [None, 2, 3]}))
+        self.assertFalse(dict_type.validate({"typed_list": [1, 2, {}]}))
 
     def test_validate_schema_with_dicts(self):
         schema = {}
@@ -477,13 +493,18 @@ class TypedDictTestCase(base.BaseTestCase):
         dict_type = types.SchemeDict(scheme=schema)
 
         self.assertTrue(
-            dict_type.validate({'int': 1,
-                                'str': 'string',
-                                'dict': {'1': 1, '2': 'a', 'z': 3},
-                                'typed_dict': {
-                                    'sub_str': 'string',
-                                    'sub_int': 42,
-                                }}))
+            dict_type.validate(
+                {
+                    "int": 1,
+                    "str": "string",
+                    "dict": {"1": 1, "2": "a", "z": 3},
+                    "typed_dict": {
+                        "sub_str": "string",
+                        "sub_int": 42,
+                    },
+                }
+            )
+        )
 
     def test_validate_schema_subdict_missing_item(self):
         schema = {}
@@ -493,12 +514,17 @@ class TypedDictTestCase(base.BaseTestCase):
         dict_type = types.SchemeDict(scheme=schema)
 
         self.assertFalse(
-            dict_type.validate({'int': 1,
-                                'str': 'string',
-                                'dict': {1: 1, 2: 'a', 'z': 3},
-                                'typed_dict': {
-                                    'sub_str': 'string',
-                                }}))
+            dict_type.validate(
+                {
+                    "int": 1,
+                    "str": "string",
+                    "dict": {1: 1, 2: "a", "z": 3},
+                    "typed_dict": {
+                        "sub_str": "string",
+                    },
+                }
+            )
+        )
 
     def test_validate_complex_schema(self):
         schema = {}
@@ -511,23 +537,24 @@ class TypedDictTestCase(base.BaseTestCase):
         dict_type = types.SchemeDict(scheme=schema)
 
         self.assertTrue(
-            dict_type.validate({'int': 1,
-                                'str': 'string',
-                                'list': ['a'],
-                                'typed_list': [],
-                                'dict': {},
-                                'typed_dict': {
-                                    'sub_str': 'string',
-                                    'sub_int': 42},
-                                'typed_dict_with_typed_list': {
-                                    'sub_list_typed': ['s']
-                                },
-                                'typed_dict_with_typed_dict': {
-                                    'sub_dict_typed': {
-                                        'sub_str': 'string_2',
-                                        'sub_int': -5}
-                                },
-                                }))
+            dict_type.validate(
+                {
+                    "int": 1,
+                    "str": "string",
+                    "list": ["a"],
+                    "typed_list": [],
+                    "dict": {},
+                    "typed_dict": {"sub_str": "string", "sub_int": 42},
+                    "typed_dict_with_typed_list": {"sub_list_typed": ["s"]},
+                    "typed_dict_with_typed_dict": {
+                        "sub_dict_typed": {
+                            "sub_str": "string_2",
+                            "sub_int": -5,
+                        }
+                    },
+                }
+            )
+        )
 
     def test_scheme_dict_to_simple_type(self):
         val = 7
@@ -540,14 +567,12 @@ class TypedDictTestCase(base.BaseTestCase):
                 return ret_val
 
         scheme = {
-            'key': TestType(),
+            "key": TestType(),
         }
         data = {
-            'key': val,
+            "key": val,
         }
-        expect_data = {
-            'key': ret_val
-        }
+        expect_data = {"key": ret_val}
 
         res = types.SchemeDict(scheme=scheme).to_simple_type(data)
         self.assertEqual(expect_data, res)
@@ -562,7 +587,8 @@ class UTCDateTimeTestCase(base.BaseTestCase):
 
     def test_validate_correct_value(self):
         self.assertTrue(
-            self.test_instance.validate(datetime.datetime.utcnow()))
+            self.test_instance.validate(datetime.datetime.utcnow())
+        )
 
     def test_validate_incorrect_value_type(self):
         self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
@@ -570,11 +596,13 @@ class UTCDateTimeTestCase(base.BaseTestCase):
     def test_validate_incorrect_value_tzinfo(self):
         self.assertFalse(
             self.test_instance.validate(
-                datetime.datetime.utcnow().replace(tzinfo=datetime.tzinfo())))
+                datetime.datetime.utcnow().replace(tzinfo=datetime.tzinfo())
+            )
+        )
 
     def test_zero_microseconds(self):
         dt = datetime.datetime(2020, 3, 13, 11, 3, 25)
-        expected = '2020-03-13 11:03:25.000000'
+        expected = "2020-03-13 11:03:25.000000"
         dt_type = types.UTCDateTime()
 
         result = dt_type.to_simple_type(dt)
@@ -584,7 +612,7 @@ class UTCDateTimeTestCase(base.BaseTestCase):
     def test_openapi_format(self):
         dt = datetime.datetime(2020, 3, 13, 11, 3, 25, 123)
 
-        expected = '2020-03-13T11:03:25.000123Z'
+        expected = "2020-03-13T11:03:25.000123Z"
         dt_type = types.UTCDateTime()
 
         result = dt_type.dump_value(dt)
@@ -623,7 +651,7 @@ class AllowNoneTestCase(base.BaseTestCase):
 
     def test_validate_correct_value(self):
         self.assertTrue(self.test_instance.validate(None))
-        self.assertTrue(self.test_instance.validate('string'))
+        self.assertTrue(self.test_instance.validate("string"))
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(4))
@@ -637,21 +665,21 @@ class HostnameTestCase(base.BaseTestCase):
         self.test_instance = types.Hostname()
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate('ns1.ra.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('ns1.55.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('n_s1.55.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('n-1.55.restalchemy.com'))
-        self.assertTrue(self.test_instance.validate('restalchemy.com'))
+        self.assertTrue(self.test_instance.validate("ns1.ra.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("ns1.55.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("n_s1.55.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("n-1.55.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("restalchemy.com"))
 
     def test_validate_incorrect_value(self):
-        self.assertFalse(self.test_instance.validate('x.y.z'))
-        self.assertFalse(self.test_instance.validate('restalchemy.com.'))
-        self.assertFalse(self.test_instance.validate('restalchemy.com.55'))
-        self.assertFalse(self.test_instance.validate('-1.55.restalchemy.com'))
-        self.assertFalse(self.test_instance.validate('_s1.55.restalchemy.com'))
-        self.assertFalse(self.test_instance.validate('.restalchemy.com'))
-        self.assertFalse(self.test_instance.validate(u'xx.москва.рф'))
-        self.assertFalse(self.test_instance.validate(u'москва.рф'))
+        self.assertFalse(self.test_instance.validate("x.y.z"))
+        self.assertFalse(self.test_instance.validate("restalchemy.com."))
+        self.assertFalse(self.test_instance.validate("restalchemy.com.55"))
+        self.assertFalse(self.test_instance.validate("-1.55.restalchemy.com"))
+        self.assertFalse(self.test_instance.validate("_s1.55.restalchemy.com"))
+        self.assertFalse(self.test_instance.validate(".restalchemy.com"))
+        self.assertFalse(self.test_instance.validate("xx.москва.рф"))
+        self.assertFalse(self.test_instance.validate("москва.рф"))
 
 
 class UrlTestCase(base.BaseTestCase):
@@ -662,15 +690,15 @@ class UrlTestCase(base.BaseTestCase):
         self.test_instance = types.Url()
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate(
-            'http://www.gmail.com'))
-        self.assertTrue(self.test_instance.validate(
-            'https://www.gmail.com/test'))
+        self.assertTrue(self.test_instance.validate("http://www.gmail.com"))
+        self.assertTrue(
+            self.test_instance.validate("https://www.gmail.com/test")
+        )
 
     def test_validate_incorrect_value(self):
-        self.assertFalse(self.test_instance.validate('x.y.z'))
+        self.assertFalse(self.test_instance.validate("x.y.z"))
         self.assertFalse(self.test_instance.validate(532))
-        self.assertFalse(self.test_instance.validate('google.com.55'))
+        self.assertFalse(self.test_instance.validate("google.com.55"))
 
 
 class SoftSchemeDictTestCase(base.BaseTestCase):
@@ -679,12 +707,12 @@ class SoftSchemeDictTestCase(base.BaseTestCase):
         super(SoftSchemeDictTestCase, self).setUp()
 
         self.scheme = {
-            'sub_str': types.String(),
-            'sub_int': types.Integer(),
+            "sub_str": types.String(),
+            "sub_int": types.Integer(),
         }
         self.correct_simple_data = {
-            'sub_str': 'substr',
-            'sub_int': 7,
+            "sub_str": "substr",
+            "sub_int": 7,
         }
         self.test_instance = types.SoftSchemeDict(scheme=self.scheme)
 
@@ -704,7 +732,7 @@ class SoftSchemeDictTestCase(base.BaseTestCase):
 
     def test_from_simple_type_extra_keys(self):
         data = self.correct_simple_data.copy()
-        data['some_key'] = object()
+        data["some_key"] = object()
 
         self.assertRaises(
             KeyError,
@@ -748,7 +776,7 @@ class SoftSchemeDictTestCase(base.BaseTestCase):
     def test_validate_wrong_key(self):
         value = self.test_instance.from_simple_type(self.correct_simple_data)
         first_key = next(iter(value.keys()))
-        value[first_key + 'something'] = value.pop(first_key)
+        value[first_key + "something"] = value.pop(first_key)
 
         self.assertFalse(
             self._test_validate(self.test_instance, self.scheme, value)
@@ -758,7 +786,7 @@ class SoftSchemeDictTestCase(base.BaseTestCase):
         arg_data = data.copy()
 
         with mock.patch.object(
-            types.Dict, 'from_simple_type', return_value=arg_data
+            types.Dict, "from_simple_type", return_value=arg_data
         ) as dict_from_simple_type:
             val = typ_obj.from_simple_type(arg_data)
 
@@ -772,7 +800,7 @@ class SoftSchemeDictTestCase(base.BaseTestCase):
         arg_value = value.copy()
 
         with mock.patch.object(
-            types.Dict, 'validate', return_value=True
+            types.Dict, "validate", return_value=True
         ) as dict_validate:
             ret = typ_obj.validate(arg_value)
 

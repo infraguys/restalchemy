@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -51,9 +49,10 @@ class MigrationStep(migrations.AbstarctMigrationStep):
             """,
             """
                 DELETE FROM ports;
-            """, """
-                DELETE FROM vms;
+            """,
             """
+                DELETE FROM vms;
+            """,
         ]
 
         for expression in expressions:

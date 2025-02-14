@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -48,25 +46,30 @@ class MetaModel(abc.ABCMeta):
 
     def __new__(cls, name, bases, attrs):
         props = {}
-        attrs['id_properties'] = {}
+        attrs["id_properties"] = {}
 
         for key, value in attrs.copy().items():
-            if isinstance(value, (properties.PropertyCreator,
-                                  properties.PropertyCollection)):
+            if isinstance(
+                value,
+                (properties.PropertyCreator, properties.PropertyCollection),
+            ):
                 props[key] = value
                 del attrs[key]
         all_base_properties = properties.PropertyCollection()
         for base in bases:
-            base_properties = getattr(base, 'properties', None)
+            base_properties = getattr(base, "properties", None)
             if isinstance(base_properties, properties.PropertyCollection):
                 all_base_properties += base_properties
-        attrs['properties'] = (
-            attrs.pop('properties', properties.PropertyCollection())
-            + all_base_properties + properties.PropertyCollection(**props))
-        for key, prop in attrs['properties'].items():
+        attrs["properties"] = (
+            attrs.pop("properties", properties.PropertyCollection())
+            + all_base_properties
+            + properties.PropertyCollection(**props)
+        )
+        for key, prop in attrs["properties"].items():
             if prop.is_id_property():
-                attrs['id_properties'][key] = (
-                    attrs['properties'].properties[key])
+                attrs["id_properties"][key] = attrs["properties"].properties[
+                    key
+                ]
         dm_class = super(MetaModel, cls).__new__(cls, name, bases, attrs)
         dm_class.__operational_storage__ = DmOperationalStorage()
         return dm_class
@@ -75,8 +78,9 @@ class MetaModel(abc.ABCMeta):
         try:
             return cls.properties[name]
         except KeyError:
-            raise AttributeError("%s object has no attribute %s" % (
-                cls.__name__, name))
+            raise AttributeError(
+                "%s object has no attribute %s" % (cls.__name__, name)
+            )
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
@@ -98,8 +102,9 @@ class Model(collections_abc.Mapping):
         try:
             return self.properties[name].value
         except KeyError:
-            raise AttributeError("%s object has no attribute %s" % (
-                type(self).__name__, name))
+            raise AttributeError(
+                "%s object has no attribute %s" % (type(self).__name__, name)
+            )
 
     def __setattr__(self, name, value):
         try:
@@ -111,25 +116,19 @@ class Model(collections_abc.Mapping):
                 property_name=name,
                 value=value,
                 model=self,
-                property_type=e.get_property_type())
-        except exc.ReadOnlyProperty:
-            raise exc.ReadOnlyProperty(
-                name=name,
-                model=type(self)
+                property_type=e.get_property_type(),
             )
+        except exc.ReadOnlyProperty:
+            raise exc.ReadOnlyProperty(name=name, model=type(self))
 
     def pour(self, **kwargs):
         try:
             self.properties = properties.PropertyManager(
-                self.properties,
-                **kwargs
+                self.properties, **kwargs
             )
             self.validate()
         except exc.PropertyRequired as e:
-            raise exc.PropertyRequired(
-                name=e.name,
-                model=self.__class__
-            )
+            raise exc.PropertyRequired(name=e.name, model=self.__class__)
 
         self.id_properties = {}
         for name, prop in self.properties.items():
@@ -157,10 +156,12 @@ class Model(collections_abc.Mapping):
         if len(cls.id_properties) == 1:
             return cls.id_properties.copy()
 
-        raise TypeError("Model %s has %s properties which marked as "
-                        "id_property. Please implement get_id_property "
-                        "method on your model."
-                        % (type(cls), 'many' if cls.id_properties else 'no'))
+        raise TypeError(
+            "Model %s has %s properties which marked as "
+            "id_property. Please implement get_id_property "
+            "method on your model."
+            % (type(cls), "many" if cls.id_properties else "no")
+        )
 
     @classmethod
     def get_id_property_name(cls):
@@ -212,15 +213,14 @@ class Model(collections_abc.Mapping):
         return len(self.properties)
 
     def __str__(self):
-        return '<%s %s>' % (self.__class__.__name__,
-                            self.get_id())
+        return "<%s %s>" % (self.__class__.__name__, self.get_id())
 
     def __repr__(self):
         result = []
         for k, v in self.items():
-            result.append('%s: %s' % (k, v))
-        result = ', '.join(result)
-        return '<%s {%s}>' % (self.__class__.__name__, result)
+            result.append("%s: %s" % (k, v))
+        result = ", ".join(result)
+        return "<%s {%s}>" % (self.__class__.__name__, result)
 
 
 class ModelWithID(Model):
@@ -242,14 +242,19 @@ class ModelWithID(Model):
 
 class ModelWithUUID(ModelWithID):
 
-    uuid = properties.property(types.UUID(), read_only=True, id_property=True,
-                               default=lambda: uuid.uuid4())
+    uuid = properties.property(
+        types.UUID(),
+        read_only=True,
+        id_property=True,
+        default=lambda: uuid.uuid4(),
+    )
 
 
 class ModelWithRequiredUUID(ModelWithUUID):
 
-    uuid = properties.property(types.UUID(), read_only=True, id_property=True,
-                               required=True)
+    uuid = properties.property(
+        types.UUID(), read_only=True, id_property=True, required=True
+    )
 
 
 class CustomPropertiesMixin(object):
@@ -265,11 +270,16 @@ class CustomPropertiesMixin(object):
     def get_custom_property_type(cls, property_name):
         return cls.__custom_properties__[property_name]
 
-    def _check_custom_property_value(self, name, value, static=False,
-                                     should_be=None):
+    def _check_custom_property_value(
+        self, name, value, static=False, should_be=None
+    ):
         prop_type = self.__custom_properties__[name]
         prop_type.validate(value)
         if static and should_be != value:
-            raise ValueError(("The value for property `%s` should be `%s` "
-                              "but actual value is `%s`") % (
-                name, should_be, value))
+            raise ValueError(
+                (
+                    "The value for property `%s` should be `%s` "
+                    "but actual value is `%s`"
+                )
+                % (name, should_be, value)
+            )

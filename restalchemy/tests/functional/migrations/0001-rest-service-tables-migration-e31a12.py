@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -41,7 +39,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     `updated` DATETIME(6) DEFAULT NOW(),
                     PRIMARY KEY (uuid)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS ports (
                     uuid CHAR(36) NOT NULL,
                     mac CHAR(17) NOT NULL,
@@ -50,7 +49,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     CONSTRAINT FOREIGN KEY ix_vms_uuid (vm)
                     REFERENCES vms (uuid)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS ip_addresses (
                     uuid CHAR(36) NOT NULL,
                     ip CHAR(17) NOT NULL,
@@ -59,7 +59,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     CONSTRAINT FOREIGN KEY ix_ports_uuid (port)
                     REFERENCES ports (uuid)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """, """
+            """,
+            """
                 CREATE TABLE IF NOT EXISTS tags (
                     uuid CHAR(36) NOT NULL,
                     vm CHAR(36) NOT NULL,
@@ -69,14 +70,14 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     CONSTRAINT FOREIGN KEY ix_tags__vms_uuid (vm)
                     REFERENCES vms (uuid)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            """
+            """,
         ]
 
         for expression in expressions:
             session.execute(expression)
 
     def downgrade(self, session):
-        tables = ['tags', 'ip_addresses', 'ports', 'vms']
+        tables = ["tags", "ip_addresses", "ports", "vms"]
 
         for table in tables:
             self._delete_table_if_exists(session, table)

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2014 Mirantis, Inc
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,8 +44,9 @@ class MetaSingleton(type):
         if cls._instance is None:
             with cls._lock:
                 if not cls._instance:
-                    cls._instance = (super(MetaSingleton, cls)
-                                     .__call__(*args, **kwargs))
+                    cls._instance = super(MetaSingleton, cls).__call__(
+                        *args, **kwargs
+                    )
         return cls._instance
 
 
@@ -59,4 +59,5 @@ class InheritSingleton(object):
     >>> class ConcreteSingleton(InheritSingleton):
     ...     pass
     """
+
     pass

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -24,15 +22,18 @@ from restalchemy.dm import types
 
 class VM(models.ModelWithUUID):
 
-    state = properties.property(types.String(max_length=10), required=True,
-                                default="off")
-    name = properties.property(types.String(max_length=255), required=True,
-                               example="testname")
-    just_none = properties.property(types.AllowNone(types.String()),
-                                    required=False, default=None)
-    status = properties.property(types.Enum(["active", "disabled"]),
-                                 default="active",
-                                 required=True)
+    state = properties.property(
+        types.String(max_length=10), required=True, default="off"
+    )
+    name = properties.property(
+        types.String(max_length=255), required=True, example="testname"
+    )
+    just_none = properties.property(
+        types.AllowNone(types.String()), required=False, default=None
+    )
+    status = properties.property(
+        types.Enum(["active", "disabled"]), default="active", required=True
+    )
     created = properties.property(
         types.UTCDateTime(),
         default=lambda: types.DEFAULT_DATE,
@@ -56,12 +57,12 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
         "unique_field": types.String(),
     }
 
-    mac = properties.property(types.Mac(), default='00:00:00:00:00:00')
+    mac = properties.property(types.Mac(), default="00:00:00:00:00:00")
     vm = relationships.relationship(VM, required=True)
 
     @property
     def never_call(self):
-        raise NotImplementedError('Should be call never')
+        raise NotImplementedError("Should be call never")
 
     @property
     def _hidden_field(self):
@@ -94,17 +95,15 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
 
 class IpAddress(models.ModelWithUUID):
 
-    ip = properties.property(types.String(), default='192.168.0.1')
+    ip = properties.property(types.String(), default="192.168.0.1")
     port = relationships.relationship(Port, required=True)
 
 
 class Tag(models.ModelWithUUID):
 
-    name = properties.property(types.String(), id_property=True,
-                               required=True)
-    visible = properties.property(types.Boolean(), default=True,
-                                  required=True)
+    name = properties.property(types.String(), id_property=True, required=True)
+    visible = properties.property(types.Boolean(), default=True, required=True)
 
     @classmethod
     def get_id_property(cls):
-        return {'name': cls.id_properties['name']}
+        return {"name": cls.id_properties["name"]}

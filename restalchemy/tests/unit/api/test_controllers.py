@@ -21,7 +21,7 @@ import mock
 from restalchemy.api import controllers
 
 
-FAKE_LOCATION_PATH = 'fake location path'
+FAKE_LOCATION_PATH = "fake location path"
 
 
 class TestLocationHeaderLogic(unittest.TestCase):
@@ -33,47 +33,50 @@ class TestLocationHeaderLogic(unittest.TestCase):
     def test_location_for_result(self):
         result = self._controller.process_result("")
 
-        self.assertEqual(result.headers.get('Location', None), None)
+        self.assertEqual(result.headers.get("Location", None), None)
 
-    @mock.patch('restalchemy.api.resources.ResourceMap')
+    @mock.patch("restalchemy.api.resources.ResourceMap")
     def test_location_for_result_and_add_location(self, resource_map):
         resource_map.get_location.return_value = FAKE_LOCATION_PATH
 
         result = self._controller.process_result("", add_location=True)
 
-        self.assertEqual(result.headers.get('Location', None),
-                         FAKE_LOCATION_PATH)
+        self.assertEqual(
+            result.headers.get("Location", None), FAKE_LOCATION_PATH
+        )
 
     def test_location_for_result_and_location_and_tuple_location_false(self):
         result = self._controller.process_result(
-            ("", 200, None, False),
-            add_location=True)
+            ("", 200, None, False), add_location=True
+        )
 
-        self.assertEqual(result.headers.get('Location', None), None)
+        self.assertEqual(result.headers.get("Location", None), None)
 
-    @mock.patch('restalchemy.api.resources.ResourceMap')
+    @mock.patch("restalchemy.api.resources.ResourceMap")
     def test_location_for_result_and_location_and_tuple_location_true(
-            self, resource_map
+        self, resource_map
     ):
         resource_map.get_location.return_value = FAKE_LOCATION_PATH
 
         result = self._controller.process_result(
-            ("", 200, None, True),
-            add_location=True)
+            ("", 200, None, True), add_location=True
+        )
 
-        self.assertEqual(result.headers.get('Location', None),
-                         FAKE_LOCATION_PATH)
+        self.assertEqual(
+            result.headers.get("Location", None), FAKE_LOCATION_PATH
+        )
 
     def test_location_for_result_and_tuple_location_false(self):
         result = self._controller.process_result(("", 200, None, False))
 
-        self.assertEqual(result.headers.get('Location', None), None)
+        self.assertEqual(result.headers.get("Location", None), None)
 
-    @mock.patch('restalchemy.api.resources.ResourceMap')
+    @mock.patch("restalchemy.api.resources.ResourceMap")
     def test_location_for_result_and_tuple_location_true(self, resource_map):
         resource_map.get_location.return_value = FAKE_LOCATION_PATH
 
         result = self._controller.process_result(("", 200, None, True))
 
-        self.assertEqual(result.headers.get('Location', None),
-                         FAKE_LOCATION_PATH)
+        self.assertEqual(
+            result.headers.get("Location", None), FAKE_LOCATION_PATH
+        )

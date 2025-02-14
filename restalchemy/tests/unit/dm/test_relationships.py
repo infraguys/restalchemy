@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2020 Eugene Frolov
 #
 # All Rights Reserved.
@@ -30,12 +28,11 @@ class RelationshipTestCase(base.BaseTestCase):
     def test_init_incorrect_value(self):
         with self.assertRaises(TypeError):
             relationships.Relationship(
-                property_type=MyModel, value='IncorrectValue')
+                property_type=MyModel, value="IncorrectValue"
+            )
 
     def test_init_with_correct_value(self):
         self.assertIsInstance(
-            relationships.Relationship(
-                property_type=MyModel,
-                value=MyModel()),
-            relationships.Relationship
+            relationships.Relationship(property_type=MyModel, value=MyModel()),
+            relationships.Relationship,
         )

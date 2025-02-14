@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2014 Eugene Frolov <efrolov@mirantis.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +21,11 @@ from restalchemy import version
 
 
 def parse(args):
-    cfg.CONF(args=args, project='restalchemy',
-             version='RESTAlchemy %s' % version.version_info.release_string())
+    cfg.CONF(
+        args=args,
+        project="restalchemy",
+        version="RESTAlchemy %s" % version.version_info.release_string(),
+    )
     return cfg.CONF.config_file
 
 

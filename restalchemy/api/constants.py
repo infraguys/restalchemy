@@ -14,38 +14,38 @@
 #    under the License.
 
 # HTTP methods
-GET = 'GET'
-PUT = 'PUT'
-POST = 'POST'
+GET = "GET"
+PUT = "PUT"
+POST = "POST"
 
 # RA methods
-FILTER = 'FILTER'
-CREATE = 'CREATE'
-UPDATE = 'UPDATE'
-DELETE = 'DELETE'
+FILTER = "FILTER"
+CREATE = "CREATE"
+UPDATE = "UPDATE"
+DELETE = "DELETE"
 
 # RA action methods
-ACTION_GET = 'ACTION_GET'
-ACTION_POST = 'ACTION_POST'
-ACTION_PUT = 'ACTION_PUT'
+ACTION_GET = "ACTION_GET"
+ACTION_POST = "ACTION_POST"
+ACTION_PUT = "ACTION_PUT"
 
 # all RA methods
-ALL = 'ALL'
+ALL = "ALL"
 
 ALL_RA_METHODS = [
-    GET,              # Controller.get
-    FILTER,           # Controller.filter
-    CREATE,           # Controller.create
-    UPDATE,           # Controller.update
-    DELETE,           # Controller.delete
-    ACTION_GET,       # Action.get
-    ACTION_POST,      # Action.post
-    ACTION_PUT,       # Action.put
-    ALL               # All RA methods + actions
+    GET,  # Controller.get
+    FILTER,  # Controller.filter
+    CREATE,  # Controller.create
+    UPDATE,  # Controller.update
+    DELETE,  # Controller.delete
+    ACTION_GET,  # Action.get
+    ACTION_POST,  # Action.post
+    ACTION_PUT,  # Action.put
+    ALL,  # All RA methods + actions
 ]
 
 
 HTTP_TO_RA_COLLECTION_METHODS = {GET: FILTER, POST: CREATE}
 HTTP_TO_RA_RESOURCE_METHODS = {GET: GET, PUT: UPDATE, DELETE: DELETE}
 
-CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = 'application/json'
+CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = "application/json"

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -56,11 +54,20 @@ class BaseProperty(AbstractProperty):
 
 class Property(BaseProperty):
 
-    def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None, mutable=False, example=None):
+    def __init__(
+        self,
+        property_type,
+        default=None,
+        required=False,
+        read_only=False,
+        value=None,
+        mutable=False,
+        example=None,
+    ):
         if not isinstance(property_type, types.BaseType):
-            raise TypeError("Property type must be instance of %s" %
-                            types.BaseType)
+            raise TypeError(
+                "Property type must be instance of %s" % types.BaseType
+            )
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
@@ -106,7 +113,7 @@ class Property(BaseProperty):
 
     @value.setter
     def value(self, value):
-        if (self.is_read_only() or self.is_id_property()):
+        if self.is_read_only() or self.is_id_property():
             raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 
@@ -138,11 +145,15 @@ class PropertyCreator(object):
         self._property_type = prop_type
         self._args = args
         self._kwargs = kwargs
-        self._prefetch = kwargs.pop('prefetch', False)
+        self._prefetch = kwargs.pop("prefetch", False)
 
     def __call__(self, value):
-        return self._property(value=value, property_type=self._property_type,
-                              *self._args, **self._kwargs)
+        return self._property(
+            value=value,
+            property_type=self._property_type,
+            *self._args,
+            **self._kwargs
+        )
 
     def get_property_class(self):
         return self._property
@@ -215,8 +226,10 @@ class PropertyCollection(PropertyMapping):
             props = dict(self.properties)
             props.update(other.properties)
             return type(self)(**props)
-        raise TypeError("Cannot concatenate %s and %s objects" %
-                        (type(self).__name__, type(other).__name__))
+        raise TypeError(
+            "Cannot concatenate %s and %s objects"
+            % (type(self).__name__, type(other).__name__)
+        )
 
     def instantiate_property(self, name, value=None):
         return self._properties[name](value)
@@ -242,8 +255,8 @@ class PropertyManager(PropertyMapping):
             self._properties[name] = prop
 
         # commented because kwargs can contain 'context' etc. Figure out
-#        if len(kwargs) > 0:
-#            raise TypeError("Unknown parameters: %s" % str(kwargs))
+        #        if len(kwargs) > 0:
+        #            raise TypeError("Unknown parameters: %s" % str(kwargs))
         super(PropertyManager, self).__init__()
 
     @builtins.property
@@ -264,35 +277,42 @@ class PropertyManager(PropertyMapping):
 
 
 def property(property_type, *args, **kwargs):
-    id_property = kwargs.pop('id_property', False)
-    property_class = kwargs.pop('property_class',
-                                IDProperty if id_property else Property)
-    if (inspect.isclass(property_class)
-            and issubclass(property_class, AbstractProperty)):
-        return PropertyCreator(prop_class=property_class,
-                               prop_type=property_type,
-                               args=args,
-                               kwargs=kwargs)
+    id_property = kwargs.pop("id_property", False)
+    property_class = kwargs.pop(
+        "property_class", IDProperty if id_property else Property
+    )
+    if inspect.isclass(property_class) and issubclass(
+        property_class, AbstractProperty
+    ):
+        return PropertyCreator(
+            prop_class=property_class,
+            prop_type=property_type,
+            args=args,
+            kwargs=kwargs,
+        )
     else:
-        raise ValueError("Value of property class argument (%s) must be"
-                         " inherited on AbstractProperty class"
-                         "" % str(property_class))
+        raise ValueError(
+            "Value of property class argument (%s) must be"
+            " inherited on AbstractProperty class"
+            "" % str(property_class)
+        )
 
 
 def container(**kwargs):
     kwargs = copy.deepcopy(kwargs)
     for prop in kwargs.values():
         if not isinstance(prop, (PropertyCreator, PropertyCollection)):
-            raise Exception("Only property, relationship "
-                            "and container are allowed.")
+            raise Exception(
+                "Only property, relationship " "and container are allowed."
+            )
     return PropertyCollection(**kwargs)
 
 
 def required_property(property_type, *args, **kwargs):
-    kwargs['required'] = True
+    kwargs["required"] = True
     return property(property_type, *args, **kwargs)
 
 
 def readonly_property(property_type, *args, **kwargs):
-    kwargs['read_only'] = True
+    kwargs["read_only"] = True
     return required_property(property_type, *args, **kwargs)

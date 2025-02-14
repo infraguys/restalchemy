@@ -26,34 +26,36 @@ from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.storage.sql import orm
 
 
-FAKE_UUID0 = uuid.UUID('00000000-0000-0000-0000-000000000000')
-FAKE_UUID1 = uuid.UUID('00000000-0000-0000-0000-000000000001')
-FAKE_UUID2 = uuid.UUID('00000000-0000-0000-0000-000000000002')
+FAKE_UUID0 = uuid.UUID("00000000-0000-0000-0000-000000000000")
+FAKE_UUID1 = uuid.UUID("00000000-0000-0000-0000-000000000001")
+FAKE_UUID2 = uuid.UUID("00000000-0000-0000-0000-000000000002")
 
 
 class SimpleModel(models.ModelWithUUID, orm.SQLStorableMixin):
-    __tablename__ = 'simple_table'
+    __tablename__ = "simple_table"
 
-    field_str = properties.property(types.String(), default='FAKE_STR')
+    field_str = properties.property(types.String(), default="FAKE_STR")
     field_int = properties.property(types.Integer(), default=1)
     field_bool = properties.property(types.Boolean(), default=True)
 
 
 class ModelWithL1Relationships(models.ModelWithUUID, orm.SQLStorableMixin):
-    __tablename__ = 'model_with_l1_relationships'
+    __tablename__ = "model_with_l1_relationships"
 
     ref_l0_1 = relationships.relationship(SimpleModel, prefetch=True)
     ref_l0_2 = relationships.relationship(SimpleModel, prefetch=False)
 
 
 class ModelWithL2Relationships(models.ModelWithUUID, orm.SQLStorableMixin):
-    __tablename__ = 'model_with_l2_relationships'
+    __tablename__ = "model_with_l2_relationships"
 
-    ref_l1_1 = relationships.relationship(ModelWithL1Relationships,
-                                          prefetch=True)
+    ref_l1_1 = relationships.relationship(
+        ModelWithL1Relationships, prefetch=True
+    )
     ref_l1_2 = relationships.relationship(SimpleModel, prefetch=True)
-    ref_l1_3 = relationships.relationship(ModelWithL1Relationships,
-                                          prefetch=False)
+    ref_l1_3 = relationships.relationship(
+        ModelWithL1Relationships, prefetch=False
+    )
 
 
 # NOTE(efrolov): Sort model properties for correct ordering in asserts
@@ -69,9 +71,9 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         model1 = SimpleModel(uuid=FAKE_UUID1)
         model2 = SimpleModel(uuid=FAKE_UUID2)
         self.flt = filters.AND(
-            {'uuid': filters.EQ(FAKE_UUID0)},
-            {'ref_l0_1': filters.LE(model1)},
-            {'ref_l0_2': filters.NE(model2)},
+            {"uuid": filters.EQ(FAKE_UUID0)},
+            {"ref_l0_1": filters.LE(model1)},
+            {"ref_l0_2": filters.NE(model2)},
         )
 
     def tearDown(self):
@@ -97,7 +99,7 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             " `simple_table` AS `t2` "
             "ON"
             " (`t1`.`ref_l0_1` = `t2`.`uuid`)",
-            result
+            result,
         )
 
     def test_l1_select_with_filters(self):
@@ -124,13 +126,15 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             " (`t1`.`uuid` = %s AND"
             " `t1`.`ref_l0_1` <= %s AND"
             " `t1`.`ref_l0_2` <> %s)",
-            result_expression
+            result_expression,
         )
         self.assertEqual(
-            ['00000000-0000-0000-0000-000000000000',
-             '00000000-0000-0000-0000-000000000001',
-             '00000000-0000-0000-0000-000000000002'],
-            result_values
+            [
+                "00000000-0000-0000-0000-000000000000",
+                "00000000-0000-0000-0000-000000000001",
+                "00000000-0000-0000-0000-000000000002",
+            ],
+            result_values,
         )
 
     def test_select_with_limit(self):
@@ -154,7 +158,7 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             "ON"
             " (`t1`.`ref_l0_1` = `t2`.`uuid`) "
             "LIMIT 100500",
-            result_expression
+            result_expression,
         )
         self.assertEqual([], result_values)
 
@@ -183,17 +187,19 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             " `t1`.`ref_l0_1` <= %s AND"
             " `t1`.`ref_l0_2` <> %s) "
             "FOR UPDATE",
-            result_expression
+            result_expression,
         )
         self.assertEqual(
-            ['00000000-0000-0000-0000-000000000000',
-             '00000000-0000-0000-0000-000000000001',
-             '00000000-0000-0000-0000-000000000002'],
-            result_values
+            [
+                "00000000-0000-0000-0000-000000000000",
+                "00000000-0000-0000-0000-000000000001",
+                "00000000-0000-0000-0000-000000000002",
+            ],
+            result_values,
         )
 
     def test_l1_select_order_by(self):
-        query = self.Q.select(ModelWithL1Relationships).order_by('uuid')
+        query = self.Q.select(ModelWithL1Relationships).order_by("uuid")
 
         result_expression = query.compile()
         result_values = query.values()
@@ -214,7 +220,7 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             " (`t1`.`ref_l0_1` = `t2`.`uuid`) "
             "ORDER BY"
             " `t1_uuid` ASC",
-            result_expression
+            result_expression,
         )
         self.assertEqual([], result_values)
 
@@ -249,7 +255,7 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             " `simple_table` AS `t4` "
             "ON"
             " (`t1`.`ref_l1_2` = `t4`.`uuid`)",
-            result
+            result,
         )
 
 

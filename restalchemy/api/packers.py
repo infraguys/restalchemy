@@ -27,13 +27,15 @@ from restalchemy.common import exceptions
 from restalchemy.common import utils
 
 DEFAULT_VALUE = object()
-CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = constants.CONTENT_TYPE_APPLICATION_JSON  # noqa
+CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = (
+    constants.CONTENT_TYPE_APPLICATION_JSON
+)  # noqa
 
 LOG = logging.getLogger(__name__)
 
 
 def get_content_type(headers):
-    return headers.get('Content-Type') or constants.DEFAULT_CONTENT_TYPE
+    return headers.get("Content-Type") or constants.DEFAULT_CONTENT_TYPE
 
 
 class BaseResourcePacker(object):
@@ -45,17 +47,23 @@ class BaseResourcePacker(object):
         self._req = request
 
     def pack_resource(self, obj):
-        if isinstance(obj, six.string_types + six.integer_types + (
-                float, bool, type(None), list, tuple, dict)):
+        if isinstance(
+            obj,
+            six.string_types
+            + six.integer_types
+            + (float, bool, type(None), list, tuple, dict),
+        ):
             return obj
         else:
             result = {}
             for name, prop in self._rt.get_fields_by_request(self._req):
                 api_name = prop.api_name
-                if (prop.is_public()
+                if (
+                    prop.is_public()
                     and not self._rt._fields_permissions.is_hidden(
-                        self._req,
-                        name)):
+                        self._req, name
+                    )
+                ):
                     value = getattr(obj, name)
                     if value is None:
                         if not self._skip_none:
@@ -66,8 +74,7 @@ class BaseResourcePacker(object):
             return result
 
     def pack(self, obj):
-        if (isinstance(obj, list)
-                or isinstance(obj, types.GeneratorType)):
+        if isinstance(obj, list) or isinstance(obj, types.GeneratorType):
             return [self.pack_resource(resource) for resource in obj]
         else:
             return self.pack_resource(obj)
@@ -87,12 +94,11 @@ class BaseResourcePacker(object):
             if prop_value is not DEFAULT_VALUE:
                 if not prop.is_public():
                     raise exceptions.ValidationPropertyPrivateError(
-                        property=api_name)
+                        property=api_name
+                    )
 
                 if self._rt._fields_permissions.is_readonly(self._req, name):
-                    raise exceptions.FieldPermissionError(
-                        field=name
-                    )
+                    raise exceptions.FieldPermissionError(field=name)
                 result[name] = self._parse_value(api_name, prop_value, prop)
 
         if len(value) > 0:
@@ -109,7 +115,7 @@ class JSONPacker(BaseResourcePacker):
     def unpack(self, value):
         if six.PY3 and isinstance(value, six.binary_type):
             return super(JSONPacker, self).unpack(
-                json.loads(str(value, 'utf-8')),
+                json.loads(str(value, "utf-8")),
             )
         return super(JSONPacker, self).unpack(json.loads(value))
 
@@ -119,14 +125,12 @@ class JSONPackerIncludeNullFields(JSONPacker):
     _skip_none = False
 
 
-packer_mapping = {
-    constants.CONTENT_TYPE_APPLICATION_JSON: JSONPacker
-}
+packer_mapping = {constants.CONTENT_TYPE_APPLICATION_JSON: JSONPacker}
 
 
 def parse_content_type(value):
     # Cleanup: application/json;charset=UTF-8
-    return value.split(';')[0].strip() if value else None
+    return value.split(";")[0].strip() if value else None
 
 
 def get_packer(content_type):
@@ -134,8 +138,9 @@ def get_packer(content_type):
         return packer_mapping[parse_content_type(content_type)]
     except KeyError:
         # TODO(Eugene Frolov): Specify Exception Type and message
-        raise Exception("Packer can't found for content type %s " %
-                        content_type)
+        raise Exception(
+            "Packer can't found for content type %s " % content_type
+        )
 
 
 def set_packer(content_type, packer_class):

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2018 Eugene Frolov
 #
 # All Rights Reserved.
@@ -32,16 +30,28 @@ LOG = logging.getLogger(__name__)
 
 
 def exception2dict(exception):
-    code = (exception.get_code() if hasattr(exception, 'get_code') else
-            exception.code if hasattr(exception, 'code') else
-            UNKNOWN_ERROR_CODE)
-    message = (exception.msg if hasattr(exception, 'msg') else
-               exception.message if hasattr(exception, 'message') else
-               str(exception))
+    code = (
+        exception.get_code()
+        if hasattr(exception, "get_code")
+        else (
+            exception.code
+            if hasattr(exception, "code")
+            else UNKNOWN_ERROR_CODE
+        )
+    )
+    message = (
+        exception.msg
+        if hasattr(exception, "msg")
+        else (
+            exception.message
+            if hasattr(exception, "message")
+            else str(exception)
+        )
+    )
     return {
-        'type': exception.__class__.__name__,
-        'code': code,
-        'message': message
+        "type": exception.__class__.__name__,
+        "code": code,
+        "message": message,
     }
 
 
@@ -56,19 +66,24 @@ class ErrorsHandlerMiddleware(middlewares.Middleware):
         try:
             return req.get_response(self.application)
         except self.not_found_exc as e:
-            return req.ResponseClass(status=http_client.NOT_FOUND,
-                                     json=exception2dict(e))
+            return req.ResponseClass(
+                status=http_client.NOT_FOUND, json=exception2dict(e)
+            )
         except self.conflict_exc as e:
-            return req.ResponseClass(status=http_client.CONFLICT,
-                                     json=exception2dict(e))
+            return req.ResponseClass(
+                status=http_client.CONFLICT, json=exception2dict(e)
+            )
         except self.valid_exc as e:
-            return req.ResponseClass(status=http_client.BAD_REQUEST,
-                                     json=exception2dict(e))
+            return req.ResponseClass(
+                status=http_client.BAD_REQUEST, json=exception2dict(e)
+            )
         except self.common_exc as e:
-            return req.ResponseClass(status=e.code,
-                                     json=exception2dict(e))
+            return req.ResponseClass(status=e.code, json=exception2dict(e))
         except Exception as e:
-            LOG.exception("Unknown error has occurred on url: %s %s",
-                          req.method, req.url)
-            return req.ResponseClass(status=http_client.INTERNAL_SERVER_ERROR,
-                                     json=exception2dict(e))
+            LOG.exception(
+                "Unknown error has occurred on url: %s %s", req.method, req.url
+            )
+            return req.ResponseClass(
+                status=http_client.INTERNAL_SERVER_ERROR,
+                json=exception2dict(e),
+            )

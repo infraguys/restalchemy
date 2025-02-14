@@ -37,8 +37,9 @@ class ResourceSchemaGenerator(object):
         return self.resource_name + prop_name.capitalize()
 
     def get_prop_kwargs(self, name):
-        return self._resource.get_model().properties.properties[
-            name].get_kwargs()
+        return (
+            self._resource.get_model().properties.properties[name].get_kwargs()
+        )
 
     def generate_parameter_object(self, request):
         parameters = {}
@@ -93,14 +94,15 @@ class ResourceSchemaGenerator(object):
 
 
 class Schema(object):
-    def __init__(self,
-                 summary=None,
-                 parameters=None,
-                 responses=None,
-                 tags=None,
-                 request_body=None,
-                 operation_id=None,
-                 ):
+    def __init__(
+        self,
+        summary=None,
+        parameters=None,
+        responses=None,
+        tags=None,
+        request_body=None,
+        operation_id=None,
+    ):
         self.summary = summary or ""
         self.parameters = parameters or []
         self.responses = responses or {}
@@ -124,12 +126,12 @@ class Schema(object):
 
 
 def extend_schema(
-        summary=None,
-        parameters=None,
-        responses=None,
-        tags=None,
-        request_body=None,
-        operation_id=None,
+    summary=None,
+    parameters=None,
+    responses=None,
+    tags=None,
+    request_body=None,
+    operation_id=None,
 ):
     if parameters and not isinstance(parameters, list):
         raise ValueError("parameters type is not list")
@@ -139,12 +141,14 @@ def extend_schema(
         raise ValueError("tags type is not list")
 
     def decorator(f):
-        schema = Schema(summary=summary,
-                        parameters=parameters,
-                        responses=responses,
-                        tags=tags,
-                        request_body=request_body,
-                        operation_id=operation_id)
+        schema = Schema(
+            summary=summary,
+            parameters=parameters,
+            responses=responses,
+            tags=tags,
+            request_body=request_body,
+            operation_id=operation_id,
+        )
         f.openapi_schema = schema
         return f
 

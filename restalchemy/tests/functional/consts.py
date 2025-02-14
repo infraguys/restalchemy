@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -18,6 +16,6 @@
 
 import os
 
-_DATABASE_URI_DEFAULT = 'mysql://test:test@127.0.0.1:/test'
+_DATABASE_URI_DEFAULT = "mysql://test:test@127.0.0.1:/test"
 
-DATABASE_URI = os.getenv('DATABASE_URI', _DATABASE_URI_DEFAULT)
+DATABASE_URI = os.getenv("DATABASE_URI", _DATABASE_URI_DEFAULT)

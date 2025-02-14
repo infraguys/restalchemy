@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2018 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -32,9 +30,9 @@ from restalchemy.tests.unit import base
 from restalchemy.tests.unit.storage.sql import common
 
 
-TEST_NAME = 'FAKE_NAME'
-TEST_VALUE = 'FAKE_VALUE'
-TEST_UUID = uuid.UUID('89d423c5-4365-4be2-bde9-2730909a9af8')
+TEST_NAME = "FAKE_NAME"
+TEST_VALUE = "FAKE_VALUE"
+TEST_UUID = uuid.UUID("89d423c5-4365-4be2-bde9-2730909a9af8")
 
 
 class BaseModel(models.Model):
@@ -54,15 +52,15 @@ class BaseModelWithRelation(BaseModel, models.ModelWithUUID):
 class EQTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.EQ(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=TEST_VALUE)
+        self._expr = filters.EQ(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' = %s', result)
+        self.assertEqual(TEST_NAME + " = %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -71,15 +69,15 @@ class EQTestCase(base.BaseTestCase):
 class NETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.NE(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=TEST_VALUE)
+        self._expr = filters.NE(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' <> %s', result)
+        self.assertEqual(TEST_NAME + " <> %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -88,15 +86,15 @@ class NETestCase(base.BaseTestCase):
 class GTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GT(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=TEST_VALUE)
+        self._expr = filters.GT(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' > %s', result)
+        self.assertEqual(TEST_NAME + " > %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -105,15 +103,15 @@ class GTTestCase(base.BaseTestCase):
 class GETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.GE(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=TEST_VALUE)
+        self._expr = filters.GE(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' >= %s', result)
+        self.assertEqual(TEST_NAME + " >= %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -122,15 +120,15 @@ class GETestCase(base.BaseTestCase):
 class LTTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LT(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=TEST_VALUE)
+        self._expr = filters.LT(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' < %s', result)
+        self.assertEqual(TEST_NAME + " < %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -139,15 +137,15 @@ class LTTestCase(base.BaseTestCase):
 class LETestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.LE(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=TEST_VALUE)
+        self._expr = filters.LE(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' <= %s', result)
+        self.assertEqual(TEST_NAME + " <= %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -158,15 +156,17 @@ class InTestCase(base.BaseTestCase):
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
-        self._expr = filters.In(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=self.TEST_LIST_VALUES)
+        self._expr = filters.In(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=self.TEST_LIST_VALUES,
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' IN %s', result)
+        self.assertEqual(TEST_NAME + " IN %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
@@ -177,15 +177,17 @@ class NotInTestCase(base.BaseTestCase):
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
-        self._expr = filters.NotIn(column=TEST_NAME,
-                                   value_type=common.AsIsType(),
-                                   value=self.TEST_LIST_VALUES)
+        self._expr = filters.NotIn(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=self.TEST_LIST_VALUES,
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' NOT IN %s', result)
+        self.assertEqual(TEST_NAME + " NOT IN %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
@@ -194,15 +196,15 @@ class NotInTestCase(base.BaseTestCase):
 class InEmptyListTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.In(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=[])
+        self._expr = filters.In(
+            column=TEST_NAME, value_type=common.AsIsType(), value=[]
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' IN %s', result)
+        self.assertEqual(TEST_NAME + " IN %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, [None])
@@ -211,15 +213,15 @@ class InEmptyListTestCase(base.BaseTestCase):
 class IsTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.Is(column=TEST_NAME,
-                                value_type=common.AsIsType(),
-                                value=TEST_VALUE)
+        self._expr = filters.Is(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' IS %s', result)
+        self.assertEqual(TEST_NAME + " IS %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -228,15 +230,15 @@ class IsTestCase(base.BaseTestCase):
 class IsNotTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.IsNot(column=TEST_NAME,
-                                   value_type=common.AsIsType(),
-                                   value=TEST_VALUE)
+        self._expr = filters.IsNot(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' IS NOT %s', result)
+        self.assertEqual(TEST_NAME + " IS NOT %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -245,15 +247,15 @@ class IsNotTestCase(base.BaseTestCase):
 class LikeTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.Like(column=TEST_NAME,
-                                  value_type=common.AsIsType(),
-                                  value=TEST_VALUE)
+        self._expr = filters.Like(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' LIKE %s', result)
+        self.assertEqual(TEST_NAME + " LIKE %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -262,15 +264,15 @@ class LikeTestCase(base.BaseTestCase):
 class NotLikeTestCase(base.BaseTestCase):
 
     def setUp(self):
-        self._expr = filters.NotLike(column=TEST_NAME,
-                                     value_type=common.AsIsType(),
-                                     value=TEST_VALUE)
+        self._expr = filters.NotLike(
+            column=TEST_NAME, value_type=common.AsIsType(), value=TEST_VALUE
+        )
 
     def test_construct_expression(self):
 
         result = self._expr.construct_expression()
 
-        self.assertEqual(TEST_NAME + ' NOT LIKE %s', result)
+        self.assertEqual(TEST_NAME + " NOT LIKE %s", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
@@ -280,84 +282,84 @@ class ConvertFiltersTestCase(base.BaseTestCase):
 
     def test_convert_filters_new(self):
         d = OrderedDict()
-        d['name1'] = dm_filters.EQ(1)
-        d['name2'] = dm_filters.EQ(2)
+        d["name1"] = dm_filters.EQ(1)
+        d["name2"] = dm_filters.EQ(2)
         filter_list = dm_filters.AND(d)
 
         processed = filters.convert_filters(BaseModel, filter_list)
 
-        self.assertEqual('(`name1` = %s AND `name2` = %s)',
-                         processed.construct_expression())
+        self.assertEqual(
+            "(`name1` = %s AND `name2` = %s)", processed.construct_expression()
+        )
         self.assertEqual([1, 2], processed.value)
 
     def test_convert_filters_new_separate_dicts(self):
         filter_list = dm_filters.AND(
-            {'name1': dm_filters.EQ(1)},
-            {'name2': dm_filters.EQ(2)})
+            {"name1": dm_filters.EQ(1)}, {"name2": dm_filters.EQ(2)}
+        )
 
         processed = filters.convert_filters(BaseModel, filter_list)
 
-        self.assertEqual('(`name1` = %s AND `name2` = %s)',
-                         processed.construct_expression())
+        self.assertEqual(
+            "(`name1` = %s AND `name2` = %s)", processed.construct_expression()
+        )
         self.assertEqual([1, 2], processed.value)
 
     def test_convert_filters_new_nested(self):
         d = OrderedDict()
-        d['name1'] = dm_filters.EQ(1)
-        d['name2'] = dm_filters.EQ(2)
+        d["name1"] = dm_filters.EQ(1)
+        d["name2"] = dm_filters.EQ(2)
         filter_list = dm_filters.OR(
-            dm_filters.AND(d),
-            dm_filters.AND({'name2': dm_filters.EQ(2)}))
+            dm_filters.AND(d), dm_filters.AND({"name2": dm_filters.EQ(2)})
+        )
 
         processed = filters.convert_filters(BaseModel, filter_list)
 
-        self.assertEqual('((`name1` = %s AND `name2` = %s) OR (`name2` = %s))',
-                         processed.construct_expression())
+        self.assertEqual(
+            "((`name1` = %s AND `name2` = %s) OR (`name2` = %s))",
+            processed.construct_expression(),
+        )
         self.assertEqual([1, 2, 2], processed.value)
 
     def test_convert_filters_old(self):
         d = OrderedDict()
-        d['name1'] = dm_filters.EQ(1)
-        d['name2'] = dm_filters.EQ(2)
+        d["name1"] = dm_filters.EQ(1)
+        d["name2"] = dm_filters.EQ(2)
         filter_list = d
 
         processed = filters.convert_filters(BaseModel, filter_list)
 
-        self.assertEqual('(`name1` = %s AND `name2` = %s)',
-                         processed.construct_expression())
+        self.assertEqual(
+            "(`name1` = %s AND `name2` = %s)", processed.construct_expression()
+        )
         self.assertEqual([1, 2], processed.value)
 
     def test_convert_filters_old_multidict(self):
         d = HTTPHeaderDict()
-        d.add('name1', dm_filters.EQ(1))
-        d.add('name1', dm_filters.EQ(1))
+        d.add("name1", dm_filters.EQ(1))
+        d.add("name1", dm_filters.EQ(1))
         filter_list = d
 
         processed = filters.convert_filters(BaseModel, filter_list)
 
-        self.assertEqual('(`name1` = %s AND `name1` = %s)',
-                         processed.construct_expression())
+        self.assertEqual(
+            "(`name1` = %s AND `name1` = %s)", processed.construct_expression()
+        )
         self.assertEqual([1, 1], processed.value)
 
     def test_convert_filters_new_relationship_by_model(self):
-        model = BaseModelWithUUID(
-            name1=1,
-            name2=2,
-            uuid=TEST_UUID
-        )
-        filter_list = {'parent': dm_filters.EQ(model)}
+        model = BaseModelWithUUID(name1=1, name2=2, uuid=TEST_UUID)
+        filter_list = {"parent": dm_filters.EQ(model)}
 
         processed = filters.convert_filters(BaseModelWithRelation, filter_list)
 
-        self.assertEqual('(`parent` = %s)',
-                         processed.construct_expression())
+        self.assertEqual("(`parent` = %s)", processed.construct_expression())
         self.assertEqual([str(TEST_UUID)], processed.value)
 
     def test_convert_filters_new_relationship_by_id(self):
-        filter_list = {'parent': dm_filters.EQ(TEST_UUID)}
+        filter_list = {"parent": dm_filters.EQ(TEST_UUID)}
 
         processed = filters.convert_filters(BaseModelWithRelation, filter_list)
 
-        self.assertEqual('(`parent` = %s)',
-                         processed.construct_expression())
+        self.assertEqual("(`parent` = %s)", processed.construct_expression())
         self.assertEqual([str(TEST_UUID)], processed.value)

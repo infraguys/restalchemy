@@ -34,11 +34,11 @@ class FakeModel(models.CustomPropertiesMixin, models.ModelWithUUID):
 
 
 class FakeMemberContext(object):
-    roles = ['member', 'some-role']
+    roles = ["member", "some-role"]
 
 
 class FakeAdminContext(object):
-    roles = ['member', 'admin']
+    roles = ["member", "admin"]
 
 
 class FakeEmptyContext(object):
@@ -46,11 +46,11 @@ class FakeEmptyContext(object):
 
 
 class FakeIncorrectFieldsRoleContext(object):
-    roles = ['incorrect_fields']
+    roles = ["incorrect_fields"]
 
 
 class FakeEmptyFieldsRoleContext(object):
-    roles = ['empty_fields']
+    roles = ["empty_fields"]
 
 
 # NOTE(efrolov): Interface tests
@@ -63,55 +63,65 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
     def test_hide_some_fields(self):
         resource = resources.ResourceByRAModel(
             FakeModel,
-            hidden_fields=['standard_field1', 'standard_field4',
-                           'standard_field5'],
+            hidden_fields=[
+                "standard_field1",
+                "standard_field4",
+                "standard_field5",
+            ],
         )
 
-        result = [name for name, prop in resource.get_fields()
-                  if prop.is_public()]
+        result = [
+            name for name, prop in resource.get_fields() if prop.is_public()
+        ]
 
-        self.assertEqual(['standard_field2', 'standard_field3', 'uuid'],
-                         sorted(result))
+        self.assertEqual(
+            ["standard_field2", "standard_field3", "uuid"], sorted(result)
+        )
 
     def test_hide_renamed_fields(self):
         resource = resources.ResourceByRAModel(
             FakeModel,
-            hidden_fields=['standard_field1', 'standard_field4',
-                           'standard_field5'],
-            name_map={'standard_field1': 'new_standard_field1'},
+            hidden_fields=[
+                "standard_field1",
+                "standard_field4",
+                "standard_field5",
+            ],
+            name_map={"standard_field1": "new_standard_field1"},
         )
 
-        result = [name for name, prop in resource.get_fields()
-                  if prop.is_public()]
+        result = [
+            name for name, prop in resource.get_fields() if prop.is_public()
+        ]
 
-        self.assertEqual(['standard_field2', 'standard_field3', 'uuid'],
-                         sorted(result))
+        self.assertEqual(
+            ["standard_field2", "standard_field3", "uuid"], sorted(result)
+        )
 
 
 class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
     def setUp(self):
-        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase,
-              self).setUp()
+        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase, self).setUp()
         self.target = resources.ResourceByRAModel(
             FakeModel,
             hidden_fields=resources.HiddenFieldMap(
-                filter=['standard_field1', 'standard_field2', 'uuid'],
-                get=['standard_field1', 'standard_field3', 'uuid'],
-                create=['standard_field1', 'standard_field4', 'uuid'],
-                update=['standard_field1', 'standard_field5', 'uuid'],
-                delete=['standard_field2', 'standard_field3', 'uuid'],
-                action_get=['standard_field2', 'standard_field4', 'uuid'],
-                action_post=['standard_field2', 'standard_field5', 'uuid'],
-                action_put=['standard_field3', 'standard_field4', 'uuid'],
+                filter=["standard_field1", "standard_field2", "uuid"],
+                get=["standard_field1", "standard_field3", "uuid"],
+                create=["standard_field1", "standard_field4", "uuid"],
+                update=["standard_field1", "standard_field5", "uuid"],
+                delete=["standard_field2", "standard_field3", "uuid"],
+                action_get=["standard_field2", "standard_field4", "uuid"],
+                action_post=["standard_field2", "standard_field5", "uuid"],
+                action_put=["standard_field3", "standard_field4", "uuid"],
             ),
         )
-        self._request = webob.Request.blank('/some-uri')
+        self._request = webob.Request.blank("/some-uri")
         self._request.api_context = contexts.RequestContext(self._request)
 
     def tearDown(self):
-        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase,
-              self).tearDown()
+        super(
+            ResourceByRAModelHiddenFieldsNewInterfacesTestCase, self
+        ).tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._request
 
@@ -130,7 +140,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field3', 'standard_field4', 'standard_field5'],
+            fields=["standard_field3", "standard_field4", "standard_field5"],
         )
 
     def test_hide_some_fields_for_get_method(self):
@@ -138,7 +148,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field2', 'standard_field4', 'standard_field5'],
+            fields=["standard_field2", "standard_field4", "standard_field5"],
         )
 
     def test_hide_some_fields_for_create_method(self):
@@ -146,7 +156,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field2', 'standard_field3', 'standard_field5'],
+            fields=["standard_field2", "standard_field3", "standard_field5"],
         )
 
     def test_hide_some_fields_for_update_method(self):
@@ -154,7 +164,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field2', 'standard_field3', 'standard_field4'],
+            fields=["standard_field2", "standard_field3", "standard_field4"],
         )
 
     def test_hide_some_fields_for_delete_method(self):
@@ -162,7 +172,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field1', 'standard_field4', 'standard_field5'],
+            fields=["standard_field1", "standard_field4", "standard_field5"],
         )
 
     def test_hide_some_fields_for_action_get_method(self):
@@ -170,7 +180,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field1', 'standard_field3', 'standard_field5'],
+            fields=["standard_field1", "standard_field3", "standard_field5"],
         )
 
     def test_hide_some_fields_for_action_post_method(self):
@@ -178,7 +188,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field1', 'standard_field3', 'standard_field4'],
+            fields=["standard_field1", "standard_field3", "standard_field4"],
         )
 
     def test_hide_some_fields_for_action_put_method(self):
@@ -186,7 +196,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field1', 'standard_field2', 'standard_field5'],
+            fields=["standard_field1", "standard_field2", "standard_field5"],
         )
 
     def test_get_fields_with_custom_is_public_field_func(self):
@@ -208,17 +218,17 @@ class ResourceByRAModelWithCustomPropsHiddenFieldsNewInterfacesTestCase(
         self.target = resources.ResourceByModelWithCustomProps(
             FakeModel,
             hidden_fields=resources.HiddenFieldMap(
-                filter=['standard_field1', 'standard_field2', 'uuid'],
-                get=['standard_field1', 'standard_field3', 'uuid'],
-                create=['standard_field1', 'standard_field4', 'uuid'],
-                update=['standard_field1', 'standard_field5', 'uuid'],
-                delete=['standard_field2', 'standard_field3', 'uuid'],
-                action_get=['standard_field2', 'standard_field4', 'uuid'],
-                action_post=['standard_field2', 'standard_field5', 'uuid'],
-                action_put=['standard_field3', 'standard_field4', 'uuid'],
+                filter=["standard_field1", "standard_field2", "uuid"],
+                get=["standard_field1", "standard_field3", "uuid"],
+                create=["standard_field1", "standard_field4", "uuid"],
+                update=["standard_field1", "standard_field5", "uuid"],
+                delete=["standard_field2", "standard_field3", "uuid"],
+                action_get=["standard_field2", "standard_field4", "uuid"],
+                action_post=["standard_field2", "standard_field5", "uuid"],
+                action_put=["standard_field3", "standard_field4", "uuid"],
             ),
         )
-        self._request = webob.Request.blank('/some-uri')
+        self._request = webob.Request.blank("/some-uri")
         self._request.api_context = contexts.RequestContext(self._request)
 
     def tearDown(self):
@@ -234,23 +244,28 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
             FakeModel,
             hidden_fields=resources.RoleBasedHiddenFieldContainer(
                 default=resources.HiddenFieldMap(
-                    get=['standard_field1', 'standard_field2',
-                         'standard_field3', 'standard_field4',
-                         'standard_field5', 'uuid'],
+                    get=[
+                        "standard_field1",
+                        "standard_field2",
+                        "standard_field3",
+                        "standard_field4",
+                        "standard_field5",
+                        "uuid",
+                    ],
                 ),
                 member=resources.HiddenFieldMap(
-                    get=['standard_field1', 'standard_field3', 'uuid'],
+                    get=["standard_field1", "standard_field3", "uuid"],
                 ),
                 admin=resources.HiddenFieldMap(
-                    get=['standard_field1', 'uuid'],
+                    get=["standard_field1", "uuid"],
                 ),
                 incorrect_fields=resources.HiddenFieldMap(
-                    get=['fake1', 'fake2'],
+                    get=["fake1", "fake2"],
                 ),
                 empty_fields=resources.HiddenFieldMap(get=[]),
             ),
         )
-        self._request = webob.Request.blank('/some-uri')
+        self._request = webob.Request.blank("/some-uri")
         self._request.api_context = contexts.RequestContext(self._request)
 
     def tearDown(self):
@@ -275,8 +290,12 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field2', 'standard_field3', 'standard_field4',
-                    'standard_field5'],
+            fields=[
+                "standard_field2",
+                "standard_field3",
+                "standard_field4",
+                "standard_field5",
+            ],
         )
 
     def test_hide_some_fields_for_member_context_method(self):
@@ -286,7 +305,7 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field2', 'standard_field4', 'standard_field5'],
+            fields=["standard_field2", "standard_field4", "standard_field5"],
         )
 
     def test_hide_some_fields_for_empty_role_context_method(self):
@@ -314,8 +333,14 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field1', 'standard_field2', 'standard_field3',
-                    'standard_field4', 'standard_field5', 'uuid'],
+            fields=[
+                "standard_field1",
+                "standard_field2",
+                "standard_field3",
+                "standard_field4",
+                "standard_field5",
+                "uuid",
+            ],
         )
 
     def test_no_hide_all_fields(self):
@@ -325,6 +350,12 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
 
         self._test_hide_some_fields_for_request(
             req=self._request,
-            fields=['standard_field1', 'standard_field2', 'standard_field3',
-                    'standard_field4', 'standard_field5', 'uuid'],
+            fields=[
+                "standard_field1",
+                "standard_field2",
+                "standard_field3",
+                "standard_field4",
+                "standard_field5",
+                "uuid",
+            ],
         )

@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
 # Copyright 2021 Eugene Frolov.
 #
@@ -38,19 +36,22 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     `foo_field2` VARCHAR(255) NOT NULL,
                 PRIMARY KEY (`uuid`),
                 UNIQUE KEY `index2` (`foo_field1`));
-            """, """
+            """,
+            """
                 CREATE TABLE `batch_delete_one_pk` (
                     `uuid` CHAR(36) NOT NULL,
                     `foo_field1` INT NOT NULL,
                     `foo_field2` VARCHAR(255) NOT NULL,
                 PRIMARY KEY (`uuid`));
-            """, """
+            """,
+            """
                 CREATE TABLE `batch_delete_two_pk` (
                     `uuid` CHAR(36) NOT NULL,
                     `foo_field1` INT NOT NULL,
                     `foo_field2` VARCHAR(255) NOT NULL,
                 PRIMARY KEY (`uuid`, `foo_field1`));
-            """, """
+            """,
+            """
                 INSERT INTO batch_delete_one_pk (
                      `uuid`, `foo_field1`, `foo_field2`
                 ) VALUES (
@@ -62,7 +63,8 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                 ), (
                     '00000000-0000-0000-0000-000000000003', 3, '3'
                 )
-            """, """
+            """,
+            """
                 INSERT INTO batch_delete_two_pk (
                      `uuid`, `foo_field1`, `foo_field2`
                 ) VALUES (
@@ -80,9 +82,9 @@ class MigrationStep(migrations.AbstarctMigrationStep):
         [session.execute(expr) for expr in sql_expr_list]
 
     def downgrade(self, session):
-        self._delete_table_if_exists(session, 'batch_insert')
-        self._delete_table_if_exists(session, 'batch_delete_one_pk')
-        self._delete_table_if_exists(session, 'batch_delete_two_pk')
+        self._delete_table_if_exists(session, "batch_insert")
+        self._delete_table_if_exists(session, "batch_delete_one_pk")
+        self._delete_table_if_exists(session, "batch_delete_two_pk")
 
 
 migration_step = MigrationStep()

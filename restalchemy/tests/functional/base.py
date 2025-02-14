@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 #    Copyright 2019 Eugene Frolov.
 #
 #
@@ -26,6 +24,7 @@ INIT_MIGRATION = "9e335f-test-batch-migration"
 
 class BaseFunctionalTestCase(unittest.TestCase):
     """All other functional tests should inherit from it."""
+
     pass
 
 
@@ -68,7 +67,8 @@ class BaseWithDbMigrationsTestCase(BaseDBEngineTestCase):
 
     @staticmethod
     def get_migration_engine():
-        migrations_path = os.path.dirname(__file__) + '/migrations/'
+        migrations_path = os.path.dirname(__file__) + "/migrations/"
         migration_engine = migrations.MigrationEngine(
-            migrations_path=migrations_path)
+            migrations_path=migrations_path
+        )
         return migration_engine

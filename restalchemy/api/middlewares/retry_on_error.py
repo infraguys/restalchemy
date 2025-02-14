@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-#
 # Copyright 2021 Eugene Frolov
 #
 # All Rights Reserved.
@@ -40,7 +38,11 @@ class RetryOnErrorsMiddleware(middlewares.Middleware):
             try:
                 return req.get_response(self.application)
             except self._exceptions as e:
-                LOG.warning("Unable to process request: %d/%d %s",
-                            retry_count, self._max_retry, e)
+                LOG.warning(
+                    "Unable to process request: %d/%d %s",
+                    retry_count,
+                    self._max_retry,
+                    e,
+                )
                 if retry_count >= self._max_retry:
                     raise

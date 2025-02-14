@@ -1,5 +1,3 @@
-# coding=utf-8
-#
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
 #
 # All Rights Reserved.
@@ -42,13 +40,13 @@ UUID_RE_TEMPLATE = r"[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
 # the regexp has issue https://github.com/kvesteri/validators/issues/185
 HOSTNAME_RE_TEMPLATE = (
     # First character of the domain
-    u"^(?:[a-zA-Z0-9]"
+    "^(?:[a-zA-Z0-9]"
     # Sub domain + hostname
-    u"(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)"  # noqa
+    "(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)"  # noqa
     # First 61 characters of the gTLD
-    u"+[A-Za-z0-9][A-Za-z0-9-_]{0,61}"
+    "+[A-Za-z0-9][A-Za-z0-9-_]{0,61}"
     # Last character of the gTLD
-    u"[A-Za-z]$"
+    "[A-Za-z]$"
 )
 KWARGS_OPENAPI_MAP = {
     "read_only": "readOnly",
@@ -56,8 +54,9 @@ KWARGS_OPENAPI_MAP = {
     "example": "example",
 }
 MYSQL_DATETIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
-DEFAULT_DATE = datetime.datetime.strptime("2006-01-02 15:04:05.000576",
-                                          MYSQL_DATETIME_FMT)
+DEFAULT_DATE = datetime.datetime.strptime(
+    "2006-01-02 15:04:05.000576", MYSQL_DATETIME_FMT
+)
 # RFC3339
 # python's datetime doesn't support nanosecond precision
 # + now without timezone, example "2006-01-02T15:04:05.999999999Z07:00"
@@ -74,7 +73,7 @@ def build_prop_kwargs(kwargs):
                 continue
             elif isinstance(value, datetime.datetime):
                 value = DEFAULT_DATE.strftime(OPENAPI_DATETIME_FMT)
-            elif hasattr(value, '__dict__'):
+            elif hasattr(value, "__dict__"):
                 value = {
                     name: prop.get_property_type().to_simple_type(value[name])
                     for name, prop in value.properties.properties.items()
@@ -87,9 +86,7 @@ def build_prop_kwargs(kwargs):
 @six.add_metaclass(abc.ABCMeta)
 class BaseType(object):
 
-    def __init__(self,
-                 openapi_type="object",
-                 openapi_format=None):
+    def __init__(self, openapi_type="object", openapi_format=None):
         super(BaseType, self).__init__()
         self._openapi_type = openapi_type
         self._openapi_format = openapi_format
@@ -128,8 +125,7 @@ class BaseType(object):
     def openapi_format(self):
         return self._openapi_format
 
-    def to_openapi_spec(self,
-                        prop_kwargs):
+    def to_openapi_spec(self, prop_kwargs):
         spec = {"type": self._openapi_type}
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
@@ -159,8 +155,7 @@ class BasePythonType(BaseType):
 class Boolean(BasePythonType):
 
     def __init__(self):
-        super(Boolean, self).__init__(bool,
-                                      openapi_type="boolean")
+        super(Boolean, self).__init__(bool, openapi_type="boolean")
 
     def from_simple_type(self, value):
         return bool(value)
@@ -172,8 +167,7 @@ class Boolean(BasePythonType):
 class String(BasePythonType):
 
     def __init__(self, min_length=0, max_length=six.MAXSIZE):
-        super(String, self).__init__(six.string_types,
-                                     openapi_type="string")
+        super(String, self).__init__(six.string_types, openapi_type="string")
         self.min_length = int(min_length)
         self.max_length = int(max_length)
 
@@ -197,10 +191,12 @@ class String(BasePythonType):
 class Integer(BasePythonType):
 
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
-        super(Integer, self).__init__(six.integer_types,
-                                      openapi_type="integer")
+        super(Integer, self).__init__(
+            six.integer_types, openapi_type="integer"
+        )
         self.min_value = (
-            min_value if min_value == -INFINITY else int(min_value))
+            min_value if min_value == -INFINITY else int(min_value)
+        )
         self.max_value = max_value if max_value == INFINITY else int(max_value)
 
     def validate(self, value):
@@ -242,21 +238,21 @@ class Integer(BasePythonType):
 
 class Int8(Integer):
     def __init__(self):
-        super(Int8, self).__init__(
-            min_value=0,
-            max_value=2 ** 8 - 1)
+        super(Int8, self).__init__(min_value=0, max_value=2**8 - 1)
 
 
 class Float(BasePythonType):
 
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
-        super(Float, self).__init__(float,
-                                    openapi_type="number",
-                                    openapi_format="float")
+        super(Float, self).__init__(
+            float, openapi_type="number", openapi_format="float"
+        )
         self.min_value = (
-            min_value if min_value == -INFINITY else float(min_value))
-        self.max_value = max_value if max_value == INFINITY else float(
-            max_value)
+            min_value if min_value == -INFINITY else float(min_value)
+        )
+        self.max_value = (
+            max_value if max_value == INFINITY else float(max_value)
+        )
 
     def validate(self, value):
         result = super(Float, self).validate(value)
@@ -296,8 +292,9 @@ class Float(BasePythonType):
 class UUID(BaseType):
 
     def __init__(self):
-        super(UUID, self).__init__(openapi_type="string",
-                                   openapi_format="uuid")
+        super(UUID, self).__init__(
+            openapi_type="string", openapi_format="uuid"
+        )
 
     def to_simple_type(self, value):
         return str(value)
@@ -318,8 +315,9 @@ class ComplexPythonType(BasePythonType):
 
     def _raise_on_invalid_type(self, value):
         if not isinstance(value, self._python_type):
-            raise TypeError(self._TYPE_ERROR_MSG
-                            % (value, type(value), self._python_type))
+            raise TypeError(
+                self._TYPE_ERROR_MSG % (value, type(value), self._python_type)
+            )
 
     def from_simple_type(self, value):
         self._raise_on_invalid_type(value)
@@ -338,15 +336,15 @@ class ComplexPythonType(BasePythonType):
 class List(ComplexPythonType):
 
     def __init__(self):
-        super(List, self).__init__(list,
-                                   openapi_type="array",
-                                   openapi_format="string")
+        super(List, self).__init__(
+            list, openapi_type="array", openapi_format="string"
+        )
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
             "format": self.openapi_format,
-            "items": {"type": "string"}
+            "items": {"type": "string"},
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
@@ -357,13 +355,16 @@ class TypedList(List):
     def __init__(self, nested_type):
         super(TypedList, self).__init__()
         if not isinstance(nested_type, BaseType):
-            raise TypeError("Nested type '%s' is not inherited from %s"
-                            % (nested_type, BaseType))
+            raise TypeError(
+                "Nested type '%s' is not inherited from %s"
+                % (nested_type, BaseType)
+            )
         self._nested_type = nested_type
 
     def validate(self, value):
-        return (super(TypedList, self).validate(value)
-                and all(self._nested_type.validate(item) for item in value))
+        return super(TypedList, self).validate(value) and all(
+            self._nested_type.validate(item) for item in value
+        )
 
     def to_simple_type(self, value):
         return [self._nested_type.to_simple_type(e) for e in value]
@@ -373,8 +374,9 @@ class TypedList(List):
 
     def from_unicode(self, value):
         if not isinstance(value, six.string_types):
-            raise TypeError("Value must be six.string_types, not %s",
-                            type(value))
+            raise TypeError(
+                "Value must be six.string_types, not %s", type(value)
+            )
 
         value = self._nested_type.from_unicode(value)
         return [value]
@@ -382,7 +384,7 @@ class TypedList(List):
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
-            "items": self._nested_type.to_openapi_spec({})
+            "items": self._nested_type.to_openapi_spec({}),
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
@@ -394,17 +396,22 @@ class Dict(ComplexPythonType):
         super(Dict, self).__init__(dict)
 
     def validate(self, value):
-        return (super(Dict, self).validate(value)
-                and all(isinstance(k, six.string_types) for k in value))
+        return super(Dict, self).validate(value) and all(
+            isinstance(k, six.string_types) for k in value
+        )
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": "object",
-            "additionalProperties": {"oneOf": [{"type": "string"},
-                                               {"type": "integer"},
-                                               {"type": "boolean"},
-                                               {"type": "object"},
-                                               {"type": "array"}]}
+            "additionalProperties": {
+                "oneOf": [
+                    {"type": "string"},
+                    {"type": "integer"},
+                    {"type": "boolean"},
+                    {"type": "object"},
+                    {"type": "array"},
+                ]
+            },
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
@@ -437,6 +444,7 @@ def _validate_scheme(scheme):
 #     in schema) and some schema keys may be missing, but all defined keys
 #     matching schema must be valid due to schema
 
+
 class SoftSchemeDict(Dict):
 
     def __init__(self, scheme):
@@ -445,26 +453,29 @@ class SoftSchemeDict(Dict):
         self._scheme = scheme
 
     def validate(self, value):
-        return (super(SoftSchemeDict, self).validate(value)
-                and set(value.keys()).issubset(set(self._scheme.keys()))
-                and all(self._scheme[k].validate(v)
-                        for k, v in six.iteritems(value)))
+        return (
+            super(SoftSchemeDict, self).validate(value)
+            and set(value.keys()).issubset(set(self._scheme.keys()))
+            and all(
+                self._scheme[k].validate(v) for k, v in six.iteritems(value)
+            )
+        )
 
     def to_simple_type(self, value):
-        return {k: self._scheme[k].to_simple_type(v)
-                for k, v in six.iteritems(value)}
+        return {
+            k: self._scheme[k].to_simple_type(v)
+            for k, v in six.iteritems(value)
+        }
 
     def from_simple_type(self, value):
         value = super(SoftSchemeDict, self).from_simple_type(value)
-        return {k: self._scheme[k].from_simple_type(v)
-                for k, v in six.iteritems(value)}
-
-    def to_openapi_spec(self,
-                        prop_kwargs):
-        spec = {
-            "type": "object",
-            "properties": {}
+        return {
+            k: self._scheme[k].from_simple_type(v)
+            for k, v in six.iteritems(value)
         }
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {"type": "object", "properties": {}}
         for k, v in self.__scheme__.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
         return spec
@@ -478,26 +489,30 @@ class SchemeDict(Dict):
         self._scheme = scheme
 
     def validate(self, value):
-        return (super(SchemeDict, self).validate(value)
-                and set(value.keys()) == set(self._scheme.keys())
-                and all(scheme.validate(value[key])
-                        for key, scheme in six.iteritems(self._scheme)))
+        return (
+            super(SchemeDict, self).validate(value)
+            and set(value.keys()) == set(self._scheme.keys())
+            and all(
+                scheme.validate(value[key])
+                for key, scheme in six.iteritems(self._scheme)
+            )
+        )
 
     def to_simple_type(self, value):
-        return {key: scheme.to_simple_type(value[key])
-                for key, scheme in self._scheme.items()}
+        return {
+            key: scheme.to_simple_type(value[key])
+            for key, scheme in self._scheme.items()
+        }
 
     def from_simple_type(self, value):
         value = super(SchemeDict, self).from_simple_type(value)
-        return {key: scheme.from_simple_type(value.get(key, None))
-                for key, scheme in six.iteritems(self._scheme)}
-
-    def to_openapi_spec(self,
-                        prop_kwargs):
-        spec = {
-            "type": "object",
-            "properties": {}
+        return {
+            key: scheme.from_simple_type(value.get(key, None))
+            for key, scheme in six.iteritems(self._scheme)
         }
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {"type": "object", "properties": {}}
         for k, v in self.__scheme__.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
         return spec
@@ -508,29 +523,35 @@ class TypedDict(Dict):
     def __init__(self, nested_type):
         super(TypedDict, self).__init__()
         if not isinstance(nested_type, BaseType):
-            raise TypeError("Nested type '%s' is not inherited from %s"
-                            % (nested_type, BaseType))
+            raise TypeError(
+                "Nested type '%s' is not inherited from %s"
+                % (nested_type, BaseType)
+            )
         self._nested_type = nested_type
 
     def validate(self, value):
-        return (super(TypedDict, self).validate(value)
-                and all(self._nested_type.validate(element)
-                        for element in six.itervalues(value)))
+        return super(TypedDict, self).validate(value) and all(
+            self._nested_type.validate(element)
+            for element in six.itervalues(value)
+        )
 
     def to_simple_type(self, value):
-        return {k: self._nested_type.to_simple_type(v)
-                for k, v in six.iteritems(value)}
+        return {
+            k: self._nested_type.to_simple_type(v)
+            for k, v in six.iteritems(value)
+        }
 
     def from_simple_type(self, value):
         value = super(TypedDict, self).from_simple_type(value)
-        return {k: self._nested_type.from_simple_type(v)
-                for k, v in six.iteritems(value)}
+        return {
+            k: self._nested_type.from_simple_type(v)
+            for k, v in six.iteritems(value)
+        }
 
-    def to_openapi_spec(self,
-                        prop_kwargs):
+    def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self._openapi_type,
-            "additionalProperties": self._nested_type.to_openapi_spec({})
+            "additionalProperties": self._nested_type.to_openapi_spec({}),
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
@@ -541,9 +562,11 @@ class TypedDict(Dict):
 class UTCDateTime(BasePythonType):
 
     def __init__(self):
-        super(UTCDateTime, self).__init__(python_type=datetime.datetime,
-                                          openapi_type="string",
-                                          openapi_format="date-time")
+        super(UTCDateTime, self).__init__(
+            python_type=datetime.datetime,
+            openapi_type="string",
+            openapi_format="date-time",
+        )
 
     def validate(self, value):
         return isinstance(value, datetime.datetime) and value.tzinfo is None
@@ -565,26 +588,27 @@ class UTCDateTime(BasePythonType):
             # http response to ra type in model
             return datetime.datetime.strptime(
                 datetime.datetime.strptime(
-                    value, OPENAPI_DATETIME_FMT).strftime(MYSQL_DATETIME_FMT),
-                MYSQL_DATETIME_FMT
+                    value, OPENAPI_DATETIME_FMT
+                ).strftime(MYSQL_DATETIME_FMT),
+                MYSQL_DATETIME_FMT,
             )
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
 
-    def to_openapi_spec(self,
-                        prop_kwargs):
+    def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self._openapi_type,
             # https://github.com/ogen-go/ogen/blob/main/_testdata/positive/time_extension.yml#L29
-            "x-ogen-time-format": self.dump_value(DEFAULT_DATE)
+            "x-ogen-time-format": self.dump_value(DEFAULT_DATE),
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         if "default" in prop_kwargs and (
-                self.validate(prop_kwargs["default"])
-                or callable(prop_kwargs["default"])):
+            self.validate(prop_kwargs["default"])
+            or callable(prop_kwargs["default"])
+        ):
             spec["default"] = self.dump_value(prop_kwargs["default"]())
         return spec
 
@@ -627,9 +651,10 @@ class Enum(BaseType):
         for enum_value in self._enums_values:
             if value == six.text_type(enum_value):
                 return enum_value
-        raise TypeError("Can't convert '%s' to enum type."
-                        " Allowed values are %s"
-                        % (value, self._enums_values))
+        raise TypeError(
+            "Can't convert '%s' to enum type."
+            " Allowed values are %s" % (value, self._enums_values)
+        )
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
@@ -643,9 +668,7 @@ class Enum(BaseType):
 class BaseRegExpType(BaseType):
     """BaseCompiledRegExpTypeFromAttr is preferred to be used"""
 
-    def __init__(self, pattern,
-                 openapi_type="string",
-                 **kwargs):
+    def __init__(self, pattern, openapi_type="string", **kwargs):
         super(BaseRegExpType, self).__init__(openapi_type, **kwargs)
         self._pattern = re.compile(pattern)
 
@@ -669,10 +692,7 @@ class BaseRegExpType(BaseType):
         return self._pattern.pattern
 
     def to_openapi_spec(self, prop_kwargs):
-        spec = {
-            "type": self.openapi_type,
-            "pattern": self.pattern_openapi
-        }
+        spec = {"type": self.openapi_type, "pattern": self.pattern_openapi}
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
 
@@ -688,7 +708,8 @@ class BaseCompiledRegExpType(BaseRegExpType):
 class BaseCompiledRegExpTypeFromAttr(BaseCompiledRegExpType):
     def __init__(self, **kwargs):
         super(BaseCompiledRegExpTypeFromAttr, self).__init__(
-            pattern=self.pattern, **kwargs)
+            pattern=self.pattern, **kwargs
+        )
 
 
 class Uri(BaseCompiledRegExpTypeFromAttr):
@@ -713,6 +734,7 @@ class Mac(BaseCompiledRegExpTypeFromAttr):
 
 class Hostname(BaseCompiledRegExpTypeFromAttr):
     """DEPRECATED! Use types from types_network module"""
+
     pattern = re.compile(HOSTNAME_RE_TEMPLATE)
 
     def __init__(self):
@@ -734,7 +756,9 @@ class Url(BaseCompiledRegExpTypeFromAttr):
         r"localhost|"
         r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
         r"(?::\d+)?"
-        r"(?:/?|[/?]\S+)$", re.IGNORECASE)
+        r"(?:/?|[/?]\S+)$",
+        re.IGNORECASE,
+    )
 
 
 class AllowNone(BaseType):
@@ -751,12 +775,16 @@ class AllowNone(BaseType):
         return value is None or self._nested_type.validate(value)
 
     def to_simple_type(self, value):
-        return None if value is None else self._nested_type.to_simple_type(
-            value)
+        return (
+            None if value is None else self._nested_type.to_simple_type(value)
+        )
 
     def from_simple_type(self, value):
-        return None if value is None else self._nested_type.from_simple_type(
-            value)
+        return (
+            None
+            if value is None
+            else self._nested_type.from_simple_type(value)
+        )
 
     def from_unicode(self, value):
         if value == "null":
