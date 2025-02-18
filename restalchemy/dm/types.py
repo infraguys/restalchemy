@@ -300,6 +300,8 @@ class UUID(BaseType):
         return str(value)
 
     def from_simple_type(self, value):
+        if isinstance(value, uuid.UUID):
+            return value
         return uuid.UUID(value)
 
     def validate(self, value):
