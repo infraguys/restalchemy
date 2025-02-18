@@ -592,6 +592,13 @@ class UTCDateTimeTestCase(base.BaseTestCase):
 
         self.test_instance = types.UTCDateTime()
 
+    def test_validate_correct_value_with_explicit_utc_tz(self):
+        self.assertTrue(
+            self.test_instance.validate(
+                datetime.datetime.now(datetime.timezone.utc)
+            )
+        )
+
     def test_validate_correct_value(self):
         self.assertTrue(
             self.test_instance.validate(datetime.datetime.utcnow())
