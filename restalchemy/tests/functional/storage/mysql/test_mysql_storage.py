@@ -26,9 +26,9 @@ from restalchemy.dm import types
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
-from restalchemy.storage.sql import sessions
 from restalchemy.tests.functional import base
 from restalchemy.tests.functional import consts
+from restalchemy.tests import fixtures
 
 
 FAKE_STR1 = "Fake1"
@@ -126,7 +126,10 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         #                from MySQL
         engines.engine_factory.destroy_engine()
 
-    @mock.patch("restalchemy.storage.sql.sessions.MySQLSession")
+    @mock.patch(
+        "restalchemy.storage.sql.sessions.MySQLSession",
+        return_value=fixtures.SessionFixture(),
+    )
     def test_insert_new_model_session_is_none(self, session_mock):
 
         self.target_model.insert()
@@ -144,7 +147,10 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         self.assertFalse(session_mock().rollback.called)
         self.assertTrue(session_mock().close.called)
 
-    @mock.patch("restalchemy.storage.sql.sessions.MySQLSession")
+    @mock.patch(
+        "restalchemy.storage.sql.sessions.MySQLSession",
+        return_value=fixtures.SessionFixture(),
+    )
     def test_insert_new_model_session_is_none_and_db_error(self, session_mock):
 
         class CustomException(Exception):
@@ -161,7 +167,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         self.assertTrue(session_mock().close.called)
 
     def test_insert_new_model_with_session(self):
-        session_mock = mock.MagicMock(spec=sessions.MySQLSession)
+        session_mock = fixtures.SessionFixture()
 
         self.target_model.insert(session=session_mock)
 
@@ -180,7 +186,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
 
     def test_insert_new_model_with_session_and_db_error(self):
 
-        session_mock = mock.MagicMock(spec=sessions.MySQLSession)
+        session_mock = fixtures.SessionFixture()
 
         class CustomException(Exception):
             pass
@@ -221,24 +227,26 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
 
         engines.engine_factory.configure_factory(consts.DATABASE_URI)
         engine = engines.engine_factory.get_engine()
-        self.session = engine.get_session()
-        self.session.execute(
-            """CREATE TABLE IF NOT EXISTS test_update (
-            uuid CHAR(36) NOT NULL,
-            field1 VARCHAR(255) NOT NULL,
-            field2 VARCHAR(255) NOT NULL,
-            PRIMARY KEY (uuid)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""",
-            None,
-        )
+        self.engine = engine
+        with engine.session_manager() as session:
+            session.execute(
+                """
+                CREATE TABLE IF NOT EXISTS test_update (
+                    uuid CHAR(36) PRIMARY KEY,
+                    field1 VARCHAR(255) NOT NULL,
+                    field2 VARCHAR(255) NOT NULL
+                )
+            """
+            )
 
     def tearDown(self):
         super(UpdateTestCase, self).tearDown()
 
-        self.session.execute("DROP TABLE IF EXISTS test_update;", None)
-        # Note(efrolov): Must be deleted otherwise we will start collect
-        #                connections and get an error "too many connections"
-        #                from MySQL
+        with self.engine.session_manager() as session:
+            session.execute("DROP TABLE IF EXISTS test_update;", None)
+            # Note(efrolov): Must be deleted otherwise we will start collect
+            #                connections and get an error "too many connections"
+            #                from MySQL
         engines.engine_factory.destroy_engine()
 
     def test_update_not_changed_model(self):

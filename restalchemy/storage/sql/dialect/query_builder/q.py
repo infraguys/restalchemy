@@ -21,16 +21,15 @@ import six
 from restalchemy.storage import base
 from restalchemy.storage.sql.dialect.query_builder import common
 from restalchemy.storage.sql import filters as sql_filters
-from restalchemy.storage.sql import utils
 
 
 class Table(common.AbstractClause):
 
-    def __init__(self, model):
+    def __init__(self, model, session):
+        super(Table, self).__init__(session)
         self._name = model.__tablename__
         self._model = model
         self._columns = self._build_columns(self._model)
-        super(Table, self).__init__()
 
     @property
     def name(self):
@@ -40,12 +39,11 @@ class Table(common.AbstractClause):
     def model(self):
         return self._model
 
-    @staticmethod
-    def _build_columns(model):
+    def _build_columns(self, model):
         # Note(efrolov): to save ordering
         ordered_result = collections.OrderedDict()
         for name, prop in model.properties.properties.items():
-            ordered_result[name] = common.Column(name, prop)
+            ordered_result[name] = common.Column(name, prop, self._session)
         return ordered_result
 
     def get_columns(self, with_prefetch=True):
@@ -66,13 +64,13 @@ class Table(common.AbstractClause):
         return self._columns[name]
 
     def compile(self):
-        return utils.escape(self._name)
+        return self._session.engine.escape(self._name)
 
 
 class Limit(common.AbstractClause):
 
-    def __init__(self, value):
-        super(Limit, self).__init__()
+    def __init__(self, value, session):
+        super(Limit, self).__init__(session)
         self._value = value
 
     def compile(self):
@@ -81,8 +79,8 @@ class Limit(common.AbstractClause):
 
 class For(common.AbstractClause):
 
-    def __init__(self, share=False):
-        super(For, self).__init__()
+    def __init__(self, session, share=False):
+        super(For, self).__init__(session)
         self._is_share = share
 
     def compile(self):
@@ -92,8 +90,8 @@ class For(common.AbstractClause):
 @six.add_metaclass(abc.ABCMeta)
 class Criteria(common.AbstractClause):
 
-    def __init__(self, clause1, clause2):
-        super(Criteria, self).__init__()
+    def __init__(self, clause1, clause2, session):
+        super(Criteria, self).__init__(session)
         self._clause1 = clause1
         self._clause2 = clause2
 
@@ -109,8 +107,8 @@ class EQCriteria(Criteria):
 
 class On(common.AbstractClause):
 
-    def __init__(self, list_of_criteria):
-        super(On, self).__init__()
+    def __init__(self, list_of_criteria, session):
+        super(On, self).__init__(session)
         self._list_of_criteria = list_of_criteria
 
     def compile(self):
@@ -119,9 +117,9 @@ class On(common.AbstractClause):
 
 class LeftJoin(common.AbstractClause):
 
-    def __init__(self, table, on):
+    def __init__(self, table, on, session):
         # type: (common.TableAlias, On) -> LeftJoin
-        super(LeftJoin, self).__init__()
+        super(LeftJoin, self).__init__(session)
         self._table = table
         self._on = on
 
@@ -135,8 +133,8 @@ class LeftJoin(common.AbstractClause):
 class OrderByValue(common.AbstractClause):
     SORT_TYPES = frozenset(("ASC", "DESC"))
 
-    def __init__(self, column, sort_type=None):
-        super(OrderByValue, self).__init__()
+    def __init__(self, column, session, sort_type=None):
+        super(OrderByValue, self).__init__(session)
         self._column = column
         if not sort_type:
             self._sort_type = "ASC"
@@ -146,7 +144,10 @@ class OrderByValue(common.AbstractClause):
                 raise ValueError("Unknown order: %s" % self._sort_type)
 
     def compile(self):
-        return "%s %s" % (utils.escape(self._column.name), self._sort_type)
+        return "%s %s" % (
+            self._session.engine.escape(self._column.name),
+            self._sort_type,
+        )
 
 
 class ResultField(object):
@@ -193,13 +194,15 @@ class ResultParser(object):
 
 class SelectQ(common.AbstractClause):
 
-    def __init__(self, model):
+    def __init__(self, model, session):
+        super(SelectQ, self).__init__(session)
         self._autoinc = 0
         self._autoinc_lock = threading.RLock()
         self._result_parser = ResultParser()
         self._model_table = common.TableAlias(
-            Table(model),
+            Table(model, session=session),
             self._build_table_alias_name(),
+            session=session,
         )
         self._select_expressions = []
         self._table_references = [self._model_table]  # type: list
@@ -215,7 +218,6 @@ class SelectQ(common.AbstractClause):
             table=self._model_table,
             result_parser_node=self._result_parser.root,
         )
-        super(SelectQ, self).__init__()
 
     def _resolve_model_dependency(self, table, result_parser_node):
         for column in table.get_prefetch_columns():
@@ -231,14 +233,20 @@ class SelectQ(common.AbstractClause):
                 ) % (table.name, id_properties, dep_model)
                 raise ValueError(msg)
             alias = common.TableAlias(
-                Table(dep_model),
+                Table(dep_model, session=self._session),
                 self._build_table_alias_name(),
+                session=self._session,
             )
             id_column = alias.get_column_by_name(list(id_properties.keys())[0])
 
             # Construct Left Join for prefetch dependency
             left_join = LeftJoin(
-                table=alias, on=On([EQCriteria(column, id_column)])
+                table=alias,
+                on=On(
+                    [EQCriteria(column, id_column, session=self._session)],
+                    session=self._session,
+                ),
+                session=self._session,
             )
             self._table_references.append(left_join)
 
@@ -264,21 +272,31 @@ class SelectQ(common.AbstractClause):
             self._select_expressions.append(column)
         return self._select_expressions
 
-    @staticmethod
-    def _wrap_alias(table, fields):
+    def _wrap_alias(self, table, fields):
         return [
-            common.ColumnAlias(field, "%s_%s" % (table.name, field.name))
+            common.ColumnAlias(
+                field,
+                "%s_%s" % (table.name, field.name),
+                session=self._session,
+            )
             for field in fields
         ]
 
     def where(self, filters=None):
         self._where_expression.extend_clauses(
-            sql_filters.convert_filters(self._model_table, filters).clauses,
+            sql_filters.convert_filters(
+                self._model_table,
+                filters,
+                session=self._session,
+            ).clauses,
         )
         return self
 
     def limit(self, value):
-        self._limit_condition = Limit(value)
+        self._limit_condition = Limit(
+            value,
+            session=self._session,
+        )
         return self
 
     def for_(self, share=False):
@@ -287,7 +305,13 @@ class SelectQ(common.AbstractClause):
 
     def order_by(self, property_name, sort_type="ASC"):
         column = self._model_table.get_column_by_name(property_name)
-        self._order_by_expressions.append(OrderByValue(column, sort_type))
+        self._order_by_expressions.append(
+            OrderByValue(
+                column=column,
+                sort_type=sort_type,
+                session=self._session,
+            )
+        )
         return self
 
     def _build_table_alias_name(self):
@@ -331,5 +355,5 @@ class SelectQ(common.AbstractClause):
 class Q(object):
 
     @staticmethod
-    def select(model):
-        return SelectQ(model)
+    def select(model, session):
+        return SelectQ(model, session)

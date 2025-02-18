@@ -30,30 +30,30 @@ class MigrationStep(migrations.AbstarctMigrationStep):
     def upgrade(self, session):
         sql_expr_list = [
             """
-                CREATE TABLE `batch_insert` (
-                    `uuid` CHAR(36) NOT NULL,
-                    `foo_field1` INT NOT NULL,
-                    `foo_field2` VARCHAR(255) NOT NULL,
-                PRIMARY KEY (`uuid`),
-                UNIQUE KEY `index2` (`foo_field1`));
+                CREATE TABLE IF NOT EXISTS batch_insert (
+                    uuid CHAR(36) NOT NULL,
+                    foo_field1 INT NOT NULL,
+                    foo_field2 VARCHAR(255) NOT NULL,
+                PRIMARY KEY (uuid),
+                UNIQUE (foo_field1));
             """,
             """
-                CREATE TABLE `batch_delete_one_pk` (
-                    `uuid` CHAR(36) NOT NULL,
-                    `foo_field1` INT NOT NULL,
-                    `foo_field2` VARCHAR(255) NOT NULL,
-                PRIMARY KEY (`uuid`));
+                CREATE TABLE IF NOT EXISTS batch_delete_one_pk (
+                    uuid CHAR(36) NOT NULL,
+                    foo_field1 INT NOT NULL,
+                    foo_field2 VARCHAR(255) NOT NULL,
+                PRIMARY KEY (uuid));
             """,
             """
-                CREATE TABLE `batch_delete_two_pk` (
-                    `uuid` CHAR(36) NOT NULL,
-                    `foo_field1` INT NOT NULL,
-                    `foo_field2` VARCHAR(255) NOT NULL,
-                PRIMARY KEY (`uuid`, `foo_field1`));
+                CREATE TABLE IF NOT EXISTS batch_delete_two_pk (
+                    uuid CHAR(36) NOT NULL,
+                    foo_field1 INT NOT NULL,
+                    foo_field2 VARCHAR(255) NOT NULL,
+                PRIMARY KEY (uuid, foo_field1));
             """,
             """
                 INSERT INTO batch_delete_one_pk (
-                     `uuid`, `foo_field1`, `foo_field2`
+                     uuid, foo_field1, foo_field2
                 ) VALUES (
                     '00000000-0000-0000-0000-000000000000', 0, '0'
                 ), (
@@ -66,7 +66,7 @@ class MigrationStep(migrations.AbstarctMigrationStep):
             """,
             """
                 INSERT INTO batch_delete_two_pk (
-                     `uuid`, `foo_field1`, `foo_field2`
+                     uuid, foo_field1, foo_field2
                 ) VALUES (
                     '00000000-0000-0000-0000-000000000000', 0, '0'
                 ), (

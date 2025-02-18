@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
 import threading
 from wsgiref.simple_server import make_server
 from wsgiref.simple_server import WSGIServer
@@ -75,24 +76,36 @@ class RESTService(threading.Thread):
             ),
         )
 
-        self._httpd = make_server(
-            bind_host,
-            bind_port,
-            errors_middleware.ErrorsHandlerMiddleware(
-                retry_error_middleware.RetryOnErrorsMiddleware(
-                    middlewares.ContextMiddleware(
-                        application=applications.OpenApiApplication(
-                            route_class=routes.Root,
-                            openapi_engine=openapi_engine,
+        for try_number in range(60):
+            try:
+                self._httpd = make_server(
+                    bind_host,
+                    bind_port,
+                    errors_middleware.ErrorsHandlerMiddleware(
+                        retry_error_middleware.RetryOnErrorsMiddleware(
+                            middlewares.ContextMiddleware(
+                                application=applications.OpenApiApplication(
+                                    route_class=routes.Root,
+                                    openapi_engine=openapi_engine,
+                                ),
+                            ),
+                            exceptions=storage_exc.DeadLock,
+                            # set max_retry == 2 to speed up retry tests
+                            # execution
+                            max_retry=2,
                         ),
                     ),
-                    exceptions=storage_exc.DeadLock,
-                    # set max_retry == 2 to speed up retry tests execution
-                    max_retry=2,
-                ),
-            ),
-            WSGIServer,
-        )
+                    WSGIServer,
+                )
+                break
+            except OSError as e:
+                if e.errno != 98:
+                    raise
+                print(
+                    f"Waiting for port {bind_port} to be available."
+                    f" Try number is {try_number}"
+                )
+                time.sleep(1)
 
     def run(self):
         self._httpd.serve_forever()

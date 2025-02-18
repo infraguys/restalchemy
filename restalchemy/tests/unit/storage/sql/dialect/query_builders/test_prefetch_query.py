@@ -22,6 +22,7 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
+from restalchemy.tests import fixtures
 from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.storage.sql import orm
 
@@ -81,7 +82,10 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         del self.Q
 
     def test_l1_select(self):
-        query = self.Q.select(ModelWithL1Relationships)
+        query = self.Q.select(
+            model=ModelWithL1Relationships,
+            session=fixtures.SessionFixture(),
+        )
 
         result = query.compile()
 
@@ -103,7 +107,10 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         )
 
     def test_l1_select_with_filters(self):
-        query = self.Q.select(ModelWithL1Relationships).where(self.flt)
+        query = self.Q.select(
+            model=ModelWithL1Relationships,
+            session=fixtures.SessionFixture(),
+        ).where(self.flt)
 
         result_expression = query.compile()
         result_values = query.values()
@@ -138,7 +145,10 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         )
 
     def test_select_with_limit(self):
-        query = self.Q.select(ModelWithL1Relationships).limit(100500)
+        query = self.Q.select(
+            model=ModelWithL1Relationships,
+            session=fixtures.SessionFixture(),
+        ).limit(100500)
 
         result_expression = query.compile()
         result_values = query.values()
@@ -163,7 +173,14 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         self.assertEqual([], result_values)
 
     def test_l1_select_lock_with_filters(self):
-        query = self.Q.select(ModelWithL1Relationships).where(self.flt).for_()
+        query = (
+            self.Q.select(
+                model=ModelWithL1Relationships,
+                session=fixtures.SessionFixture(),
+            )
+            .where(self.flt)
+            .for_()
+        )
 
         result_expression = query.compile()
         result_values = query.values()
@@ -199,7 +216,10 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         )
 
     def test_l1_select_order_by(self):
-        query = self.Q.select(ModelWithL1Relationships).order_by("uuid")
+        query = self.Q.select(
+            model=ModelWithL1Relationships,
+            session=fixtures.SessionFixture(),
+        ).order_by("uuid")
 
         result_expression = query.compile()
         result_values = query.values()
@@ -225,7 +245,10 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         self.assertEqual([], result_values)
 
     def test_l2_select(self):
-        result = self.Q.select(ModelWithL2Relationships).compile()
+        result = self.Q.select(
+            model=ModelWithL2Relationships,
+            session=fixtures.SessionFixture(),
+        ).compile()
 
         self.assertEqual(
             "SELECT"
@@ -270,7 +293,10 @@ class MySQLResultParserTestCase(unittest.TestCase):
             "t2_field_str": "FakeStr",
             "t2_uuid": "FakeUUID1",
         }
-        select_clause = q.Q.select(ModelWithL1Relationships)
+        select_clause = q.Q.select(
+            ModelWithL1Relationships,
+            fixtures.SessionFixture(),
+        )
 
         result = select_clause.parse_row(row_from_db)
 

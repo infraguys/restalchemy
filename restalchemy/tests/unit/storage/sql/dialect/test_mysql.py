@@ -26,6 +26,7 @@ from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql import tables
 from restalchemy.tests.unit import base
+from restalchemy.tests import fixtures
 
 
 class BaseModel(models.ModelWithUUID):
@@ -70,7 +71,7 @@ class AbstractDialectCommandTestMixin(object):
     )
     def test_execute_when_errno_1213(self, command_mock):
         with self.assertRaises(dialect_exc.DeadLock) as ctx:
-            self.target.execute(session=None)
+            self.target.execute()
         self.assertEqual(1213, ctx.exception.code)
         self.assertEqual("deadlock", str(ctx.exception))
 
@@ -82,7 +83,7 @@ class AbstractDialectCommandTestMixin(object):
     )
     def test_execute_when_errno_1062(self, command_mock):
         with self.assertRaises(dialect_exc.Conflict) as ctx:
-            self.target.execute(session=None)
+            self.target.execute()
         self.assertEqual(1062, ctx.exception.code)
         self.assertEqual("conflict", str(ctx.exception))
 
@@ -92,7 +93,7 @@ class AbstractDialectCommandTestMixin(object):
     )
     def test_execute_when_errno_1045(self, command_mock):
         with self.assertRaises(errors.DatabaseError) as ctx:
-            self.target.execute(session=None)
+            self.target.execute()
         self.assertEqual(1045, ctx.exception.errno)
         self.assertEqual("access denied", ctx.exception.msg)
 
@@ -100,7 +101,11 @@ class AbstractDialectCommandTestMixin(object):
 class MySQLInsertTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
 
     def setUp(self):
-        self.target = mysql.MySQLInsert(FAKE_TABLE, FAKE_VALUES)
+        self.target = mysql.MySQLInsert(
+            FAKE_TABLE,
+            FAKE_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
     def test_statement(self):
         self.assertEqual(
@@ -114,7 +119,12 @@ class MySQLUpdateTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
 
     def setUp(self):
         TABLE = FAKE_TABLE
-        self.target = mysql.MySQLUpdate(TABLE, FAKE_PK_VALUES, FAKE_VALUES)
+        self.target = mysql.MySQLUpdate(
+            TABLE,
+            FAKE_PK_VALUES,
+            FAKE_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
     def test_statement(self):
         self.assertEqual(
@@ -131,7 +141,10 @@ class MySQLUpdateMultipleIdTestCase(
     def setUp(self):
         TABLE = EXTENDED_FAKE_TABLE
         self.target = mysql.MySQLUpdate(
-            TABLE, EXTENDED_FAKE_PK_VALUES, EXTENDED_FAKE_VALUES
+            TABLE,
+            EXTENDED_FAKE_PK_VALUES,
+            EXTENDED_FAKE_VALUES,
+            session=fixtures.SessionFixture(),
         )
 
     def test_statement(self):
@@ -147,7 +160,11 @@ class MySQLDeleteTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
     def setUp(self):
         TABLE = FAKE_TABLE
 
-        self.target = mysql.MySQLDelete(TABLE, FAKE_PK_VALUES)
+        self.target = mysql.MySQLDelete(
+            TABLE,
+            FAKE_PK_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
     def test_statement(self):
         self.assertEqual(
@@ -163,7 +180,11 @@ class MySQLDeleteMultipleIdTestCase(
     def setUp(self):
         TABLE = EXTENDED_FAKE_TABLE
 
-        self.target = mysql.MySQLDelete(TABLE, EXTENDED_FAKE_VALUES)
+        self.target = mysql.MySQLDelete(
+            TABLE,
+            EXTENDED_FAKE_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
     def test_statement(self):
         self.assertEqual(
@@ -178,11 +199,18 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self._TABLE = FAKE_TABLE
 
     def test_statement_OR(self):
+        session = mock.Mock()
         ord_filter = collections.OrderedDict()
-        for k, v in sorted(zip(self._TABLE.get_column_names(), FAKE_VALUES)):
+        for k, v in sorted(
+            zip(self._TABLE.get_column_names(session), FAKE_VALUES)
+        ):
             ord_filter[k] = dm_filters.EQ(v)
         FAKE_EQ_VALUES = dm_filters.OR(ord_filter)
-        target = mysql.MySQLSelect(self._TABLE, FAKE_EQ_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_EQ_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -205,7 +233,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
                 {"uuid": dm_filters.EQ("uuid")},
             ),
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_EQ_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_EQ_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -218,15 +250,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_EQ(self):
+        session = mock.Mock()
         FAKE_EQ_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.EQ(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_EQ_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_EQ_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -239,15 +276,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_NE(self):
+        session = mock.Mock()
         FAKE_NE_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.NE(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_NE_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_NE_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -260,15 +302,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_GT(self):
+        session = mock.Mock()
         FAKE_GT_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.GT(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_GT_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_GT_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -281,15 +328,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_GE(self):
+        session = mock.Mock()
         FAKE_GE_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.GE(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_GE_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_GE_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -302,15 +354,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_LT(self):
+        session = mock.Mock()
         FAKE_LT_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.LT(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_LT_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_LT_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -323,15 +380,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_LE(self):
+        session = mock.Mock()
         FAKE_LE_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.LE(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_LE_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -344,15 +406,21 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_limit_with_where_clause(self):
+        session = mock.Mock()
         FAKE_LE_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.LE(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES, limit=2)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_LE_VALUES,
+            limit=2,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -366,15 +434,21 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_locked_with_where_clause(self):
+        session = mock.Mock()
         FAKE_LE_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.LE(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLSelect(self._TABLE, FAKE_LE_VALUES, locked=True)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            filters=FAKE_LE_VALUES,
+            locked=True,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -388,6 +462,7 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual(FAKE_VALUES, target.get_values())
 
     def test_statement_order_by_with_where_clause(self):
+        session = mock.Mock()
         orders = collections.OrderedDict()
         orders["field_str"] = ""
         orders["field_bool"] = "desc"
@@ -395,12 +470,15 @@ class MySQLSelectTestCase(base.BaseTestCase):
             *[
                 {k: dm_filters.LE(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
         target = mysql.MySQLSelect(
-            self._TABLE, FAKE_LE_VALUES, order_by=orders
+            self._TABLE,
+            filters=FAKE_LE_VALUES,
+            order_by=orders,
+            session=fixtures.SessionFixture(),
         )
 
         result = target.get_statement()
@@ -418,7 +496,11 @@ class MySQLSelectTestCase(base.BaseTestCase):
         orders = collections.OrderedDict()
         orders["field_str"] = ""
         orders["field_bool"] = "desc"
-        target = mysql.MySQLSelect(self._TABLE, order_by=orders)
+        target = mysql.MySQLSelect(
+            self._TABLE,
+            order_by=orders,
+            session=fixtures.SessionFixture(),
+        )
 
         result = target.get_statement()
 
@@ -431,16 +513,20 @@ class MySQLSelectTestCase(base.BaseTestCase):
         self.assertEqual([], target.get_values())
 
     def test_statement_order_by_false_order(self):
+        session = mock.Mock()
         FAKE_LE_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.LE(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
         target = mysql.MySQLSelect(
-            self._TABLE, FAKE_LE_VALUES, order_by={"field_str": "FALSE"}
+            self._TABLE,
+            filters=FAKE_LE_VALUES,
+            order_by={"field_str": "FALSE"},
+            session=fixtures.SessionFixture(),
         )
         self.assertRaises(ValueError, target.get_statement)
 
@@ -454,7 +540,10 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
         FAKE_WHERE_CONDITION = "NOT (`field_int` => %s AND `field_str` = %s)"
         FAKE_WHERE_VALUES = [1, "2"]
         target = mysql.MySQLCustomSelect(
-            self._TABLE, FAKE_WHERE_CONDITION, FAKE_WHERE_VALUES
+            self._TABLE,
+            FAKE_WHERE_CONDITION,
+            FAKE_WHERE_VALUES,
+            session=fixtures.SessionFixture(),
         )
 
         result = target.get_statement()
@@ -470,7 +559,11 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
         FAKE_WHERE_CONDITION = "NOT (`field_int` => %s AND `field_str` = %s)"
         FAKE_WHERE_VALUES = [1, "2"]
         target = mysql.MySQLCustomSelect(
-            self._TABLE, FAKE_WHERE_CONDITION, FAKE_WHERE_VALUES, limit=2
+            self._TABLE,
+            FAKE_WHERE_CONDITION,
+            FAKE_WHERE_VALUES,
+            limit=2,
+            session=fixtures.SessionFixture(),
         )
 
         result = target.get_statement()
@@ -486,7 +579,11 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
         FAKE_WHERE_CONDITION = "NOT (`field_int` => %s AND `field_str` = %s)"
         FAKE_WHERE_VALUES = [1, "2"]
         target = mysql.MySQLCustomSelect(
-            self._TABLE, FAKE_WHERE_CONDITION, FAKE_WHERE_VALUES, locked=True
+            self._TABLE,
+            FAKE_WHERE_CONDITION,
+            FAKE_WHERE_VALUES,
+            locked=True,
+            session=fixtures.SessionFixture(),
         )
 
         result = target.get_statement()
@@ -506,6 +603,7 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
             FAKE_WHERE_CONDITION,
             FAKE_WHERE_VALUES,
             order_by={"field_str": ""},
+            session=fixtures.SessionFixture(),
         )
 
         result = target.get_statement()
@@ -525,27 +623,35 @@ class MySQLCountTestCase(base.BaseTestCase):
         self._TABLE = FAKE_TABLE
 
     def test_statement(self):
-        target = mysql.MySQLCount(self._TABLE)
+        target = mysql.MySQLCount(
+            self._TABLE,
+            session=fixtures.SessionFixture(),
+        )
 
         self.assertEqual(
             target.get_statement(),
-            "SELECT COUNT(*) as COUNT FROM `FAKE_TABLE`",
+            "SELECT COUNT(*) as count FROM `FAKE_TABLE`",
         )
 
     def test_statement_where(self):
+        session = mock.Mock()
         FAKE_EQ_VALUES = dm_filters.AND(
             *[
                 {k: dm_filters.EQ(v)}
                 for k, v in sorted(
-                    zip(self._TABLE.get_column_names(), FAKE_VALUES)
+                    zip(self._TABLE.get_column_names(session), FAKE_VALUES)
                 )
             ]
         )
-        target = mysql.MySQLCount(self._TABLE, FAKE_EQ_VALUES)
+        target = mysql.MySQLCount(
+            self._TABLE,
+            filters=FAKE_EQ_VALUES,
+            session=fixtures.SessionFixture(),
+        )
 
         self.assertEqual(
             (
-                "SELECT COUNT(*) as COUNT FROM `FAKE_TABLE` "
+                "SELECT COUNT(*) as count FROM `FAKE_TABLE` "
                 "WHERE (`field_bool` = %s "
                 "AND `field_int` = %s AND `field_str` = %s AND `uuid` = %s)"
             ),

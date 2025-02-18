@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from restalchemy.storage.sql import utils
-
 
 OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = "table"
 
@@ -30,7 +28,7 @@ class SQLTable(object):
     def model(self):
         return self._model
 
-    def get_column_names(self, with_pk=True, do_sort=True):
+    def get_column_names(self, session, with_pk=True, do_sort=True):
         result = []
         for name, prop in self._model.properties.items():
             if not with_pk and prop.is_id_property():
@@ -40,15 +38,17 @@ class SQLTable(object):
             result.sort()
         return result
 
-    def get_escaped_column_names(self, with_pk=True, do_sort=True):
+    def get_escaped_column_names(self, session, with_pk=True, do_sort=True):
         return [
-            utils.escape(column_name)
+            session.engine.escape(column_name)
             for column_name in self.get_column_names(
-                with_pk=with_pk, do_sort=do_sort
+                session=session,
+                with_pk=with_pk,
+                do_sort=do_sort,
             )
         ]
 
-    def get_pk_names(self, do_sort=True):
+    def get_pk_names(self, session, do_sort=True):
         result = []
         for name, prop in self._model.properties.items():
             if prop.is_id_property():
@@ -57,10 +57,13 @@ class SQLTable(object):
             result.sort()
         return result
 
-    def get_escaped_pk_names(self, do_sort=True):
+    def get_escaped_pk_names(self, session, do_sort=True):
         return [
-            utils.escape(column_name)
-            for column_name in self.get_pk_names(do_sort=do_sort)
+            session.engine.escape(column_name)
+            for column_name in self.get_pk_names(
+                session=session,
+                do_sort=do_sort,
+            )
         ]
 
     @property
@@ -68,16 +71,29 @@ class SQLTable(object):
         return self._table_name
 
     def insert(self, engine, data, session):
-        cmd = engine.dialect.insert(table=self, data=data)
-        return cmd.execute(session=session)
+        cmd = engine.dialect.insert(
+            table=self,
+            data=data,
+            session=session,
+        )
+        return cmd.execute()
 
     def update(self, engine, ids, data, session):
-        cmd = engine.dialect.update(table=self, ids=ids, data=data)
-        return cmd.execute(session=session)
+        cmd = engine.dialect.update(
+            table=self,
+            ids=ids,
+            data=data,
+            session=session,
+        )
+        return cmd.execute()
 
     def delete(self, engine, ids, session):
-        cmd = engine.dialect.delete(table=self, ids=ids)
-        return cmd.execute(session=session)
+        cmd = engine.dialect.delete(
+            table=self,
+            ids=ids,
+            session=session,
+        )
+        return cmd.execute()
 
     def select(
         self, engine, filters, session, limit=None, order_by=None, locked=False
@@ -87,7 +103,9 @@ class SQLTable(object):
         Warning: query with and w/o (limit or group_by) won't flush each other
         if cached!
         """
-        q = engine.dialect.orm.select(self._model).where(filters=filters)
+        q = engine.dialect.orm.select(self._model, session).where(
+            filters=filters,
+        )
 
         for name, sort_type in (order_by or {}).items():
             q.order_by(property_name=name, sort_type=sort_type)
@@ -98,8 +116,12 @@ class SQLTable(object):
         if locked:
             q.for_(share=not locked)
 
-        cmd = engine.dialect.orm_command(table=self, query=q)
-        return cmd.execute(session=session)
+        cmd = engine.dialect.orm_command(
+            table=self,
+            query=q,
+            session=session,
+        )
+        return cmd.execute()
 
     def custom_select(
         self,
@@ -118,9 +140,14 @@ class SQLTable(object):
             limit=limit,
             order_by=order_by,
             locked=locked,
+            session=session,
         )
-        return cmd.execute(session=session)
+        return cmd.execute()
 
     def count(self, engine, session, filters):
-        cmd = engine.dialect.count(table=self, filters=filters)
-        return cmd.execute(session=session)
+        cmd = engine.dialect.count(
+            table=self,
+            filters=filters,
+            session=session,
+        )
+        return cmd.execute()

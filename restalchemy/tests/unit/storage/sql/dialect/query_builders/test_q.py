@@ -18,27 +18,47 @@ import unittest
 
 from restalchemy.storage.sql.dialect.query_builder import common
 from restalchemy.storage.sql.dialect.query_builder import q
+from restalchemy.tests import fixtures
 
 
 class TestOrderByValue(unittest.TestCase):
     def setUp(self):
-        self.column = common.Column("1", None)
+        self.column = common.Column(
+            "1",
+            None,
+            fixtures.SessionFixture(),
+        )
 
     def test_empty_type(self):
-        order = q.OrderByValue(self.column)
+        order = q.OrderByValue(
+            self.column,
+            fixtures.SessionFixture(),
+        )
 
         self.assertEqual("`1` ASC", order.compile())
 
     def test_valid_type(self):
-        order = q.OrderByValue(self.column, sort_type="DESC")
+        order = q.OrderByValue(
+            self.column,
+            sort_type="DESC",
+            session=fixtures.SessionFixture(),
+        )
 
         self.assertEqual("`1` DESC", order.compile())
 
     def test_invalid_type(self):
         with self.assertRaises(ValueError):
-            q.OrderByValue(self.column, sort_type="WRONG")
+            q.OrderByValue(
+                self.column,
+                sort_type="WRONG",
+                session=fixtures.SessionFixture(),
+            )
 
     def test_valid_type_lowercase(self):
-        order = q.OrderByValue(self.column, sort_type="desc")
+        order = q.OrderByValue(
+            self.column,
+            sort_type="desc",
+            session=fixtures.SessionFixture(),
+        )
 
         self.assertEqual("`1` DESC", order.compile())

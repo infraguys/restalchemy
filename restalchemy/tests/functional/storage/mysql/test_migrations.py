@@ -76,7 +76,6 @@ class BaseMigrationTestCase(base.BaseDBEngineTestCase):
     def setUp(self):
         super(BaseMigrationTestCase, self).setUp()
 
-        self.session = self.engine.get_session()
         self.migration_engine = self.get_migration_engine()
 
         self._drop_ra_migrations_table()
@@ -85,7 +84,6 @@ class BaseMigrationTestCase(base.BaseDBEngineTestCase):
         super(BaseMigrationTestCase, self).tearDown()
 
         self._drop_ra_migrations_table()
-        self.session.close()
 
     @staticmethod
     def get_migration_engine(migrations_dir_name="migrations"):
@@ -100,24 +98,27 @@ class BaseMigrationTestCase(base.BaseDBEngineTestCase):
         return migration_engine
 
     def _truncate_ra_migrations_table(self):
-        # DDL with auto-commit
-        self.truncate_table(
-            sql_migrations.RA_MIGRATION_TABLE_NAME, session=self.session
-        )
+        with self.engine.session_manager() as session:
+            self.truncate_table(
+                sql_migrations.RA_MIGRATION_TABLE_NAME, session=session
+            )
 
     def _drop_ra_migrations_table(self):
-        self.drop_table(
-            sql_migrations.RA_MIGRATION_TABLE_NAME, session=self.session
-        )
+        with self.engine.session_manager() as session:
+            self.drop_table(
+                sql_migrations.RA_MIGRATION_TABLE_NAME, session=session
+            )
 
     def load_migrations(self):
-        migrations = self.migration_engine._load_migration_controllers(
-            self.session
-        )
+        with self.engine.session_manager() as session:
+            migrations = self.migration_engine._load_migration_controllers(
+                session
+            )
         return migrations
 
     def init_migration_table(self):
-        self.migration_engine._init_migration_table(self.session)
+        with self.engine.session_manager() as session:
+            self.migration_engine._init_migration_table(session)
 
 
 class MigrationsModelTestCase(BaseMigrationTestCase):
@@ -174,7 +175,9 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
             "562b5a12-cb70-4f77-896b-3a6cab7c3019",
             "bbd5d871-4b0e-4856-b56e-95b2abb7cf48",
         ]
-        self.migration_engine._init_migration_table(self.session)
+        with self.engine.session_manager() as session:
+            self.migration_engine._init_migration_table(session)
+
         db_filter = {"applied": filters.EQ(True)}
         db_migrations = sql_migrations.MigrationModel.objects.get_all(
             filters=db_filter
@@ -293,9 +296,10 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         custom_migration_engine = self.get_migration_engine("migration_ok_1")
         expected_result = ["0000-init-1711de.py", "0001-first-a8a827.py"]
 
-        result = custom_migration_engine.get_unapplied_migrations(
-            session=self.session, include_manual=False
-        )
+        with self.engine.session_manager() as session:
+            result = custom_migration_engine.get_unapplied_migrations(
+                session=session, include_manual=False
+            )
         result = list(result.keys())
         result.sort(key=lambda x: x.split("-")[0])
 
@@ -313,9 +317,10 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
             migration_name=migration_to_apply
         )
 
-        result = custom_migration_engine.get_unapplied_migrations(
-            session=self.session, include_manual=True
-        )
+        with self.engine.session_manager() as session:
+            result = custom_migration_engine.get_unapplied_migrations(
+                session=session, include_manual=True
+            )
         result = list(result.keys())
         result.sort(key=lambda x: x.split("-")[1])
 
@@ -327,9 +332,10 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         custom_migration_engine.apply_migration(migration_name=head_migration)
         expected_result = []
 
-        result = custom_migration_engine.get_unapplied_migrations(
-            session=self.session, include_manual=False
-        )
+        with self.engine.session_manager() as session:
+            result = custom_migration_engine.get_unapplied_migrations(
+                session=session, include_manual=False
+            )
 
         self.assertListEqual(expected_result, list(result.keys()))
 
@@ -339,9 +345,10 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         custom_migration_engine.apply_migration(migration_name=head_migration)
         expected_result = ["0002-second-377e90.py", "0003-third-11f1da.py"]
 
-        result = custom_migration_engine.get_unapplied_migrations(
-            session=self.session, include_manual=True
-        )
+        with self.engine.session_manager() as session:
+            result = custom_migration_engine.get_unapplied_migrations(
+                session=session, include_manual=True
+            )
         result = list(result.keys())
         result.sort(key=lambda x: x.split("-")[1])
 
@@ -400,9 +407,9 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         self.assertListEqual(expected_files, files)
 
     def test_apply_migration(self):
-        self.migration_engine._init_migration_table(self.session)
+        with self.engine.session_manager() as session:
+            self.migration_engine._init_migration_table(session)
         migrations_before = self.load_migrations()
-        self.session.commit()
         self.migration_engine.apply_migration(HEAD_MIGRATION, dry_run=False)
         migrations_after = self.load_migrations()
 
@@ -421,9 +428,9 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         )
 
     def test_apply_migration_dry_run(self):
-        self.migration_engine._init_migration_table(self.session)
+        with self.engine.session_manager() as session:
+            self.migration_engine._init_migration_table(session)
         migrations_before = self.load_migrations()
-        self.session.commit()
 
         self.migration_engine.apply_migration(HEAD_MIGRATION, dry_run=True)
         migrations_after = self.load_migrations()
@@ -445,11 +452,9 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
     def test_rollback_migration(self):
         self.migration_engine.apply_migration(HEAD_MIGRATION, dry_run=False)
         migrations_before = self.load_migrations()
-        self.session.commit()
 
         self.migration_engine.rollback_migration(INIT_MIGRATION, dry_run=False)
         migrations_after = self.load_migrations()
-        self.session.commit()
 
         self.assertEqual(MIGRATIONS_TOTAL_COUNT, len(migrations_before.keys()))
         self.assertEqual(MIGRATIONS_TOTAL_COUNT, len(migrations_after.keys()))
@@ -468,11 +473,9 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
     def test_rollback_migration_dry_run(self):
         self.migration_engine.apply_migration(HEAD_MIGRATION, dry_run=False)
         migrations_before = self.load_migrations()
-        self.session.commit()
 
         self.migration_engine.rollback_migration(INIT_MIGRATION, dry_run=True)
         migrations_after = self.load_migrations()
-        self.session.commit()
 
         self.assertEqual(MIGRATIONS_TOTAL_COUNT, len(migrations_before.keys()))
         self.assertEqual(MIGRATIONS_TOTAL_COUNT, len(migrations_after.keys()))

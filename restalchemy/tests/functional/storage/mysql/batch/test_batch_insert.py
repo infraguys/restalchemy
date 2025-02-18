@@ -55,15 +55,17 @@ class InsertTestCase(base.BaseWithDbMigrationsTestCase):
         model3 = BatchInsertModel(
             uuid=dup_uuid, foo_field1=3, foo_field2="Model3"
         )
+        # NOTE(efrolov): PRIMARY - is value from table structure,
+        #   unique index for any primary key. Constant in mysql database.
+        key_name = "PRIMARY" if self.engine.dialect.name == "mysql" else "uuid"
 
         with self.engine.session_manager() as session:
             with self.assertRaises(exc.ConflictRecords):
                 try:
                     session.batch_insert([model1, model2, model3])
                 except exc.ConflictRecords as e:
-                    # NOTE(efrolov): PRIMARY - is value from table structure,
-                    # unique index for any primary key. Constant in database.
-                    self.assertEqual("PRIMARY", e.key)
+
+                    self.assertEqual(key_name, e.key)
                     # NOTE(efrolov): all values from exception in string type
                     self.assertEqual(str(dup_uuid), e.value)
                     raise
@@ -83,9 +85,7 @@ class InsertTestCase(base.BaseWithDbMigrationsTestCase):
                 try:
                     session.batch_insert([model1, model2, model3])
                 except exc.ConflictRecords as e:
-                    # NOTE(efrolov): index2 - is value from table structure,
-                    # unique index for foo_field1.
-                    self.assertEqual("index2", e.key)
+                    self.assertEqual("foo_field1", e.key)
                     # NOTE(efrolov): all values from exception in string type
                     self.assertEqual(str(dup_value), e.value)
                     raise

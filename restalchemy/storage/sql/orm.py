@@ -168,7 +168,7 @@ class ObjectCollection(
                 engine=self._engine, session=s, filters=filters
             )
             data = list(result.fetchall())
-            return data[0]["COUNT"]
+            return data[0]["count"]
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):

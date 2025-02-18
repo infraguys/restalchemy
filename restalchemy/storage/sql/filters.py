@@ -23,7 +23,7 @@ from six.moves import collections_abc
 from restalchemy.dm import filters
 from restalchemy.dm import types
 from restalchemy.storage.sql.dialect.query_builder import common
-from restalchemy.storage.sql import utils
+
 
 LOG = logging.getLogger(__name__)
 
@@ -31,10 +31,11 @@ LOG = logging.getLogger(__name__)
 @six.add_metaclass(abc.ABCMeta)
 class AbstractClause(object):
 
-    def __init__(self, column, value_type, value):
+    def __init__(self, column, value_type, value, session):
         super(AbstractClause, self).__init__()
         self._value = self._convert_value(value_type, value)
         self._column = column
+        self._session = session
 
     def _convert_value(self, value_type, value):
         return value_type.to_simple_type(value)
@@ -59,49 +60,49 @@ class AbstractClause(object):
 class EQ(AbstractClause):
 
     def construct_expression(self):
-        return ("%s = " % self.column) + "%s"
+        return f"{self.column} = %s"
 
 
 class NE(AbstractClause):
 
     def construct_expression(self):
-        return ("%s <> " % self.column) + "%s"
+        return f"{self.column} <> %s"
 
 
 class GT(AbstractClause):
 
     def construct_expression(self):
-        return ("%s > " % self.column) + "%s"
+        return f"{self.column} > %s"
 
 
 class GE(AbstractClause):
 
     def construct_expression(self):
-        return ("%s >= " % self.column) + "%s"
+        return f"{self.column} >= %s"
 
 
 class LT(AbstractClause):
 
     def construct_expression(self):
-        return ("%s < " % self.column) + "%s"
+        return f"{self.column} < %s"
 
 
 class LE(AbstractClause):
 
     def construct_expression(self):
-        return ("%s <= " % self.column) + "%s"
+        return f"{self.column} <= %s"
 
 
 class Is(AbstractClause):
 
     def construct_expression(self):
-        return ("%s IS " % self.column) + "%s"
+        return f"{self.column} IS %s"
 
 
 class IsNot(AbstractClause):
 
     def construct_expression(self):
-        return ("%s IS NOT " % self.column) + "%s"
+        return f"{self.column} IS NOT %s"
 
 
 class In(AbstractClause):
@@ -111,14 +112,29 @@ class In(AbstractClause):
         #                forbid empty lists in "in" operator.
         return [value_type.to_simple_type(item) for item in value] or [None]
 
-    def construct_expression(self):
-        return ("%s IN " % self.column) + "%s"
 
-
-class NotIn(In):
+class MySqlIn(In):
 
     def construct_expression(self):
-        return ("%s NOT IN " % self.column) + "%s"
+        return f"{self.column} IN %s"
+
+
+class PostgreSqlIn(In):
+
+    def construct_expression(self):
+        return f"{self.column} = ANY(%s)"
+
+
+class MySqlNotIn(In):
+
+    def construct_expression(self):
+        return f"{self.column} NOT IN %s"
+
+
+class PostgreSqlNotIn(In):
+
+    def construct_expression(self):
+        return f"{self.column} != ANY(%s)"
 
 
 class Like(AbstractClause):
@@ -194,18 +210,34 @@ class OR(ClauseList):
 
 
 FILTER_MAPPING = {
-    filters.EQ: EQ,
-    filters.NE: NE,
-    filters.GT: GT,
-    filters.GE: GE,
-    filters.LE: LE,
-    filters.LT: LT,
-    filters.Is: Is,
-    filters.IsNot: IsNot,
-    filters.In: In,
-    filters.NotIn: NotIn,
-    filters.Like: Like,
-    filters.NotLike: NotLike,
+    "mysql": {
+        filters.EQ: EQ,
+        filters.NE: NE,
+        filters.GT: GT,
+        filters.GE: GE,
+        filters.LE: LE,
+        filters.LT: LT,
+        filters.Is: Is,
+        filters.IsNot: IsNot,
+        filters.In: MySqlIn,
+        filters.NotIn: MySqlNotIn,
+        filters.Like: Like,
+        filters.NotLike: NotLike,
+    },
+    "postgresql": {
+        filters.EQ: EQ,
+        filters.NE: NE,
+        filters.GT: GT,
+        filters.GE: GE,
+        filters.LE: LE,
+        filters.LT: LT,
+        filters.Is: Is,
+        filters.IsNot: IsNot,
+        filters.In: PostgreSqlIn,
+        filters.NotIn: PostgreSqlNotIn,
+        filters.Like: Like,
+        filters.NotLike: NotLike,
+    },
 }
 
 FILTER_EXPR_MAPPING = {
@@ -229,24 +261,28 @@ class AsIsType(types.BaseType):
         return value
 
 
-def convert_filters(model, filters_root):
+def convert_filters(model, filters_root, session):
     filters_root = filters_root or filters.AND()
     if isinstance(filters_root, filters.AbstractExpression):
-        return iterate_filters(model, filters_root)
-    return iterate_filters(model, filters.AND(filters_root))
+        return iterate_filters(model, filters_root, session=session)
+    return iterate_filters(
+        model,
+        filters.AND(filters_root),
+        session=session,
+    )
 
 
-def iterate_filters(model, filter_list):
+def iterate_filters(model, filter_list, session):
     # Just expression
     if isinstance(filter_list, filters.AbstractExpression):
-        clauses = iterate_filters(model, filter_list.clauses)
+        clauses = iterate_filters(model, filter_list.clauses, session)
         return FILTER_EXPR_MAPPING[type(filter_list)](*clauses)
 
     # Tuple of causes from expression
     if isinstance(filter_list, tuple):
         clauses = []
         for cause in filter_list:
-            c_causes = iterate_filters(model, cause)
+            c_causes = iterate_filters(model, cause, session)
             if isinstance(cause, filters.AbstractExpression):
                 clauses.append(c_causes)
             else:
@@ -271,19 +307,24 @@ def iterate_filters(model, filter_list):
                 value_type = (
                     model.properties.properties[name].get_property_type()
                 ) or AsIsType()
-                column = utils.escape(name)
+                column = session.engine.escape(name)
             # Make API compatible with previous versions.
             if not isinstance(filt, filters.AbstractClause):
                 LOG.warning(
                     "DEPRECATED: pleases use %s wrapper for filter " "value",
                     filters.EQ,
                 )
-                clauses.append(EQ(column, value_type, filt))
+                clauses.append(EQ(column, value_type, filt, session=session))
                 continue
 
             try:
                 clauses.append(
-                    FILTER_MAPPING[type(filt)](column, value_type, filt.value)
+                    FILTER_MAPPING[session.engine.dialect.name][type(filt)](
+                        column,
+                        value_type,
+                        filt.value,
+                        session=session,
+                    ),
                 )
             except KeyError:
                 raise ValueError(

@@ -54,27 +54,48 @@ class ConflictRecords(exceptions.RestAlchemyException):
         super(ConflictRecords, self).__init__(**kwargs)
         self._original_msg = kwargs.get("msg") or ""
 
-    @staticmethod
-    def _parse_message(msg):
-        re_template = r"Duplicate entry '(.*)' for key '(.*)'"
-        result = re.search(re_template, msg)
+    def _re_parser(self, re_template):
+        result = re.search(re_template, self._original_msg)
         if result is None:
             raise ValueError(
-                "Incorrect message for parsing. %s but should be %s"
-                % (
-                    msg,
-                    re_template,
-                )
+                f"Incorrect message for parsing. {self._original_msg}"
+                f" but should be {re_template}"
             )
         return result.groups()
 
     @property
+    def _parsed_message_mysql(self):
+        re_template = r"Duplicate entry '(.*)' for key '(.*)'"
+        result = self._re_parser(re_template)
+        return {
+            "key": result[1],
+            "value": result[0],
+        }
+
+    @property
+    def _parsed_message_postgresql(self):
+        re_template = r"DETAIL:\s+Key \((\w+)\)=\(([^)]+)\)"
+        result = self._re_parser(re_template)
+        return {
+            "key": result[0],
+            "value": result[1],
+        }
+
+    @property
+    def _parse_message(self):
+        if self._original_msg.startswith("Duplicate entry"):
+            return self._parsed_message_mysql
+        elif self._original_msg.startswith("duplicate key value violates"):
+            return self._parsed_message_postgresql
+        raise ValueError(f"Can't parse message: {self._original_msg}")
+
+    @property
     def value(self):
-        return self._parse_message(self._original_msg)[0]
+        return self._parse_message["value"]
 
     @property
     def key(self):
-        return self._parse_message(self._original_msg)[1]
+        return self._parse_message["key"]
 
 
 class UnknownStorageException(exceptions.RestAlchemyException):

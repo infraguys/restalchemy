@@ -33,11 +33,10 @@ class MigrationStep(migrations.AbstarctMigrationStep):
     def upgrade(self, session):
         expressions = [
             """
-                CREATE TABLE IF NOT EXISTS `binary_data` (
-                    `uuid` CHAR(36) NOT NULL,
-                    `data` TEXT NOT NULL,
-                PRIMARY KEY (`uuid`))
-                ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                CREATE TABLE IF NOT EXISTS binary_data (
+                    uuid CHAR(36) NOT NULL,
+                    data TEXT NOT NULL,
+                PRIMARY KEY (uuid))
             """
         ]
         for expression in expressions:

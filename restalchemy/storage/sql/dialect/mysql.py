@@ -16,78 +16,31 @@
 
 from __future__ import absolute_import  # noqa
 
-import abc
+from functools import wraps
 
 from mysql.connector import errors
-import six
 
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
-from restalchemy.storage.sql.dialect.query_builder import q
-from restalchemy.storage.sql import filters as sql_filters
-from restalchemy.storage.sql import utils
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractProcessResult(base.AbstractProcessResult):
+def handle_database_errors(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        """
+        A decorator to handle database errors.
 
-    def get_count(self):
-        return self._result.rowcount
+        This decorator catches database errors from the
+        ``mysql-connector-python`` library and raises them as
+        :class:`.DeadLock` or :class:`.Conflict` exceptions when appropriate.
 
-    @property
-    def rows(self):
-        return self.get_rows()
-
-    @abc.abstractmethod
-    def fetchall(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_rows(self):
-        raise NotImplementedError()
-
-
-class MySQLProcessResult(AbstractProcessResult):
-
-    def __init__(self, result):
-        super(MySQLProcessResult, self).__init__(result)
-        self._rows = None
-
-    def fetchall(self):
-        for row in self._result:
-            yield row
-
-    def get_rows(self):
-        if self._rows is None:
-            self._rows = self._result.fetchall()
-        return self._rows
-
-
-class MySqlOrmProcessResult(AbstractProcessResult):
-
-    def __init__(self, result, query):
-        super(MySqlOrmProcessResult, self).__init__(result=result)
-        self._query = query
-        self._rows = None
-
-    def fetchall(self):
-        for row in self._result:
-            yield self._query.parse_row(row)
-
-    def get_rows(self):
-        if self._rows is None:
-            self._rows = self._query.parse_results(self._result.fetchall())
-        return self._rows
-
-
-@six.add_metaclass(abc.ABCMeta)
-class AbstractDialectCommand(base.AbstractDialectCommand):
-
-    def execute(self, session):
+        :param func: The function to be wrapped.
+        :type func: callable
+        :return: A function that wraps `func` and handles database errors.
+        :rtype: callable
+        """
         try:
-            return MySQLProcessResult(
-                super(AbstractDialectCommand, self).execute(session)
-            )
+            return func(self, *args, **kwargs)
         except errors.DatabaseError as e:
             if e.errno == 1213:
                 raise exc.DeadLock(code=e.sqlstate, message=e.msg)
@@ -95,316 +48,353 @@ class AbstractDialectCommand(base.AbstractDialectCommand):
                 raise exc.Conflict(code=e.sqlstate, message=e.msg)
             raise
 
-
-class MySQLInsert(AbstractDialectCommand):
-
-    def get_values(self):
-        values = tuple()
-        for column_name in self._table.get_column_names():
-            values += (self._data[column_name],)
-        return values
-
-    def get_statement(self):
-        column_names = self._table.get_escaped_column_names()
-        return "INSERT INTO `%s` (%s) VALUES (%s)" % (
-            self._table.name,
-            ", ".join(column_names),
-            ", ".join(["%s"] * len(column_names)),
-        )
+    return wrapper
 
 
-class MySQLUpdate(AbstractDialectCommand):
+class MySQLInsert(base.BaseInsertCommand):
 
-    def __init__(self, table, ids, data):
-        super(MySQLUpdate, self).__init__(table, data)
-        self._ids = ids
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL command.
 
-    def get_values(self):
-        values = tuple()
-        column_names = self._table.get_column_names(with_pk=False)
-        pk_names = self._table.get_pk_names()
-        for column_name in column_names:
-            values += (self._data[column_name],)
-        for column_name in pk_names:
-            values += (self._ids[column_name],)
-        return values
+        This method utilizes the base class's execute method to
+        perform the command execution. It is decorated with
+        `handle_database_errors` to handle any MySQL database
+        errors that may occur during execution, such as deadlocks
+        or conflicts, and raise appropriate exceptions.
 
-    def get_statement(self):
-        column_names = self._table.get_escaped_column_names(with_pk=False)
-        pk_names = self._table.get_escaped_pk_names()
-        return "UPDATE `%s` SET %s WHERE %s" % (
-            self._table.name,
-            ", ".join(["%s = %s" % (name, "%s") for name in column_names]),
-            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names]),
-        )
+        :return: The result of the command execution.
+        """
+
+        return super().execute()
 
 
-class MySQLDelete(AbstractDialectCommand):
+class MySQLUpdate(base.BaseUpdateCommand):
 
-    def __init__(self, table, ids):
-        super(MySQLDelete, self).__init__(table=table, data={})
-        self._ids = ids
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL command.
 
-    def get_values(self):
-        values = tuple()
-        pk_names = self._table.get_pk_names()
-        for column_name in pk_names:
-            values += (self._ids[column_name],)
-        return values
+        This method utilizes the base class's execute method to
+        perform the command execution. It is decorated with
+        `handle_database_errors` to handle any MySQL database
+        errors that may occur during execution, such as deadlocks
+        or conflicts, and raise appropriate exceptions.
 
-    def get_statement(self):
-        pk_names = self._table.get_escaped_pk_names()
-        return "DELETE FROM `%s` WHERE %s" % (
-            self._table.name,
-            " AND ".join(["%s = %s" % (name, "%s") for name in pk_names]),
-        )
+        :return: The result of the command execution.
+        """
+        return super().execute()
 
 
-class MySQLBatchDelete(AbstractDialectCommand):
+class MySQLDelete(base.BaseDeleteCommand):
 
-    def __init__(self, table, snapshot):
-        super(MySQLBatchDelete, self).__init__(table=table, data={})
-        self._snapshot = snapshot
-        self._pk_keys = self._table.get_escaped_pk_names()
-        keys_count = len(self._pk_keys)
-        if keys_count == 1:
-            self._is_multiple_primary_key = False
-        elif keys_count > 1:
-            self._is_multiple_primary_key = True
-        else:
-            raise ValueError(
-                "The model with table %r has 0 primary keys" % table
-            )
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL command.
 
-    def _get_values(self):
-        values = []
-        for snapshot in self._snapshot:
-            for key in self._table.get_pk_names():
-                values.append(snapshot[key])
-        return values
+        This method utilizes the base class's execute method to
+        perform the command execution. It is decorated with
+        `handle_database_errors` to handle any MySQL database
+        errors that may occur during execution, such as deadlocks
+        or conflicts, and raise appropriate exceptions.
 
-    def _get_multiple_primary_key_values(self):
-        return self._get_values()
-
-    def _get_single_primary_key_values(self):
-        # NOTE(efrolov): Wrap to list for `in` optimization
-        return [self._get_multiple_primary_key_values()]
-
-    def get_values(self):
-        return (
-            self._get_multiple_primary_key_values()
-            if self._is_multiple_primary_key
-            else self._get_single_primary_key_values()
-        )
-
-    def _get_single_primary_key_statement(self):
-        return "DELETE FROM `%s` WHERE %s in %s" % (
-            self._table.name,
-            self._pk_keys[0],
-            "%s",
-        )
-
-    def _get_multiple_primary_key_statement(self):
-        where_part = " AND ".join(
-            [("%s = %s" % (key, "%s")) for key in self._pk_keys]
-        )
-        where_condition = " OR ".join(
-            [where_part for _ in range(len(self._snapshot))]
-        )
-        return "DELETE FROM `%s` WHERE %s" % (
-            self._table.name,
-            where_condition,
-        )
-
-    def get_statement(self):
-        return (
-            self._get_multiple_primary_key_statement()
-            if self._is_multiple_primary_key
-            else self._get_single_primary_key_statement()
-        )
+        :return: The result of the command execution.
+        """
+        return super().execute()
 
 
-class MySQLBasicSelect(AbstractDialectCommand):
-    def __init__(self, table, limit=None, order_by=None, locked=False):
-        super(MySQLBasicSelect, self).__init__(table=table, data={})
-        self._limit = limit
-        self._order_by = order_by
-        self._locked = locked
+class MySQLBatchDelete(base.BaseBatchDelete):
 
-    def construct_limit(self):
-        if self._limit:
-            return " LIMIT " + str(self._limit)
-        return ""
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL batch delete command.
 
-    def construct_locked(self):
-        if self._locked:
-            return " FOR UPDATE"
-        return ""
+        This method utilizes the base class's execute method to perform the
+        batch delete operation. It is decorated with `handle_database_errors`
+        to handle any MySQL database errors that may occur during execution,
+        such as deadlocks or conflicts, and raise appropriate exceptions.
 
-    def construct_order_by(self):
-        if self._order_by:
-            res = []
-            for name, sorttype in self._order_by.items():
-                sorttype = sorttype.upper()
-                if sorttype not in ["ASC", "DESC", "", None]:
-                    raise ValueError("Unknown order: %s." % sorttype)
-                res.append("%s %s" % (utils.escape(name), sorttype or "ASC"))
-            return " ORDER BY " + ", ".join(res)
-        return ""
+        :return: The result of the command execution.
+        """
+
+        return super().execute()
 
 
-class MySQLSelect(MySQLBasicSelect):
+class MySQLSelect(base.BaseSelectCommand):
 
-    def __init__(
-        self, table, filters=None, limit=None, order_by=None, locked=False
-    ):
-        super(MySQLSelect, self).__init__(
-            table=table, limit=limit, order_by=order_by, locked=locked
-        )
-        self._filters = sql_filters.convert_filters(self._table.model, filters)
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL select command.
 
-    def get_values(self):
-        return self._filters.value
+        This method utilizes the base class's execute method to perform the
+        select operation. It is decorated with `handle_database_errors` to
+        handle any MySQL database errors that may occur during execution,
+        such as deadlocks or conflicts, and raise appropriate exceptions.
 
-    def construct_where(self):
-        return self._filters.construct_expression()
-
-    def get_statement(self):
-        sql = "SELECT %s FROM `%s`" % (
-            ", ".join(self._table.get_escaped_column_names()),
-            self._table.name,
-        )
-        filt = self.construct_where()
-
-        return (
-            sql
-            + (" WHERE %s" % filt if filt else "")
-            + self.construct_order_by()
-            + self.construct_limit()
-            + self.construct_locked()
-        )
+        :return: The result of the command execution.
+        """
+        return super().execute()
 
 
-class MySQLCustomSelect(MySQLBasicSelect):
+class MySQLCustomSelect(base.BaseCustomSelectCommand):
 
-    def __init__(
-        self,
-        table,
-        where_conditions,
-        where_values,
-        limit=None,
-        order_by=None,
-        locked=False,
-    ):
-        super(MySQLCustomSelect, self).__init__(
-            table=table, limit=limit, order_by=order_by, locked=locked
-        )
-        self._where_conditions = where_conditions
-        self._where_values = where_values
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL custom select command.
 
-    def get_values(self):
-        return self._where_values
+        This method performs the custom select operation by invoking the base
+        class's execute method. It is decorated with `handle_database_errors`
+        to manage any MySQL database errors, such as deadlocks or conflicts,
+        that may arise during the operation, and raises the appropriate
+        exceptions.
 
-    def construct_where(self):
-        return self._where_conditions
+        :return: The result of the command execution.
+        """
 
-    def get_statement(self):
-        sql = "SELECT %s FROM `%s`" % (
-            ", ".join(self._table.get_escaped_column_names()),
-            self._table.name,
-        )
-        return (
-            sql
-            + " WHERE "
-            + self.construct_where()
-            + self.construct_order_by()
-            + self.construct_limit()
-            + self.construct_locked()
-        )
+        return super().execute()
 
 
-class MySQLCount(MySQLSelect):
+class MySQLCount(base.BaseCountCommand):
 
-    def __init__(self, table, filters=None):
-        super(MySQLCount, self).__init__(table=table, filters=filters)
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL count command.
 
-    def get_statement(self):
-        sql = "SELECT COUNT(*) as COUNT FROM `%s`" % (self._table.name)
-        filt = self.construct_where()
+        This method performs the count operation by invoking the base
+        class's execute method. It is decorated with `handle_database_errors`
+        to manage any MySQL database errors, such as deadlocks or conflicts,
+        that may arise during the operation, and raises the appropriate
+        exceptions.
 
-        return sql + (" WHERE %s" % filt if filt else "")
-
-
-class MySqlOrmDialectCommand(base.AbstractDialectCommand):
-
-    def __init__(self, table, query):
-        super(MySqlOrmDialectCommand, self).__init__(table=table, data=None)
-        self._query = query
-
-    def get_statement(self):
-        return self._query.compile()
-
-    def get_values(self):
-        return self._query.values()
-
-    def execute(self, session):
-        try:
-            return MySqlOrmProcessResult(
-                result=super(MySqlOrmDialectCommand, self).execute(session),
-                query=self._query,
-            )
-        except errors.DatabaseError as e:
-            if e.errno == 1213:
-                raise exc.DeadLock(code=e.sqlstate, message=e.msg)
-            elif e.errno == 1062:
-                raise exc.Conflict(code=e.sqlstate, message=e.msg)
-            raise
+        :return: The result of the command execution.
+        """
+        return super().execute()
 
 
-class MySqlOrm(object):
+class MySqlOrmDialectCommand(base.BaseOrmDialectCommand):
 
-    @staticmethod
-    def select(model):
-        return q.Q.select(model)
+    @handle_database_errors
+    def execute(self):
+        """
+        Executes the MySQL ORM command.
+
+        This method compiles the query using the `get_statement` method and
+        retrieves the values required for the query execution using the
+        `get_values` method. Subsequently, it executes the SQL command using
+        the parent class's `execute` method, passing the compiled statement
+        and values to it. The result of the execution is then wrapped in a
+        `BaseOrmProcessResult` object and returned.
+
+        :return: The result of the query execution, wrapped in a
+            `BaseOrmProcessResult` object.
+        :rtype: BaseOrmProcessResult
+        """
+        return super().execute()
 
 
 class MySQLDialect(base.AbstractDialect):
 
-    def __init__(self):
-        super(MySQLDialect, self).__init__()
-        self._orm = MySqlOrm()
+    DIALECT_NAME = "mysql"
 
-    @property
-    def orm(self):
-        return self._orm
+    def orm_command(self, table, query, session):
+        """
+        Creates a new MySQL ORM command for the given table, query, and
+        session.
 
-    def orm_command(self, table, query):
-        return MySqlOrmDialectCommand(table, query)
+        This method creates an instance of `MySqlOrmDialectCommand` and
+        initializes it with the given table, query, and session.
 
-    def insert(self, table, data):
-        return MySQLInsert(table, data)
+        :param table: The table to be used in the ORM dialect command.
+        :param query: The query object that contains the SQL query to be
+            compiled.
+        :param session: The session to be used for executing the command.
+        :return: The created MySQL ORM command.
+        :rtype: MySqlOrmDialectCommand
+        """
+        return MySqlOrmDialectCommand(
+            table,
+            query,
+            session=session,
+        )
 
-    def update(self, table, ids, data):
-        return MySQLUpdate(table, ids, data)
+    def insert(self, table, data, session):
+        """
+        Inserts data into the specified table using a MySQL dialect command.
 
-    def delete(self, table, ids):
-        return MySQLDelete(table, ids)
+        This method creates an instance of `MySQLInsert` to insert the
+        provided data into the given table within the specified session
+        context.
 
-    def select(self, table, filters, limit=None, order_by=None, locked=False):
-        return MySQLSelect(table, filters, limit, order_by, locked)
+        :param table: The table into which data is to be inserted.
+        :param data: The data to be inserted into the table.
+        :param session: The session to be used for executing the insert
+            command.
+        :return: An instance of `MySQLInsert` configured with the table, data,
+            and session.
+        :rtype: MySQLInsert
+        """
+
+        return MySQLInsert(
+            table,
+            data,
+            session=session,
+        )
+
+    def update(self, table, ids, data, session):
+        """
+        Updates records in the specified table using a MySQL dialect command.
+
+        This method creates an instance of `MySQLUpdate` to update records
+        identified by the provided IDs in the given table with the specified
+        data within the session context.
+
+        :param table: The table where records are to be updated.
+        :param ids: The IDs of the records to be updated.
+        :param data: The data to update the records with.
+        :param session: The session to be used for executing the update
+            command.
+        :return: An instance of `MySQLUpdate` configured with the table,
+            IDs, data, and session.
+        :rtype: MySQLUpdate
+        """
+
+        return MySQLUpdate(
+            table,
+            ids,
+            data,
+            session=session,
+        )
+
+    def delete(self, table, ids, session):
+        """
+        Deletes records from the specified table using a MySQL dialect
+        command.
+
+        This method creates an instance of `MySQLDelete` to delete
+        records identified by the provided IDs from the given table within
+        the session context.
+
+        :param table: The table from which records are to be deleted.
+        :param ids: The IDs of the records to be deleted.
+        :param session: The session to be used for executing the delete
+            command.
+        :return: An instance of `MySQLDelete` configured with the table, IDs,
+            and session.
+        :rtype: MySQLDelete
+        """
+
+        return MySQLDelete(
+            table,
+            ids,
+            session=session,
+        )
+
+    def select(
+        self, table, filters, session, limit=None, order_by=None, locked=False
+    ):
+        """
+        Retrieves records from the specified table using a MySQL dialect
+        command.
+
+        This method creates an instance of `MySQLSelect` to select records
+        from the given table based on the provided filters, with optional
+        limit and order by constraints, within the session context.
+
+        :param table: The table from which records are to be selected.
+        :param filters: The filters to be used for selecting the records.
+        :param session: The session to be used for executing the select
+            command.
+        :param limit: The maximum number of records to be retrieved.
+        :type limit: int, optional
+        :param order_by: The ordering criteria for the selected records.
+        :param locked: Whether or not to lock the selected records for update.
+        :type locked: bool
+        :return: An instance of `MySQLSelect` configured with the table,
+            filters, session, limit, order by, and locked parameters.
+        :rtype: MySQLSelect
+        """
+        return MySQLSelect(
+            table=table,
+            filters=filters,
+            session=session,
+            limit=limit,
+            order_by=order_by,
+            locked=locked,
+        )
 
     def custom_select(
         self,
         table,
         where_conditions,
         where_values,
+        session,
         limit=None,
         order_by=None,
         locked=False,
     ):
+        """
+        Retrieves records from the specified table using a custom MySQL
+        dialect command.
+
+        This method creates an instance of `MySQLCustomSelect` to select
+        records from the given table based on the provided where conditions
+        and values, with optional limit and order by constraints, within the
+        session context.
+
+        :param table: The table from which records are to be selected.
+        :param where_conditions: The conditions for the WHERE clause in the
+            SQL statement.
+        :param where_values: The values for the WHERE clause in the SQL
+            statement.
+        :type where_values: tuple
+        :param session: The session to be used for executing the select
+            command.
+        :param limit: The maximum number of records to be retrieved.
+        :type limit: int, optional
+        :param order_by: The ordering criteria for the selected records.
+        :param locked: Whether or not to lock the selected records for update.
+        :type locked: bool
+        :return: An instance of `MySQLCustomSelect` configured with the table,
+            where conditions, where values, session, limit, order by, and
+            locked parameters.
+        :rtype: MySQLCustomSelect
+        """
         return MySQLCustomSelect(
-            table, where_conditions, where_values, limit, order_by, locked
+            table=table,
+            where_conditions=where_conditions,
+            where_values=where_values,
+            session=session,
+            limit=limit,
+            order_by=order_by,
+            locked=locked,
         )
 
-    def count(self, table, filters):
-        return MySQLCount(table, filters)
+    def count(self, table, filters, session):
+        """
+        Retrieves the count of records from the specified table using a
+        custom MySQL dialect command.
+
+        This method creates an instance of `MySQLCount` to count records
+        from the given table based on the provided filters, with optional
+        limit and order by constraints, within the session context.
+
+        :param table: The table from which records are to be counted.
+        :param filters: The filters to be used for counting the records.
+        :param session: The session to be used for executing the count
+            command.
+        :return: An instance of `MySQLCount` configured with the table,
+            filters, and session parameters.
+        :rtype: MySQLCount
+        """
+        return MySQLCount(
+            table=table,
+            filters=filters,
+            session=session,
+        )

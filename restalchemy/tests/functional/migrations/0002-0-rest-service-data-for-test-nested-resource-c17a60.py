@@ -29,13 +29,9 @@ class MigrationStep(migrations.AbstarctMigrationStep):
     def upgrade(self, session):
         expressions = [
             """
-                INSERT INTO vms (
-                     `uuid`, `name`, `state`
-                ) VALUES (
-                    '00000000-0000-0000-0000-000000000001', 'vm1', 'on'
-                ), (
-                    '00000000-0000-0000-0000-000000000002', 'vm2', 'off'
-                );
+                INSERT INTO vms (uuid, name, state)
+                VALUES ('00000000-0000-0000-0000-000000000001', 'vm1', 'on'),
+                       ('00000000-0000-0000-0000-000000000002', 'vm2', 'off');
             """
         ]
 

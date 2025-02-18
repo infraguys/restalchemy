@@ -43,14 +43,26 @@ class DBEngineMixin(object):
     @classmethod
     def get_all_tables(cls, session=None):
         with cls.engine.session_manager(session=session) as s:
-            res = s.execute(
+            if session.engine.dialect.name == "mysql":
+                res = s.execute(
+                    """
+                    select
+                        table_name as table_name
+                    from information_schema.tables
+                    where table_schema = database();
                 """
-                select
-                    table_name as table_name
-                from information_schema.tables
-                where table_schema = database();
-            """
-            ).fetchall()
+                ).fetchall()
+            elif session.engine.dialect.name == "postgresql":
+                res = s.execute(
+                    """
+                    select
+                        table_name as table_name
+                    from information_schema.tables
+                    where table_schema = current_schema();
+                """
+                ).fetchall()
+            else:
+                raise NotImplementedError("Unsupported dialect")
         tables = {row["table_name"] for row in res}
         return tables
 
@@ -64,12 +76,14 @@ class DBEngineMixin(object):
     @classmethod
     def drop_table(cls, table_name, session=None):
         with cls.engine.session_manager(session=session) as s:
-            s.execute("drop table if exists `%s`" % table_name)
+            s.execute(
+                f"drop table if exists {session.engine.escape(table_name)}"
+            )
 
     @classmethod
     def truncate_table(cls, table_name, session=None):
         with cls.engine.session_manager(session=session) as s:
-            s.execute("truncate table `%s`" % table_name)
+            s.execute(f"truncate table {session.engine.escape(table_name)}")
 
     @classmethod
     def drop_all_tables(cls, session=None):
