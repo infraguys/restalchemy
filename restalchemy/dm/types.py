@@ -569,7 +569,9 @@ class UTCDateTime(BasePythonType):
         )
 
     def validate(self, value):
-        return isinstance(value, datetime.datetime) and value.tzinfo is None
+        return isinstance(value, datetime.datetime) and (
+            value.tzinfo == datetime.timezone.utc or value.tzinfo is None
+        )
 
     def to_simple_type(self, value):
         return value.strftime(MYSQL_DATETIME_FMT)
