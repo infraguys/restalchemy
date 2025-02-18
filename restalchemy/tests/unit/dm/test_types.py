@@ -131,6 +131,13 @@ class UUIDTestCase(base.BaseTestCase):
             self.test_instance.from_simple_type(str(TEST_UUID)), TEST_UUID
         )
 
+    def test_from_simple_type_uuid(self):
+        TEST_UUID = uuid.uuid4()
+
+        self.assertEqual(
+            self.test_instance.from_simple_type(TEST_UUID), TEST_UUID
+        )
+
 
 class StringTestCase(base.BaseTestCase):
 
