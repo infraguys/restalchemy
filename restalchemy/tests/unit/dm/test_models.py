@@ -17,7 +17,6 @@
 import uuid
 
 import mock
-import six
 
 from restalchemy.common import exceptions
 from restalchemy.dm import models
@@ -40,8 +39,7 @@ class MetaModelTestCase(base.BaseTestCase):
 
     with mock.patch("restalchemy.dm.properties.PropertyCreator", FakeProperty):
 
-        @six.add_metaclass(models.MetaModel)
-        class Model(object):
+        class Model(object, metaclass=models.MetaModel):
 
             fake_prop1 = FAKE_PROPERTY1
             fake_prop2 = FAKE_PROPERTY2

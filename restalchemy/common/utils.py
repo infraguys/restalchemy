@@ -15,8 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-from six.moves import collections_abc
+from collections import abc as collections_abc
 
 from restalchemy.common import exceptions as ra_exc
 
@@ -45,7 +44,7 @@ class ReadOnlyDictProxy(collections_abc.Mapping):
     def __hash__(self):
         if self._hash is None:
             self._hash = 0
-            for key, value in six.iteritems(self):
+            for key, value in self.items():
                 self._hash ^= hash(key)
                 self._hash ^= hash(value)
 

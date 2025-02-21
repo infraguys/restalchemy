@@ -19,19 +19,18 @@ import collections
 import copy
 import inspect
 
-import six
-from six.moves import builtins
-from six.moves import collections_abc
+import builtins
+from collections import abc as collections_abc
 
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
 from restalchemy.dm import types
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractProperty(object):
+class AbstractProperty(metaclass=abc.ABCMeta):
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def value(self):
         pass
 
@@ -168,10 +167,10 @@ class PropertyCreator(object):
         return self._prefetch
 
 
-@six.add_metaclass(abc.ABCMeta)
-class PropertyMapping(collections_abc.Mapping):
+class PropertyMapping(collections_abc.Mapping, metaclass=abc.ABCMeta):
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def properties(self):
         pass
 
@@ -179,7 +178,7 @@ class PropertyMapping(collections_abc.Mapping):
         return self.properties[name]
 
     def __iter__(self):
-        return six.iterkeys(self.properties)
+        return iter(self.properties)
 
     def __len__(self):
         return len(self.properties)
@@ -266,13 +265,13 @@ class PropertyManager(PropertyMapping):
     @builtins.property
     def value(self):
         result = {}
-        for k, v in self.properties.iteritems():
+        for k, v in self.properties.items():
             result[k] = v.value
         return result
 
     @value.setter
     def value(self, values):
-        for k, v in six.iteritems(values):
+        for k, v in values.items():
             self._properties[k].value = v
 
 

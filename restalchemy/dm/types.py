@@ -23,12 +23,6 @@ import sys
 import time
 import uuid
 
-import six
-
-if six.PY2:
-    # http://bugs.python.org/issue7980
-    datetime.datetime.strptime("", "")
-
 
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
@@ -83,8 +77,7 @@ def build_prop_kwargs(kwargs):
     return result
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseType(object):
+class BaseType(metaclass=abc.ABCMeta):
 
     def __init__(self, openapi_type="object", openapi_format=None):
         super(BaseType, self).__init__()
@@ -166,8 +159,8 @@ class Boolean(BasePythonType):
 
 class String(BasePythonType):
 
-    def __init__(self, min_length=0, max_length=six.MAXSIZE):
-        super(String, self).__init__(six.string_types, openapi_type="string")
+    def __init__(self, min_length=0, max_length=sys.maxsize):
+        super(String, self).__init__(str, openapi_type="string")
         self.min_length = int(min_length)
         self.max_length = int(max_length)
 
@@ -176,7 +169,7 @@ class String(BasePythonType):
         return result and self.min_length <= len(str(value)) <= self.max_length
 
     def from_unicode(self, value):
-        return six.text_type(value)
+        return str(value)
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
@@ -191,9 +184,7 @@ class String(BasePythonType):
 class Integer(BasePythonType):
 
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
-        super(Integer, self).__init__(
-            six.integer_types, openapi_type="integer"
-        )
+        super(Integer, self).__init__(int, openapi_type="integer")
         self.min_value = (
             min_value if min_value == -INFINITY else int(min_value)
         )
@@ -209,20 +200,14 @@ class Integer(BasePythonType):
     @property
     def max_openapi_value(self):
         if self.max_value == INFINITI:
-            if six.PY2:
-                return sys.maxint
-            else:
-                return sys.maxsize
+            return sys.maxsize
         else:
             return self.max_value
 
     @property
     def min_openapi_value(self):
         if self.min_value == -INFINITI:
-            if six.PY2:
-                return -sys.maxint
-            else:
-                return -sys.maxsize
+            return -sys.maxsize
         else:
             return self.min_value
 
@@ -261,20 +246,14 @@ class Float(BasePythonType):
     @property
     def max_openapi_value(self):
         if self.max_value == INFINITI:
-            if six.PY2:
-                return sys.maxint
-            else:
-                return sys.float_info.max
+            return sys.float_info.max
         else:
             return self.max_value
 
     @property
     def min_openapi_value(self):
         if self.min_value == -INFINITI:
-            if six.PY2:
-                return -sys.maxint
-            else:
-                return -sys.float_info.max
+            return -sys.float_info.max
         else:
             return self.min_value
 
@@ -375,10 +354,8 @@ class TypedList(List):
         return [self._nested_type.from_simple_type(e) for e in value]
 
     def from_unicode(self, value):
-        if not isinstance(value, six.string_types):
-            raise TypeError(
-                "Value must be six.string_types, not %s", type(value)
-            )
+        if not isinstance(value, str):
+            raise TypeError("Value must be str, not %s", type(value))
 
         value = self._nested_type.from_unicode(value)
         return [value]
@@ -399,7 +376,7 @@ class Dict(ComplexPythonType):
 
     def validate(self, value):
         return super(Dict, self).validate(value) and all(
-            isinstance(k, six.string_types) for k in value
+            isinstance(k, str) for k in value
         )
 
     def to_openapi_spec(self, prop_kwargs):
@@ -423,8 +400,8 @@ def _validate_scheme(scheme):
     non_string_keys = []
     invalid_types = []
 
-    for key, val in six.iteritems(scheme):
-        if not isinstance(key, six.string_types):
+    for key, val in scheme.items():
+        if not isinstance(key, str):
             non_string_keys.append(key)
         if not isinstance(val, BaseType):
             invalid_types.append(val)
@@ -458,22 +435,16 @@ class SoftSchemeDict(Dict):
         return (
             super(SoftSchemeDict, self).validate(value)
             and set(value.keys()).issubset(set(self._scheme.keys()))
-            and all(
-                self._scheme[k].validate(v) for k, v in six.iteritems(value)
-            )
+            and all(self._scheme[k].validate(v) for k, v in value.items())
         )
 
     def to_simple_type(self, value):
-        return {
-            k: self._scheme[k].to_simple_type(v)
-            for k, v in six.iteritems(value)
-        }
+        return {k: self._scheme[k].to_simple_type(v) for k, v in value.items()}
 
     def from_simple_type(self, value):
         value = super(SoftSchemeDict, self).from_simple_type(value)
         return {
-            k: self._scheme[k].from_simple_type(v)
-            for k, v in six.iteritems(value)
+            k: self._scheme[k].from_simple_type(v) for k, v in value.items()
         }
 
     def to_openapi_spec(self, prop_kwargs):
@@ -496,7 +467,7 @@ class SchemeDict(Dict):
             and set(value.keys()) == set(self._scheme.keys())
             and all(
                 scheme.validate(value[key])
-                for key, scheme in six.iteritems(self._scheme)
+                for key, scheme in self._scheme.items()
             )
         )
 
@@ -510,7 +481,7 @@ class SchemeDict(Dict):
         value = super(SchemeDict, self).from_simple_type(value)
         return {
             key: scheme.from_simple_type(value.get(key, None))
-            for key, scheme in six.iteritems(self._scheme)
+            for key, scheme in self._scheme.items()
         }
 
     def to_openapi_spec(self, prop_kwargs):
@@ -533,21 +504,18 @@ class TypedDict(Dict):
 
     def validate(self, value):
         return super(TypedDict, self).validate(value) and all(
-            self._nested_type.validate(element)
-            for element in six.itervalues(value)
+            self._nested_type.validate(element) for element in value.values()
         )
 
     def to_simple_type(self, value):
         return {
-            k: self._nested_type.to_simple_type(v)
-            for k, v in six.iteritems(value)
+            k: self._nested_type.to_simple_type(v) for k, v in value.items()
         }
 
     def from_simple_type(self, value):
         value = super(TypedDict, self).from_simple_type(value)
         return {
-            k: self._nested_type.from_simple_type(v)
-            for k, v in six.iteritems(value)
+            k: self._nested_type.from_simple_type(v) for k, v in value.items()
         }
 
     def to_openapi_spec(self, prop_kwargs):
@@ -653,7 +621,7 @@ class Enum(BaseType):
 
     def from_unicode(self, value):
         for enum_value in self._enums_values:
-            if value == six.text_type(enum_value):
+            if value == str(enum_value):
                 return enum_value
         raise TypeError(
             "Can't convert '%s' to enum type."

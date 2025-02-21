@@ -16,7 +16,7 @@
 
 import mock
 
-from six.moves import http_client
+import http.client as http_client
 
 from restalchemy.api.middlewares import errors
 from restalchemy.common import exceptions as comm_exc

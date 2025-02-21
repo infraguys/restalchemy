@@ -16,10 +16,10 @@
 
 import datetime
 import re
+import sys
 import uuid
 
 import mock
-import six
 
 from restalchemy.dm import types
 from restalchemy.tests.unit import base
@@ -142,7 +142,7 @@ class UUIDTestCase(base.BaseTestCase):
 class StringTestCase(base.BaseTestCase):
 
     FAKE_STRING1 = "fake!!!"
-    FAKE_STRING2 = six.u("fake!!!")
+    FAKE_STRING2 = "fake!!!"
 
     def setUp(self):
         super(StringTestCase, self).setUp()
@@ -224,12 +224,12 @@ class IntegerTestCase(base.BaseTestCase):
     def test_validate_sys_max_value(self):
         test_instance = types.Integer()
 
-        self.assertTrue(test_instance.validate(six.MAXSIZE))
+        self.assertTrue(test_instance.validate(sys.maxsize))
 
     def test_validate_sys_min_value(self):
         test_instance = types.Integer()
 
-        self.assertTrue(test_instance.validate(-six.MAXSIZE))
+        self.assertTrue(test_instance.validate(-sys.maxsize))
 
 
 class FloatTestCase(base.BaseTestCase):
@@ -260,12 +260,12 @@ class FloatTestCase(base.BaseTestCase):
     def test_validate_sys_max_value(self):
         test_instance = types.Float()
 
-        self.assertTrue(test_instance.validate(float(six.MAXSIZE)))
+        self.assertTrue(test_instance.validate(float(sys.maxsize)))
 
     def test_validate_sys_min_value(self):
         test_instance = types.Float()
 
-        self.assertTrue(test_instance.validate(float(-six.MAXSIZE)))
+        self.assertTrue(test_instance.validate(float(-sys.maxsize)))
 
 
 class UriTestCase(BaseTestCase):

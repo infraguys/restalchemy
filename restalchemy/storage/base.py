@@ -17,16 +17,13 @@
 import abc
 import functools
 
-import six
-
 from restalchemy.common import exceptions as common_exc
 from restalchemy.common import utils
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractObjectCollection(object):
+class AbstractObjectCollection(metaclass=abc.ABCMeta):
 
     def __init__(self, model_cls):
         super(AbstractObjectCollection, self).__init__()
@@ -47,16 +44,14 @@ class AbstractObjectCollection(object):
             return None
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractObjectCollectionCountMixin(object):
+class AbstractObjectCollectionCountMixin(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def count(self, filters=None):
         raise NotImplementedError()
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractStorableMixin(object):
+class AbstractStorableMixin(metaclass=abc.ABCMeta):
 
     _ObjectCollection = AbstractObjectCollection
 

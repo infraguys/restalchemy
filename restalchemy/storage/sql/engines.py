@@ -17,10 +17,9 @@
 import abc
 import contextlib
 import logging
+import urllib.parse as parse
 
 from mysql.connector import pooling
-import six
-from six.moves.urllib import parse
 import psycopg_pool
 
 from restalchemy.common import singletons
@@ -35,8 +34,7 @@ DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractEngine(object):
+class AbstractEngine(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod

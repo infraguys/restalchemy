@@ -16,7 +16,6 @@
 
 import logging
 
-import six
 import webob
 
 from restalchemy.api import constants
@@ -68,7 +67,7 @@ class Controller(object):
             body = packer.pack(body)
 
         return webob.Response(
-            body=six.b(body or ""),
+            body=(body or "").encode("utf-8"),
             status=status,
             content_type=headers.get("Content-Type", None),
             headerlist=[(k, v) for k, v in headers.items()],

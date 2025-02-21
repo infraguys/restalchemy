@@ -16,8 +16,6 @@ import abc
 import collections
 import threading
 
-import six
-
 from restalchemy.storage import base
 from restalchemy.storage.sql.dialect.query_builder import common
 from restalchemy.storage.sql import filters as sql_filters
@@ -87,8 +85,7 @@ class For(common.AbstractClause):
         return "FOR %s" % ("SHARE" if self._is_share else "UPDATE")
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Criteria(common.AbstractClause):
+class Criteria(common.AbstractClause, metaclass=abc.ABCMeta):
 
     def __init__(self, clause1, clause2, session):
         super(Criteria, self).__init__(session)

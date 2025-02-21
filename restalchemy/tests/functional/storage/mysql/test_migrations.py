@@ -18,7 +18,6 @@ import logging
 import os
 
 import mock
-import six.moves
 
 from restalchemy.dm import filters
 from restalchemy.storage.sql import migrations as sql_migrations
@@ -491,9 +490,7 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
             all([m.is_applied() is True for m in migrations_after.values()])
         )
 
-    @mock.patch(
-        "%s.open" % six.moves.builtins.__name__, new_callable=mock.mock_open()
-    )
+    @mock.patch("builtins.open", new_callable=mock.mock_open())
     def test_create_new_migration(self, file_mock):
 
         self.migration_engine.new_migration(
@@ -527,9 +524,7 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
             )
         )
 
-    @mock.patch(
-        "%s.open" % six.moves.builtins.__name__, new_callable=mock.mock_open()
-    )
+    @mock.patch("builtins.open", new_callable=mock.mock_open())
     def test_create_new_migration_manual(self, file_mock):
 
         self.migration_engine.new_migration(
@@ -566,9 +561,7 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
             )
         )
 
-    @mock.patch(
-        "%s.open" % six.moves.builtins.__name__, new_callable=mock.mock_open()
-    )
+    @mock.patch("builtins.open", new_callable=mock.mock_open())
     def test_create_new_migration_dry_run(self, file_mock):
         self.migration_engine.new_migration(
             NEW_MIGRATION_DEPENDS, NEW_MIGRATION_MESSAGE, dry_run=True

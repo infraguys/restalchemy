@@ -17,9 +17,6 @@ from __future__ import absolute_import
 
 import datetime
 import logging
-import sys
-
-import six
 
 from restalchemy.api import middlewares
 
@@ -60,9 +57,8 @@ class LoggingHttpMiddleware(middlewares.Middleware):
         try:
             res = req.get_response(self.application)
         except Exception:
-            e_type, e_value, e_tb = sys.exc_info()
             res = Http500FakeResponse()
-            six.reraise(e_type, e_value, e_tb)
+            raise
         else:
             return res
         finally:

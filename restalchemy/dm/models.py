@@ -18,8 +18,7 @@ import abc
 import copy
 import uuid
 
-import six
-from six.moves import collections_abc
+from collections import abc as collections_abc
 
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
@@ -90,8 +89,7 @@ class MetaModel(abc.ABCMeta):
         return spec
 
 
-@six.add_metaclass(MetaModel)
-class Model(collections_abc.Mapping):
+class Model(collections_abc.Mapping, metaclass=MetaModel):
     _python_simple_types = (type(None), str, int, float, complex, bool)
 
     def __init__(self, **kwargs):
@@ -148,7 +146,7 @@ class Model(collections_abc.Mapping):
         pass
 
     def update_dm(self, values):
-        for name, value in six.iteritems(values):
+        for name, value in values.items():
             setattr(self, name, value)
 
     @classmethod
@@ -207,7 +205,7 @@ class Model(collections_abc.Mapping):
         return self.properties[name].value
 
     def __iter__(self):
-        return six.iterkeys(self.properties)
+        return iter(self.properties)
 
     def __len__(self):
         return len(self.properties)
@@ -263,7 +261,7 @@ class CustomPropertiesMixin(object):
 
     @classmethod
     def get_custom_properties(cls):
-        for name, prop_type in six.iteritems(cls.__custom_properties__):
+        for name, prop_type in cls.__custom_properties__.items():
             yield name, prop_type
 
     @classmethod

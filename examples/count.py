@@ -15,8 +15,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -49,9 +47,9 @@ model1.save()
 model2.save()
 model3.save()
 
-six.print_(FooModel.objects.count())
-six.print_(FooModel.objects.count(filters={"foo_field1": filters.GT(10)}))
-six.print_(FooModel.objects.count(filters={"foo_field2": "TypeA"}))
+print(FooModel.objects.count())
+print(FooModel.objects.count(filters={"foo_field1": filters.GT(10)}))
+print(FooModel.objects.count(filters={"foo_field2": "TypeA"}))
 
 for model in FooModel.objects.get_all():
     model.delete()

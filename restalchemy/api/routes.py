@@ -20,8 +20,6 @@ import inspect
 import posixpath
 import re
 
-import six
-
 from restalchemy.api import actions
 from restalchemy.api import constants
 from restalchemy.api import controllers
@@ -48,8 +46,7 @@ RESOURCE_ROUTE = 2
 SPECIAL_SYMBOLS = re.compile(r"[/{}!@#$%^&*())\[\]:,./<>?\|`\~\-\=\_\+]+")
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseRoute(object):
+class BaseRoute(metaclass=abc.ABCMeta):
     __controller__ = None
     __allow_methods__ = []
     __tags__ = None  # list of strings or dicts with name and description
@@ -482,10 +479,9 @@ class Route(BaseRoute):
                 uri_pieces = uri.split("/")[1:]
                 if len(uri_pieces) == len(self.path_stack):
                     for piece1, piece2 in zip(uri_pieces, self.path_stack):
-                        if (
-                            isinstance(piece2, six.string_types)
-                            and piece1 == piece2
-                        ) or (not isinstance(piece2, six.string_types)):
+                        if (isinstance(piece2, str) and piece1 == piece2) or (
+                            not isinstance(piece2, str)
+                        ):
                             continue
                         return False
                     return True
@@ -511,7 +507,7 @@ class Route(BaseRoute):
                 resource = self.path_stack[-1]
                 path = str(resource.get_resource_id(model))
                 for piece in reversed(self.path_stack[:-1]):
-                    if isinstance(piece, six.string_types):
+                    if isinstance(piece, str):
                         path = posixpath.join(piece, path)
                     else:
                         model = self.get_parent_model(
