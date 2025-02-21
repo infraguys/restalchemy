@@ -35,10 +35,10 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     name VARCHAR(255) NOT NULL,
                     just_none VARCHAR(255) NULL,
                     status VARCHAR(255) NULL,
-                    `created` DATETIME(6) DEFAULT NOW(),
-                    `updated` DATETIME(6) DEFAULT NOW(),
+                    created TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+                    updated TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (uuid)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS ports (
@@ -46,30 +46,27 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                     mac CHAR(17) NOT NULL,
                     vm CHAR(36) NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT FOREIGN KEY ix_vms_uuid (vm)
-                    REFERENCES vms (uuid)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                    FOREIGN KEY (vm) REFERENCES vms (uuid)
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS ip_addresses (
                     uuid CHAR(36) NOT NULL,
-                    ip CHAR(17) NOT NULL,
+                    ip VARCHAR(17) NOT NULL,
                     port CHAR(36) NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT FOREIGN KEY ix_ports_uuid (port)
-                    REFERENCES ports (uuid)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                    FOREIGN KEY (port) REFERENCES ports (uuid)
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS tags (
                     uuid CHAR(36) NOT NULL,
                     vm CHAR(36) NOT NULL,
-                    name CHAR(40) NOT NULL,
-                    visible BOOL NOT NULL,
+                    name VARCHAR(40) NOT NULL,
+                    visible BOOLEAN NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT FOREIGN KEY ix_tags__vms_uuid (vm)
-                    REFERENCES vms (uuid)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                    FOREIGN KEY (vm) REFERENCES vms (uuid)
+                );
             """,
         ]
 

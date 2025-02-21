@@ -29,25 +29,25 @@ class MigrationStep(migrations.AbstarctMigrationStep):
     def upgrade(self, session):
         sql_expr_list = [
             """
-                CREATE TABLE `test_count` (
-                    `uuid` CHAR(36) NOT NULL,
-                    `foo_field1` INT NOT NULL,
-                    `foo_field2` VARCHAR(255) NOT NULL,
-                PRIMARY KEY (`uuid`));
+                CREATE TABLE test_count (
+                    uuid CHAR(36) NOT NULL,
+                    foo_field1 INT NOT NULL,
+                    foo_field2 VARCHAR(255) NOT NULL,
+                PRIMARY KEY (uuid));
             """,
             """
-                    INSERT INTO test_count (
-                         `uuid`, `foo_field1`, `foo_field2`
-                    ) VALUES (
-                        '00000000-0000-0000-0000-000000000000', 1, 'value1'
-                    ), (
-                        '00000000-0000-0000-0000-000000000001', 2, 'value2'
-                    ), (
-                        '00000000-0000-0000-0000-000000000002', 3, 'value3'
-                    ), (
-                        '00000000-0000-0000-0000-000000000003', 4, 'other1'
-                    )
-                """,
+                INSERT INTO test_count (
+                     uuid, foo_field1, foo_field2
+                ) VALUES (
+                    '00000000-0000-0000-0000-000000000000', 1, 'value1'
+                ), (
+                    '00000000-0000-0000-0000-000000000001', 2, 'value2'
+                ), (
+                    '00000000-0000-0000-0000-000000000002', 3, 'value3'
+                ), (
+                    '00000000-0000-0000-0000-000000000003', 4, 'other1'
+                )
+            """,
         ]
 
         [session.execute(expr) for expr in sql_expr_list]

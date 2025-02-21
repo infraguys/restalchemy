@@ -21,6 +21,7 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage.sql.dialect.query_builder import q
+from restalchemy.tests import fixtures
 
 
 class SimpleModel(models.ModelWithUUID):
@@ -51,7 +52,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         del self.Q
 
     def test_simple_select(self):
-        result = self.Q.select(SimpleModel).compile()
+        result = self.Q.select(
+            model=SimpleModel,
+            session=fixtures.SessionFixture(),
+        ).compile()
 
         self.assertEqual(
             "SELECT"
@@ -65,7 +69,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         )
 
     def test_select_with_filters(self):
-        query = self.Q.select(SimpleModel).where(self.flt)
+        query = self.Q.select(
+            model=SimpleModel,
+            session=fixtures.SessionFixture(),
+        ).where(self.flt)
 
         result_expression = query.compile()
         result_values = query.values()
@@ -88,7 +95,14 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
     def test_select_two_where_clause(self):
         second_filter = filters.AND({"field_str": filters.EQ("FAKE_STR_TWO")})
-        query = self.Q.select(SimpleModel).where(self.flt).where(second_filter)
+        query = (
+            self.Q.select(
+                model=SimpleModel,
+                session=fixtures.SessionFixture(),
+            )
+            .where(self.flt)
+            .where(second_filter)
+        )
 
         result_expression = query.compile()
         result_values = query.values()
@@ -111,7 +125,14 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         self.assertEqual([True, 0, "FAKE_STR", "FAKE_STR_TWO"], result_values)
 
     def test_select_with_filters_and_limit(self):
-        query = self.Q.select(SimpleModel).where(self.flt).limit(2)
+        query = (
+            self.Q.select(
+                model=SimpleModel,
+                session=fixtures.SessionFixture(),
+            )
+            .where(self.flt)
+            .limit(2)
+        )
 
         result_expression = query.compile()
         result_values = query.values()
@@ -134,7 +155,14 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
     def test_select_lock_with_filters(self):
-        query = self.Q.select(SimpleModel).where(self.flt).for_()
+        query = (
+            self.Q.select(
+                model=SimpleModel,
+                session=fixtures.SessionFixture(),
+            )
+            .where(self.flt)
+            .for_()
+        )
 
         result_expression = query.compile()
         result_values = query.values()
@@ -157,7 +185,15 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
     def test_select_lock_with_filters_and_limit(self):
-        query = self.Q.select(SimpleModel).where(self.flt).for_().limit(2)
+        query = (
+            self.Q.select(
+                model=SimpleModel,
+                session=fixtures.SessionFixture(),
+            )
+            .where(self.flt)
+            .for_()
+            .limit(2)
+        )
 
         result_expression = query.compile()
         result_values = query.values()
@@ -182,7 +218,12 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
     def test_select_order_by_with_filters(self):
         query = (
-            self.Q.select(SimpleModel).where(self.flt).order_by("field_str")
+            self.Q.select(
+                model=SimpleModel,
+                session=fixtures.SessionFixture(),
+            )
+            .where(self.flt)
+            .order_by("field_str")
         )
         query = query.order_by("field_int", "DESC")
 
@@ -218,7 +259,10 @@ class MySQLResultParserTestCase(unittest.TestCase):
             "t1_field_str": "FakeStr",
             "t1_uuid": "FakeUUID",
         }
-        select_clause = q.Q.select(SimpleModel)
+        select_clause = q.Q.select(
+            SimpleModel,
+            session=fixtures.SessionFixture(),
+        )
 
         result = select_clause.parse_row(row_from_db)
 

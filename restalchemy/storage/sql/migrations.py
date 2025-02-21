@@ -83,15 +83,21 @@ class AbstarctMigrationStep(object):
 
     @staticmethod
     def _delete_table_if_exists(session, table_name):
-        session.execute("DROP TABLE IF EXISTS `%s`;" % table_name, None)
+        session.execute(
+            f"DROP TABLE IF EXISTS {session.engine.escape(table_name)};"
+        )
 
     @staticmethod
     def _delete_trigger_if_exists(session, trigger_name):
-        session.execute("DROP TRIGGER IF EXISTS `%s`;" % trigger_name, None)
+        session.execute(
+            f"DROP TRIGGER IF EXISTS {session.engine.escape(trigger_name)};"
+        )
 
     @staticmethod
     def _delete_view_if_exists(session, view_name):
-        session.execute("DROP VIEW IF EXISTS `%s`;" % view_name, None)
+        session.execute(
+            f"DROP VIEW IF EXISTS {session.engine.escape(view_name)};"
+        )
 
 
 class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
@@ -288,17 +294,10 @@ class MigrationEngine(object):
 
     @staticmethod
     def _init_migration_table(session):
-        statement = (
-            (
-                """CREATE TABLE IF NOT EXISTS %s (
-            uuid CHAR(36) NOT NULL,
-            applied BIT(1) NOT NULL,
-            PRIMARY KEY (uuid)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-        """
-            )
-            % RA_MIGRATION_TABLE_NAME
-        )
+        statement = f"""CREATE TABLE IF NOT EXISTS {RA_MIGRATION_TABLE_NAME} (
+            uuid CHAR(36) NOT NULL PRIMARY KEY,
+            applied BOOLEAN NOT NULL
+        )"""
         session.execute(statement, None)
 
     def _load_migrations(self):

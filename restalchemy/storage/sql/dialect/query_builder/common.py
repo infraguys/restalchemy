@@ -17,11 +17,12 @@ import abc
 
 import six
 
-from restalchemy.storage.sql import utils
-
 
 @six.add_metaclass(abc.ABCMeta)
 class AbstractClause(object):
+
+    def __init__(self, session):
+        self._session = session
 
     @abc.abstractmethod
     def compile(self):
@@ -34,8 +35,8 @@ class AbstractClause(object):
 
 class BaseAlias(AbstractClause):
 
-    def __init__(self, clause, name):
-        super(BaseAlias, self).__init__()
+    def __init__(self, clause, name, session):
+        super(BaseAlias, self).__init__(session)
         self._clause = clause
         self._name = name
 
@@ -52,7 +53,10 @@ class BaseAlias(AbstractClause):
         return self._clause
 
     def compile(self):
-        return "%s AS %s" % (self._clause.compile(), utils.escape(self.name))
+        return "%s AS %s" % (
+            self._clause.compile(),
+            self._session.engine.escape(self.name),
+        )
 
 
 class ColumnAlias(BaseAlias):
@@ -65,7 +69,11 @@ class ColumnAlias(BaseAlias):
 class TableAlias(BaseAlias):
 
     def _wrap(self, column):
-        return ColumnAlias(column, "%s_%s" % (self.name, column.name))
+        return ColumnAlias(
+            column,
+            "%s_%s" % (self.name, column.name),
+            self._session,
+        )
 
     def get_columns(self, with_prefetch=True, wrap_alias=True):
         return [
@@ -80,16 +88,20 @@ class TableAlias(BaseAlias):
         ]
 
     def get_column_by_name(self, name, wrap_alias=True):
-        result = ColumnFullPath(self, self._clause.get_column_by_name(name))
+        result = ColumnFullPath(
+            self,
+            self._clause.get_column_by_name(name),
+            session=self._session,
+        )
         return self._wrap(result) if wrap_alias else result
 
 
 class Column(AbstractClause):
 
-    def __init__(self, name, prop):
+    def __init__(self, name, prop, session):
         self._name = name
         self._prop = prop
-        super(Column, self).__init__()
+        super(Column, self).__init__(session=session)
 
     @property
     def name(self):
@@ -104,13 +116,13 @@ class Column(AbstractClause):
         return self.name
 
     def compile(self):
-        return "%s" % (utils.escape(self._name))
+        return "%s" % (self._session.engine.escape(self._name))
 
 
 class ColumnFullPath(AbstractClause):
 
-    def __init__(self, table, column):
-        super(ColumnFullPath, self).__init__()
+    def __init__(self, table, column, session):
+        super(ColumnFullPath, self).__init__(session)
         self._table = table
         self._column = column
 
@@ -128,6 +140,6 @@ class ColumnFullPath(AbstractClause):
 
     def compile(self):
         return "%s.%s" % (
-            utils.escape(self._table.name),
+            self._session.engine.escape(self._table.name),
             self._column.compile(),
         )

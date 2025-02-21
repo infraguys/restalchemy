@@ -30,14 +30,14 @@ class MigrationStep(migrations.AbstarctMigrationStep):
         expressions = [
             """
                 INSERT INTO vms (
-                     `uuid`, `name`, `state`
+                     uuid, name, state
                 ) VALUES (
                     '00000000-0000-0000-0000-000000000001', 'vm1', 'on'
                 );
             """,
             """
                 INSERT INTO ports (
-                     `uuid`, `mac`, `vm`
+                     uuid, mac, vm
                 ) VALUES (
                     '00000000-0000-0000-0000-000000000002',
                     '00:00:00:00:00:00',
@@ -46,7 +46,7 @@ class MigrationStep(migrations.AbstarctMigrationStep):
             """,
             """
                 INSERT INTO ip_addresses (
-                     `uuid`, `ip`, `port`
+                     uuid, ip, port
                 ) VALUES (
                     '00000000-0000-0000-0000-000000000003',
                     '192.168.0.1',

@@ -32,122 +32,122 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                 CREATE TABLE IF NOT EXISTS root (
                     uuid CHAR(36) NOT NULL,
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lnp1_1 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36) NOT NULL,
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lnp1_1_root_uuid` FOREIGN KEY (`root`)
-                        REFERENCES `root` (`uuid`)
+                    FOREIGN KEY (root)
+                        REFERENCES root (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lnp1_2 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36),
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lmp1_2_root_uuid` FOREIGN KEY (`root`)
-                        REFERENCES `root` (`uuid`)
+                    FOREIGN KEY (root)
+                        REFERENCES root (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lwp1_1 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36) NOT NULL,
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lwp1_1_root_uuid` FOREIGN KEY (`root`)
-                        REFERENCES `root` (`uuid`)
+                    FOREIGN KEY (root)
+                        REFERENCES root (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lwp1_2 (
                     uuid CHAR(36) NOT NULL,
                     root CHAR(36),
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lwp1_2_root_uuid` FOREIGN KEY (`root`)
-                        REFERENCES `root` (`uuid`)
+                    FOREIGN KEY (root)
+                        REFERENCES root (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lwp2_1 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_1 CHAR(36) NOT NULL,
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lwp2_1_lwp1_1_uuid` FOREIGN KEY (`lwp1_1`)
-                        REFERENCES `lwp1_1` (`uuid`)
+                    FOREIGN KEY (lwp1_1)
+                        REFERENCES lwp1_1 (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lwp2_2 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_1 CHAR(36),
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lwp2_2_lwp1_1_uuid` FOREIGN KEY (`lwp1_1`)
-                        REFERENCES `lwp1_1` (`uuid`)
+                    FOREIGN KEY (lwp1_1)
+                        REFERENCES lwp1_1 (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lwp2_3 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_2 CHAR(36) NOT NULL,
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lwp2_3_lwp1_2_uuid` FOREIGN KEY (`lwp1_2`)
-                        REFERENCES `lwp1_2` (`uuid`)
+                    FOREIGN KEY (lwp1_2)
+                        REFERENCES lwp1_2 (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS lwp2_4 (
                     uuid CHAR(36) NOT NULL,
                     lwp1_2 CHAR(36),
                     field_str VARCHAR(255) NOT NULL,
-                    field_int INT(11) NOT NULL,
+                    field_int INT NOT NULL,
                     field_bool BOOL NOT NULL,
                     PRIMARY KEY (uuid),
-                    CONSTRAINT `fk_lwp2_4_lwp1_2_uuid` FOREIGN KEY (`lwp1_2`)
-                        REFERENCES `lwp1_2` (`uuid`)
+                    FOREIGN KEY (lwp1_2)
+                        REFERENCES lwp1_2 (uuid)
                         ON DELETE RESTRICT
                         ON UPDATE RESTRICT
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                );
             """,
         ]
 
