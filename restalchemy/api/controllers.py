@@ -60,17 +60,18 @@ class Controller(object):
         rt = resource_type or self.get_resource()
         return packer(rt, request=self._req)
 
-    def _create_response(self, body, status, headers):
+    def _create_response(self, body, status, headers, charset="utf-8"):
         if body is not None:
             headers["Content-Type"] = packers.get_content_type(headers)
             packer = self.get_packer(headers["Content-Type"])
             body = packer.pack(body)
 
         return webob.Response(
-            body=(body or "").encode("utf-8"),
+            body=body,
             status=status,
             content_type=headers.get("Content-Type", None),
             headerlist=[(k, v) for k, v in headers.items()],
+            charset=charset,
         )
 
     def process_result(
