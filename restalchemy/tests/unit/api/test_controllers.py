@@ -18,6 +18,7 @@ import unittest
 
 import mock
 
+from restalchemy.api import packers
 from restalchemy.api import controllers
 
 
@@ -79,4 +80,40 @@ class TestLocationHeaderLogic(unittest.TestCase):
 
         self.assertEqual(
             result.headers.get("Location", None), FAKE_LOCATION_PATH
+        )
+
+
+class BytePacker(packers.JSONPacker):
+    def pack(self, obj):
+        if isinstance(obj, bytes):
+            return obj
+        return super().pack(obj)
+
+
+class ByteController(controllers.Controller):
+    __packer__ = BytePacker
+
+
+class TestRawResponses(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self._controller = ByteController(None)
+
+    def test_binary_result(self):
+        headers = {
+            "Content-Type": "application/octet-stream",
+            "Content-Disposition": 'attachment; filename="test.txt"',
+        }
+
+        result = self._controller.process_result((b"1", 200, headers))
+
+        self.assertEqual(result.body, b"1")
+        self.assertEqual(result.status, "200 OK")
+        self.assertEqual(
+            result.headers["Content-Type"], headers["Content-Type"]
+        )
+        self.assertEqual(
+            result.headers["Content-Disposition"],
+            headers["Content-Disposition"],
         )
