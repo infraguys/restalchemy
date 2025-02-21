@@ -16,8 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from wsgiref.simple_server import make_server
 
 from restalchemy.api import applications
@@ -174,10 +172,10 @@ def main():
     server = make_server(HOST, PORT, build_wsgi_application())
 
     try:
-        six.print_("Serve forever on %s:%s" % (HOST, PORT))
+        print("Serve forever on %s:%s" % (HOST, PORT))
         server.serve_forever()
     except KeyboardInterrupt:
-        six.print_("Bye")
+        print("Bye")
 
 
 if __name__ == "__main__":

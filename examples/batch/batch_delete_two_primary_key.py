@@ -15,7 +15,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
 import uuid
 
 from restalchemy.dm import models
@@ -56,9 +55,9 @@ model1.insert()
 model2.insert()
 model3.insert()
 
-six.print_(list(FooModel.objects.get_all()))
+print(list(FooModel.objects.get_all()))
 
 with engines.engine_factory.get_engine().session_manager() as session:
     session.batch_delete([model1, model2, model3])
 
-six.print_(list(FooModel.objects.get_all()))
+print(list(FooModel.objects.get_all()))

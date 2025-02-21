@@ -16,14 +16,11 @@
 
 import abc
 
-import six
-
 from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.storage.sql import filters as sql_filters
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractProcessResult(object):
+class AbstractProcessResult(metaclass=abc.ABCMeta):
 
     def __init__(self, result, session):
         self._result = result
@@ -155,8 +152,7 @@ class BaseOrmProcessResult(BaseProcessResult):
         return self._rows
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractDialectCommand(object):
+class AbstractDialectCommand(metaclass=abc.ABCMeta):
 
     def __init__(self, table, data, session):
         """
@@ -885,8 +881,7 @@ class BaseSqlOrm(object):
         return q.Q.select(model, session)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractDialect(object):
+class AbstractDialect(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod

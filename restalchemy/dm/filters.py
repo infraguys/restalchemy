@@ -16,11 +16,8 @@
 
 import abc
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class AbstractClause(object):
+class AbstractClause(metaclass=abc.ABCMeta):
 
     def __init__(self, value):
         super(AbstractClause, self).__init__()
@@ -88,8 +85,7 @@ class NotLike(AbstractClause):
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractExpression(object):
+class AbstractExpression(metaclass=abc.ABCMeta):
 
     def __init__(self, *clauses):
         super(AbstractExpression, self).__init__()

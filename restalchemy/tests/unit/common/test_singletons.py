@@ -14,14 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
 import unittest
 
 from restalchemy.common import singletons
 
 
-@six.add_metaclass(singletons.MetaSingleton)
-class FakeMetaSingleton(object):
+class FakeMetaSingleton(metaclass=singletons.MetaSingleton):
     def __init__(self, prop1, prop2, *args, **kwargs):
         self._prop1 = prop1
         self._prop2 = prop2

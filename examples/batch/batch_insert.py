@@ -15,8 +15,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
@@ -47,7 +45,7 @@ model3 = FooModel(foo_field1=2, foo_field2="Model3")
 with engines.engine_factory.get_engine().session_manager() as session:
     session.batch_insert([model1, model2, model3])
 
-six.print_(list(FooModel.objects.get_all()))
+print(list(FooModel.objects.get_all()))
 
 for model in FooModel.objects.get_all():
     model.delete()

@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from restalchemy.common import contexts
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -80,22 +78,22 @@ with engine_two.session_manager() as session:
     # the result: [<FooModel {foo_field1: 1,
     #                         uuid: 27ce96dc-daad-4272-88d8-8e41028c38e9,
     #                         foo_field2: foo_str}>]
-    six.print_("Incorrect input for storage two:")
-    six.print_(FooModel.objects.get_all())
+    print("Incorrect input for storage two:")
+    print(FooModel.objects.get_all())
 
     # correct call
     # the result: [<FooModel {foo_field1: 2,
     #                         uuid: 78141610-6709-4296-bd56-7c62aec97aa8,
     #                         foo_field2: foo_str} >]
-    six.print_("Correct input for storage two:")
-    six.print_(FooModel.objects.get_all(session=session))
+    print("Correct input for storage two:")
+    print(FooModel.objects.get_all(session=session))
 
 
 # The next expressions is correct
 context_two = contexts.Context(engine_name="db_two")
 with context_two.session_manager() as session:
-    six.print_("Correct input for storage two for context session:")
-    six.print_(FooModel.objects.get_all())
+    print("Correct input for storage two for context session:")
+    print(FooModel.objects.get_all())
 
 
 # But you can not create two active session from context
@@ -104,6 +102,6 @@ with context_two.session_manager() as session_2:
 
     try:
         with context_one.session_manager() as session_1:
-            six.print_("Newer call")
+            print("Newer call")
     except sessions.SessionConflict as e:
-        six.print_("Session conflict:", e)
+        print("Session conflict:", e)

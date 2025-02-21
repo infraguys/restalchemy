@@ -20,7 +20,7 @@ import uuid as pyuuid
 import collections
 import mock
 import requests
-from six.moves.urllib import parse
+from urllib import parse
 from webob import request
 
 from functools import partial

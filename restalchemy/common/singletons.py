@@ -13,28 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
 import threading
 
 
 class MetaSingleton(type):
     """Meta Singleton
 
-    For example py2:
-
-    >>> class ConcreteSingleton:
-    ...     __metaclass__ = MetaSingleton
-
-    For example py3:
+    For example:
 
     >>> class ConcreteSingleton(metaclass=MetaSingleton):
     ...     pass
 
-    For example py2 and py3:
-
-    >>> @six.add_metaclass(MetaSingleton)
-        class ConcreteSingleton(object):
-    ...     pass
     """
 
     _instance = None
@@ -50,8 +39,7 @@ class MetaSingleton(type):
         return cls._instance
 
 
-@six.add_metaclass(MetaSingleton)
-class InheritSingleton(object):
+class InheritSingleton(object, metaclass=MetaSingleton):
     """Inherit Singleton
 
     For example:

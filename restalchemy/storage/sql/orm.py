@@ -17,8 +17,6 @@
 import abc
 import json
 
-import six
-
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
@@ -176,8 +174,7 @@ class UndefinedAttribute(common_exc.RestAlchemyException):
     message = "Class attribute %(attr_name)s must be provided."
 
 
-@six.add_metaclass(abc.ABCMeta)
-class SQLStorableMixin(base.AbstractStorableMixin):
+class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
 
     _saved = False
 
@@ -318,8 +315,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
             )
 
 
-@six.add_metaclass(abc.ABCMeta)
-class SQLStorableWithJSONFieldsMixin(SQLStorableMixin):
+class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
 
     __jsonfields__ = None
 

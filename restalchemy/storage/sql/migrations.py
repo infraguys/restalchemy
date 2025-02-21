@@ -18,7 +18,6 @@ import abc
 import logging
 import os
 import re
-import six
 import sys
 import uuid
 
@@ -50,14 +49,14 @@ class DependenciesException(Exception):
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstarctMigrationStep(object):
+class AbstarctMigrationStep(metaclass=abc.ABCMeta):
 
     @property
     def depends(self):
         return [dep for dep in self._depends if dep]
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def migration_id(self):
         raise NotImplementedError()
 

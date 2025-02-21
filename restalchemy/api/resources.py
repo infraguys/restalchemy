@@ -17,8 +17,6 @@
 import abc
 import inspect
 
-import six
-
 from restalchemy.api import constants
 from restalchemy.api import field_permissions
 from restalchemy.common import exceptions as exc
@@ -68,7 +66,7 @@ class ResourceMap(object):
 
         # NOTE(efrolov): Get all resources except the last
         for num in range(len(pstack[:-1])):
-            if not isinstance(pstack[num], six.string_types):
+            if not isinstance(pstack[num], str):
                 # NOTE(efrolov): pstack is shorter than uri_stack by 1
                 #                element. And I have to grab the ID, so +2.
                 parent_uri = "/".join(uri_stack[0 : num + 2])
@@ -101,8 +99,7 @@ class ResourceMap(object):
             raise exc.CanNotFindResourceByModel(model=model)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractResourceProperty(object):
+class AbstractResourceProperty(metaclass=abc.ABCMeta):
 
     def __init__(self, resource, model_property_name, public=True):
         super(AbstractResourceProperty, self).__init__()
@@ -359,8 +356,7 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
         return True
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractResource(object):
+class AbstractResource(metaclass=abc.ABCMeta):
 
     def __init__(
         self,

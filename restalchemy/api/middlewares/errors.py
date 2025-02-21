@@ -17,7 +17,7 @@
 from __future__ import absolute_import
 
 import logging
-from six.moves import http_client
+from http import client as http_client
 
 from restalchemy.api import middlewares
 from restalchemy.common import exceptions as comm_exc

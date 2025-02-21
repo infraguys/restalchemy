@@ -328,7 +328,7 @@ class MySQLSession(object):
             )
             self._cursor.execute(statement, values)
             return self._cursor
-        except errors.DatabaseError as e:  ####### ???
+        except errors.DatabaseError as e:
             if e.errno == 1213:
                 raise exc.DeadLock(msg=e.msg)
             raise

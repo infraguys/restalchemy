@@ -16,8 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -69,10 +67,10 @@ foo1.save()
 bar1 = BarModel(bar_field1="test", foo=foo1)
 bar1.save()
 
-six.print_(list(BarModel.objects.get_all()))
-six.print_(BarModel.objects.get_one(filters={"uuid": bar1.get_id()}))
-six.print_(list(BarModel.objects.get_all(filters={"foo": foo1})))
-six.print_(bar1.as_plain_dict())
+print(list(BarModel.objects.get_all()))
+print(BarModel.objects.get_one(filters={"uuid": bar1.get_id()}))
+print(list(BarModel.objects.get_all(filters={"foo": foo1})))
+print(bar1.as_plain_dict())
 
 bar1.delete()
 
@@ -80,9 +78,9 @@ foo2 = FooModel(foo_field1=11, foo_field2="some text")
 foo2.save()
 
 foos = list(FooModel.objects.get_all())
-six.print_(foos)
+print(foos)
 
-six.print_(FooModel.objects.get_one(filters={"foo_field1": filters.EQ(10)}))
+print(FooModel.objects.get_one(filters={"foo_field1": filters.EQ(10)}))
 
 # Modify foo_field2 and update it in storage
 foo2.foo_field2 = "xxx2 asdad asdasd"
@@ -92,20 +90,15 @@ foo2.save()
 for foo in foos:
     foo.delete()
 
-
-six.print_("foo_field1 is greater than 5")
+print("foo_field1 is greater than 5")
 for num in range(10):
     foo = FooModel(foo_field1=num)
     foo.save()
 
-six.print_(
-    list(FooModel.objects.get_all(filters={"foo_field1": filters.GT(5)}))
-)
+print(list(FooModel.objects.get_all(filters={"foo_field1": filters.GT(5)})))
 
-six.print_("foo_field1 in equal 5 or 6")
-six.print_(
-    FooModel.objects.get_all(filters={"foo_field1": filters.In([5, 6])})
-)
+print("foo_field1 is equal to 5 or 6")
+print(FooModel.objects.get_all(filters={"foo_field1": filters.In([5, 6])}))
 
 for model in FooModel.objects.get_all():
     model.delete()
@@ -117,4 +110,4 @@ filter_list = filters.OR(
     filters.AND({"name2": filters.EQ(3)}),
 )
 
-six.print_(FooModel.objects.get_one(filters=filter_list))
+print(FooModel.objects.get_one(filters=filter_list))

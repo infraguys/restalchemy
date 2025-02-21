@@ -15,10 +15,8 @@
 #    under the License.
 
 import abc
+from collections import abc as collections_abc
 import logging
-
-import six
-from six.moves import collections_abc
 
 from restalchemy.dm import filters
 from restalchemy.dm import types
@@ -28,8 +26,7 @@ from restalchemy.storage.sql.dialect.query_builder import common
 LOG = logging.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractClause(object):
+class AbstractClause(metaclass=abc.ABCMeta):
 
     def __init__(self, column, value_type, value, session):
         super(AbstractClause, self).__init__()
@@ -149,8 +146,7 @@ class NotLike(AbstractClause):
         return ("%s NOT LIKE " % self.column) + "%s"
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractExpression(object):
+class AbstractExpression(metaclass=abc.ABCMeta):
 
     def __init__(self, *clauses):
         super(AbstractExpression, self).__init__()
@@ -311,7 +307,7 @@ def iterate_filters(model, filter_list, session):
             # Make API compatible with previous versions.
             if not isinstance(filt, filters.AbstractClause):
                 LOG.warning(
-                    "DEPRECATED: pleases use %s wrapper for filter " "value",
+                    "DEPRECATED: pleases use %s wrapper for filter value",
                     filters.EQ,
                 )
                 clauses.append(EQ(column, value_type, filt, session=session))

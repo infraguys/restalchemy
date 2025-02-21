@@ -15,11 +15,8 @@
 
 import abc
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class AbstractClause(object):
+class AbstractClause(metaclass=abc.ABCMeta):
 
     def __init__(self, session):
         self._session = session

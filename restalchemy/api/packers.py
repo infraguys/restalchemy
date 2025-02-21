@@ -20,8 +20,6 @@ import json
 import logging
 import types
 
-import six
-
 from restalchemy.api import constants
 from restalchemy.common import exceptions
 from restalchemy.common import utils
@@ -49,9 +47,7 @@ class BaseResourcePacker(object):
     def pack_resource(self, obj):
         if isinstance(
             obj,
-            six.string_types
-            + six.integer_types
-            + (float, bool, type(None), list, tuple, dict),
+            (str, int, float, bool, type(None), list, tuple, dict),
         ):
             return obj
         else:
@@ -113,9 +109,9 @@ class JSONPacker(BaseResourcePacker):
         return json.dumps(super(JSONPacker, self).pack(obj))
 
     def unpack(self, value):
-        if six.PY3 and isinstance(value, six.binary_type):
+        if isinstance(value, bytes):
             return super(JSONPacker, self).unpack(
-                json.loads(str(value, "utf-8")),
+                json.loads(value.decode("utf-8")),
             )
         return super(JSONPacker, self).unpack(json.loads(value))
 

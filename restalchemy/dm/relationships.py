@@ -14,8 +14,6 @@
 # limitations under the License.
 import abc
 
-import six
-
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -43,8 +41,7 @@ def readonly_relationship(property_type, *args, **kwargs):
     return required_relationship(property_type, *args, **kwargs)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseRelationship(properties.AbstractProperty):
+class BaseRelationship(properties.AbstractProperty, metaclass=abc.ABCMeta):
     pass
 
 

@@ -21,8 +21,6 @@ import re
 import sys
 import time
 
-import six
-
 from restalchemy.api import middlewares
 
 LOG = logging.getLogger(__name__)
@@ -62,9 +60,8 @@ class HttpMetricsMiddleware(middlewares.Middleware):
                 self._sender.send_metric(self._success_metric_name, elapsed)
             return res
         except Exception:
-            exc_info = sys.exc_info()
             self._sender.send_metric(
                 "%s.unexpected-error" % self._error_metric_name,
                 time.time() - current_time,
             )
-            six.reraise(*exc_info)
+            raise

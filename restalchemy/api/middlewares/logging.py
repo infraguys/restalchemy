@@ -19,8 +19,6 @@ import logging
 import sys
 import traceback
 
-import six
-
 from restalchemy.api import middlewares
 
 
@@ -75,7 +73,7 @@ class LoggingMiddleware(middlewares.Middleware):
                 e_fn,
                 e_line,
             )
-            six.reraise(e_type, e_value, e_tb)
+            raise
 
     @staticmethod
     def _request_chunk(req):
