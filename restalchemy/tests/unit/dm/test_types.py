@@ -139,6 +139,54 @@ class UUIDTestCase(base.BaseTestCase):
         )
 
 
+class EmailTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(EmailTestCase, self).setUp()
+        self.test_instance1 = types.Email()
+        self.test_instance2 = types.Email(5, 10)
+        self.test_instance3 = types.Email(5, 100, check_deliverability=True)
+
+    def test_correct_email_value(self):
+        CORRECT_EMAIL = "eugene@frolov.net.ru"
+
+        self.assertTrue(self.test_instance1.validate(CORRECT_EMAIL))
+
+    def test_correct_short_email_value(self):
+        CORRECT_EMAIL = "a@b.c"
+
+        self.assertTrue(self.test_instance1.validate(CORRECT_EMAIL))
+
+    def test_incorrect_email_value(self):
+        INCORRECT_EMAIL = "eugene@frolov"
+
+        self.assertFalse(self.test_instance1.validate(INCORRECT_EMAIL))
+
+    def test_incorrect_very_short_email_value(self):
+        INCORECT_EMAIL = "x@x"
+
+        self.assertFalse(self.test_instance1.validate(INCORECT_EMAIL))
+
+    def test_deliverability_email_value(self):
+        CORRECT_DELIVERABLE_EMAIL = "eugene@gmail.com"
+
+        self.assertTrue(
+            self.test_instance3.validate(CORRECT_DELIVERABLE_EMAIL)
+        )
+
+    def test_email_to_very_long_value(self):
+        INCORRECT_EMAIL = "eugene@gmail.com"
+
+        self.assertFalse(self.test_instance2.validate(INCORRECT_EMAIL))
+
+    def test_non_deliverability_email_value(self):
+        CORRECT_NOT_DELIVERABLE_EMAIL = "eugene@frolov.incorrectzone"
+
+        self.assertFalse(
+            self.test_instance3.validate(CORRECT_NOT_DELIVERABLE_EMAIL)
+        )
+
+
 class StringTestCase(base.BaseTestCase):
 
     FAKE_STRING1 = "fake!!!"

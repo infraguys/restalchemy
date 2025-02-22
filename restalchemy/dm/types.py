@@ -23,6 +23,8 @@ import sys
 import time
 import uuid
 
+import email_validator
+
 
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
@@ -159,8 +161,9 @@ class Boolean(BasePythonType):
 
 class String(BasePythonType):
 
-    def __init__(self, min_length=0, max_length=sys.maxsize):
-        super(String, self).__init__(str, openapi_type="string")
+    def __init__(self, min_length=0, max_length=sys.maxsize, **kwargs):
+        openapi_type = kwargs.pop("openapi_type", "string")
+        super(String, self).__init__(str, openapi_type=openapi_type, **kwargs)
         self.min_length = int(min_length)
         self.max_length = int(max_length)
 
@@ -179,6 +182,52 @@ class String(BasePythonType):
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+
+class Email(String):
+
+    def __init__(
+        self,
+        min_length=5,
+        max_length=254,
+        check_deliverability=False,
+        **kwargs
+    ):
+        """
+        Email type.
+
+        :param min_length: Minimum length of email
+        :param max_length: Maximum length of email
+        :param check_deliverability: check email deliverability, default: False
+        :param \\*\\*kwargs: Additional keyword arguments
+        """
+        openapi_type = kwargs.pop("openapi_type", "string")
+        openapi_format = kwargs.pop("openapi_format", "email")
+        super(Email, self).__init__(
+            min_length=min_length,
+            max_length=max_length,
+            openapi_type=openapi_type,
+            openapi_format=openapi_format,
+            **kwargs
+        )
+        self._check_deliverability = check_deliverability
+
+    def validate(self, value):
+        """
+        Validates given value as an email address.
+
+        :param value: Value to validate
+        :return: True if value is valid, False otherwise
+        """
+        result = super(Email, self).validate(value)
+        try:
+            email_validator.validate_email(
+                value,
+                check_deliverability=self._check_deliverability,
+            )
+        except email_validator.EmailNotValidError:
+            return False
+        return result
 
 
 class Integer(BasePythonType):
