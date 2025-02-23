@@ -6,3 +6,4 @@ oslo.config>=3.22.0,<8  # Apache-2.0
 PyYAML>=6.0  # MIT
 netaddr>=0.7.18  # BSD
 psycopg[binary,pool]>=3.2.4,<4.0.0  # GNU Lesser General Public License v3 (LGPLv3)
+email-validator>=2.2.0,<3.0.0  # Free, The Unlicense
