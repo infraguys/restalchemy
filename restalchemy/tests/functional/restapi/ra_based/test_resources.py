@@ -14,8 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import contextlib
 import random
+import socket
 import uuid as pyuuid
+
 
 import collections
 import mock
@@ -114,10 +117,18 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
     def get_endpoint(self, template, *args):
         return template % ((self.service_port,) + tuple(args))
 
+    def find_free_port(self):
+        with contextlib.closing(
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ) as s:
+            s.bind(("127.0.0.1", 0))
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            return s.getsockname()[1]
+
     def setUp(self):
         super(BaseResourceTestCase, self).setUp()
 
-        self.service_port = random.choice(range(2000, 10000))
+        self.service_port = self.find_free_port()
         url = parse.urlparse(self.get_endpoint(TEMPL_SERVICE_ENDPOINT))
         self._service = service.RESTService(
             bind_host=url.hostname, bind_port=url.port
