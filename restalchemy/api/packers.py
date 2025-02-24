@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import copy
 import json
 import logging
@@ -121,7 +122,69 @@ class JSONPackerIncludeNullFields(JSONPacker):
     _skip_none = False
 
 
-packer_mapping = {constants.CONTENT_TYPE_APPLICATION_JSON: JSONPacker}
+class MultipartPacker(JSONPacker):
+    """
+    This packer is specifically designed to handle multipart/form-data
+    requests, which are commonly used for uploading files.
+    It ensures that only file-related data is extracted and processed,
+    allowing for seamless integration with file upload or download function.
+
+    Key Features:
+    - Supports only file uploads by default.
+    - If future requirements extend the support to include model JSON under
+      a specific key, it may be updated accordingly.
+    - Extracts file data into a structured dictionary where each file is
+      identified by its part name.
+    - Uses '_multipart' as a flag to indicate that multipart content was used
+      for processing.
+    """
+
+    # TODO: as of now this packer support only file uploads.
+    #  In future model's json should be under this field name
+    # _resource_key = "_resource"
+    _multipart_key = "multipart"
+    _parts_key = "parts"
+
+    def _unpack_multipart(self):
+        """
+        Unpacks multipart/form-data request into a structured dictionary.
+
+        :return: A dictionary containing the following keys:
+            - 'multipart': A boolean flag indicating that multipart content
+              was found.
+            - 'parts': A dictionary where each key is the part field name and
+              the corresponding value is the file data (bytes)
+              (as `FieldStorage()`).
+        """
+        result = collections.defaultdict(dict)
+        result[self._multipart_key] = True
+
+        # if self._resource_key not in self._req.POST:
+        #     ValueError("Resource data should be under '_resource' part!")
+        #     result[self._resource_key] = super().unpack(self._req.POST['self._resource_key'])
+
+        for key, part in self._req.POST.items():
+            # if key == self._resource_key:
+            #     continue
+            result[self._parts_key][key] = part
+
+        return result
+
+    def unpack(self, value):
+        if constants.CONTENT_TYPE_MULTIPART in self._req.content_type:
+            return self._unpack_multipart()
+        return super().unpack(value)
+
+    def pack(self, obj):
+        if isinstance(obj, bytes):
+            return obj
+        return super().pack(obj)
+
+
+packer_mapping = {
+    constants.CONTENT_TYPE_APPLICATION_JSON: JSONPacker,
+    constants.CONTENT_TYPE_MULTIPART: MultipartPacker,
+}
 
 
 def parse_content_type(value):

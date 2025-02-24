@@ -18,7 +18,9 @@
 import json
 
 import mock
+import webob
 
+from restalchemy.api import controllers
 from restalchemy.api import field_permissions
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -172,3 +174,52 @@ class JSONPackerIncludeNullTestCase(base.BaseTestCase):
 
         result = self._test_resource_packer.unpack(json.dumps(new_data))
         self.assertDictEqual(result, new_data)
+
+
+class MultipartPackerTestCase(base.BaseTestCase):
+    _raw_http_request = (
+        "POST /v1/docs/5fc2e03d-8b22-4baf-b16d-772c373b98e1/files/ "
+        "HTTP/1.1\r\n"
+        "Accept: */*\r\n"
+        "Content-Length: 200\r\n"
+        "Content-Type: multipart/form-data; "
+        "boundary=------------------------hSlQJvPejd4JFNPeCJtXm0\r\n"
+        "Host: 127.0.0.1:8080\r\n"
+        "User-Agent: curl/8.12.1-DEV\r\n"
+        "\r\n"
+        "--------------------------hSlQJvPejd4JFNPeCJtXm0\r\n"
+        'Content-Disposition: form-data; name="data"; filename="test.md"\r\n'
+        "Content-Type: */*\r\n"
+        "\r\n"
+        "test_body\n"
+        "\r\n"
+        "--------------------------hSlQJvPejd4JFNPeCJtXm0--\r\n"
+    )
+
+    def setUp(self):
+        super().setUp()
+        self._req = webob.Request.from_text(self._raw_http_request)
+        self._packer = packers.MultipartPacker(
+            resources.ResourceByRAModel(FakeModel),
+            self._req,
+        )
+
+    def tearDown(self):
+        super().tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._packer
+
+    def test_pack(self):
+        new_data = b"test"
+
+        result = self._packer.pack(new_data)
+        assert result == new_data
+
+    def test_unpack(self):
+        result = self._packer.unpack(None)
+        assert packers.MultipartPacker._multipart_key in result
+        assert len(result[packers.MultipartPacker._parts_key]) == 1
+        assert (
+            next(iter(result[packers.MultipartPacker._parts_key]["data"].file))
+            == b"test_body\n"
+        )
