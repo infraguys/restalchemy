@@ -554,7 +554,43 @@ class BaseNestedResourceControllerPaginated(
         return super(BaseNestedResourceController, self).filter(filters)
 
 
-class RootController(Controller):
+class RoutesListController(Controller):
+    __TARGET_PATH__ = "/"
+
+    def _get_target_route(self, target_path):
+        """
+        Finds the route from main route by target_path.
+
+        :param target_path: the path to find the route from main route
+        :return: the target route
+        """
+        result = self.request.application.main_route
+        for next_path in target_path.rstrip("/").split("/")[1:]:
+            result = getattr(result, next_path)
+        return result
+
+    def filter(self, filters):
+        """
+        Returns a list of all routes in the main route that are collection
+        routes.
+
+        The `__TARGET_PATH__` attribute on the class determines the target
+        route that is filtered.
+
+        :param filters: the filters to apply when filtering the routes (Is not
+            implemented now)
+        :return: a list of route names
+        """
+        target_route = self._get_target_route(self.__TARGET_PATH__)
+        req = self.request
+        return [
+            route_name
+            for route_name in target_route.get_routes()
+            if target_route.get_route(route_name)(req).is_collection_route()
+        ]
+
+
+class RootController(RoutesListController):
 
     def filter(self, filters):
         main_route = self.request.application.main_route
