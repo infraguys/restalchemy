@@ -16,6 +16,7 @@
 
 import abc
 import copy
+import datetime
 import uuid
 
 from collections import abc as collections_abc
@@ -281,3 +282,39 @@ class CustomPropertiesMixin(object):
                 )
                 % (name, should_be, value)
             )
+
+
+class ModelWithTimestamp(Model):
+
+    created_at = properties.property(
+        types.UTCDateTime(),
+        required=True,
+        read_only=True,
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+    )
+    updated_at = properties.property(
+        types.UTCDateTime(),
+        required=True,
+        read_only=True,
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+    )
+
+    def update(self, session=None, force=False, *args, **kwargs):
+        if self.is_dirty() or force:
+            self.properties["updated_at"].set_value_force(
+                datetime.datetime.now(datetime.timezone.utc)
+            )
+        super().update(session=session, force=force, *args, **kwargs)
+
+
+class ModelWithProject(Model):
+
+    project_id = properties.property(
+        types.UUID(), required=True, read_only=True
+    )
+
+
+class ModelWithNameDesc(Model):
+
+    name = properties.property(types.String(max_length=255), default="")
+    description = properties.property(types.String(max_length=255), default="")
