@@ -196,7 +196,7 @@ class TestVersionsResourceTestCase(BaseResourceTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), ["vms"])
+        self.assertEqual(response.json(), ["notimplementedmethods", "vms"])
 
 
 class TestVMResourceTestCase(BaseResourceTestCase):

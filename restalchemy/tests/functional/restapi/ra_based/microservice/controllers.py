@@ -148,10 +148,9 @@ class VMController(controllers.BaseResourceControllerPaginated):
         return {"state": resource.state}
 
 
-class V1Controller(controllers.Controller):
+class V1Controller(controllers.RoutesListController):
 
-    def filter(self, filters):
-        return ["vms"]
+    __TARGET_PATH__ = "/v1"
 
 
 class NotImplementedMethodsController(controllers.Controller):
