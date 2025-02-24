@@ -22,6 +22,7 @@ import urllib.parse as parse
 from mysql.connector import pooling
 import psycopg_pool
 
+from restalchemy.common import constants as c
 from restalchemy.common import singletons
 from restalchemy.storage.sql.dialect import adapters
 from restalchemy.storage.sql.dialect import mysql
@@ -299,8 +300,8 @@ class AbstractEngine(metaclass=abc.ABCMeta):
 
 class PgSQLEngine(AbstractEngine):
 
-    URL_SCHEMA = "postgresql"
-    DEFAULT_PORT = 5432
+    URL_SCHEMA = c.RA_POSTGRESQL_PROTO_NAME
+    DEFAULT_PORT = c.RA_POSTGRESQL_DB_PORT
 
     def __init__(self, db_url, config=None, query_cache=False):
         """
@@ -413,8 +414,8 @@ class PgSQLEngine(AbstractEngine):
 
 class MySQLEngine(AbstractEngine):
 
-    URL_SCHEMA = "mysql"
-    DEFAULT_PORT = 3306
+    URL_SCHEMA = c.RA_MYSQL_PROTO_NAME
+    DEFAULT_PORT = c.RA_MYSQL_DB_PORT
 
     def __init__(self, db_url, config=None, query_cache=False):
         """
@@ -515,6 +516,70 @@ class EngineFactory(singletons.InheritSingleton):
             MySQLEngine.URL_SCHEMA: MySQLEngine,
             PgSQLEngine.URL_SCHEMA: PgSQLEngine,
         }
+
+    def configure_postgresql_factory(
+        self,
+        conf,
+        section=c.DB_CONFIG_SECTION,
+        name=DEFAULT_NAME,
+    ):
+        """
+        Configures the engine factory for a PostgreSQL database.
+
+        This method is a convenience wrapper around the `configure_factory`
+        method that is specific to PostgreSQL databases. It takes the same
+        parameters as `configure_factory` but provides default values for the
+        configuration options that are specific to PostgreSQL.
+
+        :param conf: The configuration object to read from.
+        :param section: The section of the configuration object to read from.
+        :param name: The name of the engine to configure.
+        """
+        self.configure_factory(
+            db_url=conf[section].connection_url,
+            config={
+                "min_size": conf[section].connection_pool_min_size,
+                "max_size": conf[section].connection_pool_max_size,
+                "open": conf[section].connection_pool_open,
+                "timeout": conf[section].connection_pool_client_timeout,
+                "max_waiting": conf[section].connection_pool_max_waiting,
+                "max_lifetime": conf[section].connection_max_lifetime,
+                "max_idle": conf[section].connection_max_idle,
+                "reconnect_timeout": conf[
+                    section
+                ].connection_pool_reconnect_timeout,
+                "num_workers": conf[section].connection_pool_num_workers,
+            },
+            query_cache=conf[section].connection_query_cache,
+            name=name,
+        )
+
+    def configure_mysql_factory(
+        self,
+        conf,
+        section=c.DB_CONFIG_SECTION,
+        name=DEFAULT_NAME,
+    ):
+        """
+        Configures the engine factory for a MySQL database.
+
+        This method is a convenience wrapper around the `configure_factory`
+        method that is specific to MySQL databases. It takes the same
+        parameters as `configure_factory` but provides default values for the
+        configuration options that are specific to MySQL.
+
+        :param conf: The configuration object to read from.
+        :param section: The section of the configuration object to read from.
+        :param name: The name of the engine to configure.
+        """
+        self.configure_factory(
+            db_url=conf[section].connection_url,
+            config={
+                "pool_size": conf[section].connection_pool_size,
+            },
+            query_cache=conf[section].connection_query_cache,
+            name=name,
+        )
 
     def configure_factory(
         self,
