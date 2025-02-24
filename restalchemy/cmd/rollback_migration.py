@@ -19,6 +19,7 @@ import sys
 from oslo_config import cfg
 
 from restalchemy.common import config
+from restalchemy.common import config_opts
 from restalchemy.common import log as ra_log
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import migrations
@@ -44,23 +45,15 @@ cmd_opts = [
     ),
 ]
 
-cmd_db_opts = [
-    cfg.StrOpt(
-        "connection",
-        required=True,
-        help="connection string to database",
-    ),
-]
-
 CONF = cfg.CONF
 CONF.register_cli_opts(cmd_opts)
-CONF.register_cli_opts(cmd_db_opts, "db")
+config_opts.register_common_db_opts(conf=CONF)
 
 
 def main():
     config.parse(sys.argv[1:])
     ra_log.configure()
-    engines.engine_factory.configure_factory(db_url=CONF.db.connection)
+    engines.engine_factory.configure_factory(db_url=CONF.db.connection_url)
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
     engine.rollback_migration(
         migration_name=CONF.migration, dry_run=CONF.dry_run
