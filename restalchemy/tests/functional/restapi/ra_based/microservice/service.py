@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
 import threading
 from wsgiref.simple_server import make_server
 from wsgiref.simple_server import WSGIServer
@@ -23,6 +22,7 @@ from restalchemy.api import applications
 from restalchemy.api.middlewares import (
     retry_on_error as retry_error_middleware,
 )
+
 from restalchemy.api.middlewares import errors as errors_middleware
 from restalchemy.openapi import engines as openapi_engines
 from restalchemy.openapi import structures as openapi_structures
@@ -37,7 +37,9 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 
 class RESTService(threading.Thread):
 
-    def __init__(self, bind_host="127.0.0.1", bind_port=8080):
+    def __init__(
+        self, bind_host="127.0.0.1", bind_port=8080, app_root=routes.Root
+    ):
         super(RESTService, self).__init__(name="REST Service")
 
         openapi_engine = openapi_engines.OpenApiEngine(
@@ -83,7 +85,7 @@ class RESTService(threading.Thread):
                 retry_error_middleware.RetryOnErrorsMiddleware(
                     middlewares.ContextMiddleware(
                         application=applications.OpenApiApplication(
-                            route_class=routes.Root,
+                            route_class=app_root,
                             openapi_engine=openapi_engine,
                         ),
                     ),
