@@ -37,17 +37,23 @@ class SessionQueryCache(object):
         self._session = session
         self.__query_cache = {}
 
-    @staticmethod
     def _get_hash(
-        engine, table, filters, limit=None, order_by=None, locked=False
+        self, engine, table, filters, limit=None, order_by=None, locked=False
     ):
-        query = engine.dialect.select(table, filters, limit, order_by, locked)
+        query = engine.dialect.select(
+            table=table,
+            filters=filters,
+            limit=limit,
+            order_by=order_by,
+            session=self._session,
+            locked=locked,
+        )
         values = query.get_values()
         statement = query.get_statement()
         return hash(tuple([statement] + values))
 
-    @staticmethod
     def _get_hash_by_query(
+        self,
         engine,
         table,
         where_conditions,
@@ -62,6 +68,7 @@ class SessionQueryCache(object):
             where_values=where_values,
             limit=limit,
             order_by=order_by,
+            session=self._session,
             locked=locked,
         )
         values = query.get_values()
