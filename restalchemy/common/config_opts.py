@@ -58,7 +58,7 @@ def register_common_db_opts(
         ),
     ]
 
-    conf.register_opts(db_opt, group=config_section)
+    conf.register_cli_opts(db_opt, group=config_section)
 
 
 def register_posgresql_db_opts(
