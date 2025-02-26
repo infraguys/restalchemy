@@ -17,8 +17,10 @@ from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
 from restalchemy.tests.functional import base
+from restalchemy.tests.functional import consts
 
 
 class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
@@ -188,3 +190,42 @@ class TestLikeTestCase(base.BaseWithDbMigrationsTestCase):
         )
 
         self.assertEqual({model1, model2, model3, model4}, all_models)
+
+
+class TestCacheTestCase(base.BaseWithDbMigrationsTestCase):
+
+    __LAST_MIGRATION__ = "test-batch-migration-9e335f"
+    __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
+
+    @classmethod
+    def init_engine(cls):
+        engines.engine_factory.configure_factory(
+            db_url=consts.DATABASE_URI, query_cache=True
+        )
+        cls.__ENGINE__ = engines.engine_factory.get_engine()
+
+    def test_get_one_all_with_cache(self):
+        model1 = FakeModel(foo_field1=1, foo_field2="Model1")
+
+        with self.engine.session_manager() as session:
+            session.batch_insert([model1])
+
+            tgt_model = FakeModel.objects.get_one(session=session, cache=True)
+            tgt_model_cached = FakeModel.objects.get_one(
+                session=session, cache=True
+            )
+
+            assert tgt_model is tgt_model_cached
+
+    def test_get_one_all_without_cache(self):
+        model1 = FakeModel(foo_field1=1, foo_field2="Model1")
+
+        with self.engine.session_manager() as session:
+            session.batch_insert([model1])
+
+            tgt_model = FakeModel.objects.get_one(session=session, cache=True)
+            tgt_model_cached = FakeModel.objects.get_one(
+                session=session, cache=False
+            )
+
+            assert tgt_model is not tgt_model_cached
