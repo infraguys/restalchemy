@@ -274,6 +274,46 @@ class IsNotTestCase(base.BaseTestCase):
         self.assertEqual(self._expr.value, TEST_VALUE)
 
 
+class IsPgTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._expr = filters.PostgreSqlIs(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=TEST_VALUE,
+            session=fixtures.SessionFixture(),
+        )
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression()
+
+        self.assertEqual(TEST_NAME + " IS NOT DISTINCT FROM (%s)", result)
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, TEST_VALUE)
+
+
+class IsNotPgTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._expr = filters.PostgreSqlIsNot(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=TEST_VALUE,
+            session=fixtures.SessionFixture(),
+        )
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression()
+
+        self.assertEqual(TEST_NAME + " IS DISTINCT FROM (%s)", result)
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, TEST_VALUE)
+
+
 class LikeTestCase(base.BaseTestCase):
 
     def setUp(self):

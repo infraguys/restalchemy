@@ -134,6 +134,18 @@ class PostgreSqlNotIn(In):
         return f"{self.column} != ANY(%s)"
 
 
+class PostgreSqlIs(Is):
+
+    def construct_expression(self):
+        return f"{self.column} IS NOT DISTINCT FROM (%s)"
+
+
+class PostgreSqlIsNot(IsNot):
+
+    def construct_expression(self):
+        return f"{self.column} IS DISTINCT FROM (%s)"
+
+
 class Like(AbstractClause):
 
     def construct_expression(self):
@@ -227,8 +239,8 @@ FILTER_MAPPING = {
         filters.GE: GE,
         filters.LE: LE,
         filters.LT: LT,
-        filters.Is: Is,
-        filters.IsNot: IsNot,
+        filters.Is: PostgreSqlIs,
+        filters.IsNot: PostgreSqlIsNot,
         filters.In: PostgreSqlIn,
         filters.NotIn: PostgreSqlNotIn,
         filters.Like: Like,
