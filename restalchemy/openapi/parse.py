@@ -71,7 +71,7 @@ def parse_docstring(docstring):
               {
                   "short_description": ...,
                   "long_description": ...,
-                  "params": [{"name": ..., "doc": ...}, ...],
+                  "params": [{"name": ..., "description": ...}, ...],
                   "returns": ...
               }
     """
@@ -96,9 +96,15 @@ def parse_docstring(docstring):
                 params_returns_desc = long_description[long_desc_end:].strip()
                 long_description = long_description[:long_desc_end].rstrip()
 
+            # TODO: handle param types, now describe everything as string
             if params_returns_desc:
                 params = [
-                    {"name": name, "doc": trim(doc)}
+                    {
+                        "name": name,
+                        "description": trim(doc),
+                        "schema": {"type": "string"},
+                        "in": "query",
+                    }
                     for name, doc in PARAM_REGEX.findall(params_returns_desc)
                 ]
 
