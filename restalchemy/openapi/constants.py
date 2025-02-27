@@ -179,6 +179,7 @@ def build_openapi_object_response(
     properties,
     code=200,
     description="",
+    content_type=ra_const.CONTENT_TYPE_APPLICATION_JSON,
 ):
     """
 
@@ -196,12 +197,25 @@ def build_openapi_object_response(
         code: {
             "description": description,
             "content": {
-                ra_const.CONTENT_TYPE_APPLICATION_JSON: {
+                content_type: {
                     "schema": {"type": "object", "properties": properties}
                 }
             },
         },
         "default": DEFAULT_RESPONSE,
+    }
+
+
+def build_openapi_response_octet_stream(description="Returns binary file"):
+    return {
+        status.HTTP_200_OK: {
+            "description": description,
+            "content": {
+                ra_const.CONTENT_TYPE_OCTET_STREAM: {
+                    "schema": {"format": "binary", "type": "string"}
+                }
+            },
+        },
     }
 
 
@@ -233,18 +247,36 @@ def build_openapi_user_response(
     }
 
 
-def build_openapi_json_req_body(model_name):
+def build_openapi_req_body(description, content_type, schema):
     return {
-        "description": model_name,
+        "description": description,
         "required": True,
-        "content": {
-            ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                "schema": {
-                    "$ref": "#/components/schemas/{}".format(model_name)
-                }
-            }
-        },
+        "content": {content_type: {"schema": schema}},
     }
+
+
+def build_openapi_req_body_multipart(description, properties):
+
+    props = {}
+    # See openapi types, examples:
+    #  {"format": "binary", "type": "string"} - for files
+    #  {"format": "uuid", "type": "string"} - for uuids
+    for name, pval in properties.items():
+        props[name] = pval
+
+    return build_openapi_req_body(
+        description=description,
+        content_type=ra_const.CONTENT_TYPE_MULTIPART,
+        schema={"properties": props},
+    )
+
+
+def build_openapi_json_req_body(model_name):
+    return build_openapi_req_body(
+        model_name,
+        ra_const.CONTENT_TYPE_APPLICATION_JSON,
+        {"$ref": f"#/components/schemas/{model_name}"},
+    )
 
 
 def build_openapi_parameter(
