@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+import decimal
 import re
 import sys
 import uuid
@@ -314,6 +315,53 @@ class FloatTestCase(base.BaseTestCase):
         test_instance = types.Float()
 
         self.assertTrue(test_instance.validate(float(-sys.maxsize)))
+
+
+class DecimalTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+        self.test_instance = types.Decimal(0.0, 55.0)
+
+    def test_validate_decimal_roundup(self):
+        assert types.Decimal().from_simple_type(
+            "0.1"
+        ) + types.Decimal().from_simple_type(
+            "0.1"
+        ) + types.Decimal().from_simple_type(
+            "0.1"
+        ) == decimal.Decimal(
+            "0.3"
+        )
+
+    def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate(decimal.Decimal(30.0)))
+
+    def test_validate_correct_max_value(self):
+        self.assertTrue(self.test_instance.validate(decimal.Decimal(55.0)))
+
+    def test_validate_correct_min_value(self):
+        self.assertTrue(self.test_instance.validate(decimal.Decimal(0.0)))
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate("TEST_STR_VALUE"))
+
+    def test_validate_incorrect_max_value(self):
+        self.assertFalse(self.test_instance.validate(decimal.Decimal(56.0)))
+
+    def test_validate_incorrect_min_value(self):
+        self.assertFalse(self.test_instance.validate(decimal.Decimal(-1.0)))
+
+    def test_validate_sys_max_value(self):
+        test_instance = types.Decimal()
+
+        self.assertTrue(test_instance.validate(decimal.Decimal(sys.maxsize)))
+
+    def test_validate_sys_min_value(self):
+        test_instance = types.Decimal()
+
+        self.assertTrue(test_instance.validate(decimal.Decimal(-sys.maxsize)))
 
 
 class UriTestCase(BaseTestCase):

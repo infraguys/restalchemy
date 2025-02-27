@@ -17,6 +17,7 @@
 import abc
 import copy
 import datetime
+import decimal
 import json
 import re
 import sys
@@ -314,6 +315,59 @@ class Float(BasePythonType):
             "maximum": self.max_openapi_value,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
+
+class Decimal(BasePythonType):
+    def __init__(self, min_value=-INFINITY, max_value=INFINITY):
+        super().__init__(
+            python_type=decimal.Decimal,
+            openapi_type="string",
+            openapi_format="decimal",
+        )
+        self.min_value = decimal.Decimal(min_value)
+        self.max_value = decimal.Decimal(max_value)
+
+    def validate(self, value):
+        return (
+            isinstance(value, decimal.Decimal)
+            and self.min_value <= value <= self.max_value
+        )
+
+    def to_simple_type(self, value):
+        return str(value)
+
+    def from_simple_type(self, value):
+        return decimal.Decimal(str(value))
+
+    def from_unicode(self, value):
+        return self.from_simple_type(value)
+
+    @property
+    def max_openapi_value(self):
+        if self.max_value == INFINITY:
+            return sys.maxsize
+        else:
+            return int(self.max_value)
+
+    @property
+    def min_openapi_value(self):
+        if self.min_value == -INFINITY:
+            return -sys.maxsize
+        else:
+            return int(self.min_value)
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "minimum": self.min_openapi_value,
+            "maximum": self.max_openapi_value,
+        }
+        if self._openapi_format is not None:
+            spec["format"] = self._openapi_format
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        if "default" in prop_kwargs and self.validate(prop_kwargs["default"]):
+            spec["default"] = self.to_simple_type(prop_kwargs["default"])
         return spec
 
 
