@@ -62,28 +62,32 @@ class ErrorsHandlerMiddleware(middlewares.Middleware):
     common_exc = (comm_exc.RestAlchemyException,)
     valid_exc = (comm_exc.ValidationErrorException,)
 
-    def process_request(self, req):
-        try:
-            return req.get_response(self.application)
-        except self.not_found_exc as e:
+    def _construct_error_response(self, req, e):
+        if isinstance(e, self.not_found_exc):
             return req.ResponseClass(
                 status=http_client.NOT_FOUND, json=exception2dict(e)
             )
-        except self.conflict_exc as e:
+        elif isinstance(e, self.conflict_exc):
             return req.ResponseClass(
                 status=http_client.CONFLICT, json=exception2dict(e)
             )
-        except self.valid_exc as e:
+        elif isinstance(e, self.valid_exc):
             return req.ResponseClass(
                 status=http_client.BAD_REQUEST, json=exception2dict(e)
             )
-        except self.common_exc as e:
+        elif isinstance(e, self.common_exc):
             return req.ResponseClass(status=e.code, json=exception2dict(e))
-        except Exception as e:
-            LOG.exception(
-                "Unknown error has occurred on url: %s %s", req.method, req.url
-            )
+        else:
             return req.ResponseClass(
                 status=http_client.INTERNAL_SERVER_ERROR,
                 json=exception2dict(e),
             )
+
+    def process_request(self, req):
+        try:
+            return req.get_response(self.application)
+        except Exception as e:
+            LOG.exception(
+                "Unknown error has occurred on url: %s %s", req.method, req.url
+            )
+            return self._construct_error_response(req, e)
