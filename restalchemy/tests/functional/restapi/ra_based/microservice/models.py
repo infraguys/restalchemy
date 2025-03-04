@@ -35,8 +35,8 @@ class VM(models.ModelWithUUID):
         types.Enum(["active", "disabled"]), default="active", required=True
     )
     created = properties.property(
-        types.UTCDateTime(),
-        default=lambda: types.DEFAULT_DATE,
+        types.UTCDateTimeZ(),
+        default=lambda: types.DEFAULT_DATE_Z,
     )
     updated = properties.property(
         types.UTCDateTime(),

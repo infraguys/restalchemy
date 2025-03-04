@@ -733,6 +733,49 @@ class UTCDateTimeTestCase(base.BaseTestCase):
         self.assertEqual(result, dt)
 
 
+class UTCDateTimeZTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(UTCDateTimeZTestCase, self).setUp()
+
+        self.test_instance = types.UTCDateTimeZ()
+
+    def test_validate_correct_value_with_explicit_utc_tz(self):
+        self.assertTrue(
+            self.test_instance.validate(
+                datetime.datetime.now(datetime.timezone.utc)
+            )
+        )
+
+    def test_validate_incorrect_value_wo_tz(self):
+        self.assertFalse(self.test_instance.validate(datetime.datetime.now()))
+
+    def test_validate_from_simple_type_wo_tz(self):
+        dt = datetime.datetime(2020, 3, 13, 11, 3, 25)
+        expected = "2020-03-13 11:03:25.000000"
+
+        result = types.UTCDateTimeZ().from_simple_type(dt)
+
+        self.assertEqual(result, dt.replace(tzinfo=datetime.timezone.utc))
+        self.assertIsNone(dt.tzinfo)
+        self.assertEqual(result.tzinfo, datetime.timezone.utc)
+
+    def test_validate_from_simple_type_with_tz(self):
+        dtz = datetime.datetime.fromisoformat("2020-03-13T11:03:25+03:00")
+        expected_utc = "2020-03-13 08:03:25.000000"
+
+        result = types.UTCDateTimeZ().from_simple_type(dtz)
+
+        self.assertEqual(
+            dtz.tzinfo, datetime.timezone(datetime.timedelta(seconds=10800))
+        )
+        self.assertEqual(result.tzinfo, datetime.timezone.utc)
+        self.assertEqual(result, dtz.astimezone(datetime.timezone.utc))
+        self.assertEqual(
+            types.UTCDateTimeZ().to_simple_type(result), expected_utc
+        )
+
+
 class EnumTestCase(base.BaseTestCase):
 
     def setUp(self):

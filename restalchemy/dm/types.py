@@ -54,6 +54,7 @@ MYSQL_DATETIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
 DEFAULT_DATE = datetime.datetime.strptime(
     "2006-01-02 15:04:05.000576", MYSQL_DATETIME_FMT
 )
+DEFAULT_DATE_Z = DEFAULT_DATE.replace(tzinfo=datetime.timezone.utc)
 # RFC3339
 # python's datetime doesn't support nanosecond precision
 # + now without timezone, example "2006-01-02T15:04:05.999999999Z07:00"
@@ -633,6 +634,12 @@ class TypedDict(Dict):
 
 
 class UTCDateTime(BasePythonType):
+    """Deprecated utc datetime type. Use UTCDateTimeZ instead.
+
+    UTCDateTime should be used only for compatibility,
+    when you use naive datetime objects without datetimes.
+    It's strongly recommended to use UTCDateTimeZ.
+    """
 
     def __init__(self):
         super(UTCDateTime, self).__init__(
@@ -661,12 +668,7 @@ class UTCDateTime(BasePythonType):
         except ValueError:
             # Used in cases, than we manually convert openapi string in
             # http response to ra type in model
-            return datetime.datetime.strptime(
-                datetime.datetime.strptime(
-                    value, OPENAPI_DATETIME_FMT
-                ).strftime(MYSQL_DATETIME_FMT),
-                MYSQL_DATETIME_FMT,
-            )
+            return datetime.datetime.strptime(value, OPENAPI_DATETIME_FMT)
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
@@ -686,6 +688,22 @@ class UTCDateTime(BasePythonType):
         ):
             spec["default"] = self.dump_value(prop_kwargs["default"]())
         return spec
+
+
+class UTCDateTimeZ(UTCDateTime):
+    """Appropriate datetime UTC type with guarantees for tzinfo existence."""
+
+    def validate(self, value):
+        return isinstance(value, datetime.datetime) and (
+            value.tzinfo == datetime.timezone.utc
+        )
+
+    def from_simple_type(self, value):
+        result = super(UTCDateTimeZ, self).from_simple_type(value)
+        if result.tzinfo is not None:
+            return result.astimezone(datetime.timezone.utc)
+        # If datetime is naive, it's assumed that timezone is UTC, add it
+        return result.replace(tzinfo=datetime.timezone.utc)
 
 
 class DateTime(BasePythonType):
