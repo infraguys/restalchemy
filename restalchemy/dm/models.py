@@ -287,13 +287,13 @@ class CustomPropertiesMixin(object):
 class ModelWithTimestamp(Model):
 
     created_at = properties.property(
-        types.UTCDateTime(),
+        types.UTCDateTimeZ(),
         required=True,
         read_only=True,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
     updated_at = properties.property(
-        types.UTCDateTime(),
+        types.UTCDateTimeZ(),
         required=True,
         read_only=True,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
