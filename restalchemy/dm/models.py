@@ -13,11 +13,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from __future__ import annotations
 
 import abc
 import copy
 import datetime
 import uuid
+import inspect
+import typing as tp
 
 from collections import abc as collections_abc
 
@@ -318,3 +321,82 @@ class ModelWithNameDesc(Model):
 
     name = properties.property(types.String(max_length=255), default="")
     description = properties.property(types.String(max_length=255), default="")
+
+
+class DumpToSimpleViewMixin:
+    def dump_to_simple_view(
+        self,
+        skip: tp.Iterable[str] | None = None,
+        save_uuid: bool = False,
+        custom_properties: bool = False,
+    ):
+        skip = skip or []
+        result = {}
+        for name, prop in self.properties.properties.items():
+            if name in skip:
+                continue
+            prop_type = prop.get_property_type()
+            if save_uuid and (
+                isinstance(prop_type, types.UUID)
+                or (
+                    isinstance(prop_type, types.AllowNone)
+                    and isinstance(prop_type.nested_type, types.UUID)
+                )
+            ):
+                result[name] = getattr(self, name)
+                continue
+
+            result[name] = prop_type.to_simple_type(getattr(self, name))
+
+        # Convert the custom properties.
+        if not custom_properties and not hasattr(
+            self, "__custom_properties__"
+        ):
+            return result
+
+        for name, prop_type in self.get_custom_properties():
+            result[name] = prop_type.to_simple_type(getattr(self, name))
+
+        return result
+
+
+class RestoreFromSimpleViewMixin:
+    @classmethod
+    def restore_from_simple_view(
+        cls, skip_unknown_fields: bool = False, **kwargs
+    ):
+        model_format = {}
+        for name, value in kwargs.items():
+            name = name.replace("-", "_")
+
+            # Ignore unknown fields
+            if skip_unknown_fields and name not in cls.properties.properties:
+                continue
+
+            try:
+                prop_type = cls.properties.properties[name].get_property_type()
+            except KeyError:
+                prop_type = cls.get_custom_property_type(name)
+            prop_type = (
+                type(prop_type)
+                if not inspect.isclass(prop_type)
+                else prop_type
+            )
+            if not isinstance(value, prop_type):
+                try:
+                    model_format[name] = (
+                        cls.properties.properties[name]
+                        .get_property_type()
+                        .from_simple_type(value)
+                    )
+                except KeyError:
+                    model_format[name] = cls.get_custom_property_type(
+                        name
+                    ).from_simple_type(value)
+            else:
+                model_format[name] = value
+        return cls(**model_format)
+
+
+class SimpleViewMixin(DumpToSimpleViewMixin, RestoreFromSimpleViewMixin):
+    pass

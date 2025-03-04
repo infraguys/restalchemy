@@ -127,6 +127,14 @@ class FakeModel(BaseModel):
     property3 = relationships.relationship(Model3)
 
 
+class SimpleViewModel(models.ModelWithUUID, models.SimpleViewMixin):
+    int_property = properties.property(types.Integer(), default=1)
+    str_property = properties.property(types.String(), default="foo")
+    none_property = properties.property(
+        types.AllowNone(types.Integer()), default=None
+    )
+
+
 class InheritModelTestCase(base.BaseTestCase):
 
     def test_correct_type_in_base_model(self):
@@ -268,3 +276,30 @@ class ModelWithRequiredUUIDTestCase(base.BaseTestCase):
         model = models.ModelWithRequiredUUID(uuid=uuid_1)
 
         self.assertEqual(model.get_id(), uuid_1)
+
+
+class SimpleViewMixinTestCase(base.BaseTestCase):
+
+    def test_dump_to_simple_view(self):
+        simple_view_model = SimpleViewModel()
+        view = simple_view_model.dump_to_simple_view()
+
+        self.assertEqual(view["int_property"], 1)
+        self.assertEqual(view["str_property"], "foo")
+        self.assertIs(view["none_property"], None)
+        self.assertIsInstance(view["uuid"], str)
+
+    def test_restore_to_simple_view(self):
+        simple_view_model = SimpleViewModel()
+        view = {
+            "uuid": "2e39d8df-2662-4834-ad86-c637d1edd504",
+            "int_property": 2,
+            "str_property": "bar",
+            "none_property": None,
+        }
+        simple_view_model = SimpleViewModel.restore_from_simple_view(**view)
+
+        self.assertEqual(simple_view_model.int_property, 2)
+        self.assertEqual(simple_view_model.str_property, "bar")
+        self.assertIs(simple_view_model.none_property, None)
+        self.assertIs(simple_view_model.uuid.__class__, uuid.UUID)
