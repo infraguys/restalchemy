@@ -69,6 +69,9 @@ class BasePackerTestCase(base.BaseTestCase):
 
 class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
     def setUp(self):
+        req = mock.Mock()
+        req.context.roles = ["owner"]
+
         super(PackerFieldPermissionsHiddenTestCase, self).setUp()
         self._test_resource_packer = packers.BaseResourcePacker(
             resources.ResourceByRAModel(
@@ -79,7 +82,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
                     )
                 ),
             ),
-            mock.Mock(),
+            req,
         )
 
     def tearDown(self):
@@ -106,8 +109,56 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
         self.assertEqual(context.exception.code, 500)
 
 
+class PackerFieldPermissionsNonDefaultHiddenTestCase(base.BaseTestCase):
+    def setUp(self):
+        req = mock.Mock()
+        req.context.roles = ["owner"]
+
+        super().setUp()
+        self._test_resource_packer = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(
+                FakeModel,
+                fields_permissions=field_permissions.FieldsPermissionsByRole(
+                    default=field_permissions.UniversalPermissions(
+                        permission=field_permissions.Permissions.RW
+                    ),
+                    owner=field_permissions.UniversalPermissions(
+                        permission=field_permissions.Permissions.HIDDEN
+                    ),
+                ),
+            ),
+            req,
+        )
+
+    def tearDown(self):
+        super().tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._test_resource_packer
+
+    def test_pack(self):
+        new_data = TestData()
+        expected_data = {}
+
+        result = self._test_resource_packer.pack(new_data)
+        self.assertDictEqual(result, expected_data)
+
+    def test_unpack(self):
+        new_data = {"field2": 2}
+
+        with self.assertRaises(exceptions.FieldPermissionError) as context:
+            self._test_resource_packer.unpack(new_data)
+
+        self.assertEqual(
+            "Permission denied for field field2.", str(context.exception)
+        )
+        self.assertEqual(context.exception.code, 500)
+
+
 class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
     def setUp(self):
+        req = mock.Mock()
+        req.context.roles = ["owner"]
+
         super(PackerFieldPermissionsRWTestCase, self).setUp()
         self._test_resource_packer = packers.BaseResourcePacker(
             resources.ResourceByRAModel(
@@ -116,7 +167,7 @@ class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
                     default=field_permissions.UniversalPermissions()
                 ),
             ),
-            mock.Mock(),
+            req,
         )
 
     def tearDown(self):
@@ -140,6 +191,9 @@ class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
 
 class JSONPackerIncludeNullTestCase(base.BaseTestCase):
     def setUp(self):
+        req = mock.Mock()
+        req.context.roles = ["owner"]
+
         super(JSONPackerIncludeNullTestCase, self).setUp()
         self._test_resource_packer = packers.JSONPackerIncludeNullFields(
             resources.ResourceByRAModel(
@@ -148,7 +202,7 @@ class JSONPackerIncludeNullTestCase(base.BaseTestCase):
                     default=field_permissions.UniversalPermissions()
                 ),
             ),
-            mock.Mock(),
+            req,
         )
 
     def tearDown(self):

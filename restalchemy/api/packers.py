@@ -58,7 +58,7 @@ class BaseResourcePacker(object):
                 if (
                     prop.is_public()
                     and not self._rt._fields_permissions.is_hidden(
-                        self._req, name
+                        name, self._req
                     )
                 ):
                     value = getattr(obj, name)
@@ -94,7 +94,7 @@ class BaseResourcePacker(object):
                         property=api_name
                     )
 
-                if self._rt._fields_permissions.is_readonly(self._req, name):
+                if self._rt._fields_permissions.is_readonly(name, self._req):
                     raise exceptions.FieldPermissionError(field=name)
                 result[name] = self._parse_value(api_name, prop_value, prop)
 
