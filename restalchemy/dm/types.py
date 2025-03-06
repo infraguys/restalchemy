@@ -29,7 +29,17 @@ import email_validator
 
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
-UUID_RE_TEMPLATE = r"[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
+UUID_RE_TEMPLATE = (
+    r"[0-9a-fA-F]{8}"
+    r"-"
+    r"[0-9a-fA-F]{4}"
+    r"-"
+    r"[0-9a-fA-F]{4}"
+    r"-"
+    r"[0-9a-fA-F]{4}"
+    r"-"
+    r"[0-9a-fA-F]{12}"
+)
 
 # Copy-paste from validators library because RA must support python 2.7
 # and support cyrillic domain names. The validators library is located:
