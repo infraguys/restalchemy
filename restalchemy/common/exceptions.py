@@ -194,6 +194,7 @@ class ParseError(RestAlchemyException):
 
 class FieldPermissionError(RestAlchemyException):
     message = "Permission denied for field %(field)s."
+    code = 403
 
 
 class ValidationErrorException(RestAlchemyException):

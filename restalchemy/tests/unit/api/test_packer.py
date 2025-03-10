@@ -106,7 +106,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
         self.assertEqual(
             "Permission denied for field field2.", str(context.exception)
         )
-        self.assertEqual(context.exception.code, 500)
+        self.assertEqual(context.exception.code, 403)
 
 
 class PackerFieldPermissionsNonDefaultHiddenTestCase(base.BaseTestCase):
@@ -151,7 +151,7 @@ class PackerFieldPermissionsNonDefaultHiddenTestCase(base.BaseTestCase):
         self.assertEqual(
             "Permission denied for field field2.", str(context.exception)
         )
-        self.assertEqual(context.exception.code, 500)
+        self.assertEqual(context.exception.code, 403)
 
 
 class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
