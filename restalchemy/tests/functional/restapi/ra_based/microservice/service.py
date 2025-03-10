@@ -15,8 +15,7 @@
 #    under the License.
 
 import threading
-from wsgiref.simple_server import make_server
-from wsgiref.simple_server import WSGIServer
+from wsgiref import simple_server
 
 from restalchemy.api import applications
 from restalchemy.api.middlewares import (
@@ -37,66 +36,26 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 
 class RESTService(threading.Thread):
 
-    def __init__(
-        self, bind_host="127.0.0.1", bind_port=8080, app_root=routes.Root
-    ):
+    def __init__(self, bind_host, bind_port, app_root):
         super(RESTService, self).__init__(name="REST Service")
 
-        openapi_engine = openapi_engines.OpenApiEngine(
-            info=openapi_structures.OpenApiInfo(
-                title="REST API Microservice",
-                description="REST API Microservice for tests",
-                version="1.2.3",
-                contact=openapi_structures.OpenApiContact(
-                    name="Functional Tests",
-                    url="https://functional.tests/",
-                    email="functional@tests.local",
-                ),
-                license=openapi_structures.OpenApiApacheLicense(),
-                terms_of_service="https://functional.tests/terms/",
-            ),
-            paths=openapi_structures.OpenApiPaths(),
-            components=openapi_structures.OpenApiComponents(),
-            security=[openapi_structures.OpenApiSecurity()],
-            tags=openapi_structures.OpenApiTags(
-                [
-                    openapi_structures.OpenApiTag(
-                        name="functional-test",
-                        description="Just functional tests",
-                        external_docs=openapi_structures.OpenApiExternalDocs(
-                            url="https://https://functional.tests/docs/",
-                            description=(
-                                "Functional tests external documentation"
-                            ),
-                        ),
-                    )
-                ]
-            ),
-            external_docs=openapi_structures.OpenApiExternalDocs(
-                url="https://https://functional.tests/docs/",
-                description="Functional tests external documentation",
-            ),
-        )
+        self._service_port = bind_port
+        self._service_host = bind_host
 
-        self._httpd = make_server(
+        self._httpd = simple_server.make_server(
             bind_host,
             bind_port,
-            errors_middleware.ErrorsHandlerMiddleware(
-                retry_error_middleware.RetryOnErrorsMiddleware(
-                    middlewares.ContextMiddleware(
-                        application=applications.OpenApiApplication(
-                            route_class=app_root,
-                            openapi_engine=openapi_engine,
-                        ),
-                    ),
-                    exceptions=storage_exc.DeadLock,
-                    # set max_retry == 2 to speed up retry tests
-                    # execution
-                    max_retry=2,
-                ),
-            ),
-            WSGIServer,
+            app_root,
+            simple_server.WSGIServer,
         )
+
+    @property
+    def service_port(self):
+        return self._service_port
+
+    @property
+    def service_host(self):
+        return self._service_host
 
     def run(self):
         self._httpd.serve_forever()
@@ -107,8 +66,65 @@ class RESTService(threading.Thread):
         self.join(timeout=10)
 
 
+def build_wsgi_application(app_root):
+    openapi_engine = openapi_engines.OpenApiEngine(
+        info=openapi_structures.OpenApiInfo(
+            title="REST API Microservice",
+            description="REST API Microservice for tests",
+            version="1.2.3",
+            contact=openapi_structures.OpenApiContact(
+                name="Functional Tests",
+                url="https://functional.tests/",
+                email="functional@tests.local",
+            ),
+            license=openapi_structures.OpenApiApacheLicense(),
+            terms_of_service="https://functional.tests/terms/",
+        ),
+        paths=openapi_structures.OpenApiPaths(),
+        components=openapi_structures.OpenApiComponents(),
+        security=[openapi_structures.OpenApiSecurity()],
+        tags=openapi_structures.OpenApiTags(
+            [
+                openapi_structures.OpenApiTag(
+                    name="functional-test",
+                    description="Just functional tests",
+                    external_docs=openapi_structures.OpenApiExternalDocs(
+                        url="https://https://functional.tests/docs/",
+                        description=(
+                            "Functional tests external documentation"
+                        ),
+                    ),
+                )
+            ]
+        ),
+        external_docs=openapi_structures.OpenApiExternalDocs(
+            url="https://https://functional.tests/docs/",
+            description="Functional tests external documentation",
+        ),
+    )
+
+    return errors_middleware.ErrorsHandlerMiddleware(
+        retry_error_middleware.RetryOnErrorsMiddleware(
+            middlewares.ContextMiddleware(
+                application=applications.OpenApiApplication(
+                    route_class=app_root,
+                    openapi_engine=openapi_engine,
+                ),
+            ),
+            exceptions=storage_exc.DeadLock,
+            # set max_retry == 2 to speed up retry tests
+            # execution
+            max_retry=2,
+        ),
+    )
+
+
 def main():
-    rest_service = RESTService()
+    rest_service = RESTService(
+        bind_host="0.0.0.0",
+        bind_port=8000,
+        app_root=build_wsgi_application(app_root=routes.Root),
+    )
     try:
         rest_service.run()
     except KeyboardInterrupt:

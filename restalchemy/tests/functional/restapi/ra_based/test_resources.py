@@ -40,7 +40,9 @@ from restalchemy.tests.functional import base
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models,
 )
+from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 from restalchemy.tests.functional.restapi.ra_based.microservice import service
+
 
 TEMPL_SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:%s/")
 TEMPL_ROOT_COLLECTION_ENDPOINT = TEMPL_SERVICE_ENDPOINT
@@ -131,7 +133,9 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
         self.service_port = self.find_free_port()
         url = parse.urlparse(self.get_endpoint(TEMPL_SERVICE_ENDPOINT))
         self._service = service.RESTService(
-            bind_host=url.hostname, bind_port=url.port
+            bind_host=url.hostname,
+            bind_port=url.port,
+            app_root=service.build_wsgi_application(app_root=routes.Root),
         )
         self._service.start()
 
