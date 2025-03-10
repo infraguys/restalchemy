@@ -1,8 +1,18 @@
+.. raw:: html
+
+  <div style="display: flex; align-items: center;">
+      <a href="https://github.com/infraguys/restalchemy/actions/workflows/tests.yml" target="_blank">
+          <img src="https://github.com/infraguys/restalchemy/actions/workflows/tests.yml/badge.svg" alt="Tests" style="margin-right: 10px;">
+      </a>
+      <img src="https://img.shields.io/pypi/pyversions/restalchemy" alt="PyPI - Python Version" style="margin-right: 10px;">
+      <img src="https://img.shields.io/pypi/dm/restalchemy" alt="PyPI - Downloads">
+  </div>
+  <div style="display: none;"></div>
+
+|
+
 REST Alchemy
 ============
-
-.. image:: https://github.com/infraguys/restalchemy/actions/workflows/tests.yml/badge.svg
-    :target: https://github.com/infraguys/restalchemy/actions/workflows/tests.yml
 
 The Python REST HTTP Toolkit and Object Relational Mapper.
 
