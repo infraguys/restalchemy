@@ -99,7 +99,9 @@ class BaseResourcePacker(object):
                 result[name] = self._parse_value(api_name, prop_value, prop)
 
         if len(value) > 0:
-            raise TypeError("%s is not compatible with %s" % (value, self._rt))
+            raise exceptions.ValidationPropertyIncompatibleError(
+                val=value, model=self._rt.get_model().__name__
+            )
 
         return result
 

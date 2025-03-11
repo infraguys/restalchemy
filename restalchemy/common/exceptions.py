@@ -209,6 +209,11 @@ class ValidationPropertyPrivateError(ValidationErrorException):
     message = "Property %(property)s is private"
 
 
+class ValidationPropertyIncompatibleError(ValidationErrorException):
+
+    message = "%(val)s is not compatible with model %(model)s"
+
+
 class NotEqualUuidException(RestAlchemyException):
 
     message = (
