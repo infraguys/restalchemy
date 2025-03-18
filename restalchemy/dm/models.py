@@ -323,6 +323,14 @@ class ModelWithNameDesc(Model):
     description = properties.property(types.String(max_length=255), default="")
 
 
+class ModelWithRequiredNameDesc(ModelWithNameDesc):
+
+    name = properties.property(
+        types.String(max_length=255),
+        required=True,
+    )
+
+
 class DumpToSimpleViewMixin:
     def dump_to_simple_view(
         self,
