@@ -104,6 +104,16 @@ class ObjectCollection(
                 model=self.model_cls, filters=filters
             )
 
+    def get_one_or_none(
+        self, filters=None, session=None, cache=False, locked=False
+    ):
+        try:
+            return self.get_one(
+                filters=filters, session=session, cache=cache, locked=locked
+            )
+        except exceptions.RecordNotFound:
+            return None
+
     def _query(
         self, where_conditions, where_values, session, limit, order_by, locked
     ):
