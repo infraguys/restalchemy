@@ -16,6 +16,7 @@
 
 import abc
 import copy
+import ctypes
 import datetime
 import decimal
 import json
@@ -40,6 +41,8 @@ UUID_RE_TEMPLATE = (
     r"-"
     r"[0-9a-fA-F]{12}"
 )
+
+TIMEDELTA_INFINITY = (1 << (ctypes.sizeof(ctypes.c_int()) * 8) - 1) - 1
 
 # Copy-paste from validators library because RA must support python 2.7
 # and support cyrillic domain names. The validators library is located:
@@ -716,9 +719,74 @@ class UTCDateTimeZ(UTCDateTime):
         return result.replace(tzinfo=datetime.timezone.utc)
 
 
+class TimeDelta(BasePythonType):
+    """Appropriate timedelta type."""
+
+    def __init__(
+        self, min_value=-TIMEDELTA_INFINITY, max_value=TIMEDELTA_INFINITY
+    ):
+        self._min_value = min_value
+        self._max_value = max_value
+        super().__init__(
+            python_type=datetime.timedelta,
+            openapi_type="number",
+            openapi_format="float",
+        )
+
+    @property
+    def min_value(self):
+        return self._min_value
+
+    @property
+    def max_value(self):
+        return self._max_value
+
+    def validate(self, value):
+        result = super().validate(value)
+        return (
+            result
+            and self.min_value <= self.to_simple_type(value) <= self.max_value
+        )
+
+    def to_simple_type(self, value):
+        return value.total_seconds()
+
+    def from_simple_type(self, value):
+        if isinstance(value, datetime.timedelta):
+            return value
+        return datetime.timedelta(seconds=value)
+
+    def from_unicode(self, value):
+        return self.from_simple_type(value)
+
+    @property
+    def max_openapi_value(self):
+        if self.max_value == INFINITI:
+            return sys.float_info.max
+        else:
+            return self.max_value
+
+    @property
+    def min_openapi_value(self):
+        if self.min_value == -INFINITI:
+            return -sys.float_info.max
+        else:
+            return self.min_value
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "format": self.openapi_format,
+            "minimum": self.min_openapi_value,
+            "maximum": self.max_openapi_value,
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
+
 class DateTime(BasePythonType):
 
-    def __init__(self):
+    def __init__(self, min_value=None, max_value=None):
         super(DateTime, self).__init__(python_type=datetime.datetime)
 
     def to_simple_type(self, value):
