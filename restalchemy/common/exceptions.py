@@ -146,8 +146,17 @@ class TypeError(RestAlchemyException, TypeError):
     def __init__(self, value, property_type):
         self._value = value
         self._property_type = property_type
+
+        # Consider the nested type in output message
+        if hasattr(property_type, "nested_type"):
+            outer_type = type(property_type).__name__
+            inner_type = type(property_type.nested_type).__name__
+            property_type = f"{outer_type}({inner_type})"
+        else:
+            property_type = type(property_type).__name__
+
         super(TypeError, self).__init__(
-            value=value, property_type=type(property_type).__name__
+            value=value, property_type=property_type
         )
 
     def get_value(self):
