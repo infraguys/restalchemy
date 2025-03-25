@@ -172,3 +172,29 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
             )
         )
         super(Hostname, self).__init__(**kwargs)
+
+
+class IPRange(types.BaseType):
+    """IPRange type.
+
+    This type represents an IP range as a string. The string is expected
+    to be in the format: <start_ip>-<end_ip>
+    where <start_ip> and <end_ip> are valid IPv4 address.
+    """
+
+    SEPARATOR = "-"
+
+    def __init__(self, **kwargs):
+        super(IPRange, self).__init__(openapi_type="string", **kwargs)
+
+    def validate(self, value):
+        return isinstance(value, netaddr.IPRange)
+
+    def to_simple_type(self, value):
+        return str(value)
+
+    def from_simple_type(self, value):
+        return netaddr.IPRange(*value.split(self.SEPARATOR))
+
+    def from_unicode(self, value):
+        return self.from_simple_type(value)

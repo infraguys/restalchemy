@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
 import unittest
 
 from restalchemy.dm import types_network
@@ -262,3 +263,33 @@ class FQDNTest(unittest.TestCase):
         ]
         for fqdn in data:
             self.assertFalse(self.fqdn_2level.validate(fqdn), fqdn)
+
+
+class IPRangeTest(unittest.TestCase):
+    def setUp(self):
+        self.ip_range = types_network.IPRange()
+
+    def test_validate(self):
+        correct_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
+        self.assertTrue(self.ip_range.validate(correct_range))
+
+        incorrect_range = "10.0.0.0-10.0.1.0"
+        self.assertFalse(self.ip_range.validate(incorrect_range))
+
+    def test_to_simple_type(self):
+        foo_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
+        self.assertEqual(
+            self.ip_range.to_simple_type(foo_range), "10.0.0.0-10.0.1.0"
+        )
+
+    def test_from_simple_type(self):
+        foo_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
+        self.assertEqual(
+            self.ip_range.from_simple_type("10.0.0.0-10.0.1.0"), foo_range
+        )
+
+    def test_from_unicode(self):
+        foo_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
+        self.assertEqual(
+            self.ip_range.from_unicode("10.0.0.0-10.0.1.0"), foo_range
+        )
