@@ -21,6 +21,7 @@ import urllib.parse as parse
 
 from mysql.connector import pooling
 import psycopg_pool
+from psycopg.types.json import Jsonb, JsonbDumper
 
 from restalchemy.common import constants as c
 from restalchemy.common import singletons
@@ -298,6 +299,11 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         conn.close()
 
 
+class PgDictJsonbDumper(JsonbDumper):
+    def dump(self, obj):
+        return super().dump(Jsonb(obj))
+
+
 class PgSQLEngine(AbstractEngine):
 
     URL_SCHEMA = c.RA_POSTGRESQL_PROTO_NAME
@@ -324,9 +330,13 @@ class PgSQLEngine(AbstractEngine):
         )
         self._pool = psycopg_pool.ConnectionPool(
             conninfo=db_url,
+            configure=self._conn_configure_callback,
             **self._config,
         )
         self._pool.wait()
+
+    def _conn_configure_callback(self, conn):
+        conn.adapters.register_dumper(dict, PgDictJsonbDumper)
 
     def escape(self, value):
         """
