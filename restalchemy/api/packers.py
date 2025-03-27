@@ -113,9 +113,13 @@ class JSONPacker(BaseResourcePacker):
 
     def unpack(self, value):
         if isinstance(value, bytes):
-            return super(JSONPacker, self).unpack(
-                json.loads(value.decode("utf-8")),
-            )
+            try:
+                return super(JSONPacker, self).unpack(
+                    json.loads(value.decode("utf-8")),
+                )
+            except json.decoder.JSONDecodeError:
+                raise exceptions.ParseBodyError()
+
         return super(JSONPacker, self).unpack(json.loads(value))
 
 

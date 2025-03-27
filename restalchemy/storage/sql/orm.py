@@ -326,6 +326,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
 
 
 class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
+    """Use only if database's client doesn't support JSON fields natively."""
 
     __jsonfields__ = None
 
@@ -335,7 +336,9 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
             raise UndefinedAttribute(attr_name="__jsonfields__")
         kwargs = kwargs.copy()
         for field in cls.__jsonfields__:
-            kwargs[field] = json.loads(kwargs[field])
+            # Some databases' clients support JSON fields natively.
+            if isinstance(kwargs[field], str):
+                kwargs[field] = json.loads(kwargs[field])
         return super(SQLStorableWithJSONFieldsMixin, cls).restore_from_storage(
             **kwargs
         )
@@ -353,5 +356,5 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
                 set(properties.keys())
             )
         for field in json_properties:
-            result[field] = json.dumps(result[field])
+            result[field] = json.dumps(result[field], separators=(",", ":"))
         return result
