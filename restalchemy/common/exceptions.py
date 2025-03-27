@@ -192,6 +192,11 @@ class ParseError(RestAlchemyException):
     code = 400
 
 
+class ParseBodyError(RestAlchemyException):
+    message = "Can't parse body with specified content-type."
+    code = 400
+
+
 class FieldPermissionError(RestAlchemyException):
     message = "Permission denied for field %(field)s."
     code = 403
