@@ -326,6 +326,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
 
 
 class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
+    """Use only if database's client doesn't support JSON fields natively."""
 
     __jsonfields__ = None
 
