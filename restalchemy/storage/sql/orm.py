@@ -355,5 +355,5 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
                 set(properties.keys())
             )
         for field in json_properties:
-            result[field] = json.dumps(result[field])
+            result[field] = json.dumps(result[field], separators=(",", ":"))
         return result
