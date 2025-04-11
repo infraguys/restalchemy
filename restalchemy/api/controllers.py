@@ -113,18 +113,15 @@ class Controller(object):
         return resource_field.parse_value_from_unicode(self._req, value)
 
     def _prepare_filter(self, param_name, value):
-        resource_fields = {}
-        if self.model is not None:
-            resource_fields = {
-                self.__resource__.get_resource_field_name(name): prop
-                for name, prop in self.__resource__.get_fields()
-            }
-        if param_name not in resource_fields:
-            raise ValueError(
-                "Unknown filter '%s' with value %r for "
-                "resource %r" % (param_name, value, self.__resource__)
+        if self.model is None:
+            raise exc.ValidationFilterIncompatibleError(val=param_name)
+        try:
+            resource_field = self.__resource__.get_field(
+                self.__resource__.get_model_field_name(param_name)
             )
-        resource_field = resource_fields[param_name]
+        except ValueError:
+            raise exc.ValidationFilterIncompatibleError(val=param_name)
+
         value = self._parse_field_value(param_name, value, resource_field)
 
         return resource_field.name, value
@@ -329,9 +326,7 @@ class BaseResourceController(Controller):
                         result.remove(item)
                         continue
                 else:
-                    raise ValueError(
-                        "Unknown filter %s<%s>" % (field_name, filter_value)
-                    )
+                    raise exc.ValidationFilterIncompatibleError(val=field_name)
         return result
 
     def _process_storage_filters(self, filters):
