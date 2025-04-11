@@ -228,6 +228,11 @@ class ValidationPropertyIncompatibleError(ValidationErrorException):
     message = "%(val)s is not compatible with model %(model)s"
 
 
+class ValidationFilterIncompatibleError(ValidationErrorException):
+
+    message = "Filter %(val)s is not supported"
+
+
 class NotEqualUuidException(RestAlchemyException):
 
     message = (

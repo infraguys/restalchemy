@@ -403,6 +403,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
         super(AbstractResource, self).__init__()
         self._model_class = model_class
         self._name_map = name_map or {}
+        self._inv_name_map = {v: k for k, v in self._name_map.items()}
         # NOTE(efrolov): to support the old resource interface
         if not isinstance(hidden_fields, BaseHiddenFieldsMap):
             hidden_fields = HiddenFieldsCompatibleClass(
@@ -476,8 +477,16 @@ class AbstractResource(metaclass=abc.ABCMeta):
         return self._name_map
 
     @property
+    def _r2m_name_map(self):
+        return self._inv_name_map
+
+    @property
     def _hidden_model_fields(self):
         return self._hidden_fields
+
+    def get_model_field_name(self, res_field_name):
+        name = self._r2m_name_map.get(res_field_name, res_field_name)
+        return name.replace("-", "_") if self._convert_underscore else name
 
     def get_resource_field_name(self, model_field_name):
         name = self._m2r_name_map.get(model_field_name, model_field_name)
@@ -560,33 +569,47 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
 class ResourceByRAModel(AbstractResource):
 
+    def _prep_field(self, name, prop, override_is_public_field_func=None):
+        is_public_field = override_is_public_field_func or self.is_public_field
+        if issubclass(prop, ra_properties.BaseProperty):
+            return ResourceRAProperty(
+                resource=self,
+                prop_type=(
+                    self._model_class.properties.properties[
+                        name
+                    ].get_property_type()
+                ),
+                model_property_name=name,
+                public=is_public_field(name),
+            )
+        elif issubclass(prop, ra_relationsips.BaseRelationship):
+            return ResourceRelationship(
+                self,
+                model_property_name=name,
+                public=is_public_field(name),
+            )
+        else:
+            raise TypeError("Unknown property type %s" % type(prop))
+
+    def get_field(self, name, override_is_public_field_func=None):
+        if not (prop := self._model_class.properties.get(name)):
+            raise ValueError("Model doesn't have field %s" % name)
+        return self._prep_field(
+            name,
+            prop,
+            override_is_public_field_func,
+        )
+
     def get_fields(self, override_is_public_field_func=None):
         """Get resource fields
 
         :return: The dict of resource fields.
         """
-        is_public_field = override_is_public_field_func or self.is_public_field
+
         for name, prop in self._model_class.properties.items():
-            if issubclass(prop, ra_properties.BaseProperty):
-                prop = ResourceRAProperty(
-                    resource=self,
-                    prop_type=(
-                        self._model_class.properties.properties[
-                            name
-                        ].get_property_type()
-                    ),
-                    model_property_name=name,
-                    public=is_public_field(name),
-                )
-            elif issubclass(prop, ra_relationsips.BaseRelationship):
-                prop = ResourceRelationship(
-                    self,
-                    model_property_name=name,
-                    public=is_public_field(name),
-                )
-            else:
-                raise TypeError("Unknown property type %s" % type(prop))
-            yield name, prop
+            yield name, self._prep_field(
+                name, prop, override_is_public_field_func
+            )
 
     def get_resource_id(self, model):
         # TODO(efrolov): Write code to convert value to simple value.
@@ -616,6 +639,28 @@ class ResourceByRAModel(AbstractResource):
 
 
 class ResourceByModelWithCustomProps(ResourceByRAModel):
+
+    def get_field(self, name, override_is_public_field_func=None):
+        try:
+            return super(ResourceByModelWithCustomProps, self).get_field(
+                name=name,
+                override_is_public_field_func=override_is_public_field_func,
+            )
+        except ValueError:
+            # native property doesn't exist, try custom property
+            pass
+        try:
+            is_public_field = (
+                override_is_public_field_func or self.is_public_field
+            )
+            return ResourceRAProperty(
+                resource=self,
+                prop_type=self._model_class.get_custom_property_type(name),
+                model_property_name=name,
+                public=is_public_field(name),
+            )
+        except KeyError:
+            raise ValueError("Model doesn't have field %s" % name)
 
     def get_fields(self, override_is_public_field_func=None):
         """Get resource fields
