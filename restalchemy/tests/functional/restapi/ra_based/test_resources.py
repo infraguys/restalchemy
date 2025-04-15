@@ -865,10 +865,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         ]
 
         response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT),
-            headers={
-                "X-Pagination-Limit": "1",
-            },
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT) + "?page_limit=1"
         )
 
         self.assertEqual(response.status_code, 200)
@@ -900,10 +897,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
-            + "?sort_key=name&sort_dir=desc",
-            headers={
-                "X-Pagination-Limit": "1",
-            },
+            + "?sort_key=name&sort_dir=desc&page_limit=1",
         )
 
         self.assertEqual(response.status_code, 200)
@@ -948,11 +942,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         ]
 
         response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT),
-            headers={
-                "X-Pagination-Limit": "2",
-                "X-Pagination-Marker": str(RESOURCE_ID1),
-            },
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
+            + "?page_limit=2&page_marker="
+            + str(RESOURCE_ID1),
         )
 
         self.assertEqual(response.status_code, 200)
@@ -997,11 +989,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         ]
 
         response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT),
-            headers={
-                "X-Pagination-Limit": "3",
-                "X-Pagination-Marker": str(RESOURCE_ID1),
-            },
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
+            + "?page_limit=3&page_marker="
+            + str(RESOURCE_ID1),
         )
 
         self.assertEqual(response.status_code, 200)
@@ -1034,10 +1024,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         response = requests.get(
             self.get_endpoint(
                 "%s?state=on" % (TEMPL_VMS_COLLECTION_ENDPOINT,)
+                + "&page_limit=1"
             ),
-            headers={
-                "X-Pagination-Limit": "1",
-            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -1054,10 +1042,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
 
         response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT),
-            headers={
-                "X-Pagination-Limit": "a",
-            },
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT) + "?page_limit=a"
         )
 
         self.assertEqual(response.status_code, 400)
@@ -1070,10 +1055,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
 
         response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT),
-            headers={
-                "X-Pagination-Limit": "-1",
-            },
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT) + "?page_limit=-1"
         )
 
         self.assertEqual(response.status_code, 400)
@@ -1086,11 +1068,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
 
         response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT),
-            headers={
-                "X-Pagination-Limit": "1",
-                "X-Pagination-Marker": "a",
-            },
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
+            + "?page_limit=-1&page_marker=a"
         )
 
         self.assertEqual(response.status_code, 400)
@@ -1365,10 +1344,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(TEMPL_PORTS_COLLECTION_ENDPOINT, VM_RESOURCE_ID)
-            + "?unique-field=%s" % str(PORT2_RESOURCE_ID),
-            headers={
-                "X-Pagination-Limit": "1",
-            },
+            + "?unique-field=%s&page_limit=1" % str(PORT2_RESOURCE_ID),
         )
 
         self.assertEqual(response.status_code, 200)
