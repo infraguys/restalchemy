@@ -439,28 +439,28 @@ class BasePaginationMixin(object):
     """Pagination mixin, marker based, not offset based!
 
     Contract:
-    - Works via headers only
-    - All results are sorted by `order by id ASC`
-    - X-Pagination-Limit: sets limit of each "page"
-    - X-Pagination-Marker: sets marker of last ID in previous batch,
+    - Works via `page_limit` and `page_marker` params.
+    - All results are sorted by `order by id ASC`, if sort_key was not provided
+    - page_limit: sets limit of each "page"
+    - page_marker: sets marker of last ID in previous batch,
       next batch will by filtered by `where id > MARKER`
     - There are next "pages" while X-Pagination-Marker exists in response
 
     Example:
     # get first "page"
-    curl '..' -H 'X-Pagination-Limit: 5' -i
+    curl '/some/collection/?page_limit=5' -i
     HTTP/1.1 200 OK
     X-Pagination-Limit: 5
     X-Pagination-Marker: XXX_UUID1
 
     # get next "page" by marker
-    curl '..' -H 'X-Pagination-Limit: 5' -H 'X-Pagination-Marker: XXX_UUID1' -i
+    curl '/some/collection/?page_limit=5&page_marker=XXX_UUID1' -i
     HTTP/1.1 200 OK
     X-Pagination-Limit: 5
     X-Pagination-Marker: XXX_UUID2
 
     # get last "page" by marker
-    curl '..' -H 'X-Pagination-Limit: 5' -H 'X-Pagination-Marker: XXX_UUID2' -i
+    curl '/some/collection/?page_limit=5&page_marker=XXX_UUID2' -i
     HTTP/1.1 200 OK
     X-Pagination-Limit: 5
     (Last page won't have Marker)
@@ -469,6 +469,9 @@ class BasePaginationMixin(object):
     _pagination_limit = 0
     _header_page_limit = "X-Pagination-Limit"
     _header_page_marker = "X-Pagination-Marker"
+
+    _param_page_limit = "page_limit"
+    _param_page_marker = "page_marker"
 
     def _create_response(self, body, status, headers):
         if self._pagination_limit:
@@ -485,21 +488,15 @@ class BasePaginationMixin(object):
     def _prepare_pagination_meta(self):
         try:
             self._pagination_limit = int(
-                self._req.headers.get(self._header_page_limit, 0)
+                self._req.api_context.params.get(self._param_page_limit, 0)
             )
             if self._pagination_limit < 0:
                 raise ValueError()
         except ValueError:
-            raise exc.ParseError(
-                value="%s=%s"
-                % (
-                    self._header_page_limit,
-                    self._req.headers.get(self._header_page_limit),
-                )
-            )
+            raise exc.ParseError(value="%s" % (self._pagination_limit,))
         # TODO(g.melikov): do we need to validate if marker ID record exists?
-        self._pagination_marker = self._req.headers.get(
-            self._header_page_marker
+        self._pagination_marker = self._req.api_context.params.get(
+            self._param_page_marker
         )
         if self._pagination_marker:
             self._pagination_marker = (
