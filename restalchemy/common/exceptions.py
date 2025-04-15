@@ -233,6 +233,16 @@ class ValidationFilterIncompatibleError(ValidationErrorException):
     message = "Filter %(val)s is not supported"
 
 
+class ValidationSortInvalidDirValueError(ValidationErrorException):
+
+    message = "Direction %(dir)s is not valid for sorting."
+
+
+class ValidationSortIncompatibleDirCountError(ValidationErrorException):
+
+    message = "Number of sort keys and directions is not equal."
+
+
 class NotEqualUuidException(RestAlchemyException):
 
     message = (

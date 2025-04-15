@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import itertools
 import logging
 
 import webob
@@ -26,6 +27,7 @@ from restalchemy.common import utils
 from restalchemy.dm import filters as dm_filters
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import utils as oa_utils
+from restalchemy.storage.sql import constants as sql_c
 
 LOG = logging.getLogger(__name__)
 
@@ -43,6 +45,12 @@ class Controller(object):
     __generate_location_for__ = {
         constants.CREATE,
     }
+
+    # List of fields that can be used for user sorting. If '__all__', any field is allowed.
+    __sortable_fields__ = "__all__"
+
+    # Default sorting, leave empty for no default sorting.
+    __default_sort__ = {}
 
     def __init__(self, request):
         super(Controller, self).__init__()
@@ -126,6 +134,24 @@ class Controller(object):
 
         return resource_field.name, value
 
+    def _prepare_sorts(self, params):
+        keys = params.getall("sort_key")
+        if not keys:
+            return self.__default_sort__
+        if keys and self.__sortable_fields__ != "__all__":
+            keys = [key for key in keys if key in self.__sortable_fields__]
+
+        dirs = params.getall("sort_dir")
+        for dir in dirs:
+            if dir.upper() not in sql_c.SQL_SORT_SET:
+                raise exc.ValidationSortInvalidDirValueError(dir=dir)
+        if dirs:
+            if len(keys) != len(dirs):
+                raise exc.ValidationSortIncompatibleDirCountError()
+            return dict(itertools.zip_longest(keys, dirs, fillvalue="asc"))
+
+        return {key: "asc" for key in keys}
+
     def _prepare_filters(self, params):
         if not (self.__resource__ and self.__resource__.is_process_filters()):
             return params
@@ -151,11 +177,24 @@ class Controller(object):
         api_context = self._req.api_context
         if method == "GET":
             api_context.set_active_method(constants.FILTER)
-            filters = self._prepare_filters(
+            order_by = self._prepare_sorts(
                 params=self._req.api_context.params,
             )
+            filters = self._prepare_filters(
+                params=self._req.api_context.params_filters,
+            )
             kwargs = self._make_kwargs(parent_resource, filters=filters)
-            return self.process_result(result=self.filter(**kwargs))
+            try:
+                return self.process_result(
+                    result=self.filter(**kwargs, order_by=order_by)
+                )
+            except TypeError:
+                LOG.warning(
+                    "DEPRECATED: filter() got an unexpected keyword argument "
+                    "'order_by', please add order_by to your filter() call, "
+                    "retrying without order_by..."
+                )
+                return self.process_result(result=self.filter(**kwargs))
         elif method == "POST":
             api_context.set_active_method(constants.CREATE)
             content_type = packers.get_content_type(self._req.headers)
@@ -259,7 +298,7 @@ class Controller(object):
             msg="method get in %s" % self.__class__.__name__
         )
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         raise exc.NotImplementedError(
             msg="method filter in %s" % self.__class__.__name__
         )
@@ -329,8 +368,8 @@ class BaseResourceController(Controller):
                     raise exc.ValidationFilterIncompatibleError(val=field_name)
         return result
 
-    def _process_storage_filters(self, filters):
-        return self.model.objects.get_all(filters=filters)
+    def _process_storage_filters(self, filters, order_by=None):
+        return self.model.objects.get_all(filters=filters, order_by=order_by)
 
     @staticmethod
     def _convert_raw_filters_to_dm_filters(filters):
@@ -340,10 +379,12 @@ class BaseResourceController(Controller):
                 filters[k] = dm_filters.EQ(v)
         return filters
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         custom_filters, storage_filters = self._split_filters(filters)
 
-        result = self._process_storage_filters(storage_filters)
+        result = self._process_storage_filters(
+            storage_filters, order_by=order_by
+        )
 
         return self._process_custom_filters(result, custom_filters)
 
@@ -376,11 +417,11 @@ class BaseNestedResourceController(BaseResourceController):
             **self._prepare_kwargs(**kwargs)
         )
 
-    def filter(self, parent_resource, filters):
+    def filter(self, parent_resource, filters, order_by=None):
         filters = filters.copy()
         filters[self.__pr_name__] = dm_filters.EQ(parent_resource)
         return super(BaseNestedResourceController, self).filter(
-            filters=filters
+            filters=filters, order_by=order_by
         )
 
     def delete(self, parent_resource, uuid):
@@ -478,10 +519,10 @@ class BasePaginationMixin(object):
             parent_resource=parent_resource
         )
 
-    def _process_storage_filters(self, filters):
+    def _process_storage_filters(self, filters, order_by=None):
         if not self._pagination_limit:
             return super(BasePaginationMixin, self)._process_storage_filters(
-                filters
+                filters, order_by=order_by
             )
 
         id_name = self.model.get_id_property_name()
@@ -492,17 +533,19 @@ class BasePaginationMixin(object):
         return self.model.objects.get_all(
             filters=filters,
             limit=self._pagination_limit,
-            order_by={id_name: "asc"},
+            order_by=order_by or {id_name: "asc"},
         )
 
-    def paginated_filter(self, filters):
+    def paginated_filter(self, filters, order_by=None):
         custom_filters, storage_filters = self._split_filters(filters)
 
         cleaned_results = []
 
         # Get additional data from DB if some was filtered by custom props
         while len(cleaned_results) < self._pagination_limit:
-            result = self._process_storage_filters(storage_filters)
+            result = self._process_storage_filters(
+                storage_filters, order_by=order_by
+            )
 
             if not len(result):
                 break
@@ -525,28 +568,32 @@ class BaseResourceControllerPaginated(
     BasePaginationMixin, BaseResourceController
 ):
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         # NOTE(g.melikov): if you want to add pagination and you need to
         #  override `filter` method - it's better to add custom filters into
         #  `_process_custom_filters`.
         if self._pagination_limit:
-            return self.paginated_filter(filters)
+            return self.paginated_filter(filters, order_by=order_by)
 
-        return super(BasePaginationMixin, self).filter(filters)
+        return super(BasePaginationMixin, self).filter(
+            filters, order_by=order_by
+        )
 
 
 class BaseNestedResourceControllerPaginated(
     BasePaginationMixin, BaseNestedResourceController
 ):
 
-    def filter(self, parent_resource, filters):
+    def filter(self, parent_resource, filters, order_by=None):
         filters = filters.copy()
         filters[self.__pr_name__] = dm_filters.EQ(parent_resource)
 
         if self._pagination_limit:
-            return self.paginated_filter(filters)
+            return self.paginated_filter(filters, order_by=order_by)
 
-        return super(BaseNestedResourceController, self).filter(filters)
+        return super(BaseNestedResourceController, self).filter(
+            filters, order_by=order_by
+        )
 
 
 class RoutesListController(Controller):
@@ -564,7 +611,7 @@ class RoutesListController(Controller):
             result = getattr(result, next_path)
         return result
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         """
         Returns a list of all routes in the main route that are collection
         routes.
@@ -574,6 +621,8 @@ class RoutesListController(Controller):
 
         :param filters: the filters to apply when filtering the routes (Is not
             implemented now)
+        :param order_by: fields to order the routes by (Is not implemented
+            now)
         :return: a list of route names
         """
         target_route = self._get_target_route(self.__TARGET_PATH__)
@@ -587,7 +636,7 @@ class RoutesListController(Controller):
 
 class RootController(RoutesListController):
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         main_route = self.request.application.main_route
         req = self.request
         return [
@@ -615,7 +664,7 @@ class OpenApiSpecificationController(Controller):
             )
         raise exc.NotExtended()
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         openapi_engine = self.request.application.openapi_engine
         if openapi_engine:
             return openapi_engine.list_supported_openapi_versions()

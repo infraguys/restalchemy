@@ -17,3 +17,5 @@
 
 SQL_ASC = "ASC"
 SQL_DESC = "DESC"
+
+SQL_SORT_SET = frozenset((SQL_ASC, SQL_DESC))

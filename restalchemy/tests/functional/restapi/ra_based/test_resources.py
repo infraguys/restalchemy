@@ -200,7 +200,10 @@ class TestVersionsResourceTestCase(BaseResourceTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), ["notimplementedmethods", "vms"])
+        self.assertEqual(
+            response.json(),
+            ["notimplementedmethods", "vms", "vmsdefsort", "vmsnosort"],
+        )
 
 
 class TestVMResourceTestCase(BaseResourceTestCase):
@@ -614,6 +617,192 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
 
+    def test_get_collection_vms_with_sort_one_key(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        RESOURCE_ID3 = UUID3
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="off")
+        vm_response_body = [
+            {
+                "uuid": str(RESOURCE_ID3),
+                "name": "test3",
+                "state": "off",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+            {
+                "uuid": str(RESOURCE_ID2),
+                "name": "test2",
+                "state": "on",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+            {
+                "uuid": str(RESOURCE_ID1),
+                "name": "test1",
+                "state": "off",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+        ]
+
+        response = requests.get(
+            self.get_endpoint(
+                "%s?sort_key=name&sort_dir=desc"
+                % (TEMPL_VMS_COLLECTION_ENDPOINT,)
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        for i, item in enumerate(response.json()):
+            self.assertEqual(item, vm_response_body[i])
+
+    def test_get_collection_vms_with_sort_one_key_restricted_field(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        RESOURCE_ID3 = UUID3
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="off")
+        vm_response_body = [
+            {
+                "uuid": str(RESOURCE_ID1),
+                "name": "test2",
+                "state": "on",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+            {
+                "uuid": str(RESOURCE_ID2),
+                "name": "test1",
+                "state": "off",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+            {
+                "uuid": str(RESOURCE_ID3),
+                "name": "test3",
+                "state": "off",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+        ]
+
+        response = requests.get(
+            self.get_endpoint(
+                "%s?sort_key=name"
+                % (
+                    utils.lastslash(
+                        parse.urljoin(
+                            TEMPL_V1_COLLECTION_ENDPOINT, "vmsnosort"
+                        )
+                    ),
+                )
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        for i, item in enumerate(response.json()):
+            self.assertEqual(item, vm_response_body[i])
+
+    def test_get_collection_vms_with_sort_default(self):
+        class Model(models.VM):
+            __defaul_sort__ = {"name": "desc"}
+
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        RESOURCE_ID3 = UUID3
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="off")
+        vm_response_body = [
+            {
+                "uuid": str(RESOURCE_ID3),
+                "name": "test3",
+                "state": "off",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+            {
+                "uuid": str(RESOURCE_ID2),
+                "name": "test2",
+                "state": "on",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+            {
+                "uuid": str(RESOURCE_ID1),
+                "name": "test1",
+                "state": "off",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+        ]
+
+        response = requests.get(
+            self.get_endpoint(
+                "%s"
+                % (
+                    utils.lastslash(
+                        parse.urljoin(
+                            TEMPL_V1_COLLECTION_ENDPOINT, "vmsdefsort"
+                        )
+                    ),
+                )
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        for i, item in enumerate(response.json()):
+            self.assertEqual(item, vm_response_body[i])
+
     def test_get_collection_non_paginated(self):
         RESOURCE_ID1 = UUID1
         RESOURCE_ID2 = UUID2
@@ -687,6 +876,41 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.headers["X-Pagination-Limit"], "1")
         self.assertEqual(
             response.headers["X-Pagination-Marker"], str(RESOURCE_ID1)
+        )
+
+    def test_get_collection_paginated_custom_sort(self):
+        RESOURCE_ID1 = UUID1
+        RESOURCE_ID2 = UUID2
+        self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
+        self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        vm_response_body = [
+            {
+                "uuid": str(RESOURCE_ID2),
+                "name": "test2",
+                "state": "on",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            }
+        ]
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
+            + "?sort_key=name&sort_dir=desc",
+            headers={
+                "X-Pagination-Limit": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertEqual(response.headers["X-Pagination-Limit"], "1")
+        self.assertEqual(
+            response.headers["X-Pagination-Marker"], str(RESOURCE_ID2)
         )
 
     def test_get_collection_paginated_with_marker(self):
