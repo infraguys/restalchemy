@@ -121,11 +121,35 @@ class VMRoute(routes.Route):
     tags = routes.route(TagRoute, resource_route=True)
 
 
+class VMNoSortRoute(routes.Route):
+    __controller__ = controllers.VMNoSortController
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.GET,
+        routes.DELETE,
+        routes.FILTER,
+        routes.UPDATE,
+    ]
+
+
+class VMDefSortRoute(routes.Route):
+    __controller__ = controllers.VMDefSortController
+    __allow_methods__ = [
+        routes.CREATE,
+        routes.GET,
+        routes.DELETE,
+        routes.FILTER,
+        routes.UPDATE,
+    ]
+
+
 class V1Route(routes.Route):
     __controller__ = controllers.V1Controller
     __allow_methods__ = [routes.FILTER]
 
     vms = routes.route(VMRoute)
+    vmsnosort = routes.route(VMNoSortRoute)
+    vmsdefsort = routes.route(VMDefSortRoute)
     notimplementedmethods = routes.route(NotImplementedMethodsRoute)
 
 

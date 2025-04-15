@@ -23,6 +23,14 @@ class VM(models.VM, orm.SQLStorableMixin):
     __tablename__ = "vms"
 
 
+class VMNoSort(models.VM, orm.SQLStorableMixin):
+    __tablename__ = "vms"
+
+
+class VMDefSort(models.VM, orm.SQLStorableMixin):
+    __tablename__ = "vms"
+
+
 class Port(models.Port, orm.SQLStorableMixin):
     __tablename__ = "ports"
 

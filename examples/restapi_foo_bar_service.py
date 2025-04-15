@@ -79,7 +79,7 @@ class FooController(controllers.Controller):
     def get(self, uuid):
         return foo_storage[uuid]
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         return foo_storage.values()
 
 

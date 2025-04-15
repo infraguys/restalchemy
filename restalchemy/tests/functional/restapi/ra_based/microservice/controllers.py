@@ -148,6 +148,20 @@ class VMController(controllers.BaseResourceControllerPaginated):
         return {"state": resource.state}
 
 
+class VMNoSortController(VMController):
+    __resource__ = resources.ResourceByRAModel(
+        models.VMNoSort, process_filters=True
+    )
+    __sortable_fields__ = []
+
+
+class VMDefSortController(VMController):
+    __resource__ = resources.ResourceByRAModel(
+        models.VMDefSort, process_filters=True
+    )
+    __default_sort__ = {"name": "desc"}
+
+
 class V1Controller(controllers.RoutesListController):
 
     __TARGET_PATH__ = "/v1"

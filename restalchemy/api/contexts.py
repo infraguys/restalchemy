@@ -24,6 +24,10 @@ class CanNotGetActiveMethod(exceptions.RestAlchemyException):
 
 class RequestContext(object):
 
+    _special_params = frozenset(
+        ("fields", "page_limit", "page_marker", "sort_key", "sort_dir")
+    )
+
     def __init__(self, request):
         super(RequestContext, self).__init__()
         self._req = request
@@ -40,10 +44,14 @@ class RequestContext(object):
 
     @property
     def params(self):
+        return multidict.MultiDict(self._req.params.items())
+
+    @property
+    def params_filters(self):
         result_multi_dict_items = [
             (name, value)
             for name, value in self._req.params.items()
-            if name != "fields"
+            if name not in self._special_params
         ]
         return multidict.MultiDict(result_multi_dict_items)
 
