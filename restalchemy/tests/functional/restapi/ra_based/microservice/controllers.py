@@ -169,7 +169,7 @@ class V1Controller(controllers.RoutesListController):
 
 class NotImplementedMethodsController(controllers.Controller):
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         """
         method filter was implemented for testing base error message
         """

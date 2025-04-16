@@ -184,17 +184,9 @@ class Controller(object):
                 params=self._req.api_context.params_filters,
             )
             kwargs = self._make_kwargs(parent_resource, filters=filters)
-            try:
-                return self.process_result(
-                    result=self.filter(**kwargs, order_by=order_by)
-                )
-            except TypeError:
-                LOG.warning(
-                    "DEPRECATED: filter() got an unexpected keyword argument "
-                    "'order_by', please add order_by to your filter() call, "
-                    "retrying without order_by..."
-                )
-                return self.process_result(result=self.filter(**kwargs))
+            return self.process_result(
+                result=self.filter(**kwargs, order_by=order_by)
+            )
         elif method == "POST":
             api_context.set_active_method(constants.CREATE)
             content_type = packers.get_content_type(self._req.headers)
