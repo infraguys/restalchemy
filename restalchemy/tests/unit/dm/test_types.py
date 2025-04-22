@@ -363,6 +363,16 @@ class DecimalTestCase(base.BaseTestCase):
 
         self.assertTrue(test_instance.validate(decimal.Decimal(-sys.maxsize)))
 
+    def test_validate_correct_max_decimal_places(self):
+        test_instance = types.Decimal(max_decimal_places=2)
+
+        self.assertTrue(test_instance.validate(decimal.Decimal("2.22")))
+
+    def test_validate_incorrect_max_decimal_places(self):
+        test_instance = types.Decimal(max_decimal_places=2)
+
+        self.assertFalse(test_instance.validate(decimal.Decimal("2.222")))
+
 
 class UriTestCase(BaseTestCase):
 

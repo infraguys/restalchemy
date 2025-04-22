@@ -333,7 +333,9 @@ class Float(BasePythonType):
 
 
 class Decimal(BasePythonType):
-    def __init__(self, min_value=-INFINITY, max_value=INFINITY):
+    def __init__(
+        self, min_value=-INFINITY, max_value=INFINITY, max_decimal_places=None
+    ):
         super().__init__(
             python_type=decimal.Decimal,
             openapi_type="string",
@@ -341,11 +343,16 @@ class Decimal(BasePythonType):
         )
         self.min_value = decimal.Decimal(min_value)
         self.max_value = decimal.Decimal(max_value)
+        self.max_decimal_places = max_decimal_places
 
     def validate(self, value):
         return (
             isinstance(value, decimal.Decimal)
             and self.min_value <= value <= self.max_value
+            and (
+                (self.max_decimal_places is None)
+                or -value.as_tuple().exponent <= self.max_decimal_places
+            )
         )
 
     def to_simple_type(self, value):
