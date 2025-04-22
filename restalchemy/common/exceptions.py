@@ -118,6 +118,8 @@ class CollectionNotFoundError(NotFoundError):
 
 class PropertyException(RestAlchemyException, ValueError):
 
+    code = 400
+
     def __init__(self, name=None, model=None):
         self.name = name or "Unknown"
         self.model = model or "Unknown"
@@ -142,6 +144,7 @@ class ReadOnlyProperty(PropertyException):
 class TypeError(RestAlchemyException, TypeError):
 
     message = "Invalid type value '%(value)s' for '%(property_type)s'."
+    code = 400
 
     def __init__(self, value, property_type):
         self._value = value
@@ -189,6 +192,7 @@ class RelationshipModelError(RestAlchemyException):
         "Invalid model %(model)s for relationship. Must be inherited "
         "from dm.core.models.Model."
     )
+    code = 400
 
 
 class NotFoundOperationalStorageError(RestAlchemyException):
