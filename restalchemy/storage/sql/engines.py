@@ -330,6 +330,7 @@ class PgSQLEngine(AbstractEngine):
         )
         self._pool = psycopg_pool.ConnectionPool(
             conninfo=db_url,
+            open=True,
             configure=self._conn_configure_callback,
             **self._config,
         )
@@ -407,19 +408,14 @@ class PgSQLEngine(AbstractEngine):
         """
         Releases a connection back to the pool.
 
-        This method checks if the provided connection is closed. If the
-        connection is closed, it returns `None` to the pool, indicating
-        that the connection should be discarded. Otherwise, it returns
+        This method runs appropriate cleanup routines and returns
         the connection back to the pool for reuse.
 
         :param conn: The connection to be released back to the pool.
         :type conn: psycopg2.extensions.connection
         """
 
-        if conn.closed:
-            self._pool.putconn(None)
-        else:
-            self._pool.putconn(conn)
+        self._pool.putconn(conn)
 
 
 class MySQLEngine(AbstractEngine):
