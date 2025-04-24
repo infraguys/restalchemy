@@ -48,7 +48,12 @@ class Context(object):
         engine = self._engine
         storage = engine.get_session_storage()
         session = engine.get_session()
-        storage.store_session(session)
+        try:
+            storage.store_session(session)
+        except Exception:
+            # Return the session to the pool and raise the exception.
+            session.close()
+            raise
         LOG.debug("New session %r has been started", session)
         return session
 
