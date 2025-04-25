@@ -330,7 +330,6 @@ class PgSQLEngine(AbstractEngine):
         )
         self._pool = psycopg_pool.ConnectionPool(
             conninfo=db_url,
-            open=True,
             configure=self._conn_configure_callback,
             **self._config,
         )
