@@ -84,10 +84,20 @@ def lastslash(url):
 
 
 def raise_parse_error_on_fail(func):
+    """Decorator for handling model properties/relationships parsing errors
+
+    Catches ValueError and TypeError exceptions during field validation and
+    converts them into ParseError with HTTP 400 BadRequest status. Other
+    exceptions are propagated to the error middleware for further processing.
+
+    Any validation errors from controllers or properties related to validating
+    the correctness of a value must be subclasses of ValueError or TypeError.
+    """
+
     def wrapper(obj, name, value, *args, **kwargs):
         try:
             return func(obj, name, value, *args, **kwargs)
-        except Exception:
+        except (ValueError, TypeError):
             value = "%s=%s" % (name, value)
             raise ra_exc.ParseError(value=value)
 
