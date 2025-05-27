@@ -205,9 +205,12 @@ class KindModelType(types.BasePythonType):
             `build_prop_kwargs`.
         :return: an OpenAPI specification for this type.
         """
-        spec = {
-            "type": self.openapi_type,
+        props = {
+            name: prop.get_property_type().to_openapi_spec(prop.get_kwargs())
+            for name, prop in self._python_type.properties.properties.items()
         }
+        props["kind"] = {"type": "string", "enum": [self.kind]}
+        spec = {"type": self.openapi_type, "properties": props}
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
 
@@ -320,5 +323,11 @@ class KindModelSelectorType(types.BaseType):
 
         spec = {
             "type": self.openapi_type,
+            "oneOf": [
+                subtype.to_openapi_spec({})
+                for subtype in self._kind_type_map.values()
+            ],
         }
+
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
