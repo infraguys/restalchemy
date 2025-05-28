@@ -247,6 +247,11 @@ class ValidationSortIncompatibleDirCountError(ValidationErrorException):
     message = "Number of sort keys and directions is not equal."
 
 
+class ValidationSortNumberError(ValidationErrorException):
+
+    message = "Only one field can be sorted with such request."
+
+
 class NotEqualUuidException(RestAlchemyException):
 
     message = (
