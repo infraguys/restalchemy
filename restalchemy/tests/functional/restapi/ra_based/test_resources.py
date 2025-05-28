@@ -876,11 +876,72 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         )
 
     def test_get_collection_paginated_custom_sort(self):
-        RESOURCE_ID1 = UUID1
-        RESOURCE_ID2 = UUID2
+        # There are two sorts under the hood: sort_key and sort by uuid,
+        #  so UUID here are sorted appropriately
+        RESOURCE_ID1 = UUID2
+        RESOURCE_ID2 = UUID1
+        RESOURCE_ID3 = UUID4
+        RESOURCE_ID4 = UUID3
+        RESOURCE_ID5 = UUID5
         self._insert_vm_to_db(uuid=RESOURCE_ID1, name="test1", state="off")
         self._insert_vm_to_db(uuid=RESOURCE_ID2, name="test2", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID3, name="test3", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID4, name="test3", state="on")
+        self._insert_vm_to_db(uuid=RESOURCE_ID5, name="test5", state="on")
         vm_response_body = [
+            {
+                "uuid": str(RESOURCE_ID5),
+                "name": "test5",
+                "state": "on",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+            {
+                "uuid": str(RESOURCE_ID4),
+                "name": "test3",
+                "state": "on",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+        ]
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
+            + "?sort_key=name&sort_dir=desc&page_limit=2",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertEqual(response.headers["X-Pagination-Limit"], "2")
+        self.assertEqual(
+            response.headers["X-Pagination-Marker"], str(RESOURCE_ID4)
+        )
+
+        # Test marker
+
+        vm_response_body = [
+            {
+                "uuid": str(RESOURCE_ID3),
+                "name": "test3",
+                "state": "on",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
             {
                 "uuid": str(RESOURCE_ID2),
                 "name": "test2",
@@ -892,20 +953,48 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "updated": types.DEFAULT_DATE.strftime(
                     types.OPENAPI_DATETIME_FMT
                 ),
-            }
+            },
         ]
 
         response = requests.get(
             self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
-            + "?sort_key=name&sort_dir=desc&page_limit=1",
+            + "?sort_key=name&sort_dir=desc&page_limit=2&page_marker="
+            + str(RESOURCE_ID4),
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
-        self.assertEqual(response.headers["X-Pagination-Limit"], "1")
+        self.assertEqual(response.headers["X-Pagination-Limit"], "2")
         self.assertEqual(
             response.headers["X-Pagination-Marker"], str(RESOURCE_ID2)
         )
+
+        # Last non-full page
+        vm_response_body = [
+            {
+                "uuid": str(RESOURCE_ID1),
+                "name": "test1",
+                "state": "off",
+                "status": "active",
+                "created": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+                "updated": types.DEFAULT_DATE.strftime(
+                    types.OPENAPI_DATETIME_FMT
+                ),
+            },
+        ]
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
+            + "?sort_key=name&sort_dir=desc&page_limit=2&page_marker="
+            + str(RESOURCE_ID2),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), vm_response_body)
+        self.assertEqual(response.headers["X-Pagination-Limit"], "2")
+        self.assertEqual(response.headers.get("X-Pagination-Marker"), None)
 
     def test_get_collection_paginated_with_marker(self):
         RESOURCE_ID1 = UUID1
