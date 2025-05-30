@@ -328,6 +328,11 @@ class PgSQLEngine(AbstractEngine):
             config=config,
             query_cache=query_cache,
         )
+
+        # RA expects the pool to be ready to use
+        if not "open" in self._config:
+            self._config["open"] = True
+
         self._pool = psycopg_pool.ConnectionPool(
             conninfo=db_url,
             configure=self._conn_configure_callback,
