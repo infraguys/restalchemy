@@ -52,6 +52,39 @@ class RecordNameTestCase(unittest.TestCase):
         self.assertFalse(self.test_instance.validate("ee.ёёё.ЕЁ"))
 
 
+class RecordNameWithWildcardTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(RecordNameWithWildcardTestCase, self).setUp()
+        self.test_instance = types_network.RecordNameWithWildcard()
+
+    def test_validate_correct_value(self):
+        self.assertTrue(
+            self.test_instance.validate("*.ns1.ra.restalchemy.com")
+        )
+        self.assertTrue(self.test_instance.validate("ns1.ra.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("*.restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("restalchemy.com"))
+
+    def test_from_simple_type(self):
+        self.assertEqual(self.test_instance.from_simple_type("*.x."), "*.x")
+        self.assertEqual(
+            self.test_instance.from_simple_type("*.x.x."), "*.x.x"
+        )
+
+    def test_to_simple_type(self):
+        self.assertEqual(self.test_instance.to_simple_type("*.xxx"), "*.xxx")
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate("*.a..b.s"))
+        self.assertFalse(self.test_instance.validate("a.*.b.s"))
+        self.assertFalse(self.test_instance.validate(".a.b.s"))
+        self.assertFalse(self.test_instance.validate("*a.b.s"))
+        self.assertFalse(self.test_instance.validate("a.b.s*"))
+        self.assertFalse(self.test_instance.validate("a.b*.s"))
+        self.assertFalse(self.test_instance.validate("a.b.s..*"))
+
+
 class SrvNameTest(unittest.TestCase):
     def setUp(self):
         self.srv_record = types_network.SrvName()
