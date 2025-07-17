@@ -108,6 +108,11 @@ class RecordName(types.BaseCompiledRegExpTypeFromAttr):
         return converted_value if len(converted_value) > 0 else "@"
 
 
+class RecordNameWithWildcard(RecordName):
+    # Difference - allow wildcard at the beginning of domain name.
+    pattern = re.compile(r"^(\*\.){0,1}([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")
+
+
 class SrvName(RecordName):
     def validate(self, value):
         parts = value.split(".")
