@@ -301,7 +301,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
 
 class PgDictJsonbDumper(JsonbDumper):
     def dump(self, obj):
-        return super().dump(Jsonb(obj))
+        return obj if obj is None else super().dump(Jsonb(obj))
 
 
 class PgSQLEngine(AbstractEngine):
