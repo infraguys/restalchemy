@@ -573,7 +573,7 @@ class SoftSchemeDict(Dict):
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {"type": "object", "properties": {}}
-        for k, v in self.__scheme__.items():
+        for k, v in self._scheme.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
         return spec
 
@@ -610,7 +610,7 @@ class SchemeDict(Dict):
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {"type": "object", "properties": {}}
-        for k, v in self.__scheme__.items():
+        for k, v in self._scheme.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
         return spec
 
