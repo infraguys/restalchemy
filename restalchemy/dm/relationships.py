@@ -113,7 +113,7 @@ class Relationship(BaseRelationship):
         return self._type
 
     @classmethod
-    def is_id_property(self):
+    def is_id_property(cls):
         return False
 
 
