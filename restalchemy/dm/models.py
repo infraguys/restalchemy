@@ -215,7 +215,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         return len(self.properties)
 
     def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.get_id())
+        return "<%s %s>" % (self.__class__.__name__, self.as_plain_dict())
 
     def __repr__(self):
         result = []
@@ -240,6 +240,9 @@ class ModelWithID(Model):
 
     def __hash__(self):
         return hash(str(self.get_id()))
+
+    def __str__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.get_id())
 
 
 class ModelWithUUID(ModelWithID):
