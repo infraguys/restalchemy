@@ -109,6 +109,9 @@ class Relationship(BaseRelationship):
     def property_type(self):
         return self._type
 
+    def get_property_type(self):
+        return self._type
+
     @classmethod
     def is_id_property(self):
         return False
