@@ -427,6 +427,82 @@ class BaseNestedResourceController(BaseResourceController):
         return dm
 
 
+class PaginationFilterBuilder:
+    """
+    Represents a pagination cursor with sort value and ID.
+    Handles non-trivial logic for paginating by non-unique column.
+    """
+
+    def __init__(
+        self, model, marker_id, sort_column=None, sort_direction="asc"
+    ):
+        """
+        Create pagination cursor from marker ID.
+
+        Problem: when we sort by non-unique field, there'll be rows
+        which were in the previous response too.
+        So, we need to remove them somehow.
+        Example of a target query:
+            SELECT * FROM table WHERE
+                filters
+                AND
+                (
+                    order_key > marker_order_val
+                        AND
+                        (
+                            order_key <> marker_order_val
+                            OR
+                            id_name > _pagination_marker
+                        )
+                    )
+            ORDER BY
+                order_key order_dir, id_name ASC
+            LIMIT X;
+
+        Args:
+            model: The model to query
+            marker_id: The ID of the last row from previous page
+            sort_column: Column name to sort by (None for ID-only sort)
+            sort_direction: "asc" or "desc"
+        """
+        self.marker_id = marker_id
+        self.sort_col = sort_column
+        self.sort_dir = sort_direction
+        self.id_name = model.get_id_property_name()
+        self.sort_value = self._fetch_sort_val(model)
+
+    def _fetch_sort_val(self, model):
+        """Fetch the sort value for this marker ID"""
+        # No need for extra query, if we're sorting by UUID
+        if self.sort_col in (None, self.id_name):
+            return self.marker_id
+
+        # Get last seen row
+        marker_row = model.objects.get_one(
+            filters={self.id_name: dm_filters.EQ(self.marker_id)}
+        )
+        return getattr(marker_row, self.sort_col)
+
+    def build_filter(self):
+        """Build the compound pagination filter."""
+        if not self.sort_col:
+            return {self.id_name: dm_filters.GT(self.marker_id)}
+
+        # Check if sorting by ID directly
+        id_op = dm_filters.GT if self.sort_dir == "asc" else dm_filters.LT
+        if self.sort_col == self.id_name:
+            return {self.id_name: id_op(self.marker_id)}
+
+        # Standard compound cursor for non-ID primary sort
+        return dm_filters.OR(
+            {self.sort_col: id_op(self.sort_value)},
+            dm_filters.AND(
+                {self.sort_col: dm_filters.EQ(self.sort_value)},
+                {self.id_name: dm_filters.GT(self.marker_id)},
+            ),
+        )
+
+
 class BasePaginationMixin(object):
     """Pagination mixin, marker based, not offset based!
 
@@ -509,79 +585,45 @@ class BasePaginationMixin(object):
         )
 
     def _process_storage_filters(self, filters, order_by=None):
-        if not self._pagination_limit:
-            return super(BasePaginationMixin, self)._process_storage_filters(
-                filters, order_by=order_by
-            )
-
-        # We support only one sort key with pagination for now.
-        if order_by and len(order_by) > 1:
-            raise exc.ValidationSortNumberError()
-
-        id_name = self.model.get_id_property_name()
-        if self._pagination_marker:
-            if order_by:
-                # Problem: when we sort by non-unique field, there'll be
-                #  rows which will be in previous response too.
-                #  So, we need to remove them somehow. Example of target query:
-                #  SELECT * FROM table WHERE
-                #       filters
-                #       AND
-                #       (
-                #           order_key > marker_order_val
-                #           AND
-                #           (
-                #               order_key <> marker_order_val
-                #               OR
-                #               id_name > _pagination_marker
-                #           )
-                #       )
-                #  ORDER BY
-                #       order_key order_dir, id_name ASC
-                #  LIMIT X;
-
-                for key, val in order_by.items():
-                    order_key = key
-                    order_dir = val
-                    order_dir_op = (
-                        dm_filters.GE if order_dir == "asc" else dm_filters.LE
-                    )
-                marker_order_val = getattr(
-                    self.model.objects.get_one(
-                        filters={
-                            id_name: dm_filters.EQ(self._pagination_marker)
-                        }
-                    ),
-                    order_key,
-                )
-                filters = dm_filters.AND(
-                    dm_filters.AND(
-                        {order_key: order_dir_op(marker_order_val)},
-                        # Unfortunately, sorting column may be non-unique,
-                        #   so remove already sent rows from previous request.
-                        dm_filters.OR(
-                            {order_key: dm_filters.NE(marker_order_val)},
-                            {id_name: dm_filters.GT(self._pagination_marker)},
-                        ),
-                    ),
-                    filters,
-                )
-            else:
-                filters = dm_filters.AND(
-                    {id_name: dm_filters.GT(self._pagination_marker)}, filters
-                )
-
-        if order_by:
-            order_by = order_by.copy()
-            order_by[id_name] = "asc"
-        else:
-            order_by = {id_name: "asc"}
-
+        self._validate_params(filters, order_by)
+        filters, order_by = self._build_pagination_with_cursor(
+            filters, order_by
+        )
         return self.model.objects.get_all(
             filters=filters,
             limit=self._pagination_limit,
             order_by=order_by,
         )
+
+    def _validate_params(self, filters, order_by):
+        if order_by and len(order_by) > 1:
+            raise exc.ValidationSortNumberError()
+
+    def _build_pagination_with_cursor(self, filters, order_by):
+        if self._pagination_marker:
+            sort_col, sort_dir = (
+                next(iter(order_by.items())) if order_by else (None, "asc")
+            )
+            cursor = PaginationFilterBuilder(
+                self.model,
+                self._pagination_marker,
+                sort_col,
+                sort_dir,
+            )
+            pagination_filters = cursor.build_filter()
+            filters = dm_filters.AND(pagination_filters, filters)
+
+        # Build final ordering
+        # Don't add ID tiebreaker if ID is already the primary sort
+        id_name = self.model.get_id_property_name()
+        if order_by:
+            order_by = order_by.copy()
+            if id_name not in order_by:
+                order_by[id_name] = "asc"
+        else:
+            order_by = {id_name: "asc"}
+
+        return filters, order_by
 
     def paginated_filter(self, filters, order_by=None):
         custom_filters, storage_filters = self._split_filters(filters)
