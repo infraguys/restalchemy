@@ -128,7 +128,16 @@ class LeftJoin(common.AbstractClause):
 
 
 class OrderByValue(common.AbstractClause):
-    SORT_TYPES = frozenset(("ASC", "DESC"))
+    SORT_TYPES = frozenset(
+        (
+            "ASC",
+            "ASC NULLS FIRST",
+            "ASC NULLS LAST",
+            "DESC",
+            "DESC NULLS FIRST",
+            "DESC NULLS LAST",
+        )
+    )
 
     def __init__(self, column, session, sort_type=None):
         super(OrderByValue, self).__init__(session)
@@ -141,9 +150,48 @@ class OrderByValue(common.AbstractClause):
                 raise ValueError("Unknown order: %s" % self._sort_type)
 
     def compile(self):
-        return "%s %s" % (
-            self._session.engine.escape(self._column.name),
-            self._sort_type,
+        """
+        Generic compilation of the ORDER BY clause.
+
+        A note regarding "NULLS FIRST/LAST":
+            Resulting SQL looks like:
+                ORDER BY
+                    CASE WHEN table.col IS NULL THEN 0 ELSE 1 END ASC,
+                    table.col ASC
+
+            So, for example with NULLS FIRST:
+            CASE result | Actual value
+            ----------- | ------------
+             0          | NULL
+             0          | NULL
+             1          | 2
+             1          | 5
+             1          | 8
+
+            This approach is generic, and works for both PostgreSQL and MySQL,
+            unlike PostgreSQL-specific "NULLS FIRST/LAST".
+
+            todo: Add PostgreSQL-specific ordering using the native
+                NULLS FIRST/LAST syntax for its performance benefits.
+        """
+        column_name = self._column.compile()
+
+        # Handle simple ASC/DESC without NULLS specification
+        if self._sort_type in ("ASC", "DESC"):
+            return "%s %s" % (column_name, self._sort_type)
+
+        # Handle NULLS FIRST/LAST with a generic CASE approach
+        order_map = {
+            "ASC NULLS FIRST": ("ASC", 0, 1),
+            "ASC NULLS LAST": ("ASC", 1, 0),
+            "DESC NULLS FIRST": ("DESC", 0, 1),
+            "DESC NULLS LAST": ("DESC", 1, 0),
+        }
+        order, then_, else_ = order_map[self._sort_type]
+        return (
+            f"CASE WHEN {column_name} IS NULL "
+            f"THEN {then_} ELSE {else_} END ASC, "
+            f"{column_name} {order}"
         )
 
 
@@ -301,7 +349,11 @@ class SelectQ(common.AbstractClause):
         return self
 
     def order_by(self, property_name, sort_type="ASC"):
-        column = self._model_table.get_column_by_name(property_name)
+        column = self._model_table.get_column_by_name(
+            property_name,
+            wrap_alias=False,
+        )
+
         self._order_by_expressions.append(
             OrderByValue(
                 column=column,
