@@ -12,6 +12,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from parameterized import parameterized
 
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
@@ -21,12 +22,13 @@ from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
 from restalchemy.tests.functional import base
 from restalchemy.tests.functional import consts
+from restalchemy.tests.utils import make_test_name
 
 
 class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = "batch_insert"
     foo_field1 = properties.property(types.Integer(), required=True)
-    foo_field2 = properties.property(types.String(), default="foo_str")
+    foo_field2 = properties.property(types.String())
 
 
 class TestOrderByTestCase(base.BaseWithDbMigrationsTestCase):
@@ -45,27 +47,31 @@ class TestOrderByTestCase(base.BaseWithDbMigrationsTestCase):
 
         self.assertEqual({model1, model2}, all_models)
 
-    def test_with_order_by_asc(self):
-        model1 = FakeModel(foo_field1=1, foo_field2="Model1")
-        model2 = FakeModel(foo_field1=2, foo_field2="Model2")
-
+    @parameterized.expand(
+        [
+            (None, ("1", "2")),
+            ("ASC", ("1", "2")),
+            ("DESC", ("2", "1")),
+            ("ASC NULLS FIRST", (None, "1", "2")),
+            ("ASC NULLS LAST", ("1", "2", None)),
+            ("DESC NULLS FIRST", (None, "2", "1")),
+            ("DESC NULLS LAST", ("2", "1", None)),
+        ],
+        name_func=make_test_name,
+    )
+    def test_with_various_order_bys(self, sort_dir, correct_order):
+        items = [
+            FakeModel(foo_field1=idx, foo_field2=val)
+            for idx, val in enumerate(correct_order)
+        ]
         with self.engine.session_manager() as session:
-            session.batch_insert([model1, model2])
+            session.batch_insert(items)
 
-        all_models = FakeModel.objects.get_all(order_by={"foo_field1": "ASC"})
-
-        self.assertEqual([model1, model2], all_models)
-
-    def test_with_order_by_desc(self):
-        model1 = FakeModel(foo_field1=1, foo_field2="Model1")
-        model2 = FakeModel(foo_field1=2, foo_field2="Model2")
-
-        with self.engine.session_manager() as session:
-            session.batch_insert([model1, model2])
-
-        all_models = FakeModel.objects.get_all(order_by={"foo_field1": "DESC"})
-
-        self.assertEqual([model2, model1], all_models)
+        results_from_db = FakeModel.objects.get_all(
+            order_by={"foo_field2": sort_dir}
+        )
+        values_from_db = tuple(i.foo_field2 for i in results_from_db)
+        self.assertEqual(correct_order, values_from_db)
 
 
 class TestLikeTestCase(base.BaseWithDbMigrationsTestCase):

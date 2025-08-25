@@ -243,8 +243,8 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " `t1`.`field_int` = %s AND"
             " `t1`.`field_str` = %s) "
             "ORDER BY"
-            " `t1_field_str` ASC,"
-            " `t1_field_int` DESC",
+            " `t1`.`field_str` ASC,"
+            " `t1`.`field_int` DESC",
             result_expression,
         )
         self.assertEqual([True, 0, "FAKE_STR"], result_values)

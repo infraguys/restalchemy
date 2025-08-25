@@ -7,5 +7,5 @@ def make_test_name(testcase_func, param_num, param):
         test_smth_3_arg1.3_arg2.1
                   ^^^^^^^^^^^^^^^
     """
-    params_str = "_".join(str(i) for i in param[0])
+    params_str = "_".join(str(i).replace(" ", "_") for i in param[0])
     return f"{testcase_func.__name__}_{param_num}_{params_str}"

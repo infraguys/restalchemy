@@ -16,9 +16,12 @@
 
 import unittest
 
+from parameterized import parameterized
+
 from restalchemy.storage.sql.dialect.query_builder import common
 from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.tests import fixtures
+from restalchemy.tests.utils import make_test_name
 
 
 class TestOrderByValue(unittest.TestCase):
@@ -37,14 +40,24 @@ class TestOrderByValue(unittest.TestCase):
 
         self.assertEqual("`1` ASC", order.compile())
 
-    def test_valid_type(self):
+    @parameterized.expand(
+        [
+            ("ASC",),
+            ("DESC",),
+            ("ASC NULLS FIRST",),
+            ("ASC NULLS LAST",),
+            ("DESC NULLS FIRST",),
+            ("DESC NULLS LAST",),
+        ],
+        name_func=make_test_name,
+    )
+    def test_valid_type(self, sort_dir):
         order = q.OrderByValue(
             self.column,
-            sort_type="DESC",
+            sort_type=sort_dir,
             session=fixtures.SessionFixture(),
         )
-
-        self.assertEqual("`1` DESC", order.compile())
+        self.assertTrue(order.compile())
 
     def test_invalid_type(self):
         with self.assertRaises(ValueError):

@@ -33,7 +33,7 @@ class MigrationStep(migrations.AbstarctMigrationStep):
                 CREATE TABLE IF NOT EXISTS batch_insert (
                     uuid CHAR(36) NOT NULL,
                     foo_field1 INT NOT NULL,
-                    foo_field2 VARCHAR(255) NOT NULL,
+                    foo_field2 VARCHAR(255) NULL,
                 PRIMARY KEY (uuid),
                 UNIQUE (foo_field1));
             """,
