@@ -17,6 +17,8 @@
 import unittest
 import uuid
 
+from parameterized import parameterized
+
 from restalchemy.dm import filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -25,7 +27,7 @@ from restalchemy.dm import types
 from restalchemy.tests import fixtures
 from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.storage.sql import orm
-
+from restalchemy.tests.utils import make_test_name
 
 FAKE_UUID0 = uuid.UUID("00000000-0000-0000-0000-000000000000")
 FAKE_UUID1 = uuid.UUID("00000000-0000-0000-0000-000000000001")
@@ -215,11 +217,39 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             result_values,
         )
 
-    def test_l1_select_order_by(self):
+    @parameterized.expand(
+        [
+            (None, "`t1`.`uuid` ASC"),
+            ("ASC", "`t1`.`uuid` ASC"),
+            ("DESC", "`t1`.`uuid` DESC"),
+            (
+                "ASC NULLS FIRST",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 0 ELSE 1 END ASC, "
+                "`t1`.`uuid` ASC",
+            ),
+            (
+                "ASC NULLS LAST",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 1 ELSE 0 END ASC, "
+                "`t1`.`uuid` ASC",
+            ),
+            (
+                "DESC NULLS FIRST",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 0 ELSE 1 END ASC, "
+                "`t1`.`uuid` DESC",
+            ),
+            (
+                "DESC NULLS LAST",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 1 ELSE 0 END ASC, "
+                "`t1`.`uuid` DESC",
+            ),
+        ],
+        name_func=make_test_name,
+    )
+    def test_l1_select_order_by(self, sort_dir, correct_clause):
         query = self.Q.select(
             model=ModelWithL1Relationships,
             session=fixtures.SessionFixture(),
-        ).order_by("uuid")
+        ).order_by("uuid", sort_dir)
 
         result_expression = query.compile()
         result_values = query.values()
@@ -238,8 +268,7 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             " `simple_table` AS `t2` "
             "ON"
             " (`t1`.`ref_l0_1` = `t2`.`uuid`) "
-            "ORDER BY"
-            " `t1_uuid` ASC",
+            f"ORDER BY {correct_clause}",
             result_expression,
         )
         self.assertEqual([], result_values)
