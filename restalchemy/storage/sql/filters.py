@@ -196,17 +196,18 @@ class ClauseList(AbstractExpression):
         raise NotImplementedError
 
     def construct_expression(self):
-        return (
-            (
-                "("
-                + (" " + self.operator + " ").join(
-                    val.construct_expression() for val in self._clauses
-                )
-                + ")"
-            )
-            if self._clauses
-            else ""
+        clause_count = len(self._clauses)
+
+        if clause_count == 0:
+            return ""
+
+        if clause_count == 1:
+            return self._clauses[0].construct_expression()
+
+        joined = f" {self.operator} ".join(
+            clause.construct_expression() for clause in self._clauses
         )
+        return f"({joined})"
 
 
 class AND(ClauseList):

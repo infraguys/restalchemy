@@ -404,7 +404,7 @@ class ConvertFiltersTestCase(base.BaseTestCase):
         )
 
         self.assertEqual(
-            "((`name1` = %s AND `name2` = %s) OR (`name2` = %s))",
+            "((`name1` = %s AND `name2` = %s) OR `name2` = %s)",
             processed.construct_expression(),
         )
         self.assertEqual([1, 2, 2], processed.value)
@@ -453,7 +453,7 @@ class ConvertFiltersTestCase(base.BaseTestCase):
             session=fixtures.SessionFixture(),
         )
 
-        self.assertEqual("(`parent` = %s)", processed.construct_expression())
+        self.assertEqual("`parent` = %s", processed.construct_expression())
         self.assertEqual([str(TEST_UUID)], processed.value)
 
     def test_convert_filters_new_relationship_by_id(self):
@@ -465,5 +465,5 @@ class ConvertFiltersTestCase(base.BaseTestCase):
             session=fixtures.SessionFixture(),
         )
 
-        self.assertEqual("(`parent` = %s)", processed.construct_expression())
+        self.assertEqual("`parent` = %s", processed.construct_expression())
         self.assertEqual([str(TEST_UUID)], processed.value)

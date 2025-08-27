@@ -68,7 +68,27 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             result,
         )
 
-    def test_select_with_filters(self):
+    def test_select_with_1_filter(self):
+        query = self.Q.select(
+            model=SimpleModel,
+            session=fixtures.SessionFixture(),
+        ).where({"field_bool": filters.EQ(True)})
+
+        result_expression = query.compile()
+        self.assertEqual(
+            "SELECT"
+            " `t1`.`field_bool` AS `t1_field_bool`,"
+            " `t1`.`field_int` AS `t1_field_int`,"
+            " `t1`.`field_str` AS `t1_field_str`,"
+            " `t1`.`uuid` AS `t1_uuid`"
+            " FROM"
+            " `simple_table` AS `t1` "
+            "WHERE"
+            " `t1`.`field_bool` = %s",
+            result_expression,
+        )
+
+    def test_select_with_filters_with_and(self):
         query = self.Q.select(
             model=SimpleModel,
             session=fixtures.SessionFixture(),
@@ -93,6 +113,49 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         )
         self.assertEqual([True, 0, "FAKE_STR"], result_values)
 
+    def test_select_with_filters_with_or(self):
+        my_filter = filters.OR(
+            filters.AND({"field_int": filters.LT(9)}),
+            filters.AND(
+                {"field_int": filters.GE(1), "field_str": filters.IsNot(None)}
+            ),
+        )
+        query = self.Q.select(
+            model=SimpleModel,
+            session=fixtures.SessionFixture(),
+        ).where(my_filter)
+
+        result_expression = query.compile()
+        self.assertEqual(
+            "SELECT `t1`.`field_bool` AS `t1_field_bool`,"
+            " `t1`.`field_int` AS `t1_field_int`,"
+            " `t1`.`field_str` AS `t1_field_str`,"
+            " `t1`.`uuid` AS `t1_uuid` "
+            "FROM `simple_table` AS `t1` "
+            "WHERE (`t1`.`field_int` < %s"
+            " OR (`t1`.`field_int` >= %s AND `t1`.`field_str` IS NOT %s))",
+            result_expression,
+        )
+
+    def test_select_with_empty_filter(self):
+        query = self.Q.select(
+            model=SimpleModel,
+            session=fixtures.SessionFixture(),
+        ).where({})
+
+        result_expression = query.compile()
+
+        self.assertEqual(
+            "SELECT"
+            " `t1`.`field_bool` AS `t1_field_bool`,"
+            " `t1`.`field_int` AS `t1_field_int`,"
+            " `t1`.`field_str` AS `t1_field_str`,"
+            " `t1`.`uuid` AS `t1_uuid`"
+            " FROM"
+            " `simple_table` AS `t1`",
+            result_expression,
+        )
+
     def test_select_two_where_clause(self):
         second_filter = filters.AND({"field_str": filters.EQ("FAKE_STR_TWO")})
         query = (
@@ -116,9 +179,9 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
-            " (`t1`.`field_bool` = %s AND"
+            " ((`t1`.`field_bool` = %s AND"
             " `t1`.`field_int` = %s AND"
-            " `t1`.`field_str` = %s AND"
+            " `t1`.`field_str` = %s) AND"
             " `t1`.`field_str` = %s)",
             result_expression,
         )
