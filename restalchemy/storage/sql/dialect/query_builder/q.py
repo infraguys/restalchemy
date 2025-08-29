@@ -328,13 +328,13 @@ class SelectQ(common.AbstractClause):
         ]
 
     def where(self, filters=None):
-        self._where_expression.extend_clauses(
-            sql_filters.convert_filters(
-                self._model_table,
-                filters,
-                session=self._session,
-            ).clauses,
+        filters_converted = sql_filters.convert_filters(
+            self._model_table,
+            filters,
+            session=self._session,
         )
+        filters_tuple = (filters_converted,)
+        self._where_expression.extend_clauses(filters_tuple)
         return self
 
     def limit(self, value):
