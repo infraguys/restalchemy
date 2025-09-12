@@ -17,7 +17,7 @@
 from restalchemy.storage.sql import migrations
 
 
-class MigrationStep(migrations.AbstarctMigrationStep):
+class MigrationStep(migrations.AbstractMigrationStep):
 
     def __init__(self):
         self._depends = ["0006-sixth-a405f4.py", "0005-fifth-4705d1.py"]
