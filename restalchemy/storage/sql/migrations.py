@@ -49,7 +49,7 @@ class DependenciesException(Exception):
     pass
 
 
-class AbstarctMigrationStep(metaclass=abc.ABCMeta):
+class AbstractMigrationStep(metaclass=abc.ABCMeta):
 
     @property
     def depends(self):
@@ -97,6 +97,12 @@ class AbstarctMigrationStep(metaclass=abc.ABCMeta):
         session.execute(
             f"DROP VIEW IF EXISTS {session.engine.escape(view_name)};"
         )
+
+
+class AbstarctMigrationStep(AbstractMigrationStep):
+    """Legacy class with typo in name, please migrate to valid class"""
+
+    pass
 
 
 class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
