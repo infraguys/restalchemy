@@ -153,11 +153,14 @@ class Controller(object):
         return {key: "asc" for key in keys}
 
     def _prepare_filters(self, params):
-        if not (self.__resource__ and self.__resource__.is_process_filters()):
-            return params
         result = {}
+        process = self.__resource__ and self.__resource__.is_process_filters()
         for param, value in params.items():
-            filter_name, filter_value = self._prepare_filter(param, value)
+            filter_name, filter_value = (
+                self._prepare_filter(param, value)
+                if process
+                else (param, value)
+            )
             if filter_name not in result:
                 result[filter_name] = dm_filters.EQ(filter_value)
             else:

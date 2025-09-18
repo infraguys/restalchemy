@@ -59,6 +59,9 @@ TEMPL_V1_COLLECTION_ENDPOINT = utils.lastslash(
 TEMPL_VMS_COLLECTION_ENDPOINT = utils.lastslash(
     parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, "vms")
 )
+TEMPL_VMSNOPROCESSFILTERS_COLLECTION_ENDPOINT = utils.lastslash(
+    parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, "vmsnoproccessfilters")
+)
 TEMPL_NOT_IMPLEMENTED_METHODS_COLLECTION_ENDPOINT = utils.lastslash(
     parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, "notimplementedmethods")
 )
@@ -206,7 +209,13 @@ class TestVersionsResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            ["notimplementedmethods", "vms", "vmsdefsort", "vmsnosort"],
+            [
+                "notimplementedmethods",
+                "vms",
+                "vmsdefsort",
+                "vmsnoproccessfilters",
+                "vmsnosort",
+            ],
         )
 
 
@@ -574,7 +583,14 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(vm_response_body, response.json())
 
-    def test_get_collection_vms_with_filter_by_two_uuid(self):
+    @parameterized.expand(
+        [
+            TEMPL_VMS_COLLECTION_ENDPOINT,
+            TEMPL_VMSNOPROCESSFILTERS_COLLECTION_ENDPOINT,
+        ],
+        name_func=make_test_name,
+    )
+    def test_get_collection_vms_with_filter_by_two_uuid(self, base_url):
         RESOURCE_ID1 = UUID1
         RESOURCE_ID2 = UUID2
         RESOURCE_ID3 = UUID3
@@ -612,7 +628,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             self.get_endpoint(
                 "%s?uuid=%s&uuid=%s"
                 % (
-                    TEMPL_VMS_COLLECTION_ENDPOINT,
+                    base_url,
                     str(RESOURCE_ID1),
                     str(RESOURCE_ID3),
                 )
