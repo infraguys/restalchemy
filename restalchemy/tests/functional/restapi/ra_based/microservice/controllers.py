@@ -148,6 +148,13 @@ class VMController(controllers.BaseResourceControllerPaginated):
         return {"state": resource.state}
 
 
+class VMNoProcessFiltersController(VMController):
+    __resource__ = resources.ResourceByRAModel(
+        models.VMNoProcessFilters,
+        process_filters=False,
+    )
+
+
 class VMNoSortController(VMController):
     __resource__ = resources.ResourceByRAModel(
         models.VMNoSort, process_filters=True

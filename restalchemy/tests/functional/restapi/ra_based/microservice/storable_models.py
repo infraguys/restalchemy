@@ -23,6 +23,10 @@ class VM(models.VM, orm.SQLStorableMixin):
     __tablename__ = "vms"
 
 
+class VMNoProcessFilters(models.VM, orm.SQLStorableMixin):
+    __tablename__ = "vms"
+
+
 class VMNoSort(models.VM, orm.SQLStorableMixin):
     __tablename__ = "vms"
 
