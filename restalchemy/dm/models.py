@@ -408,3 +408,60 @@ class RestoreFromSimpleViewMixin:
 
 class SimpleViewMixin(DumpToSimpleViewMixin, RestoreFromSimpleViewMixin):
     pass
+
+
+class ModelSoftDelete(Model):
+    """
+    Soft-delete support
+
+    Models using this mixin must define and adjust
+    their database indexes accordingly. Since soft delete changes the effective
+    uniqueness and filtering semantics, **all existing indexes must be updated to
+    include `deleted_at`.**
+
+    Required index changes:
+
+    1. Add a standard index on `deleted_at`:
+       Enables fast filtering of active (`deleted_at IS NULL`) and deleted rows.
+
+       Example:
+           CREATE INDEX idx_<table>_deleted_at
+           ON <table>(deleted_at);
+
+    2. Update all existing indexes to include `deleted_at`:
+       Every non-unique index should append `deleted_at` as the last column.
+       Every unique index should become a composite unique index that also includes
+       `deleted_at`, ensuring uniqueness applies only among non-deleted rows.
+
+       Example:
+           -- Original:
+           CREATE UNIQUE INDEX idx_<table>_email ON <table>(email);
+
+           -- Updated for soft delete:
+           CREATE UNIQUE INDEX idx_<table>_email_deleted
+           ON <table>(email, deleted_at);
+
+    3. (Optional but recommended) Add a partial index for active rows:
+       If supported (e.g., PostgreSQL), a partial index for `deleted_at IS NULL`
+       greatly speeds up common queries.
+
+       Example (PostgreSQL):
+           CREATE INDEX idx_<table>_active
+           ON <table>(id)
+           WHERE deleted_at IS NULL;
+
+    Notes:
+    - The mixin does not create or manage these indexes automatically — they must be
+      added in the manual migration for each model.
+    - If your model defines constraints that logically apply only to active records,
+      convert them to partial unique indexes where supported.
+    """
+
+    deleted_at = properties.property(
+        types.AllowNone(types.UTCDateTimeZ()),
+        default=None,
+    )
+
+    def delete(self, session=None, **kwargs):
+        self.deleted_at = datetime.datetime.now(datetime.timezone.utc)
+        self.save(session)

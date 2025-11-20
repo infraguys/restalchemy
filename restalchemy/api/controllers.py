@@ -19,7 +19,7 @@ import logging
 
 import webob
 
-from restalchemy.api import constants
+from restalchemy.api import constants, actions
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
@@ -654,6 +654,26 @@ class BasePaginationMixin(object):
             cleaned_results = cleaned_results[: self._pagination_limit]
 
         return cleaned_results
+
+
+class SoftDeleteControllerMixin(object):
+
+    def filter(self, filters, order_by=None):
+        filters["deleted_at"] = (
+            dm_filters.IsNot(None)
+            if filters.pop("deleted", False)
+            else dm_filters.Is(None)
+        )
+        return super().filter(filters, order_by=order_by)
+
+    @actions.post
+    def undelete(self, resource, **kwargs):
+        self._enforce_and_override_project_id_in_kwargs(
+            "update:undelete", kwargs
+        )
+        resource.deleted_at = None
+        resource.save()
+        return resource, 200, {}
 
 
 class BaseResourceControllerPaginated(
