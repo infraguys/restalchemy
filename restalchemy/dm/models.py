@@ -408,3 +408,15 @@ class RestoreFromSimpleViewMixin:
 
 class SimpleViewMixin(DumpToSimpleViewMixin, RestoreFromSimpleViewMixin):
     pass
+
+
+class ModelSoftDelete(Model):
+
+    deleted_at = properties.property(
+        types.AllowNone(types.UTCDateTimeZ()),
+        default=None,
+    )
+
+    def delete(self, session=None, **kwargs):
+        self.deleted_at = datetime.datetime.now(datetime.timezone.utc)
+        self.save(session)
