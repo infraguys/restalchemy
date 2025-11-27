@@ -23,9 +23,11 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
+from restalchemy.common import contexts
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
+from restalchemy.storage.sql import utils
 from restalchemy.tests.functional import base
 from restalchemy.tests.functional import consts
 from restalchemy.tests import fixtures
@@ -269,3 +271,98 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
         model.test_str_field2 = FAKE_STR1
         with self.assertRaises(exceptions.UnknownStorageException):
             model.update()
+
+
+class SavepointModel(models.ModelWithUUID, orm.SQLStorableMixin):
+    __tablename__ = "savepoint_table"
+
+    field1 = properties.property(types.String(), required=True)
+    field2 = properties.property(types.String(), required=True)
+
+
+class SavepointTestCase(base.BaseFunctionalTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+        engines.engine_factory.configure_factory(consts.DATABASE_URI)
+        engine = engines.engine_factory.get_engine()
+        self.engine = engine
+        with engine.session_manager() as session:
+            session.execute(
+                """
+                CREATE TABLE IF NOT EXISTS savepoint_table (
+                    uuid CHAR(36) PRIMARY KEY,
+                    field1 VARCHAR(255) NOT NULL,
+                    field2 VARCHAR(255) NOT NULL
+                )
+            """
+            )
+
+    def tearDown(self):
+        super().tearDown()
+
+        with self.engine.session_manager() as session:
+            session.execute("DROP TABLE IF EXISTS savepoint_table;", None)
+        engines.engine_factory.destroy_engine()
+
+    def test_savepoint_success_result(self):
+        with contexts.Context().session_manager():
+            test_model = SavepointModel(field1=FAKE_STR1, field2=FAKE_STR2)
+
+            with utils.savepoint():
+                test_model.save()
+
+            self.assertEqual(test_model.field1, FAKE_STR1)
+            self.assertEqual(test_model.field2, FAKE_STR2)
+
+    def test_savepoint_rollback_result(self):
+        with contexts.Context().session_manager():
+            test_model = SavepointModel(field1=FAKE_STR1, field2="")
+            test_model.save()
+
+            self.assertEqual(test_model.field1, FAKE_STR1)
+            self.assertEqual(test_model.field2, "")
+
+            def save_and_raise():
+                test_model.field2 = FAKE_STR2
+                test_model.save()
+                raise ValueError("Error")
+
+            with self.assertRaises(ValueError):
+                with utils.savepoint():
+                    save_and_raise()
+
+        with contexts.Context().session_manager():
+            objects = SavepointModel.objects.get_all()
+
+            self.assertEqual(len(objects), 1)
+            self.assertEqual(objects[0].field1, FAKE_STR1)
+            self.assertEqual(objects[0].field2, "")
+
+    def test_savepoint_can_continue(self):
+        with contexts.Context().session_manager():
+            test_model = SavepointModel(field1=FAKE_STR1, field2="")
+            test_model.save()
+
+            self.assertEqual(test_model.field1, FAKE_STR1)
+            self.assertEqual(test_model.field2, "")
+
+            def save_and_raise():
+                test_model.field2 = FAKE_STR2
+                test_model.save()
+                raise ValueError("Error")
+
+            with self.assertRaises(ValueError):
+                with utils.savepoint():
+                    save_and_raise()
+
+            test_model.field2 = "foo-value"
+            test_model.save()
+
+        with contexts.Context().session_manager():
+            objects = SavepointModel.objects.get_all()
+
+            self.assertEqual(len(objects), 1)
+            self.assertEqual(objects[0].field1, FAKE_STR1)
+            self.assertEqual(objects[0].field2, "foo-value")
