@@ -55,7 +55,11 @@ class IPAddress(types.BaseType):
             "type": self.openapi_type,
             "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
         }
-        spec.update(types.build_prop_kwargs(kwargs=prop_kwargs))
+        spec.update(
+            types.build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
         return spec
 
 
