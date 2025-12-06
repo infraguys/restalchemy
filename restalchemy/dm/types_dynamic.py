@@ -21,6 +21,7 @@ import json
 import logging
 import uuid
 
+from restalchemy.common import exceptions as ra_exc
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
@@ -165,16 +166,16 @@ class KindModelType(types.BasePythonType):
         for name, prop in self._python_type.properties.properties.items():
             if name in copied_value:
                 property_type = prop.get_property_type()
-                parsed_value[name] = property_type.from_simple_type(
-                    copied_value.pop(name),
-                )
+                try:
+                    val = copied_value.pop(name)
+                    parsed_value[name] = property_type.from_simple_type(val)
+                except (ValueError, TypeError):
+                    raise ra_exc.ParseError(value="%s=%s" % (name, val))
+                except ra_exc.ParseError as e:
+                    raise ra_exc.ParseError(value="%s=%s" % (name, e.value))
         if copied_value:
-            raise ValueError(
-                "Unknown fields: %s for type %s"
-                % (
-                    copied_value,
-                    self._python_type,
-                )
+            raise ra_exc.ParseError(
+                value="(Unknown fields: %s)" % (copied_value)
             )
         return self._python_type(**parsed_value)
 

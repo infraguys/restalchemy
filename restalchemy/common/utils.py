@@ -98,8 +98,9 @@ def raise_parse_error_on_fail(func):
         try:
             return func(obj, name, value, *args, **kwargs)
         except (ValueError, TypeError):
-            value = "%s=%s" % (name, value)
-            raise ra_exc.ParseError(value=value)
+            raise ra_exc.ParseError(value="%s=%s" % (name, value))
+        except ra_exc.ParseError as e:
+            raise ra_exc.ParseError(value="%s=%s" % (name, e.value))
 
     return wrapper
 

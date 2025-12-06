@@ -204,6 +204,10 @@ class ParseError(RestAlchemyException):
     message = "Can't parse value: %(value)s."
     code = 400
 
+    def __init__(self, **kwargs):
+        self.value = kwargs.get("value", "unknown")
+        super().__init__(**kwargs)
+
 
 class ParseBodyError(RestAlchemyException):
     message = "Can't parse body with specified content-type."
