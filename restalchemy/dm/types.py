@@ -74,13 +74,13 @@ DEFAULT_DATE_Z = DEFAULT_DATE.replace(tzinfo=datetime.timezone.utc)
 OPENAPI_DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-def build_prop_kwargs(kwargs):
+def build_prop_kwargs(kwargs, to_simple_type=None):
     result = {}
     for k, v in KWARGS_OPENAPI_MAP.items():
         if k in kwargs.keys():
             value = kwargs[k]() if callable(kwargs[k]) else kwargs[k]
-            if isinstance(value, (UUID, uuid.UUID)):
-                # No default value for uuid
+            if isinstance(value, (UUID, uuid.UUID, bool)):
+                # No default value for uuid and bool
                 continue
             elif isinstance(value, datetime.datetime):
                 value = DEFAULT_DATE.strftime(OPENAPI_DATETIME_FMT)
@@ -89,6 +89,8 @@ def build_prop_kwargs(kwargs):
                     name: prop.get_property_type().to_simple_type(value[name])
                     for name, prop in value.properties.properties.items()
                 }
+            elif to_simple_type is not None:
+                value = to_simple_type(value)
 
             result[v] = value
     return result
@@ -139,7 +141,11 @@ class BaseType(metaclass=abc.ABCMeta):
         spec = {"type": self._openapi_type}
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
-        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        spec.update(
+            build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
         return spec
 
 
@@ -386,9 +392,11 @@ class Decimal(BasePythonType):
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
-        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
-        if "default" in prop_kwargs and self.validate(prop_kwargs["default"]):
-            spec["default"] = self.to_simple_type(prop_kwargs["default"])
+        spec.update(
+            build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
         return spec
 
 
@@ -489,7 +497,11 @@ class TypedList(List):
             "type": self.openapi_type,
             "items": self._nested_type.to_openapi_spec({}),
         }
-        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        spec.update(
+            build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
         return spec
 
 
@@ -512,7 +524,7 @@ class Dict(ComplexPythonType):
                     {"type": "integer"},
                     {"type": "boolean"},
                     {"type": "object"},
-                    {"type": "array"},
+                    {"type": "array", "items": {}},
                 ]
             },
         }
@@ -649,7 +661,11 @@ class TypedDict(Dict):
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
-        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        spec.update(
+            build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
         return spec
 
 
@@ -701,12 +717,11 @@ class UTCDateTime(BasePythonType):
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
-        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
-        if "default" in prop_kwargs and (
-            self.validate(prop_kwargs["default"])
-            or callable(prop_kwargs["default"])
-        ):
-            spec["default"] = self.dump_value(prop_kwargs["default"]())
+        spec.update(
+            build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.dump_value
+            )
+        )
         return spec
 
 
@@ -787,7 +802,11 @@ class TimeDelta(BasePythonType):
             "minimum": self.min_openapi_value,
             "maximum": self.max_openapi_value,
         }
-        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        spec.update(
+            build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
         return spec
 
 
