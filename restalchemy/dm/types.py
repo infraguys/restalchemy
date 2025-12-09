@@ -524,7 +524,7 @@ class Dict(ComplexPythonType):
                     {"type": "integer"},
                     {"type": "boolean"},
                     {"type": "object"},
-                    {"type": "array"},
+                    {"type": "array", "items": {}},
                 ]
             },
         }
