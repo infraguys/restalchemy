@@ -113,7 +113,8 @@ class Property(BaseProperty):
     @value.setter
     def value(self, value):
         if self.is_read_only() or self.is_id_property():
-            raise exc.ReadOnlyProperty()
+            if value != self._value:
+                raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 
     def set_value_force(self, value):
