@@ -215,6 +215,9 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         return len(self.properties)
 
     def __str__(self):
+        if len(self.id_properties) == 0:
+            return self.__repr__()
+
         return "<%s %s>" % (self.__class__.__name__, self.get_id())
 
     def __repr__(self):
