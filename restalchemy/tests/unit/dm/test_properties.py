@@ -1,4 +1,5 @@
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2025 Genesis Corporation
 #
 # All Rights Reserved.
 #
@@ -171,6 +172,48 @@ class PropertyTestCase(base.BaseTestCase):
             FAKE_VALUE2,
         )
         self.assertEqual(property_obj._value, None)
+
+    def test_set_value_if_property_read_only_and_value_is_same(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, read_only=True, value=FAKE_VALUE
+        )
+
+        self.assertIsNone(self._set_property_value(property_obj, FAKE_VALUE))
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+
+    def test_set_value_if_property_read_only_and_value_is_different(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, read_only=True, value=FAKE_VALUE
+        )
+
+        self.assertRaises(
+            exceptions.ReadOnlyProperty,
+            self._set_property_value,
+            property_obj,
+            FAKE_VALUE2,
+        )
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+
+    def test_set_value_if_id_property_and_value_is_same(self):
+        property_obj = properties.IDProperty(
+            self.positive_fake_property_type, value=FAKE_VALUE
+        )
+
+        self.assertIsNone(self._set_property_value(property_obj, FAKE_VALUE))
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+
+    def test_set_value_if_id_property_and_value_is_different(self):
+        property_obj = properties.IDProperty(
+            self.positive_fake_property_type, value=FAKE_VALUE
+        )
+
+        self.assertRaises(
+            exceptions.ReadOnlyProperty,
+            self._set_property_value,
+            property_obj,
+            FAKE_VALUE2,
+        )
+        self.assertEqual(property_obj._value, FAKE_VALUE)
 
     def test_set_force_correct_value(self):
         property_obj = properties.Property(self.positive_fake_property_type)
