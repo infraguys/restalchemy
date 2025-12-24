@@ -671,8 +671,9 @@ class SoftDeleteControllerMixin(object):
         self._enforce_and_override_project_id_in_kwargs(
             "update:undelete", kwargs
         )
-        resource.deleted_at = None
-        resource.save()
+        if resource.deleted_at is not None:
+            resource.deleted_at = None
+            resource.save()
         return resource, 200, {}
 
 
