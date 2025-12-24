@@ -1,4 +1,5 @@
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2025 Genesis Corporation
 #
 # All Rights Reserved.
 #
@@ -102,6 +103,10 @@ class VMPowerOffAction(routes.Action):
     __controller__ = controllers.VMController
 
 
+class VMIPAddressesAction(routes.Action):
+    __controller__ = controllers.VMIpAddressesController
+
+
 class VMRoute(routes.Route):
     __controller__ = controllers.VMController
     __allow_methods__ = [
@@ -113,6 +118,7 @@ class VMRoute(routes.Route):
     ]
 
     power = routes.action(VMPowerAction, invoke=True)
+    ip_addresses = routes.action(VMIPAddressesAction, invoke=False)
     power_state = routes.action(VMPowerStateAction, invoke=False)
     poweron = routes.action(VMPowerOnAction, invoke=True)
     poweroff = routes.action(VMPowerOffAction, invoke=True)
