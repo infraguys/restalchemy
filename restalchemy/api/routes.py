@@ -1,4 +1,5 @@
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2025 Genesis Corporation
 #
 # All Rights Reserved.
 #
@@ -115,6 +116,24 @@ class BaseRoute(metaclass=abc.ABCMeta):
 class Route(BaseRoute):
     __controller__ = None
     __allow_methods__ = [GET, CREATE, UPDATE, DELETE, FILTER]
+
+    def _get_openapi_action_controller_and_handler(self, action_name):
+        action_route_cls = self.get_action(action_name)
+        action_controller_cls = action_route_cls.get_controller_class()
+        if not action_controller_cls:
+            raise exc.IncorrectRouteAttribute(
+                route=action_route_cls, attr="__controller__"
+            )
+
+        try:
+            action_handler = getattr(action_controller_cls, action_name)
+        except AttributeError:
+            raise exc.IncorrectRouteAttribute(
+                route=action_controller_cls, attr=action_name
+            )
+
+        action_controller = action_controller_cls(request=self._req)
+        return action_controller, action_handler
 
     @classmethod
     def is_resource_route(cls):
@@ -413,15 +432,20 @@ class Route(BaseRoute):
 
             action_names = [r for r in self.get_action_names()]
             if action_names:
-                route_actions = self.get_actions_by_names(action_names)
-                for route_action in route_actions:
-                    is_invoke = getattr(self, route_action.name).is_invoke()
+                for action_name in action_names:
+                    action_controller, action_handler = (
+                        self._get_openapi_action_controller_and_handler(
+                            action_name
+                        )
+                    )
+
+                    is_invoke = getattr(self, action_handler.name).is_invoke()
                     if is_invoke:
                         action_path = posixpath.join(
                             current_path,
                             id_parameter_name,
                             "actions",
-                            route_action.name,
+                            action_handler.name,
                             "invoke",
                         )
                     else:
@@ -429,12 +453,15 @@ class Route(BaseRoute):
                             current_path,
                             id_parameter_name,
                             "actions",
-                            route_action.name,
+                            action_handler.name,
                         )
-                    paths_result[action_path][route_action.method.lower()] = (
-                        self._build_openapi_method_specification(
-                            route_action, parameters, action_path
-                        )
+                    paths_result[action_path][
+                        action_handler.method.lower()
+                    ] = self._build_openapi_method_specification(
+                        action_handler,
+                        parameters,
+                        action_path,
+                        controller=action_controller,
                     )
         return paths_result, schemas_result
 

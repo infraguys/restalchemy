@@ -98,6 +98,10 @@ Actions 表示不直接等同于 CRUD 的操作，例如：
 - `/v1/files/<id>/actions/download` —— 下载文件；
 - `/v1/objects/<id>/actions/some_business_operation` —— 自定义业务操作。
 
+另见 action 返回结果序列化的注意事项：
+
+- [Action 返回结果序列化的注意事项](actions-serialization.md)
+
 ### 2.1 使用 ActionHandler 定义 Action
 
 模块：`restalchemy.api.actions`
