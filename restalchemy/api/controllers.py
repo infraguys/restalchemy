@@ -660,7 +660,7 @@ class SoftDeleteControllerMixin(object):
 
     def filter(self, filters, order_by=None):
         deleted_value = filters.pop("deleted", False)
-        show_deleted = str(deleted_value).lower() in ('true', '1', 'yes')
+        show_deleted = str(deleted_value).lower() in ("true", "1", "yes")
         filters["deleted_at"] = (
             dm_filters.IsNot(None) if show_deleted else dm_filters.Is(None)
         )
