@@ -23,6 +23,12 @@ from mysql.connector import errors
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
 
+SAVEPOINT_EXP_MAP = {
+    "savepoint": "SAVEPOINT {name};",
+    "rollback": "ROLLBACK TO {name};",
+    "release": "RELEASE SAVEPOINT {name};",
+}
+
 
 def handle_database_errors(func):
     @wraps(func)
