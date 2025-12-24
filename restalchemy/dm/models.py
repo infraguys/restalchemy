@@ -466,5 +466,6 @@ class ModelSoftDelete(Model):
     )
 
     def delete(self, session=None, **kwargs):
-        self.deleted_at = datetime.datetime.now(datetime.timezone.utc)
-        self.save(session)
+        if self.deleted_at is None:
+            self.deleted_at = datetime.datetime.now(datetime.timezone.utc)
+            self.save(session)
