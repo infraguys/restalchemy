@@ -659,10 +659,10 @@ class BasePaginationMixin(object):
 class SoftDeleteControllerMixin(object):
 
     def filter(self, filters, order_by=None):
+        deleted_value = filters.pop("deleted", False)
+        show_deleted = str(deleted_value).lower() in ('true', '1', 'yes')
         filters["deleted_at"] = (
-            dm_filters.IsNot(None)
-            if filters.pop("deleted", False)
-            else dm_filters.Is(None)
+            dm_filters.IsNot(None) if show_deleted else dm_filters.Is(None)
         )
         return super().filter(filters, order_by=order_by)
 
