@@ -21,6 +21,7 @@ from restalchemy.common import exceptions
 
 class RecordNotFound(exceptions.RestAlchemyException):
 
+    code = 404
     message = (
         "Can't found record in storage for model (%(model)s) and "
         "filters (%(filters)s)."
@@ -48,6 +49,8 @@ class DeadLock(exceptions.RestAlchemyException):
 
 
 class ConflictRecords(exceptions.RestAlchemyException):
+
+    code = 409
     message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
 
     def __init__(self, **kwargs):
