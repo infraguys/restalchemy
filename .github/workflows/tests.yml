@@ -37,7 +37,13 @@ jobs:
           MARIADB_DATABASE: ra_database
           MARIADB_USER: root
           MYSQL_ROOT_PASSWORD: test_password
-        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --ulimit nofile=65536:65536
+          --health-cmd="healthcheck.sh
+          --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
       postgresql:
         image: postgres:latest
         # Provide the password for postgres
@@ -46,8 +52,13 @@ jobs:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: test_password
+          POSTGRES_INITDB_ARGS: "-c max_connections=100"
         # Set health checks to wait until postgres has started
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         ports:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432

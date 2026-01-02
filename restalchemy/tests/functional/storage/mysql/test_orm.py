@@ -206,7 +206,7 @@ class TestCacheTestCase(base.BaseWithDbMigrationsTestCase):
     @classmethod
     def init_engine(cls):
         engines.engine_factory.configure_factory(
-            db_url=consts.DATABASE_URI, query_cache=True
+            db_url=consts.get_database_uri(), query_cache=True
         )
         cls.__ENGINE__ = engines.engine_factory.get_engine()
 
