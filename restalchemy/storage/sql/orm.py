@@ -15,7 +15,7 @@
 #    under the License.
 
 import abc
-import json
+import orjson
 
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
@@ -338,7 +338,7 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
         for field in cls.__jsonfields__:
             # Some databases' clients support JSON fields natively.
             if isinstance(kwargs[field], str):
-                kwargs[field] = json.loads(kwargs[field])
+                kwargs[field] = orjson.loads(kwargs[field])
         return super(SQLStorableWithJSONFieldsMixin, cls).restore_from_storage(
             **kwargs
         )
@@ -356,5 +356,7 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
                 set(properties.keys())
             )
         for field in json_properties:
-            result[field] = json.dumps(result[field], separators=(",", ":"))
+            result[field] = orjson.dumps(
+                result[field], option=orjson.OPT_NON_STR_KEYS
+            ).decode()
         return result
