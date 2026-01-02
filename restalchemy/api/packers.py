@@ -17,8 +17,8 @@
 
 import collections
 import copy
-import json
 import logging
+import orjson
 import types
 
 from restalchemy.api import constants
@@ -109,18 +109,20 @@ class BaseResourcePacker(object):
 class JSONPacker(BaseResourcePacker):
 
     def pack(self, obj):
-        return json.dumps(super(JSONPacker, self).pack(obj))
+        return orjson.dumps(
+            super(JSONPacker, self).pack(obj), option=orjson.OPT_NON_STR_KEYS
+        )
 
     def unpack(self, value):
         if isinstance(value, bytes):
             try:
                 return super(JSONPacker, self).unpack(
-                    json.loads(value.decode("utf-8")),
+                    orjson.loads(value),
                 )
-            except json.decoder.JSONDecodeError:
+            except orjson.JSONDecodeError:
                 raise exceptions.ParseBodyError()
 
-        return super(JSONPacker, self).unpack(json.loads(value))
+        return super(JSONPacker, self).unpack(orjson.loads(value))
 
 
 class JSONPackerIncludeNullFields(JSONPacker):

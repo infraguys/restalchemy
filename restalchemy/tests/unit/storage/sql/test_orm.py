@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
+import orjson
 
 import mock
 
@@ -31,9 +31,9 @@ FAKE_VALUE_B = "FAKE_B"
 FAKE_UUID = "89d423c5-4365-4be2-bde9-2730909a9af8"
 
 FAKE_DICT = {"key": "value", "list": [1, 2, 3], "dict": {"a": "A"}}
-FAKE_DICT_JSON = json.dumps(FAKE_DICT, separators=(",", ":"))
+FAKE_DICT_JSON = orjson.dumps(FAKE_DICT).decode()
 FAKE_LIST = [1, "a", None]
-FAKE_LIST_JSON = json.dumps(FAKE_LIST, separators=(",", ":"))
+FAKE_LIST_JSON = orjson.dumps(FAKE_LIST).decode()
 
 
 class FakeRestoreModel(models.Model, orm.SQLStorableMixin):

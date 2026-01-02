@@ -15,7 +15,7 @@
 #    under the License.
 
 # TODO(Eugene Frolov): Rewrite tests
-import json
+import orjson
 
 import mock
 import webob
@@ -220,13 +220,15 @@ class JSONPackerIncludeNullTestCase(base.BaseTestCase):
             "uuid": None,
         }
 
-        result = json.loads(self._test_resource_packer.pack(new_data))
+        result = orjson.loads(self._test_resource_packer.pack(new_data))
         self.assertDictEqual(result, expected_data)
 
     def test_unpack(self):
         new_data = {"field1": None, "field2": 2}
 
-        result = self._test_resource_packer.unpack(json.dumps(new_data))
+        result = self._test_resource_packer.unpack(
+            orjson.dumps(new_data, option=orjson.OPT_NON_STR_KEYS)
+        )
         self.assertDictEqual(result, new_data)
 
 
