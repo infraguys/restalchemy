@@ -132,5 +132,5 @@ def main():
 
 
 if __name__ == "__main__":
-    engines.engine_factory.configure_factory(consts.DATABASE_URI)
+    engines.engine_factory.configure_factory(consts.get_database_uri())
     main()

@@ -227,7 +227,7 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
     def setUp(self):
         super(UpdateTestCase, self).setUp()
 
-        engines.engine_factory.configure_factory(consts.DATABASE_URI)
+        engines.engine_factory.configure_factory(consts.get_database_uri())
         engine = engines.engine_factory.get_engine()
         self.engine = engine
         with engine.session_manager() as session:
@@ -285,7 +285,7 @@ class SavepointTestCase(base.BaseFunctionalTestCase):
     def setUp(self):
         super().setUp()
 
-        engines.engine_factory.configure_factory(consts.DATABASE_URI)
+        engines.engine_factory.configure_factory(consts.get_database_uri())
         engine = engines.engine_factory.get_engine()
         self.engine = engine
         with engine.session_manager() as session:
