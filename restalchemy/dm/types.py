@@ -19,7 +19,7 @@ import copy
 import ctypes
 import datetime
 import decimal
-import json
+import orjson
 import re
 import sys
 import time
@@ -439,7 +439,7 @@ class ComplexPythonType(BasePythonType):
     def from_unicode(self, value):
         result = None
         try:
-            result = json.loads(value)
+            result = orjson.loads(value)
         except (TypeError, ValueError):
             pass
         self._raise_on_invalid_type(value)
