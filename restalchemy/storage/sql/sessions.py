@@ -26,7 +26,6 @@ from restalchemy.storage import exceptions as exc
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql.dialect import pgsql
 
-
 LOG = logging.getLogger(__name__)
 
 

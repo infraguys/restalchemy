@@ -22,7 +22,6 @@ from restalchemy.dm import filters
 from restalchemy.dm import types
 from restalchemy.storage.sql.dialect.query_builder import common
 
-
 LOG = logging.getLogger(__name__)
 
 

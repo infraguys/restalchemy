@@ -22,7 +22,6 @@ from restalchemy.common import config
 from restalchemy.common import log as ra_log
 from restalchemy.storage.sql import migrations
 
-
 cmd_opts = [
     cfg.StrOpt("message", default="", short="m", help="message to migration"),
     cfg.MultiOpt(

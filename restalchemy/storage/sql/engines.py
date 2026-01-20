@@ -30,7 +30,6 @@ from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql.dialect import pgsql
 from restalchemy.storage.sql import sessions
 
-
 DEFAULT_NAME = "default"
 DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)

@@ -19,7 +19,6 @@ from oslo_config import cfg
 
 from restalchemy.common import constants as c
 
-
 CONF = cfg.CONF
 
 

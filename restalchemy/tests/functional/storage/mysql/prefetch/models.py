@@ -21,7 +21,6 @@ from restalchemy.dm import relationships
 from restalchemy.dm import types
 from restalchemy.storage.sql import orm
 
-
 # root table
 FAKE_ROOT_INT = 0
 FAKE_ROOT_STR = "root"
