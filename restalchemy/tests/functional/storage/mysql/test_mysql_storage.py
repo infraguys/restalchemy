@@ -32,7 +32,6 @@ from restalchemy.tests.functional import base
 from restalchemy.tests.functional import consts
 from restalchemy.tests import fixtures
 
-
 FAKE_STR1 = "Fake1"
 FAKE_STR2 = "Fake2"
 FAKE_INT1 = 1
@@ -231,15 +230,13 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
         engine = engines.engine_factory.get_engine()
         self.engine = engine
         with engine.session_manager() as session:
-            session.execute(
-                """
+            session.execute("""
                 CREATE TABLE IF NOT EXISTS test_update (
                     uuid CHAR(36) PRIMARY KEY,
                     field1 VARCHAR(255) NOT NULL,
                     field2 VARCHAR(255) NOT NULL
                 )
-            """
-            )
+            """)
 
     def tearDown(self):
         super(UpdateTestCase, self).tearDown()
@@ -289,15 +286,13 @@ class SavepointTestCase(base.BaseFunctionalTestCase):
         engine = engines.engine_factory.get_engine()
         self.engine = engine
         with engine.session_manager() as session:
-            session.execute(
-                """
+            session.execute("""
                 CREATE TABLE IF NOT EXISTS savepoint_table (
                     uuid CHAR(36) PRIMARY KEY,
                     field1 VARCHAR(255) NOT NULL,
                     field2 VARCHAR(255) NOT NULL
                 )
-            """
-            )
+            """)
 
     def tearDown(self):
         super().tearDown()

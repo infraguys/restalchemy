@@ -50,23 +50,19 @@ class DBEngineMixin(object):
     def get_all_tables(cls, session=None):
         with cls.engine.session_manager(session=session) as s:
             if session.engine.dialect.name == "mysql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.tables
                     where table_schema = database();
-                """
-                ).fetchall()
+                """).fetchall()
             elif session.engine.dialect.name == "postgresql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.tables
                     where table_schema = current_schema();
-                """
-                ).fetchall()
+                """).fetchall()
             else:
                 raise NotImplementedError("Unsupported dialect")
         tables = {row["table_name"] for row in res}
@@ -103,23 +99,19 @@ class DBEngineMixin(object):
     def get_all_views(cls, session=None):
         with cls.engine.session_manager(session=session) as s:
             if session.engine.dialect.name == "mysql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.views
                     where table_schema = database();
-                """
-                ).fetchall()
+                """).fetchall()
             elif session.engine.dialect.name == "postgresql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.views
                     where table_schema = current_schema();
-                """
-                ).fetchall()
+                """).fetchall()
             else:
                 raise NotImplementedError("Unsupported dialect")
         return {row["table_name"] for row in res}

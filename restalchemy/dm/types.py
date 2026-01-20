@@ -27,7 +27,6 @@ import uuid
 
 import email_validator
 
-
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
 UUID_RE_TEMPLATE = (

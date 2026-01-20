@@ -21,7 +21,6 @@ import mock
 from restalchemy.api import packers
 from restalchemy.api import controllers
 
-
 FAKE_LOCATION_PATH = "fake location path"
 
 

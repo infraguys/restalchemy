@@ -27,13 +27,11 @@ class MigrationStep(migrations.AbstractMigrationStep):
         return "c17a6066-fd95-4fad-84ed-c8777dff9a08"
 
     def upgrade(self, session):
-        expressions = [
-            """
+        expressions = ["""
                 INSERT INTO vms (uuid, name, state)
                 VALUES ('00000000-0000-0000-0000-000000000001', 'vm1', 'on'),
                        ('00000000-0000-0000-0000-000000000002', 'vm2', 'off');
-            """
-        ]
+            """]
 
         for expression in expressions:
             session.execute(expression)

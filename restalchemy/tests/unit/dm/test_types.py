@@ -25,7 +25,6 @@ import mock
 from restalchemy.dm import types
 from restalchemy.tests.unit import base
 
-
 TEST_STR_VALUE = "test_value :)"
 TEST_INT_AS_STR_VALUE = "1234"
 TEST_INT_VALUE = 5

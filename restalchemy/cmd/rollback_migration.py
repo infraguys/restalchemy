@@ -24,7 +24,6 @@ from restalchemy.common import log as ra_log
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import migrations
 
-
 cmd_opts = [
     cfg.StrOpt(
         "migration",

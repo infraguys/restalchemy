@@ -22,7 +22,6 @@ from restalchemy.dm import types as ra_types
 from restalchemy.storage.sql import orm
 from restalchemy.tests.functional import base
 
-
 FAKE_UUID_1 = uuid.UUID("63cf2e1a-4f1f-11ec-8f05-1bfa6ad82a13")
 FAKE_UUID_2 = uuid.UUID("78e4a492-4f1f-11ec-abd3-c362c434cef3")
 

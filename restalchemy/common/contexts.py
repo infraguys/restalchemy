@@ -21,7 +21,6 @@ import threading
 from restalchemy.common import exceptions as e
 from restalchemy.storage.sql import engines
 
-
 LOG = logging.getLogger(__name__)
 
 
