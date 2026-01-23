@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from __future__ import annotations
 
 import abc
 import copy
@@ -211,7 +212,7 @@ class Email(String):
         min_length=5,
         max_length=254,
         check_deliverability=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Email type.
@@ -228,7 +229,7 @@ class Email(String):
             max_length=max_length,
             openapi_type=openapi_type,
             openapi_format=openapi_format,
-            **kwargs
+            **kwargs,
         )
         self._check_deliverability = check_deliverability
 
@@ -994,3 +995,32 @@ class AllowNone(BaseType):
         spec = self._nested_type.to_openapi_spec(prop_kwargs)
         spec["nullable"] = True
         return spec
+
+
+class AnySimpleType(BasePythonType):
+    """Accepts any simple type.
+
+    Example:
+    >>> AnySimpleType().validate(1)
+    True
+    >>> AnySimpleType().validate("foo")
+    True
+    >>> AnySimpleType().validate([1, 2, 3])
+    True
+    >>> AnySimpleType().validate({"foo": "bar"})
+    True
+    >>> AnySimpleType().validate(True)
+    True
+    """
+
+    def __init__(self):
+        self._simple_types = (int, float, list, dict, bool, str)
+        super().__init__(python_type=self._simple_types)
+
+    def from_unicode(self, value: str | bytes):
+        try:
+            # Handles JSON-encoded numbers, booleans, lists,
+            # dicts, and strings.
+            return orjson.loads(value)
+        except orjson.JSONDecodeError:
+            raise TypeError(f"Incorrect value {value} for type {type(self)}")

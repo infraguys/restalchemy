@@ -819,6 +819,73 @@ class AllowNoneTestCase(base.BaseTestCase):
         self.assertFalse(self.test_instance.validate(4))
 
 
+class AnySimpleTypeTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.test_instance = types.AnySimpleType()
+
+    def test_validate_correct_value(self):
+        payload = (
+            1,
+            1.0,
+            "foo",
+            [1, 2, 3],
+            {"foo": "bar"},
+            True,
+        )
+
+        for value in payload:
+            self.assertTrue(self.test_instance.validate(value))
+
+    def test_validate_incorrect_value(self):
+        payload = (
+            None,
+            object(),
+            datetime.datetime.utcnow(),
+        )
+
+        for value in payload:
+            self.assertFalse(self.test_instance.validate(value))
+
+    def test_from_unicode_str(self):
+        payload = (
+            ("123", 123),
+            ("1.5", 1.5),
+            ("true", True),
+            ('"foo"', "foo"),
+            ("[1, 2, 3]", [1, 2, 3]),
+            ('{"foo": "bar"}', {"foo": "bar"}),
+        )
+
+        for value, expected in payload:
+            self.assertEqual(self.test_instance.from_unicode(value), expected)
+
+    def test_from_unicode_bytes(self):
+        payload = (
+            (b"123", 123),
+            (b"1.5", 1.5),
+            (b"true", True),
+            (b'"foo"', "foo"),
+            (b"[1, 2, 3]", [1, 2, 3]),
+            (b'{"foo": "bar"}', {"foo": "bar"}),
+        )
+
+        for value, expected in payload:
+            self.assertEqual(self.test_instance.from_unicode(value), expected)
+
+    def test_from_unicode_invalid_json(self):
+        payload = (
+            "foo",
+            "{",
+            "[1,",
+        )
+
+        for value in payload:
+            with self.assertRaises(TypeError):
+                self.test_instance.from_unicode(value)
+
+
 class HostnameTestCase(base.BaseTestCase):
 
     def setUp(self):
