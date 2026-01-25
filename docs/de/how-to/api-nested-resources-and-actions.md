@@ -98,6 +98,10 @@ Actions repräsentieren Operationen, die nicht reine CRUD-Operationen auf der Ha
 - `/v1/files/<id>/actions/download` — Datei-Download.
 - `/v1/objects/<id>/actions/some_business_operation`.
 
+Siehe auch Besonderheiten der Serialisierung von Action-Ergebnissen:
+
+- [Besonderheiten der Serialisierung von Action-Ergebnissen](actions-serialization.md)
+
 ### 2.1 Definition einer Action mit ActionHandler
 
 Modul: `restalchemy.api.actions`
