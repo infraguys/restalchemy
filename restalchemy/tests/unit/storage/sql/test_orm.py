@@ -17,10 +17,13 @@
 import json
 
 import mock
+import uuid
 
+from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.dm.models import ModelSoftDelete
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql import orm
@@ -54,6 +57,10 @@ class FakeRestoreModelWithUUID(FakeRestoreModel, models.ModelWithUUID):
 class FakeDirtyRestoreModelWithUUID(FakeRestoreModel, models.ModelWithUUID):
     def is_dirty(self):
         return True
+
+
+class FakeRestoreModelWithSoftDelete(FakeRestoreModelWithUUID, ModelSoftDelete):
+    pass
 
 
 class TestRestoreModelTestCase(base.BaseTestCase):
@@ -231,3 +238,63 @@ class TestModelErrorHandlingCase(base.BaseTestCase):
             a=FAKE_VALUE_A, b=FAKE_VALUE_B
         )
         self.assertRaises(exceptions.DeadLock, model.delete)
+
+
+@mock.patch("restalchemy.storage.sql.engines.engine_factory")
+class TestSoftDelete(base.BaseTestCase):
+    def test_soft_delete_filter_reaches_table_select(self, engine_factory_mock):
+        # given
+        table = mock.Mock()
+        table.select.return_value = mock.Mock(rows=[])
+
+        FakeRestoreModelWithSoftDelete.get_table = mock.Mock(return_value=table)
+
+        user_filters = {
+            "uuid": dm_filters.EQ(uuid.uuid4()),
+        }
+
+        # when
+        FakeRestoreModelWithSoftDelete.objects.get_all(filters=user_filters)
+
+        # then
+        table.select.assert_called_once()
+        _, kwargs = table.select.call_args
+
+        filters = kwargs["filters"]
+
+        self.assertIn("uuid", filters)
+        self.assertIn("deleted_at", filters)
+
+        self.assertIsInstance(filters["deleted_at"], dm_filters.Is)
+        self.assertEqual(filters["deleted_at"].value, None)
+
+    def test_soft_delete_added_when_filters_none(self, engine_factory_mock):
+        table = mock.Mock()
+        table.select.return_value = mock.Mock(rows=[])
+
+        FakeRestoreModelWithSoftDelete.get_table = mock.Mock(return_value=table)
+
+        FakeRestoreModelWithSoftDelete.objects.get_all(filters=None)
+
+        _, kwargs = table.select.call_args
+        filters = kwargs["filters"]
+
+        self.assertEqual(list(filters.keys()), ["deleted_at"])
+        self.assertIsInstance(filters["deleted_at"], dm_filters.Is)
+
+    def test_all_objects_does_not_add_soft_delete(self, engine_factory_mock):
+        table = mock.Mock()
+        table.select.return_value = mock.Mock(rows=[])
+
+        FakeRestoreModelWithSoftDelete.get_table = mock.Mock(return_value=table)
+
+        filter_uuid = str(uuid.uuid4())
+        user_filters = {
+            "uuid": dm_filters.EQ(filter_uuid),
+        }
+        FakeRestoreModelWithSoftDelete.all_objects.get_all(filters=user_filters)
+
+        _, kwargs = table.select.call_args
+        filters = kwargs["filters"]
+
+        self.assertEqual(filters, {"uuid": dm_filters.EQ(filter_uuid)})

@@ -658,13 +658,16 @@ class BasePaginationMixin(object):
 
 class SoftDeleteControllerMixin(object):
 
-    def filter(self, filters, order_by=None):
-        deleted_value = filters.pop("deleted", False)
-        show_deleted = str(deleted_value).lower() in ("true", "1", "yes")
-        filters["deleted_at"] = (
-            dm_filters.IsNot(None) if show_deleted else dm_filters.Is(None)
-        )
-        return super().filter(filters, order_by=order_by)
+    def _get_objects_collection(self, filters):
+        deleted = filters.pop("deleted", None)
+        if deleted is None:
+            return self.model.objects
+
+        return self.model.all_objects
+
+    def _process_storage_filters(self, filters, order_by=None):
+        collection = self._get_objects_collection(filters)
+        return collection.get_all(filters=filters, order_by=order_by)
 
     @actions.post
     def undelete(self, resource, **kwargs):

@@ -27,6 +27,7 @@ from collections import abc as collections_abc
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.storage.sql.orm import AllObjectsCollection, SoftDeleteObjectCollection
 
 
 class DmOperationalStorage(object):
@@ -464,6 +465,13 @@ class ModelSoftDelete(Model):
         types.AllowNone(types.UTCDateTimeZ()),
         default=None,
     )
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        cls.all_objects = AllObjectsCollection(cls)
+        cls.objects = SoftDeleteObjectCollection(cls)
 
     def delete(self, session=None, **kwargs):
         if self.deleted_at is None:
