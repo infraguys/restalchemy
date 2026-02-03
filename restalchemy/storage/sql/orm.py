@@ -179,6 +179,52 @@ class ObjectCollection(
             return data[0]["count"]
 
 
+class AllObjectsCollection(ObjectCollection):
+    pass
+
+
+class SoftDeleteObjectCollection(ObjectCollection):
+    SOFT_DELETE_FIELD = "deleted_at"
+
+    def _with_soft_delete_filter(self, filters):
+        filters = filters or {}
+        filters[self.SOFT_DELETE_FIELD] = dm_filters.Is(None)
+        print(filters)
+        return filters
+
+    def get_all(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        limit=None,
+        order_by=None,
+        locked=False,
+    ):
+        filters = self._with_soft_delete_filter(filters)
+        return super().get_all(
+            filters=filters,
+            session=session,
+            cache=cache,
+            limit=limit,
+            order_by=order_by,
+            locked=locked,
+        )
+
+    def get_one(self, filters=None, session=None, cache=False, locked=False):
+        filters = self._with_soft_delete_filter(filters)
+        return super().get_one(
+            filters=filters,
+            session=session,
+            cache=cache,
+            locked=locked,
+        )
+
+    def count(self, session=None, filters=None):
+        filters = self._with_soft_delete_filter(filters)
+        return super().count(session=session, filters=filters)
+
+
 class UndefinedAttribute(common_exc.RestAlchemyException):
 
     message = "Class attribute %(attr_name)s must be provided."
