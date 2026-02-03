@@ -68,7 +68,10 @@ class Relationship(BaseRelationship):
             self._default = (
                 (default()) if callable(default) else self._safe_value(default)
             )
-        self._value = value
+        if self._default is None:
+            self.set_value_force(value)
+        else:
+            self._value = None
         self.__first_value = self.value
 
     def is_dirty(self):
