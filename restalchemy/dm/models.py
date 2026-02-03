@@ -416,49 +416,103 @@ class SimpleViewMixin(DumpToSimpleViewMixin, RestoreFromSimpleViewMixin):
 
 class ModelSoftDelete(Model):
     """
-    Soft-delete support
+    Soft-delete support for models.
 
-    Models using this mixin must define and adjust
-    their database indexes accordingly. Since soft delete changes the effective
-    uniqueness and filtering semantics, **all existing indexes must be updated to
-    include `deleted_at`.**
+    This mixin implements logical deletion via the ``deleted_at`` column and
+    transparently affects how model collections build queries.
+
+    Behaviour
+    ---------
+    Models using this mixin expose two collections:
+
+    - ``objects`` (SoftDeleteObjectCollection)
+        The default collection.
+        Automatically filters out soft-deleted rows by adding::
+
+            deleted_at IS NULL
+
+        to all read queries, including:
+        - ``get_all()``
+        - ``get_one()``
+        - ``count()``
+
+    - ``all_objects`` (AllObjectsCollection)
+        A raw collection that does **not** apply soft-delete filtering.
+        Use it when deleted records must be visible.
+
+    Soft deletion
+    -------------
+    Calling ``delete()`` does not remove the row from the database.
+    Instead, it sets ``deleted_at`` to the current UTC timestamp and saves
+    the model.
+
+    Repeated calls to ``delete()`` are idempotent.
+
+    Database & indexing requirements
+    --------------------------------
+    Soft delete changes the effective uniqueness and filtering semantics
+    of the table. All indexes **must be designed with ``deleted_at`` in mind**.
 
     Required index changes:
 
-    1. Add a standard index on `deleted_at`:
-       Enables fast filtering of active (`deleted_at IS NULL`) and deleted rows.
+    1. Index on ``deleted_at``
+       Enables fast filtering of active and deleted rows.
 
        Example:
            CREATE INDEX idx_<table>_deleted_at
            ON <table>(deleted_at);
 
-    2. Update all existing indexes to include `deleted_at`:
-       Every non-unique index should append `deleted_at` as the last column.
-       Every unique index should become a composite unique index that also includes
-       `deleted_at`, ensuring uniqueness applies only among non-deleted rows.
+    2. Update existing indexes to include ``deleted_at``
+       - Non-unique indexes should append ``deleted_at`` as the last column.
+       - Unique indexes must become composite unique indexes including
+         ``deleted_at`` to ensure uniqueness applies only to non-deleted rows.
 
        Example:
            -- Original:
-           CREATE UNIQUE INDEX idx_<table>_email ON <table>(email);
+           CREATE UNIQUE INDEX idx_<table>_email
+           ON <table>(email);
 
-           -- Updated for soft delete:
+           -- Soft-delete aware:
            CREATE UNIQUE INDEX idx_<table>_email_deleted
            ON <table>(email, deleted_at);
 
-    3. (Optional but recommended) Add a partial index for active rows:
-       If supported (e.g., PostgreSQL), a partial index for `deleted_at IS NULL`
-       greatly speeds up common queries.
+    3. (Optional, PostgreSQL) Partial index for active rows
+       Strongly recommended for frequently queried tables.
 
-       Example (PostgreSQL):
+       Example:
            CREATE INDEX idx_<table>_active
            ON <table>(id)
            WHERE deleted_at IS NULL;
 
-    Notes:
-    - The mixin does not create or manage these indexes automatically — they must be
-      added in the manual migration for each model.
-    - If your model defines constraints that logically apply only to active records,
-      convert them to partial unique indexes where supported.
+    Notes
+    -----
+    - This mixin does **not** create or manage indexes automatically.
+      All index changes must be applied explicitly via migrations.
+    - Any business constraint that should apply only to active records
+      must be implemented as a composite or partial index.
+    - Query-time filtering is implemented at the collection level
+      (``objects`` / ``all_objects``), not at the database layer.
+
+    Uniqueness and undelete semantics
+    --------------------------------
+    Including ``deleted_at`` in unique indexes intentionally allows duplicate
+    values among soft-deleted rows.
+
+    This is a deliberate trade-off required to preserve uniqueness guarantees
+    for active records while still allowing soft deletion.
+
+    Important implications:
+
+    - Multiple soft-deleted rows may share the same unique field values.
+    - Attempting to "undelete" a record may fail with a uniqueness violation
+      if another active row already exists with the same values.
+    - Applications must treat undelete as a potentially failing operation
+      and handle it explicitly (e.g. conflict resolution, validation, or
+      forced cleanup of duplicates).
+
+    Alternative approaches (such as hard uniqueness across all rows) are
+    incompatible with soft delete semantics and are intentionally not supported
+    by this mixin.
     """
 
     deleted_at = properties.property(
