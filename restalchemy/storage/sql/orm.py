@@ -189,7 +189,6 @@ class SoftDeleteObjectCollection(ObjectCollection):
     def _with_soft_delete_filter(self, filters):
         filters = filters or {}
         filters[self.SOFT_DELETE_FIELD] = dm_filters.Is(None)
-        print(filters)
         return filters
 
     def get_all(
