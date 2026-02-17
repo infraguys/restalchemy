@@ -658,8 +658,13 @@ class BasePaginationMixin(object):
 
 class SoftDeleteControllerMixin(object):
 
+    def _prepare_filter(self, param_name, value):
+        if param_name == "all_objects":
+            return param_name, True
+        return super()._prepare_filter(param_name, value)
+
     def _get_objects_collection(self, filters):
-        deleted = filters.pop("deleted_at", None)
+        deleted = filters.pop("all_objects", None)
         if deleted is None:
             return self.model.objects
 
