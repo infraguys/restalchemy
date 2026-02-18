@@ -659,7 +659,7 @@ class BasePaginationMixin(object):
 class SoftDeleteControllerMixin(object):
 
     def _prepare_filter(self, param_name, value):
-        if param_name == "all_objects":
+        if param_name == "include_deleted":
             return param_name, True
         return super()._prepare_filter(param_name, value)
 
