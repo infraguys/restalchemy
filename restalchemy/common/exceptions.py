@@ -41,19 +41,16 @@ class RestAlchemyException(Exception):
 
 
 class PropertyNotFoundError(RestAlchemyException):
-
     message = "'%(class_name)s' object has no property '%(property_name)s'."
     code = 400
 
 
 class NotFoundError(RestAlchemyException):
-
     message = "Nothing is found on path '%(path)s'."
     code = 404
 
 
 class NotImplementedError(RestAlchemyException):
-
     base_message = "Not implemented."
     message = "Not implemented ('%(msg)s')."
     code = 501
@@ -70,14 +67,11 @@ class UnsupportedHttpMethod(RestAlchemyException):
 
 
 class UnsupportedMethod(NotFoundError):
-    message = "Method '%(method)s' is not supported " "for %(object_name)s."
+    message = "Method '%(method)s' is not supported for %(object_name)s."
 
 
 class LocatorNotFound(NotFoundError):
-    message = (
-        "Locator is not found for URI %(uri)s. "
-        "Thus resource could not be found."
-    )
+    message = "Locator is not found for URI %(uri)s. Thus resource could not be found."
 
 
 class UnknownResourceLocation(NotFoundError):
@@ -100,36 +94,27 @@ class IncorrectRouteAttribute(NotFoundError):
 
 
 class IncorrectActionCall(NotFoundError):
-    message = (
-        "Action %(action)s is incorrectly called with HTTP method %("
-        "method)s."
-    )
+    message = "Action %(action)s is incorrectly called with HTTP method %(method)s."
 
 
 class ResourceNotFoundError(NotFoundError):
-
     message = "Resource '%(resource)s' is not found on path: %(path)s."
 
 
 class CollectionNotFoundError(NotFoundError):
-
     message = "Collection '%(collection)s' is not found on path: %(path)s."
 
 
 class PropertyException(RestAlchemyException, ValueError):
-
     code = 400
 
     def __init__(self, name=None, model=None):
         self.name = name or "Unknown"
         self.model = model or "Unknown"
-        super(PropertyException, self).__init__(
-            name=self.name, model=self.model
-        )
+        super(PropertyException, self).__init__(name=self.name, model=self.model)
 
 
 class PropertyRequired(PropertyException):
-
     message = (
         "Value for property '%(name)s' for model %(model)s "
         "is required! Property should not be None value."
@@ -137,12 +122,10 @@ class PropertyRequired(PropertyException):
 
 
 class ReadOnlyProperty(PropertyException):
-
     message = "Property '%(name)s' of model %(model)s is read only."
 
 
 class TypeError(RestAlchemyException, TypeError):
-
     message = "Invalid type value '%(value)s' for '%(property_type)s'."
     code = 400
 
@@ -158,9 +141,7 @@ class TypeError(RestAlchemyException, TypeError):
         else:
             property_type = type(property_type).__name__
 
-        super(TypeError, self).__init__(
-            value=value, property_type=property_type
-        )
+        super(TypeError, self).__init__(value=value, property_type=property_type)
 
     def get_value(self):
         return self._value
@@ -170,7 +151,6 @@ class TypeError(RestAlchemyException, TypeError):
 
 
 class ModelTypeError(TypeError):
-
     message = (
         "Invalid type value '%(value)s'(%(value_type)s) for "
         "'%(model_name)s.%(property_name)s'(%(property_type)s)."
@@ -187,7 +167,6 @@ class ModelTypeError(TypeError):
 
 
 class RelationshipModelError(RestAlchemyException):
-
     message = (
         "Invalid model %(model)s for relationship. Must be inherited "
         "from dm.core.models.Model."
@@ -196,7 +175,6 @@ class RelationshipModelError(RestAlchemyException):
 
 
 class NotFoundOperationalStorageError(RestAlchemyException):
-
     message = "Can't get data for %(name)s key."
 
 
@@ -227,45 +205,36 @@ class ValidationErrorException(RestAlchemyException):
 
 
 class ValidationPropertyPrivateError(ValidationErrorException):
-
     message = "Property %(property)s is private"
 
 
 class ValidationPropertyIncompatibleError(ValidationErrorException):
-
     message = "%(val)s is not compatible with model %(model)s"
 
 
 class ValidationFilterIncompatibleError(ValidationErrorException):
-
     message = "Filter %(val)s is not supported"
 
 
 class ValidationSortInvalidDirValueError(ValidationErrorException):
-
     message = "Direction %(dir)s is not valid for sorting."
 
 
 class ValidationSortIncompatibleDirCountError(ValidationErrorException):
-
     message = "Number of sort keys and directions is not equal."
 
 
 class ValidationSortNumberError(ValidationErrorException):
-
     message = "Only one field can be sorted with such request."
 
 
 class NotEqualUuidException(RestAlchemyException):
-
     message = (
-        "Uuid (%(uuid)s) in body is not equal to "
-        "parsed id (%(parsed_id)s) from url."
+        "Uuid (%(uuid)s) in body is not equal to parsed id (%(parsed_id)s) from url."
     )
     code = 400
 
 
 class NotExtended(RestAlchemyException):
-
     message = "Application does not initialized with openapi engine."
     code = 400

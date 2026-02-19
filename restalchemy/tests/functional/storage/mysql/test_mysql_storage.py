@@ -51,12 +51,10 @@ URL_TO_DB = "mysql://fake:fake@127.0.0.1/test"
 
 
 class FakeParentModel(models.ModelWithUUID, orm.SQLStorableMixin):
-
     __tablename__ = FAKE_TABLE_NAME2
 
 
 class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
-
     __tablename__ = FAKE_TABLE_NAME1
 
     test_str_field1 = properties.property(types.String(), default=FAKE_STR1)
@@ -75,7 +73,6 @@ class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class FakeModelWithValidate(FakeModel):
-
     def validate(self):
         if self.test_str_field1 == self.test_str_field2:
             raise ValueError
@@ -106,7 +103,6 @@ def escape(list_of_fields):
 
 
 class InsertCaseTestCase(base.BaseFunctionalTestCase):
-
     @mock.patch("mysql.connector.pooling.MySQLConnectionPool")
     def setUp(self, mysql_pool_mock):
         super(InsertCaseTestCase, self).setUp()
@@ -159,9 +155,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
 
         session_mock().execute.side_effect = CustomException
 
-        self.assertRaises(
-            exceptions.UnknownStorageException, self.target_model.insert
-        )
+        self.assertRaises(exceptions.UnknownStorageException, self.target_model.insert)
 
         self.assertFalse(session_mock().commit.called)
         self.assertTrue(session_mock().rollback.called)
@@ -222,7 +216,6 @@ class FakeUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class UpdateTestCase(base.BaseFunctionalTestCase):
-
     def setUp(self):
         super(UpdateTestCase, self).setUp()
 
@@ -278,7 +271,6 @@ class SavepointModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class SavepointTestCase(base.BaseFunctionalTestCase):
-
     def setUp(self):
         super().setUp()
 

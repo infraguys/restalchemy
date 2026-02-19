@@ -28,7 +28,6 @@ FAKE_VALUE3 = "FAKE_VALUE3"
 
 
 class PropertyTestCase(base.BaseTestCase):
-
     def setUp(self):
         super(PropertyTestCase, self).setUp()
         self.positive_fake_property_type = mock.MagicMock(
@@ -53,9 +52,7 @@ class PropertyTestCase(base.BaseTestCase):
         )
 
         self.assertEqual(property_obj._value, FAKE_VALUE)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_init_incorrect_value(self):
         self.assertRaises(
@@ -71,9 +68,7 @@ class PropertyTestCase(base.BaseTestCase):
         )
 
         self.assertEqual(property_obj._value, FAKE_VALUE)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_init_default_callable_value(self):
         property_obj = properties.Property(
@@ -81,9 +76,7 @@ class PropertyTestCase(base.BaseTestCase):
         )
 
         self.assertEqual(property_obj.value, FAKE_VALUE)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_init_default_value_if_property_read_only(self):
         property_obj = properties.Property(
@@ -93,9 +86,7 @@ class PropertyTestCase(base.BaseTestCase):
         )
 
         self.assertEqual(property_obj._value, FAKE_VALUE)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_init_none_and_require(self):
         self.assertRaises(
@@ -115,14 +106,10 @@ class PropertyTestCase(base.BaseTestCase):
         )
 
         self.assertEqual(property_obj._value, FAKE_VALUE)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_init_none_value(self):
-        property_obj = properties.Property(
-            self.negative_fake_property_type, value=None
-        )
+        property_obj = properties.Property(self.negative_fake_property_type, value=None)
 
         self.assertEqual(property_obj._value, None)
 
@@ -132,18 +119,14 @@ class PropertyTestCase(base.BaseTestCase):
         )
 
         self.assertEqual(property_obj._value, FAKE_VALUE2)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE2
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE2)
 
     def test_set_correct_value(self):
         property_obj = properties.Property(self.positive_fake_property_type)
 
         self.assertIsNone(self._set_property_value(property_obj, FAKE_VALUE))
         self.assertEqual(property_obj._value, FAKE_VALUE)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_set_incorect_value(self):
         property_obj = properties.Property(self.negative_fake_property_type)
@@ -156,9 +139,7 @@ class PropertyTestCase(base.BaseTestCase):
             FAKE_VALUE,
         )
         self.assertEqual(property_obj._value, old_value)
-        self.negative_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.negative_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_set_value_if_property_read_only(self):
         property_obj = properties.Property(
@@ -220,9 +201,7 @@ class PropertyTestCase(base.BaseTestCase):
 
         self.assertIsNone(property_obj.set_value_force(FAKE_VALUE))
         self.assertEqual(property_obj._value, FAKE_VALUE)
-        self.positive_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.positive_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_set_force_incorect_value(self):
         property_obj = properties.Property(self.negative_fake_property_type)
@@ -232,9 +211,7 @@ class PropertyTestCase(base.BaseTestCase):
             exceptions.TypeError, property_obj.set_value_force, FAKE_VALUE
         )
         self.assertEqual(property_obj._value, old_value)
-        self.negative_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE
-        )
+        self.negative_fake_property_type.validate.assert_called_with(FAKE_VALUE)
 
     def test_set_force_none_value(self):
         property_obj = properties.Property(
@@ -249,7 +226,6 @@ class PropertyTestCase(base.BaseTestCase):
 
 
 class PropertyCreatorTestCase(base.BaseTestCase):
-
     ARGS = [1, 2, 3]
     KWARGS = {"fake_key1": "fake_value1", "fake_key2": "fake_value2"}
 
@@ -266,17 +242,14 @@ class PropertyCreatorTestCase(base.BaseTestCase):
             value=FAKE_VALUE2,
             property_type=self.prop_type_mock,
             *self.ARGS,
-            **self.KWARGS
+            **self.KWARGS,
         )
 
     def test_get_property_class(self):
-        self.assertEqual(
-            self.test_instance.get_property_class(), self.property_mock
-        )
+        self.assertEqual(self.test_instance.get_property_class(), self.property_mock)
 
 
 class PropertyCollectionTestCase(base.BaseTestCase):
-
     def setUp(self):
 
         self.kwargs = {
@@ -318,9 +291,7 @@ class PropertyCollectionTestCase(base.BaseTestCase):
 
     def test_instantiate_property_fake1(self):
         self.assertEqual(
-            self.test_instance.instantiate_property(
-                name="fake1", value=FAKE_VALUE3
-            ),
+            self.test_instance.instantiate_property(name="fake1", value=FAKE_VALUE3),
             FAKE_VALUE2,
         )
         self.kwargs["fake1"].assert_called_once_with(FAKE_VALUE3)
@@ -328,9 +299,7 @@ class PropertyCollectionTestCase(base.BaseTestCase):
 
     def test_instantiate_property_fake2(self):
         self.assertEqual(
-            self.test_instance.instantiate_property(
-                name="fake2", value=FAKE_VALUE3
-            ),
+            self.test_instance.instantiate_property(name="fake2", value=FAKE_VALUE3),
             FAKE_VALUE,
         )
         self.kwargs["fake2"].assert_called_once_with(FAKE_VALUE3)
@@ -357,7 +326,6 @@ class PropertyCollectionTestCase(base.BaseTestCase):
 
 
 class PropertyManagerTestCase(base.BaseTestCase):
-
     def setUp(self):
         self.collection_mock = mock.Mock(
             **{
@@ -418,23 +386,16 @@ class PropertyManagerTestCase(base.BaseTestCase):
         def set_item(d, key, value):
             d[key] = value
 
-        self.assertRaises(
-            TypeError, set_item, property_manager.properties, "fake1", 2
-        )
+        self.assertRaises(TypeError, set_item, property_manager.properties, "fake1", 2)
 
 
-@mock.patch(
-    "restalchemy.dm.properties.PropertyCreator", return_value=FAKE_VALUE
-)
+@mock.patch("restalchemy.dm.properties.PropertyCreator", return_value=FAKE_VALUE)
 class PropertyFuncTestCase(base.BaseTestCase):
-
     ARGS = (1, 2, 3)
     KWARGS = {"fake_key1": "fake_value1", "fake_key2": "fake_value2"}
 
     def test_create_property(self, pc_mock):
-        self.assertEqual(
-            properties.property(*self.ARGS, **self.KWARGS), FAKE_VALUE
-        )
+        self.assertEqual(properties.property(*self.ARGS, **self.KWARGS), FAKE_VALUE)
         pc_mock.assert_called_once_with(
             prop_class=properties.Property,
             prop_type=1,
@@ -445,7 +406,6 @@ class PropertyFuncTestCase(base.BaseTestCase):
     def test_create_property_with_property_class(self, pc_mock):
 
         class LocalProperty(properties.AbstractProperty):
-
             @property
             def value(self):
                 pass
@@ -472,5 +432,5 @@ class PropertyFuncTestCase(base.BaseTestCase):
             properties.property,
             property_class=object,
             *self.ARGS,
-            **self.KWARGS
+            **self.KWARGS,
         )

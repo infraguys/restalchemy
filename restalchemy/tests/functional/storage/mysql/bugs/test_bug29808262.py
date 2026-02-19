@@ -33,7 +33,6 @@ class BinaryField(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class Bug29808262TestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "0001-test-bug-29808262-743d38"
     __FIRST_MIGRATION__ = "0001-test-bug-29808262-743d38.py"
 

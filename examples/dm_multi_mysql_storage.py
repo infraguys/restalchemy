@@ -70,7 +70,6 @@ foo_two.insert(session=session_two)
 session_two.commit()
 
 with engine_two.session_manager() as session:
-
     # Incorrect. Session from context manager is not used because new session
     # from default storage going to create in get_all call. And you get data
     # from default database (engine).
@@ -99,7 +98,6 @@ with context_two.session_manager() as session:
 # But you can not create two active session from context
 context_one = contexts.Context(engine_name="db_one")
 with context_two.session_manager() as session_2:
-
     try:
         with context_one.session_manager() as session_1:
             print("Newer call")

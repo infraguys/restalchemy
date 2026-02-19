@@ -72,7 +72,6 @@ OBJECT_COLLECTION_MOCK = mock.Mock(spec=orm.ObjectCollection)
 
 
 class ObjectCollection(orm.ObjectCollection):
-
     def get_all(
         self,
         filters=None,
@@ -100,7 +99,6 @@ class ObjectCollection(orm.ObjectCollection):
 
 
 class SQLStorableMixin(orm.SQLStorableMixin):
-
     _ObjectCollection = ObjectCollection
 
 

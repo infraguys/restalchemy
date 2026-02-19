@@ -15,7 +15,6 @@
 #    under the License.
 
 import contextlib
-import random
 import socket
 import uuid as pyuuid
 
@@ -25,7 +24,6 @@ import mock
 import requests
 from urllib import parse
 from webob import request
-import pytest
 from parameterized import parameterized
 
 
@@ -87,18 +85,14 @@ TEMPL_PORTS_COLLECTION_ENDPOINT = utils.lastslash(
 TEMPL_PORTSNONE_COLLECTION_ENDPOINT = utils.lastslash(
     parse.urljoin(utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "none_ports")
 )
-TEMPL_PORT_RESOURCE_ENDPOINT = parse.urljoin(
-    TEMPL_PORTS_COLLECTION_ENDPOINT, "%s"
-)
+TEMPL_PORT_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_PORTS_COLLECTION_ENDPOINT, "%s")
 TEMPL_PORTNONE_RESOURCE_ENDPOINT = parse.urljoin(
     TEMPL_PORTSNONE_COLLECTION_ENDPOINT, "%s"
 )
 TEMPL_TAGS_COLLECTION_ENDPOINT = utils.lastslash(
     parse.urljoin(utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "tags")
 )
-TEMPL_TAG_RESOURCE_ENDPOINT = parse.urljoin(
-    TEMPL_TAGS_COLLECTION_ENDPOINT, "%s"
-)
+TEMPL_TAG_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_TAGS_COLLECTION_ENDPOINT, "%s")
 
 UUID1 = pyuuid.UUID("00000000-0000-0000-0000-000000000001")
 UUID2 = pyuuid.UUID("00000000-0000-0000-0000-000000000002")
@@ -119,7 +113,6 @@ DEADLOCK_RESPONSE = {
 
 
 class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "0001-rest-service-tables-migration-e31a12"
     __FIRST_MIGRATION__ = "0001-rest-service-tables-migration-e31a12"
 
@@ -127,9 +120,7 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
         return template % ((self.service_port,) + tuple(args))
 
     def find_free_port(self):
-        with contextlib.closing(
-            socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ) as s:
+        with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
             s.bind(("127.0.0.1", 0))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             return s.getsockname()[1]
@@ -153,19 +144,15 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
 
 
 class TestRootResourceTestCase(BaseResourceTestCase):
-
     def test_get_versions_list(self):
 
-        response = requests.get(
-            self.get_endpoint(TEMPL_ROOT_COLLECTION_ENDPOINT)
-        )
+        response = requests.get(self.get_endpoint(TEMPL_ROOT_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(sorted(response.json()), ["specifications", "v1"])
 
 
 class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
-
     def test_generate_openapi_specification(self):
         info = {
             "title": "REST API Microservice",
@@ -199,12 +186,9 @@ class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
 
 
 class TestVersionsResourceTestCase(BaseResourceTestCase):
-
     def test_get_resources_list(self):
 
-        response = requests.get(
-            self.get_endpoint(TEMPL_V1_COLLECTION_ENDPOINT)
-        )
+        response = requests.get(self.get_endpoint(TEMPL_V1_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -220,12 +204,9 @@ class TestVersionsResourceTestCase(BaseResourceTestCase):
 
 
 class TestVMResourceTestCase(BaseResourceTestCase):
-
     def tearDown(self):
         super(TestVMResourceTestCase, self).tearDown()
-        packers.set_packer(
-            constants.CONTENT_TYPE_APPLICATION_JSON, packers.JSONPacker
-        )
+        packers.set_packer(constants.CONTENT_TYPE_APPLICATION_JSON, packers.JSONPacker)
 
     def _insert_vm_to_db(self, uuid, name, state):
         vm = models.VM(uuid=uuid, name=name, state=state)
@@ -240,9 +221,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             return False
 
     def test_not_implemented_error(self):
-        endpoint = self.get_endpoint(
-            TEMPL_NOT_IMPLEMENTED_METHODS_COLLECTION_ENDPOINT
-        )
+        endpoint = self.get_endpoint(TEMPL_NOT_IMPLEMENTED_METHODS_COLLECTION_ENDPOINT)
         response = requests.post(endpoint, json={})
 
         self.assertEqual(response.status_code, 501)
@@ -264,9 +243,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         resp = response.json()
 
         # Not allowed (method update in NotImplementedMethodsController).
-        self.assertEqual(
-            "HTTP method 'UPDATE' is not supported.", resp["message"]
-        )
+        self.assertEqual("HTTP method 'UPDATE' is not supported.", resp["message"])
 
         response = requests.delete(uuid_endpoint)
 
@@ -278,9 +255,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         action_name = "not_implemented_action"
         action_path = "actions/%s/invoke" % action_name
-        action_endpoint = parse.urljoin(
-            utils.lastslash(uuid_endpoint), action_path
-        )
+        action_endpoint = parse.urljoin(utils.lastslash(uuid_endpoint), action_path)
         response = requests.post(action_endpoint, json={})
 
         self.assertEqual(response.status_code, 500)
@@ -325,9 +300,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
-        VM_RES_ENDPOINT = self.get_endpoint(
-            TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID
-        )
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
 
         response = requests.get(VM_RES_ENDPOINT)
 
@@ -346,9 +319,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
-        VM_RES_ENDPOINT = self.get_endpoint(
-            TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID
-        )
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
         packers.set_packer(
             constants.CONTENT_TYPE_APPLICATION_JSON,
             packers.JSONPackerIncludeNullFields,
@@ -371,9 +342,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
         }
-        VM_RES_ENDPOINT = self.get_endpoint(
-            TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID
-        )
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
 
         response = requests.put(VM_RES_ENDPOINT, json=vm_request_body)
 
@@ -385,16 +354,14 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self._insert_vm_to_db(uuid=RESOURCE_ID, name="old", state="off")
         vm_request_body = {"uuid": str(UUID2), "name": "new"}
 
-        VM_RES_ENDPOINT = self.get_endpoint(
-            TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID
-        )
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
 
         response = requests.put(VM_RES_ENDPOINT, json=vm_request_body)
 
         self.assertEqual(response.status_code, 400)
         message = response.json()["message"]
         expected_message = (
-            "Uuid (%s) in body is not equal to parsed id (%s) " "from url."
+            "Uuid (%s) in body is not equal to parsed id (%s) from url."
         ) % (UUID2, RESOURCE_ID)
         self.assertEqual(message, expected_message)
 
@@ -416,9 +383,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         RESOURCE_ID = UUID1
         self._insert_vm_to_db(uuid=RESOURCE_ID, name="test", state="off")
 
-        VM_RES_ENDPOINT = self.get_endpoint(
-            TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID
-        )
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
 
         response = requests.delete(VM_RES_ENDPOINT)
 
@@ -456,30 +421,20 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test1",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID2),
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
-        response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
-        )
+        response = requests.get(self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
@@ -543,19 +498,14 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             }
         ]
 
         response = requests.get(
             self.get_endpoint(
-                "%s?uuid=%s"
-                % (TEMPL_VMS_COLLECTION_ENDPOINT, str(RESOURCE_ID2))
+                "%s?uuid=%s" % (TEMPL_VMS_COLLECTION_ENDPOINT, str(RESOURCE_ID2))
             )
         )
 
@@ -603,24 +553,16 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test1",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID3),
                 "name": "test3",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
@@ -651,43 +593,30 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test3",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID2),
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID1),
                 "name": "test1",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
         response = requests.get(
             self.get_endpoint(
-                "%s?sort_key=name&sort_dir=desc"
-                % (TEMPL_VMS_COLLECTION_ENDPOINT,)
+                "%s?sort_key=name&sort_dir=desc" % (TEMPL_VMS_COLLECTION_ENDPOINT,)
             )
         )
 
@@ -708,36 +637,24 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID2),
                 "name": "test1",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID3),
                 "name": "test3",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
@@ -746,9 +663,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "%s?sort_key=name"
                 % (
                     utils.lastslash(
-                        parse.urljoin(
-                            TEMPL_V1_COLLECTION_ENDPOINT, "vmsnosort"
-                        )
+                        parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, "vmsnosort")
                     ),
                 )
             )
@@ -774,36 +689,24 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test3",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID2),
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID1),
                 "name": "test1",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
@@ -812,9 +715,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "%s"
                 % (
                     utils.lastslash(
-                        parse.urljoin(
-                            TEMPL_V1_COLLECTION_ENDPOINT, "vmsdefsort"
-                        )
+                        parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, "vmsdefsort")
                     ),
                 )
             )
@@ -835,30 +736,20 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test1",
                 "state": "off",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID2),
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
-        response = requests.get(
-            self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT)
-        )
+        response = requests.get(self.get_endpoint(TEMPL_VMS_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
@@ -875,9 +766,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         ],
         name_func=make_test_name,
     )
-    def test_get_collection_paginated(
-        self, page_limit, expected_len, assert_headers
-    ):
+    def test_get_collection_paginated(self, page_limit, expected_len, assert_headers):
         if expected_len == "all":
             expected_len = len(ALL_UUIDS)
 
@@ -892,13 +781,9 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), expected_len)
         if assert_headers:
-            self.assertEqual(
-                response.headers["X-Pagination-Limit"], str(page_limit)
-            )
+            self.assertEqual(response.headers["X-Pagination-Limit"], str(page_limit))
             last_uuid = ALL_UUIDS[expected_len - 1]
-            self.assertEqual(
-                response.headers["X-Pagination-Marker"], str(last_uuid)
-            )
+            self.assertEqual(response.headers["X-Pagination-Marker"], str(last_uuid))
 
     @parameterized.expand(
         [
@@ -909,9 +794,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         ],
         name_func=make_test_name,
     )
-    def test_get_collection_paginated_custom_sort(
-        self, page_limit, sort_key, sort_dir
-    ):
+    def test_get_collection_paginated_custom_sort(self, page_limit, sort_key, sort_dir):
         # Create a bunch of docs
         amount = 10
         records_created = [
@@ -956,16 +839,12 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             self.assertLessEqual(len(res_data), page_limit or amount)
             for record in res_data:
                 # Check that all newly fetched records are not seen before
-                self.assertNotIn(
-                    record["uuid"], [i["uuid"] for i in records_fetched]
-                )
+                self.assertNotIn(record["uuid"], [i["uuid"] for i in records_fetched])
                 records_fetched.append(record)
             if len(records_fetched) == amount:
                 break
             else:
-                self.assertEqual(
-                    response.headers.get("X-Pagination-Marker"), marker
-                )
+                self.assertEqual(response.headers.get("X-Pagination-Marker"), marker)
         else:
             self.assertTrue(False, "Did not exit pagination loop properly.")
 
@@ -989,24 +868,16 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID3),
                 "name": "test3",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
@@ -1021,9 +892,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
         self.assertEqual(response.headers["X-Pagination-Limit"], "2")
-        self.assertEqual(
-            response.headers["X-Pagination-Marker"], str(RESOURCE_ID3)
-        )
+        self.assertEqual(response.headers["X-Pagination-Marker"], str(RESOURCE_ID3))
 
     def test_get_collection_paginated_with_marker_last(self):
         RESOURCE_ID1 = UUID1
@@ -1038,24 +907,16 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
             {
                 "uuid": str(RESOURCE_ID3),
                 "name": "test3",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             },
         ]
 
@@ -1083,28 +944,21 @@ class TestVMResourceTestCase(BaseResourceTestCase):
                 "name": "test2",
                 "state": "on",
                 "status": "active",
-                "created": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
-                "updated": types.DEFAULT_DATE.strftime(
-                    types.OPENAPI_DATETIME_FMT
-                ),
+                "created": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
+                "updated": types.DEFAULT_DATE.strftime(types.OPENAPI_DATETIME_FMT),
             }
         ]
 
         response = requests.get(
             self.get_endpoint(
-                "%s?state=on" % (TEMPL_VMS_COLLECTION_ENDPOINT,)
-                + "&page_limit=1"
+                "%s?state=on" % (TEMPL_VMS_COLLECTION_ENDPOINT,) + "&page_limit=1"
             ),
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
         self.assertEqual(response.headers["X-Pagination-Limit"], "1")
-        self.assertEqual(
-            response.headers["X-Pagination-Marker"], str(RESOURCE_ID2)
-        )
+        self.assertEqual(response.headers["X-Pagination-Marker"], str(RESOURCE_ID2))
 
     def test_get_collection_paginated_limit_nonnumeric_negative(self):
         RESOURCE_ID1 = UUID1
@@ -1148,20 +1002,13 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
 
 class TestNestedResourceTestCase(BaseResourceTestCase):
-
-    __LAST_MIGRATION__ = (
-        "0002-0-rest-service-data-for-test-nested-resource-c17a60"
-    )
+    __LAST_MIGRATION__ = "0002-0-rest-service-data-for-test-nested-resource-c17a60"
 
     def setUp(self):
         super(TestNestedResourceTestCase, self).setUp()
 
-        self.vm1 = models.VM.objects.get_one(
-            filters={"uuid": filters.EQ(UUID1)}
-        )
-        self.vm2 = models.VM.objects.get_one(
-            filters={"uuid": filters.EQ(UUID2)}
-        )
+        self.vm1 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID1)})
+        self.vm2 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID2)})
 
     def tearDown(self):
         super(TestNestedResourceTestCase, self).tearDown()
@@ -1198,9 +1045,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
     def test_update_nested_resource_successful(self):
         VM_RESOURCE_ID = UUID1
         PORT_RESOURCE_ID = UUID3
-        port = models.Port(
-            uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1
-        )
+        port = models.Port(uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1)
         port.save()
         port_request_body = {"mac": "00:00:00:00:00:04"}
         port_response_body = {
@@ -1227,9 +1072,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
     def test_get_nested_resource_successful(self):
         VM_RESOURCE_ID = UUID1
         PORT_RESOURCE_ID = UUID3
-        port = models.Port(
-            uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1
-        )
+        port = models.Port(uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1)
         port.save()
         port_response_body = {
             "uuid": str(PORT_RESOURCE_ID),
@@ -1254,9 +1097,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
     def test_get_nested_resource_none_successful(self):
         VM_RESOURCE_ID = UUID1
         PORT_RESOURCE_ID = UUID3
-        port = models.Port(
-            uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1
-        )
+        port = models.Port(uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1)
         port.save()
         port_response_body = {
             "uuid": str(PORT_RESOURCE_ID),
@@ -1284,9 +1125,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
     def test_get_nested_resource_with_fields_definition_successful(self):
         VM_RESOURCE_ID = UUID1
         PORT_RESOURCE_ID = UUID3
-        port = models.Port(
-            uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1
-        )
+        port = models.Port(uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1)
         port.save()
         port_response_body = {
             "uuid": str(PORT_RESOURCE_ID),
@@ -1328,9 +1167,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "uuid": str(PORT1_RESOURCE_ID),
                 "mac": "00:00:00:00:00:03",
                 "vm": parse.urlparse(
-                    self.get_endpoint(
-                        TEMPL_VM_RESOURCE_ENDPOINT, VM_RESOURCE_ID
-                    )
+                    self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, VM_RESOURCE_ID)
                 ).path,
                 "some-field1": "some_field1",
                 "some-field3": "some_field3",
@@ -1341,9 +1178,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "uuid": str(PORT2_RESOURCE_ID),
                 "mac": "00:00:00:00:00:04",
                 "vm": parse.urlparse(
-                    self.get_endpoint(
-                        TEMPL_VM_RESOURCE_ENDPOINT, VM_RESOURCE_ID
-                    )
+                    self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, VM_RESOURCE_ID)
                 ).path,
                 "some-field1": "some_field1",
                 "some-field3": "some_field3",
@@ -1362,9 +1197,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
     def test_delete_nested_resource_successful(self):
         VM_RESOURCE_ID = UUID1
         PORT_RESOURCE_ID = UUID3
-        port = models.Port(
-            uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1
-        )
+        port = models.Port(uuid=PORT_RESOURCE_ID, mac="00:00:00:00:00:03", vm=self.vm1)
         port.save()
 
         response = requests.delete(
@@ -1402,9 +1235,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "uuid": str(PORT2_RESOURCE_ID),
                 "mac": "00:00:00:00:00:04",
                 "vm": parse.urlparse(
-                    self.get_endpoint(
-                        TEMPL_VM_RESOURCE_ENDPOINT, VM_RESOURCE_ID
-                    )
+                    self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, VM_RESOURCE_ID)
                 ).path,
                 "some-field1": "some_field1",
                 "some-field3": "some_field3",
@@ -1427,20 +1258,13 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
 
 
 class TestMultipleIdProperties(BaseResourceTestCase):
-
-    __LAST_MIGRATION__ = (
-        "0002-0-rest-service-data-for-test-nested-resource-c17a60"
-    )
+    __LAST_MIGRATION__ = "0002-0-rest-service-data-for-test-nested-resource-c17a60"
 
     def setUp(self):
         super(TestMultipleIdProperties, self).setUp()
 
-        self.vm1 = models.VM.objects.get_one(
-            filters={"uuid": filters.EQ(UUID1)}
-        )
-        self.vm2 = models.VM.objects.get_one(
-            filters={"uuid": filters.EQ(UUID2)}
-        )
+        self.vm1 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID1)})
+        self.vm2 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID2)})
 
     def _swap_tag_visibility(self, vm_uuid, tag_uuid, new_visible):
         tag_response_body = {
@@ -1460,19 +1284,14 @@ class TestMultipleIdProperties(BaseResourceTestCase):
         self.assertEqual(response.json(), tag_response_body)
 
     def test_update_same_name_uuid(self):
-        models.Tag(
-            uuid=UUID3, vm=self.vm1, name="tagname", visible=True
-        ).save()
-        models.Tag(
-            uuid=UUID4, vm=self.vm2, name="tagname", visible=False
-        ).save()
+        models.Tag(uuid=UUID3, vm=self.vm1, name="tagname", visible=True).save()
+        models.Tag(uuid=UUID4, vm=self.vm2, name="tagname", visible=False).save()
 
         self._swap_tag_visibility(UUID1, UUID3, False)
         self._swap_tag_visibility(UUID2, UUID4, True)
 
 
 class ResourceExceptionsTestCase(BaseResourceTestCase):
-
     def _insert_vm_to_db(self, uuid, name, state):
         vm = models.VM(uuid=uuid, name=name, state=state)
         vm.save()
@@ -1516,7 +1335,6 @@ class ResourceExceptionsTestCase(BaseResourceTestCase):
 
 
 class TestNestedResourceForUnpackerTestCase(BaseResourceTestCase):
-
     __LAST_MIGRATION__ = "0002-1-rest-service-data-for-test-unpacker-1a9112"
 
     def test_get_resource_by_uri(self):
@@ -1530,9 +1348,7 @@ class TestNestedResourceForUnpackerTestCase(BaseResourceTestCase):
         result = resources.ResourceMap.get_resource(req, uri)
 
         self.assertEqual(
-            models.IpAddress.objects.get_one(
-                filters={"uuid": filters.EQ(UUID3)}
-            ),
+            models.IpAddress.objects.get_one(filters={"uuid": filters.EQ(UUID3)}),
             result,
         )
 
@@ -1546,7 +1362,6 @@ def raise_deadlock_exc_once(counter, original_method, obj, *args, **kwargs):
 
 
 class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
-
     @mock.patch(
         "restalchemy.storage.sql.tables.SQLTable.insert",
         side_effect=DEADLOCK_EXC,
@@ -1575,9 +1390,7 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         )
         self.assertEqual(201, response.status_code)
         self.assertEqual(2, model_insert_mock.call_count)
-        self.assertIsNotNone(
-            models.VM.objects.get_one(filters={"name": "test"})
-        )
+        self.assertIsNotNone(models.VM.objects.get_one(filters={"name": "test"}))
 
     @mock.patch(
         "restalchemy.storage.sql.tables.SQLTable.update",
@@ -1625,9 +1438,7 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
     )
     def test_delete_vm_when_deadlock_raises(self, model_delete_mock):
         models.VM(uuid=UUID1, name="old", state="off").save()
-        response = requests.delete(
-            self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1)
-        )
+        response = requests.delete(self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1))
         self.assertEqual(500, response.status_code)
         self.assertEqual(DEADLOCK_RESPONSE, response.json())
         self.assertEqual(2, model_delete_mock.call_count)
@@ -1646,9 +1457,7 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
     )
     def test_delete_vm_when_deadlock_raises_once(self, model_delete_mock):
         models.VM(uuid=UUID1, name="old", state="off").save()
-        response = requests.delete(
-            self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1)
-        )
+        response = requests.delete(self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, UUID1))
         self.assertEqual(204, response.status_code)
         self.assertEqual(2, model_delete_mock.call_count)
         self.assertEqual(0, len(models.VM.objects.get_all()))
@@ -1802,17 +1611,12 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
 
 
 class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):
-
-    __LAST_MIGRATION__ = (
-        "0002-0-rest-service-data-for-test-nested-resource-c17a60"
-    )
+    __LAST_MIGRATION__ = "0002-0-rest-service-data-for-test-nested-resource-c17a60"
 
     def setUp(self):
         super(TestRetryOnErrorMiddlewareNestedResourceTestCase, self).setUp()
 
-        self.vm1 = models.VM.objects.get_one(
-            filters={"uuid": filters.EQ(UUID1)}
-        )
+        self.vm1 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID1)})
 
     @mock.patch(
         "restalchemy.storage.sql.tables.SQLTable.insert",

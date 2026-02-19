@@ -25,7 +25,6 @@ LOG = logging.getLogger(__name__)
 
 
 class Context(object):
-
     def __init__(self, engine_name=engines.DEFAULT_NAME):
         """
         Initializes the context with a given engine name.
@@ -93,9 +92,7 @@ class Context(object):
             LOG.debug("Session %r has been committed", session)
         except Exception:
             session.rollback()
-            LOG.exception(
-                "Session %r has been rolled back by reason:", session
-            )
+            LOG.exception("Session %r has been rolled back by reason:", session)
             raise
         finally:
             self.session_close()
@@ -147,9 +144,7 @@ class Context(object):
             LOG.exception("Can't close session by reason:")
         finally:
             self._get_storage().remove_session()
-            LOG.debug(
-                "Session %r has been removed from thread storage", session
-            )
+            LOG.debug("Session %r has been removed from thread storage", session)
 
 
 class StorageRuntimeException(e.RestAlchemyException):
@@ -165,13 +160,11 @@ class ContextRuntimeException(e.RestAlchemyException):
 
 
 class ContextAlreadyInStorage(ContextRuntimeException):
-
     def __init__(self, message="Context is already in storage."):
         super().__init__(message=message)
 
 
 class ContextIsNotExistsInStorage(ContextRuntimeException):
-
     def __init__(self, message="Context is not exists in storage."):
         super().__init__(message=message)
 
@@ -243,7 +236,6 @@ class Storage:
 
 
 class ContextWithStorage(Context):
-
     _local_thread_storage = threading.local()
 
     def __init__(

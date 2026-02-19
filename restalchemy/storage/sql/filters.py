@@ -26,7 +26,6 @@ LOG = logging.getLogger(__name__)
 
 
 class AbstractClause(metaclass=abc.ABCMeta):
-
     def __init__(self, column, value_type, value, session):
         super(AbstractClause, self).__init__()
         self._value = self._convert_value(value_type, value)
@@ -54,55 +53,46 @@ class AbstractClause(metaclass=abc.ABCMeta):
 
 
 class EQ(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} = %s"
 
 
 class NE(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} <> %s"
 
 
 class GT(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} > %s"
 
 
 class GE(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} >= %s"
 
 
 class LT(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} < %s"
 
 
 class LE(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} <= %s"
 
 
 class Is(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} IS %s"
 
 
 class IsNot(AbstractClause):
-
     def construct_expression(self):
         return f"{self.column} IS NOT %s"
 
 
 class In(AbstractClause):
-
     def _convert_value(self, value_type, value):
         # Note(efrolov): Replace empty list with [Null]. Some SQL servers
         #                forbid empty lists in "in" operator.
@@ -110,55 +100,46 @@ class In(AbstractClause):
 
 
 class MySqlIn(In):
-
     def construct_expression(self):
         return f"{self.column} IN %s"
 
 
 class PostgreSqlIn(In):
-
     def construct_expression(self):
         return f"{self.column} = ANY(%s)"
 
 
 class MySqlNotIn(In):
-
     def construct_expression(self):
         return f"{self.column} NOT IN %s"
 
 
 class PostgreSqlNotIn(In):
-
     def construct_expression(self):
         return f"{self.column} != ANY(%s)"
 
 
 class PostgreSqlIs(Is):
-
     def construct_expression(self):
         return f"{self.column} IS NOT DISTINCT FROM (%s)"
 
 
 class PostgreSqlIsNot(IsNot):
-
     def construct_expression(self):
         return f"{self.column} IS DISTINCT FROM (%s)"
 
 
 class Like(AbstractClause):
-
     def construct_expression(self):
         return ("%s LIKE " % self.column) + "%s"
 
 
 class NotLike(AbstractClause):
-
     def construct_expression(self):
         return ("%s NOT LIKE " % self.column) + "%s"
 
 
 class AbstractExpression(metaclass=abc.ABCMeta):
-
     def __init__(self, *clauses):
         super(AbstractExpression, self).__init__()
         self._clauses = clauses
@@ -255,7 +236,6 @@ FILTER_EXPR_MAPPING = {
 
 
 class AsIsType(types.BaseType):
-
     def validate(self, value):
         return True
 
@@ -303,9 +283,7 @@ def iterate_filters(model, filter_list, session):
         for name, filt in filter_list.items():
             if isinstance(model, common.TableAlias):
                 value_type = (
-                    model.original.model.properties.properties[
-                        name
-                    ].get_property_type()
+                    model.original.model.properties.properties[name].get_property_type()
                 ) or AsIsType()
                 column = model.get_column_by_name(
                     name,

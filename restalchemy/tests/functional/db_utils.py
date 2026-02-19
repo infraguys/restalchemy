@@ -22,7 +22,6 @@ from restalchemy.tests.functional import consts
 
 
 class DBEngineMixin(object):
-
     __ENGINE__ = None
 
     @utils.classproperty
@@ -31,9 +30,7 @@ class DBEngineMixin(object):
 
     @classmethod
     def init_engine(cls):
-        engines.engine_factory.configure_factory(
-            db_url=consts.get_database_uri()
-        )
+        engines.engine_factory.configure_factory(db_url=consts.get_database_uri())
         cls.__ENGINE__ = engines.engine_factory.get_engine()
 
     @classmethod
@@ -126,6 +123,4 @@ class DBEngineMixin(object):
     @classmethod
     def drop_view(cls, view_name, session=None):
         with cls.engine.session_manager(session=session) as s:
-            s.execute(
-                f"drop view if exists {session.engine.escape(view_name)}"
-            )
+            s.execute(f"drop view if exists {session.engine.escape(view_name)}")

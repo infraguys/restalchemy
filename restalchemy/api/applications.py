@@ -23,7 +23,6 @@ from restalchemy.api import routes
 
 
 class WSGIApp(object):
-
     def __init__(self, route_class):
         super(WSGIApp, self).__init__()
         self._main_route = routes.route(route_class)
@@ -46,7 +45,6 @@ class WSGIApp(object):
 
 
 class OpenApiApplication(WSGIApp):
-
     def __init__(self, route_class, openapi_engine):
         super(OpenApiApplication, self).__init__(route_class)
         self._openapi_engine = openapi_engine

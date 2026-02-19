@@ -20,7 +20,6 @@ import orjson
 import mock
 import webob
 
-from restalchemy.api import controllers
 from restalchemy.api import field_permissions
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -47,7 +46,6 @@ class TestData(object):
 
 
 class BasePackerTestCase(base.BaseTestCase):
-
     def setUp(self):
         super(BasePackerTestCase, self).setUp()
         self._test_instance = packers.BaseResourcePacker(
@@ -103,9 +101,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
         with self.assertRaises(exceptions.FieldPermissionError) as context:
             self._test_resource_packer.unpack(new_data)
 
-        self.assertEqual(
-            "Permission denied for field field2.", str(context.exception)
-        )
+        self.assertEqual("Permission denied for field field2.", str(context.exception))
         self.assertEqual(context.exception.code, 403)
 
 
@@ -148,9 +144,7 @@ class PackerFieldPermissionsNonDefaultHiddenTestCase(base.BaseTestCase):
         with self.assertRaises(exceptions.FieldPermissionError) as context:
             self._test_resource_packer.unpack(new_data)
 
-        self.assertEqual(
-            "Permission denied for field field2.", str(context.exception)
-        )
+        self.assertEqual("Permission denied for field field2.", str(context.exception))
         self.assertEqual(context.exception.code, 403)
 
 

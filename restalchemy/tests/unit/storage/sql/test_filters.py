@@ -104,7 +104,6 @@ TEST_UUID = uuid.UUID("89d423c5-4365-4be2-bde9-2730909a9af8")
 
 
 class BaseModel(models.Model):
-
     name1 = properties.property(types.Integer())
     name2 = properties.property(types.Integer())
 
@@ -118,7 +117,6 @@ class BaseModelWithRelation(BaseModel, models.ModelWithUUID):
 
 
 class EQTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.EQ(
             column=TEST_NAME,
@@ -138,7 +136,6 @@ class EQTestCase(base.BaseTestCase):
 
 
 class NETestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.NE(
             column=TEST_NAME,
@@ -158,7 +155,6 @@ class NETestCase(base.BaseTestCase):
 
 
 class GTTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.GT(
             column=TEST_NAME,
@@ -178,7 +174,6 @@ class GTTestCase(base.BaseTestCase):
 
 
 class GETestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.GE(
             column=TEST_NAME,
@@ -198,7 +193,6 @@ class GETestCase(base.BaseTestCase):
 
 
 class LTTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.LT(
             column=TEST_NAME,
@@ -218,7 +212,6 @@ class LTTestCase(base.BaseTestCase):
 
 
 class LETestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.LE(
             column=TEST_NAME,
@@ -238,7 +231,6 @@ class LETestCase(base.BaseTestCase):
 
 
 class InTestCase(base.BaseTestCase):
-
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
@@ -260,7 +252,6 @@ class InTestCase(base.BaseTestCase):
 
 
 class NotInTestCase(base.BaseTestCase):
-
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
@@ -282,7 +273,6 @@ class NotInTestCase(base.BaseTestCase):
 
 
 class InEmptyListTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.MySqlIn(
             column=TEST_NAME,
@@ -302,7 +292,6 @@ class InEmptyListTestCase(base.BaseTestCase):
 
 
 class IsTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.Is(
             column=TEST_NAME,
@@ -322,7 +311,6 @@ class IsTestCase(base.BaseTestCase):
 
 
 class IsNotTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.IsNot(
             column=TEST_NAME,
@@ -342,7 +330,6 @@ class IsNotTestCase(base.BaseTestCase):
 
 
 class IsPgTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.PostgreSqlIs(
             column=TEST_NAME,
@@ -362,7 +349,6 @@ class IsPgTestCase(base.BaseTestCase):
 
 
 class IsNotPgTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.PostgreSqlIsNot(
             column=TEST_NAME,
@@ -382,7 +368,6 @@ class IsNotPgTestCase(base.BaseTestCase):
 
 
 class LikeTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.Like(
             column=TEST_NAME,
@@ -402,7 +387,6 @@ class LikeTestCase(base.BaseTestCase):
 
 
 class NotLikeTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.NotLike(
             column=TEST_NAME,
@@ -422,7 +406,6 @@ class NotLikeTestCase(base.BaseTestCase):
 
 
 class ConvertFiltersTestCase(base.BaseTestCase):
-
     def test_convert_filters_new(self):
         d = collections.OrderedDict()
         d["name1"] = dm_filters.EQ(1)

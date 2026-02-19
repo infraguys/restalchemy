@@ -55,9 +55,7 @@ class BarModel(models.ModelWithUUID, orm.SQLStorableMixin):
     foo = relationships.relationship(FooModel)
 
 
-engines.engine_factory.configure_factory(
-    db_url="mysql://test:test@127.0.0.1/test"
-)
+engines.engine_factory.configure_factory(db_url="mysql://test:test@127.0.0.1/test")
 
 
 # Create new foo object and store it

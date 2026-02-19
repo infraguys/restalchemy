@@ -30,7 +30,6 @@ class FakeModel(models.ModelWithUUID):
 
 
 class BasePackerTestCase(base.BaseTestCase):
-
     def setUp(self):
         super(BasePackerTestCase, self).setUp()
         self._test_instance = packers.BaseResourcePacker(

@@ -36,7 +36,6 @@ LOG = logging.getLogger(__name__)
 
 
 class AbstractEngine(metaclass=abc.ABCMeta):
-
     @property
     @abc.abstractmethod
     def URL_SCHEMA(self):
@@ -304,7 +303,6 @@ class PgDictJsonbDumper(JsonbDumper):
 
 
 class PgSQLEngine(AbstractEngine):
-
     URL_SCHEMA = c.RA_POSTGRESQL_PROTO_NAME
     DEFAULT_PORT = c.RA_POSTGRESQL_DB_PORT
 
@@ -329,7 +327,7 @@ class PgSQLEngine(AbstractEngine):
         )
 
         # RA expects the pool to be ready to use
-        if not "open" in self._config:
+        if "open" not in self._config:
             self._config["open"] = True
 
         self._pool = psycopg_pool.ConnectionPool(
@@ -422,7 +420,6 @@ class PgSQLEngine(AbstractEngine):
 
 
 class MySQLEngine(AbstractEngine):
-
     URL_SCHEMA = c.RA_MYSQL_PROTO_NAME
     DEFAULT_PORT = c.RA_MYSQL_DB_PORT
 
@@ -508,7 +505,6 @@ class MySQLEngine(AbstractEngine):
 
 
 class EngineFactory(singletons.InheritSingleton):
-
     def __init__(self):
         """
         Initializes the engine factory singleton.
@@ -554,9 +550,7 @@ class EngineFactory(singletons.InheritSingleton):
                 "max_waiting": conf[section].connection_pool_max_waiting,
                 "max_lifetime": conf[section].connection_max_lifetime,
                 "max_idle": conf[section].connection_max_idle,
-                "reconnect_timeout": conf[
-                    section
-                ].connection_pool_reconnect_timeout,
+                "reconnect_timeout": conf[section].connection_pool_reconnect_timeout,
                 "num_workers": conf[section].connection_pool_num_workers,
             },
             query_cache=conf[section].connection_query_cache,
@@ -641,8 +635,7 @@ class EngineFactory(singletons.InheritSingleton):
         if engine:
             return engine
         raise ValueError(
-            ("Can not return %s engine. Please configure EngineFactory")
-            % name,
+            ("Can not return %s engine. Please configure EngineFactory") % name,
         )
 
     def destroy_engine(self, name=DEFAULT_NAME):
@@ -676,7 +669,6 @@ class EngineFactory(singletons.InheritSingleton):
 
 
 class DBConnectionUrl(object):
-
     _CENSORED = ":<censored>@"
 
     def __init__(self, db_url):

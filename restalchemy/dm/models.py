@@ -30,7 +30,6 @@ from restalchemy.dm import types
 
 
 class DmOperationalStorage(object):
-
     def __init__(self):
         super(DmOperationalStorage, self).__init__()
         self._storage = {}
@@ -46,7 +45,6 @@ class DmOperationalStorage(object):
 
 
 class MetaModel(abc.ABCMeta):
-
     def __new__(cls, name, bases, attrs):
         props = {}
         attrs["id_properties"] = {}
@@ -70,9 +68,7 @@ class MetaModel(abc.ABCMeta):
         )
         for key, prop in attrs["properties"].items():
             if prop.is_id_property():
-                attrs["id_properties"][key] = attrs["properties"].properties[
-                    key
-                ]
+                attrs["id_properties"][key] = attrs["properties"].properties[key]
         dm_class = super(MetaModel, cls).__new__(cls, name, bases, attrs)
         dm_class.__operational_storage__ = DmOperationalStorage()
         return dm_class
@@ -81,9 +77,7 @@ class MetaModel(abc.ABCMeta):
         try:
             return cls.properties[name]
         except KeyError:
-            raise AttributeError(
-                "%s object has no attribute %s" % (cls.__name__, name)
-            )
+            raise AttributeError("%s object has no attribute %s" % (cls.__name__, name))
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
@@ -125,9 +119,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
 
     def pour(self, **kwargs):
         try:
-            self.properties = properties.PropertyManager(
-                self.properties, **kwargs
-            )
+            self.properties = properties.PropertyManager(self.properties, **kwargs)
             self.validate()
         except exc.PropertyRequired as e:
             raise exc.PropertyRequired(name=e.name, model=self.__class__)
@@ -161,8 +153,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         raise TypeError(
             "Model %s has %s properties which marked as "
             "id_property. Please implement get_id_property "
-            "method on your model."
-            % (type(cls), "many" if cls.id_properties else "no")
+            "method on your model." % (type(cls), "many" if cls.id_properties else "no")
         )
 
     @classmethod
@@ -229,7 +220,6 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
 
 
 class ModelWithID(Model):
-
     def get_id(self):
         return getattr(self, self.get_id_property_name())
 
@@ -246,7 +236,6 @@ class ModelWithID(Model):
 
 
 class ModelWithUUID(ModelWithID):
-
     uuid = properties.property(
         types.UUID(),
         read_only=True,
@@ -256,14 +245,12 @@ class ModelWithUUID(ModelWithID):
 
 
 class ModelWithRequiredUUID(ModelWithUUID):
-
     uuid = properties.property(
         types.UUID(), read_only=True, id_property=True, required=True
     )
 
 
 class CustomPropertiesMixin(object):
-
     __custom_properties__ = {}
 
     @classmethod
@@ -275,23 +262,17 @@ class CustomPropertiesMixin(object):
     def get_custom_property_type(cls, property_name):
         return cls.__custom_properties__[property_name]
 
-    def _check_custom_property_value(
-        self, name, value, static=False, should_be=None
-    ):
+    def _check_custom_property_value(self, name, value, static=False, should_be=None):
         prop_type = self.__custom_properties__[name]
         prop_type.validate(value)
         if static and should_be != value:
             raise ValueError(
-                (
-                    "The value for property `%s` should be `%s` "
-                    "but actual value is `%s`"
-                )
+                ("The value for property `%s` should be `%s` but actual value is `%s`")
                 % (name, should_be, value)
             )
 
 
 class ModelWithTimestamp(Model):
-
     created_at = properties.property(
         types.UTCDateTimeZ(),
         required=True,
@@ -314,20 +295,15 @@ class ModelWithTimestamp(Model):
 
 
 class ModelWithProject(Model):
-
-    project_id = properties.property(
-        types.UUID(), required=True, read_only=True
-    )
+    project_id = properties.property(types.UUID(), required=True, read_only=True)
 
 
 class ModelWithNameDesc(Model):
-
     name = properties.property(types.String(max_length=255), default="")
     description = properties.property(types.String(max_length=255), default="")
 
 
 class ModelWithRequiredNameDesc(ModelWithNameDesc):
-
     name = properties.property(
         types.String(max_length=255),
         required=True,
@@ -360,9 +336,7 @@ class DumpToSimpleViewMixin:
             result[name] = prop_type.to_simple_type(getattr(self, name))
 
         # Convert the custom properties.
-        if not custom_properties and not hasattr(
-            self, "__custom_properties__"
-        ):
+        if not custom_properties and not hasattr(self, "__custom_properties__"):
             return result
 
         for name, prop_type in self.get_custom_properties():
@@ -373,9 +347,7 @@ class DumpToSimpleViewMixin:
 
 class RestoreFromSimpleViewMixin:
     @classmethod
-    def restore_from_simple_view(
-        cls, skip_unknown_fields: bool = False, **kwargs
-    ):
+    def restore_from_simple_view(cls, skip_unknown_fields: bool = False, **kwargs):
         model_format = {}
         for name, value in kwargs.items():
             name = name.replace("-", "_")
@@ -388,11 +360,7 @@ class RestoreFromSimpleViewMixin:
                 prop_type = cls.properties.properties[name].get_property_type()
             except KeyError:
                 prop_type = cls.get_custom_property_type(name)
-            prop_type = (
-                type(prop_type)
-                if not inspect.isclass(prop_type)
-                else prop_type
-            )
+            prop_type = type(prop_type) if not inspect.isclass(prop_type) else prop_type
             if not isinstance(value, prop_type):
                 try:
                     model_format[name] = (

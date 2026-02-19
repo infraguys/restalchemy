@@ -32,7 +32,6 @@ class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class TestOrderByTestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "test-batch-migration-9e335f"
     __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
 
@@ -67,15 +66,12 @@ class TestOrderByTestCase(base.BaseWithDbMigrationsTestCase):
         with self.engine.session_manager() as session:
             session.batch_insert(items)
 
-        results_from_db = FakeModel.objects.get_all(
-            order_by={"foo_field2": sort_dir}
-        )
+        results_from_db = FakeModel.objects.get_all(order_by={"foo_field2": sort_dir})
         values_from_db = tuple(i.foo_field2 for i in results_from_db)
         self.assertEqual(correct_order, values_from_db)
 
 
 class TestLikeTestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "test-batch-migration-9e335f"
     __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
 
@@ -91,27 +87,21 @@ class TestLikeTestCase(base.BaseWithDbMigrationsTestCase):
 
         # Like: Startswith Model
         all_models = set(
-            FakeModel.objects.get_all(
-                filters={"foo_field2": dm_filters.Like("Model%")}
-            )
+            FakeModel.objects.get_all(filters={"foo_field2": dm_filters.Like("Model%")})
         )
 
         self.assertEqual({model1, model2}, all_models)
 
         # Like: del in center
         all_models = set(
-            FakeModel.objects.get_all(
-                filters={"foo_field2": dm_filters.Like("%del%")}
-            )
+            FakeModel.objects.get_all(filters={"foo_field2": dm_filters.Like("%del%")})
         )
 
         self.assertEqual({model1, model2, model3}, all_models)
 
         # Like: Endswith 3
         all_models = set(
-            FakeModel.objects.get_all(
-                filters={"foo_field2": dm_filters.Like("%3")}
-            )
+            FakeModel.objects.get_all(filters={"foo_field2": dm_filters.Like("%3")})
         )
 
         self.assertEqual(
@@ -137,9 +127,7 @@ class TestLikeTestCase(base.BaseWithDbMigrationsTestCase):
 
         # Like: Endswith 5
         all_models = set(
-            FakeModel.objects.get_all(
-                filters={"foo_field2": dm_filters.Like("%5")}
-            )
+            FakeModel.objects.get_all(filters={"foo_field2": dm_filters.Like("%5")})
         )
 
         self.assertEqual(set(), all_models)
@@ -199,7 +187,6 @@ class TestLikeTestCase(base.BaseWithDbMigrationsTestCase):
 
 
 class TestCacheTestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "test-batch-migration-9e335f"
     __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
 
@@ -217,9 +204,7 @@ class TestCacheTestCase(base.BaseWithDbMigrationsTestCase):
             session.batch_insert([model1])
 
             tgt_model = FakeModel.objects.get_one(session=session, cache=True)
-            tgt_model_cached = FakeModel.objects.get_one(
-                session=session, cache=True
-            )
+            tgt_model_cached = FakeModel.objects.get_one(session=session, cache=True)
 
             assert tgt_model is tgt_model_cached
 
@@ -230,8 +215,6 @@ class TestCacheTestCase(base.BaseWithDbMigrationsTestCase):
             session.batch_insert([model1])
 
             tgt_model = FakeModel.objects.get_one(session=session, cache=True)
-            tgt_model_cached = FakeModel.objects.get_one(
-                session=session, cache=False
-            )
+            tgt_model_cached = FakeModel.objects.get_one(session=session, cache=False)
 
             assert tgt_model is not tgt_model_cached

@@ -20,36 +20,27 @@ from restalchemy.common import exceptions
 
 
 class RecordNotFound(exceptions.RestAlchemyException):
-
     code = 404
     message = (
-        "Can't found record in storage for model (%(model)s) and "
-        "filters (%(filters)s)."
+        "Can't found record in storage for model (%(model)s) and filters (%(filters)s)."
     )
 
 
 class MultipleUpdatesDetected(exceptions.RestAlchemyException):
-
     message = "Multiple records were updated in storage for %(model)s"
 
 
 class HasManyRecords(exceptions.RestAlchemyException):
-
     message = (
-        "Has many records in storage for model (%(model)s) and filters "
-        "(%(filters)s)."
+        "Has many records in storage for model (%(model)s) and filters (%(filters)s)."
     )
 
 
 class DeadLock(exceptions.RestAlchemyException):
-
-    message = (
-        "Deadlock found when trying to get lock. " "Original message: %(msg)s"
-    )
+    message = "Deadlock found when trying to get lock. Original message: %(msg)s"
 
 
 class ConflictRecords(exceptions.RestAlchemyException):
-
     code = 409
     message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
 
