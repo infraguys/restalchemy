@@ -83,7 +83,6 @@ class OpenApiLicense(object):
 
 
 class OpenApiApacheLicense(OpenApiLicense):
-
     def __init__(self):
         super(OpenApiApacheLicense, self).__init__(
             name="Apache 2.0",
@@ -156,7 +155,6 @@ class OpenApiInfo(object):
 
 
 class OpenApiPaths(object):
-
     def __init__(self):
         super(OpenApiPaths, self).__init__()
 
@@ -186,9 +184,9 @@ class OpenApiPaths(object):
                             next_route, next_path, request, parameters
                         )
                     )
-                    paths, schemas = next_route(
-                        request
-                    ).build_openapi_specification(next_path, parameters)
+                    paths, schemas = next_route(request).build_openapi_specification(
+                        next_path, parameters
+                    )
                     result_spec.update(paths)
 
         return result_spec
@@ -197,15 +195,12 @@ class OpenApiPaths(object):
         paths_spec = {}
 
         main_route = request.application.main_route
-        paths_spec.update(
-            self._build_api_paths(main_route, "/", request, parameters)
-        )
+        paths_spec.update(self._build_api_paths(main_route, "/", request, parameters))
 
         return {"paths": paths_spec}
 
 
 class OpenApiComponents(object):
-
     def __init__(self):
         super(OpenApiComponents, self).__init__()
 
@@ -216,8 +211,8 @@ class OpenApiComponents(object):
             if method == c.DELETE:
                 continue
             schema_name = schema_generator.resource_method_name(method)
-            schemas["schemas"][schema_name] = (
-                schema_generator.generate_schema_object(method)
+            schemas["schemas"][schema_name] = schema_generator.generate_schema_object(
+                method
             )
         return schemas
 
@@ -276,7 +271,6 @@ class OpenApiComponents(object):
 
 
 class OpenApiSecurity(object):
-
     def __init__(self):
         super(OpenApiSecurity, self).__init__()
 
@@ -351,15 +345,12 @@ class OpenApiTags(object):
         main_route = request.application.main_route
         tags["tags"].extend(self._build_route_tag(main_route, "/", request))
         tags["tags"] = [
-            i
-            for n, i in enumerate(tags["tags"])
-            if i not in tags["tags"][n + 1 :]
+            i for n, i in enumerate(tags["tags"]) if i not in tags["tags"][n + 1 :]
         ]
         return tags
 
 
 class OpenApiExternalDocs(object):
-
     def __init__(self, url, description=None):
         super(OpenApiExternalDocs, self).__init__()
         self._url = url
@@ -370,10 +361,7 @@ class OpenApiExternalDocs(object):
 
 
 class OpenApiServers(object):
-
-    def __init__(
-        self, url=None, description=None, variables=None, versions=None
-    ):
+    def __init__(self, url=None, description=None, variables=None, versions=None):
         super(OpenApiServers, self).__init__()
         self._url = url
         self._description = description
@@ -382,9 +370,7 @@ class OpenApiServers(object):
 
     def build_variables(self):
         enum = self._versions or [oa_c.API_VERSION_V1]
-        return self._variables or {
-            "version": {"enum": enum, "default": enum[0]}
-        }
+        return self._variables or {"version": {"enum": enum, "default": enum[0]}}
 
     def build(self, request):
         servers = [

@@ -54,6 +54,4 @@ def main():
     ra_log.configure()
     engines.engine_factory.configure_factory(db_url=CONF.db.connection_url)
     engine = migrations.MigrationEngine(migrations_path=CONF.path)
-    engine.rollback_migration(
-        migration_name=CONF.migration, dry_run=CONF.dry_run
-    )
+    engine.rollback_migration(migration_name=CONF.migration, dry_run=CONF.dry_run)

@@ -21,7 +21,6 @@ from restalchemy.dm import types
 
 
 class VM(models.ModelWithUUID):
-
     state = properties.property(
         types.String(max_length=10), required=True, default="off"
     )
@@ -45,7 +44,6 @@ class VM(models.ModelWithUUID):
 
 
 class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
-
     __custom_properties__ = {
         "never_call": types.String(),
         "_hidden_field": types.String(),
@@ -94,13 +92,11 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
 
 
 class IpAddress(models.ModelWithUUID):
-
     ip = properties.property(types.String(), default="192.168.0.1")
     port = relationships.relationship(Port, required=True)
 
 
 class Tag(models.ModelWithUUID):
-
     name = properties.property(types.String(), id_property=True, required=True)
     visible = properties.property(types.Boolean(), default=True, required=True)
 

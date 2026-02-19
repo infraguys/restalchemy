@@ -24,12 +24,9 @@ class MyModel(models.Model):
 
 
 class RelationshipTestCase(base.BaseTestCase):
-
     def test_init_incorrect_value(self):
         with self.assertRaises(TypeError):
-            relationships.Relationship(
-                property_type=MyModel, value="IncorrectValue"
-            )
+            relationships.Relationship(property_type=MyModel, value="IncorrectValue")
 
     def test_init_with_correct_value(self):
         self.assertIsInstance(

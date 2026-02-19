@@ -16,7 +16,6 @@
 
 
 class BaseException(Exception):
-
     def __init__(self, code, message):
         super(BaseException, self).__init__(message)
         self._code = code

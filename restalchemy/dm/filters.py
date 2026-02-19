@@ -18,7 +18,6 @@ import abc
 
 
 class AbstractClause(metaclass=abc.ABCMeta):
-
     def __init__(self, value):
         super(AbstractClause, self).__init__()
         self._value = value
@@ -86,7 +85,6 @@ class NotLike(AbstractClause):
 
 
 class AbstractExpression(metaclass=abc.ABCMeta):
-
     def __init__(self, *clauses):
         super(AbstractExpression, self).__init__()
         self._clauses = clauses

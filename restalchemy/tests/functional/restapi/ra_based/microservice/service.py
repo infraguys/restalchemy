@@ -35,7 +35,6 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 
 
 class RESTService(threading.Thread):
-
     def __init__(self, bind_host, bind_port, app_root):
         super(RESTService, self).__init__(name="REST Service")
 
@@ -90,9 +89,7 @@ def build_wsgi_application(app_root):
                     description="Just functional tests",
                     external_docs=openapi_structures.OpenApiExternalDocs(
                         url="https://https://functional.tests/docs/",
-                        description=(
-                            "Functional tests external documentation"
-                        ),
+                        description=("Functional tests external documentation"),
                     ),
                 )
             ]

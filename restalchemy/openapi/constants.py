@@ -121,9 +121,7 @@ def build_openapi_create_response(ref_name):
             "description": ref_name,
             "content": {
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                    "schema": {
-                        "$ref": "#/components/schemas/{}".format(ref_name)
-                    }
+                    "schema": {"$ref": "#/components/schemas/{}".format(ref_name)}
                 }
             },
         },
@@ -137,9 +135,7 @@ def build_openapi_get_update_response(ref_name):
             "description": ref_name,
             "content": {
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                    "schema": {
-                        "$ref": "#/components/schemas/{}".format(ref_name)
-                    }
+                    "schema": {"$ref": "#/components/schemas/{}".format(ref_name)}
                 }
             },
         },
@@ -155,9 +151,7 @@ def build_openapi_list_model_response(ref_name):
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
                     "schema": {
                         "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/{}".format(ref_name)
-                        },
+                        "items": {"$ref": "#/components/schemas/{}".format(ref_name)},
                     }
                 }
             },
@@ -197,9 +191,7 @@ def build_openapi_object_response(
         code: {
             "description": description,
             "content": {
-                content_type: {
-                    "schema": {"type": "object", "properties": properties}
-                }
+                content_type: {"schema": {"type": "object", "properties": properties}}
             },
         },
         "default": DEFAULT_RESPONSE,
@@ -219,9 +211,7 @@ def build_openapi_response_octet_stream(description="Returns binary file"):
     }
 
 
-def build_openapi_user_response(
-    code=status.HTTP_200_OK, description="", **kwargs
-):
+def build_openapi_user_response(code=status.HTTP_200_OK, description="", **kwargs):
     """
 
     properties - dict as needed in openapi
@@ -239,9 +229,7 @@ def build_openapi_user_response(
     return {
         code: {
             "description": description,
-            "content": {
-                ra_const.CONTENT_TYPE_APPLICATION_JSON: {"schema": kwargs}
-            },
+            "content": {ra_const.CONTENT_TYPE_APPLICATION_JSON: {"schema": kwargs}},
         },
         "default": DEFAULT_RESPONSE,
     }

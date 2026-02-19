@@ -71,7 +71,6 @@ def test_get_filename_hash():
 
 
 class BaseMigrationTestCase(base.BaseDBEngineTestCase):
-
     def setUp(self):
         super(BaseMigrationTestCase, self).setUp()
 
@@ -98,21 +97,15 @@ class BaseMigrationTestCase(base.BaseDBEngineTestCase):
 
     def _truncate_ra_migrations_table(self):
         with self.engine.session_manager() as session:
-            self.truncate_table(
-                sql_migrations.RA_MIGRATION_TABLE_NAME, session=session
-            )
+            self.truncate_table(sql_migrations.RA_MIGRATION_TABLE_NAME, session=session)
 
     def _drop_ra_migrations_table(self):
         with self.engine.session_manager() as session:
-            self.drop_table(
-                sql_migrations.RA_MIGRATION_TABLE_NAME, session=session
-            )
+            self.drop_table(sql_migrations.RA_MIGRATION_TABLE_NAME, session=session)
 
     def load_migrations(self):
         with self.engine.session_manager() as session:
-            migrations = self.migration_engine._load_migration_controllers(
-                session
-            )
+            migrations = self.migration_engine._load_migration_controllers(session)
         return migrations
 
     def init_migration_table(self):
@@ -121,7 +114,6 @@ class BaseMigrationTestCase(base.BaseDBEngineTestCase):
 
 
 class MigrationsModelTestCase(BaseMigrationTestCase):
-
     def test_instantiate_migration_model(self):
         model_cls = sql_migrations.MigrationModel
 
@@ -132,9 +124,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.migration_engine.apply_migration(migration_name=FIRST_MIGRATION)
 
         with mock.patch.object(logging.Logger, "warning") as warning:
-            self.migration_engine.apply_migration(
-                migration_name=FIRST_MIGRATION
-            )
+            self.migration_engine.apply_migration(migration_name=FIRST_MIGRATION)
             warning.assert_called_with(
                 "Migration '%s' is already applied", FIRST_MIGRATION
             )
@@ -142,12 +132,8 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
     def test_migration_not_applied(self):
 
         with mock.patch.object(logging.Logger, "warning") as warning:
-            self.migration_engine.rollback_migration(
-                migration_name=FIRST_MIGRATION
-            )
-            warning.assert_called_with(
-                "Migration '%s' is not applied", FIRST_MIGRATION
-            )
+            self.migration_engine.rollback_migration(migration_name=FIRST_MIGRATION)
+            warning.assert_called_with("Migration '%s' is not applied", FIRST_MIGRATION)
 
     def test_migration_in_db_is_correct(self):
 
@@ -157,9 +143,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.assertTrue(all([m.applied for m in db_migrations]))
         self.assertEqual(len(db_migrations), 2)
 
-        self.migration_engine.rollback_migration(
-            migration_name=FIRST_MIGRATION
-        )
+        self.migration_engine.rollback_migration(migration_name=FIRST_MIGRATION)
 
         # Only one applied init migration after rollback
         db_filter = {"applied": filters.EQ(True)}
@@ -178,23 +162,16 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
             self.migration_engine._init_migration_table(session)
 
         db_filter = {"applied": filters.EQ(True)}
-        db_migrations = sql_migrations.MigrationModel.objects.get_all(
-            filters=db_filter
-        )
+        db_migrations = sql_migrations.MigrationModel.objects.get_all(filters=db_filter)
         self.assertEqual(0, len(db_migrations))
 
         latest_migration_name = self.migration_engine.get_latest_migration()
 
-        self.migration_engine.apply_migration(
-            migration_name=latest_migration_name
-        )
-        db_migrations = sql_migrations.MigrationModel.objects.get_all(
-            filters=db_filter
-        )
+        self.migration_engine.apply_migration(migration_name=latest_migration_name)
+        db_migrations = sql_migrations.MigrationModel.objects.get_all(filters=db_filter)
         self.assertEqual(4, len(db_migrations))
         self.assertTrue(
-            str(migration.uuid) in expected_uuids
-            for migration in db_migrations
+            str(migration.uuid) in expected_uuids for migration in db_migrations
         )
 
     def test_find_head_in_two_migration_sequences(self):
@@ -274,9 +251,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
 
         with mock.patch.object(logging.Logger, "warning") as warning:
             result = fmdm(new_migration_depends)
-            warning.assert_called_with(
-                "Manual migration(s) is(are) in dependencies!"
-            )
+            warning.assert_called_with("Manual migration(s) is(are) in dependencies!")
 
         self.assertFalse(result)
 
@@ -312,9 +287,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
             "0003-third-11f1da.py",
         ]
         migration_to_apply = "0000-init-1711de.py"
-        custom_migration_engine.apply_migration(
-            migration_name=migration_to_apply
-        )
+        custom_migration_engine.apply_migration(migration_name=migration_to_apply)
 
         with self.engine.session_manager() as session:
             result = custom_migration_engine.get_unapplied_migrations(
@@ -355,7 +328,6 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
 
 
 class MigrationEngineTestCase(BaseMigrationTestCase):
-
     def test_get_file_name(self):
         file_name = self.migration_engine.get_file_name(FIRST_MIGRATION)
 

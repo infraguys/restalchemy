@@ -70,6 +70,5 @@ class Middleware(object):
 
 
 class ContextMiddleware(Middleware):
-
     def process_request(self, req):
         req.context = common_contexts.Context()

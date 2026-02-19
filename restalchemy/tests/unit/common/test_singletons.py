@@ -32,7 +32,6 @@ class FakeInheritSingleton(singletons.InheritSingleton):
 
 
 class TestSingletons(unittest.TestCase):
-
     def check_singletons(self, a, b):
         self.assertIs(a, b)
         self.assertTrue(a._prop1)

@@ -52,13 +52,9 @@ class ModelWithL1Relationships(models.ModelWithUUID, orm.SQLStorableMixin):
 class ModelWithL2Relationships(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = "model_with_l2_relationships"
 
-    ref_l1_1 = relationships.relationship(
-        ModelWithL1Relationships, prefetch=True
-    )
+    ref_l1_1 = relationships.relationship(ModelWithL1Relationships, prefetch=True)
     ref_l1_2 = relationships.relationship(SimpleModel, prefetch=True)
-    ref_l1_3 = relationships.relationship(
-        ModelWithL1Relationships, prefetch=False
-    )
+    ref_l1_3 = relationships.relationship(ModelWithL1Relationships, prefetch=False)
 
 
 # NOTE(efrolov): Sort model properties for correct ordering in asserts
@@ -67,7 +63,6 @@ for model in [SimpleModel, ModelWithL1Relationships, ModelWithL2Relationships]:
 
 
 class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
-
     def setUp(self):
         super(MySQLPrefetchQueryBuilderTestCase, self).setUp()
         self.Q = q.Q
@@ -224,23 +219,19 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
             ("DESC", "`t1`.`uuid` DESC"),
             (
                 "ASC NULLS FIRST",
-                "CASE WHEN `t1`.`uuid` IS NULL THEN 0 ELSE 1 END ASC, "
-                "`t1`.`uuid` ASC",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 0 ELSE 1 END ASC, `t1`.`uuid` ASC",
             ),
             (
                 "ASC NULLS LAST",
-                "CASE WHEN `t1`.`uuid` IS NULL THEN 1 ELSE 0 END ASC, "
-                "`t1`.`uuid` ASC",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 1 ELSE 0 END ASC, `t1`.`uuid` ASC",
             ),
             (
                 "DESC NULLS FIRST",
-                "CASE WHEN `t1`.`uuid` IS NULL THEN 0 ELSE 1 END ASC, "
-                "`t1`.`uuid` DESC",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 0 ELSE 1 END ASC, `t1`.`uuid` DESC",
             ),
             (
                 "DESC NULLS LAST",
-                "CASE WHEN `t1`.`uuid` IS NULL THEN 1 ELSE 0 END ASC, "
-                "`t1`.`uuid` DESC",
+                "CASE WHEN `t1`.`uuid` IS NULL THEN 1 ELSE 0 END ASC, `t1`.`uuid` DESC",
             ),
         ],
         name_func=make_test_name,
@@ -312,7 +303,6 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
 
 
 class MySQLResultParserTestCase(unittest.TestCase):
-
     def test_l1_prefetch_result_parser(self):
         row_from_db = {
             "t1_ref_l0_2": "FakeRsUUID",

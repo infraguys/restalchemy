@@ -18,7 +18,6 @@ OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = "table"
 
 
 class SQLTable(object):
-
     def __init__(self, engine, table_name, model):
         super(SQLTable, self).__init__()
         self._table_name = table_name
@@ -95,9 +94,7 @@ class SQLTable(object):
         )
         return cmd.execute()
 
-    def select(
-        self, engine, filters, session, limit=None, order_by=None, locked=False
-    ):
+    def select(self, engine, filters, session, limit=None, order_by=None, locked=False):
         """
 
         Warning: query with and w/o (limit or group_by) won't flush each other

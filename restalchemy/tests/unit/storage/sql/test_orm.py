@@ -57,11 +57,8 @@ class FakeDirtyRestoreModelWithUUID(FakeRestoreModel, models.ModelWithUUID):
 
 
 class TestRestoreModelTestCase(base.BaseTestCase):
-
     def test_init_should_not_be_called(self):
-        model = FakeRestoreModel.restore_from_storage(
-            a=FAKE_VALUE_A, b=FAKE_VALUE_B
-        )
+        model = FakeRestoreModel.restore_from_storage(a=FAKE_VALUE_A, b=FAKE_VALUE_B)
 
         self.assertEqual(model.a, FAKE_VALUE_A)
         self.assertEqual(model.b, FAKE_VALUE_B)
@@ -77,9 +74,7 @@ class TestRestoreModelTestCase(base.BaseTestCase):
             model.get_table()
 
 
-class FakeRestoreWithJSONModel(
-    models.Model, orm.SQLStorableWithJSONFieldsMixin
-):
+class FakeRestoreWithJSONModel(models.Model, orm.SQLStorableWithJSONFieldsMixin):
     __tablename__ = "fake_table"
     __jsonfields__ = ["a", "b"]
 
@@ -88,7 +83,6 @@ class FakeRestoreWithJSONModel(
 
 
 class TestRestoreWithJSONModelTestCase(base.BaseTestCase):
-
     def test_json_parsed(self):
         model = FakeRestoreWithJSONModel.restore_from_storage(
             a=FAKE_DICT_JSON, b=FAKE_LIST_JSON
@@ -135,7 +129,6 @@ class TestSimplifyModelTestCase(base.BaseTestCase):
 
 @mock.patch("restalchemy.storage.sql.engines.engine_factory")
 class TestModelErrorHandlingCase(base.BaseTestCase):
-
     @mock.patch("restalchemy.storage.sql.tables.SQLTable.insert")
     def test_insert_model_when_unknown_error_raises(
         self, model_insert_mock, engine_factory_mock

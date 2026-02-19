@@ -18,7 +18,6 @@ from __future__ import absolute_import
 
 import logging
 import re
-import sys
 import time
 
 from restalchemy.api import middlewares
@@ -27,7 +26,6 @@ LOG = logging.getLogger(__name__)
 
 
 class HttpMetricsMiddleware(middlewares.Middleware):
-
     def __init__(
         self,
         application,

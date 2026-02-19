@@ -34,7 +34,6 @@ HOSTNAME_TEMPLATE = (
 
 
 class IPAddress(types.BaseType):
-
     def __init__(self, **kwargs):
         super(IPAddress, self).__init__(openapi_type="string", **kwargs)
 
@@ -64,7 +63,6 @@ class IPAddress(types.BaseType):
 
 
 class Network(types.BaseType):
-
     def __init__(self, **kwargs):
         super(Network, self).__init__(openapi_type="string", **kwargs)
 
@@ -82,7 +80,6 @@ class Network(types.BaseType):
 
 
 class IpWithMask(types.BaseType):
-
     def validate(self, value):
         return isinstance(value, netaddr.IPNetwork)
 
@@ -164,7 +161,7 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
         min_levels=HOSTNAME_MIN_LEVELS,
         allow_leading_underscore=False,
         allow_middle_underscore=False,
-        **kwargs
+        **kwargs,
     ):
         underscore_or_empty = UNDERSCORE if allow_middle_underscore else ""
         self.pattern = re.compile(

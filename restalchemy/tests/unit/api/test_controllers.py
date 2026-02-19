@@ -25,7 +25,6 @@ FAKE_LOCATION_PATH = "fake location path"
 
 
 class TestLocationHeaderLogic(unittest.TestCase):
-
     def setUp(self):
         super(TestLocationHeaderLogic, self).setUp()
         self._controller = controllers.Controller(None)
@@ -41,9 +40,7 @@ class TestLocationHeaderLogic(unittest.TestCase):
 
         result = self._controller.process_result("", add_location=True)
 
-        self.assertEqual(
-            result.headers.get("Location", None), FAKE_LOCATION_PATH
-        )
+        self.assertEqual(result.headers.get("Location", None), FAKE_LOCATION_PATH)
 
     def test_location_for_result_and_location_and_tuple_location_false(self):
         result = self._controller.process_result(
@@ -62,9 +59,7 @@ class TestLocationHeaderLogic(unittest.TestCase):
             ("", 200, None, True), add_location=True
         )
 
-        self.assertEqual(
-            result.headers.get("Location", None), FAKE_LOCATION_PATH
-        )
+        self.assertEqual(result.headers.get("Location", None), FAKE_LOCATION_PATH)
 
     def test_location_for_result_and_tuple_location_false(self):
         result = self._controller.process_result(("", 200, None, False))
@@ -77,9 +72,7 @@ class TestLocationHeaderLogic(unittest.TestCase):
 
         result = self._controller.process_result(("", 200, None, True))
 
-        self.assertEqual(
-            result.headers.get("Location", None), FAKE_LOCATION_PATH
-        )
+        self.assertEqual(result.headers.get("Location", None), FAKE_LOCATION_PATH)
 
 
 class BytePacker(packers.JSONPacker):
@@ -94,7 +87,6 @@ class ByteController(controllers.Controller):
 
 
 class TestRawResponses(unittest.TestCase):
-
     def setUp(self):
         super().setUp()
         self._controller = ByteController(None)
@@ -109,9 +101,7 @@ class TestRawResponses(unittest.TestCase):
 
         self.assertEqual(result.body, b"1")
         self.assertEqual(result.status, "200 OK")
-        self.assertEqual(
-            result.headers["Content-Type"], headers["Content-Type"]
-        )
+        self.assertEqual(result.headers["Content-Type"], headers["Content-Type"])
         self.assertEqual(
             result.headers["Content-Disposition"],
             headers["Content-Disposition"],

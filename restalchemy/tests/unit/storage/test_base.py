@@ -22,7 +22,6 @@ from restalchemy.tests.unit import base
 
 
 class TestErrorCatcherTestCase(base.BaseTestCase):
-
     @sbase.error_catcher
     def my_func(self, *args, **kwargs):
         if args[0] == "test_arg" and kwargs.get("kwarg0") == "test_kwarg":

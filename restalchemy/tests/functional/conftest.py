@@ -80,9 +80,7 @@ def setup_db_for_worker():
         conn = engine.get_connection()
         if db_type == "postgresql":
             conn.autocommit = True
-            conn.execute(
-                f"DROP DATABASE IF EXISTS {worker_db_name} WITH (FORCE)"
-            )
+            conn.execute(f"DROP DATABASE IF EXISTS {worker_db_name} WITH (FORCE)")
         elif db_type == "mysql":
             conn.cursor().execute(f"DROP DATABASE IF EXISTS {worker_db_name}")
 

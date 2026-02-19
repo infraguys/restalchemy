@@ -55,7 +55,6 @@ class FakeEmptyFieldsRoleContext(object):
 
 # NOTE(efrolov): Interface tests
 class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
-
     def tearDown(self):
         super(ResourceByRAModelHiddenFieldsInterfacesTestCase, self).tearDown()
         resources.ResourceMap.model_type_to_resource = {}
@@ -70,13 +69,9 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
             ],
         )
 
-        result = [
-            name for name, prop in resource.get_fields() if prop.is_public()
-        ]
+        result = [name for name, prop in resource.get_fields() if prop.is_public()]
 
-        self.assertEqual(
-            ["standard_field2", "standard_field3", "uuid"], sorted(result)
-        )
+        self.assertEqual(["standard_field2", "standard_field3", "uuid"], sorted(result))
 
     def test_hide_renamed_fields(self):
         resource = resources.ResourceByRAModel(
@@ -89,17 +84,12 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
             name_map={"standard_field1": "new_standard_field1"},
         )
 
-        result = [
-            name for name, prop in resource.get_fields() if prop.is_public()
-        ]
+        result = [name for name, prop in resource.get_fields() if prop.is_public()]
 
-        self.assertEqual(
-            ["standard_field2", "standard_field3", "uuid"], sorted(result)
-        )
+        self.assertEqual(["standard_field2", "standard_field3", "uuid"], sorted(result))
 
 
 class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
-
     def setUp(self):
         super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase, self).setUp()
         self.target = resources.ResourceByRAModel(
@@ -119,9 +109,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
         self._request.api_context = contexts.RequestContext(self._request)
 
     def tearDown(self):
-        super(
-            ResourceByRAModelHiddenFieldsNewInterfacesTestCase, self
-        ).tearDown()
+        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase, self).tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._request
 
@@ -237,7 +225,6 @@ class ResourceByRAModelWithCustomPropsHiddenFieldsNewInterfacesTestCase(
 
 
 class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
-
     def setUp(self):
         super(ResourceByRAModelRoleBasedHiddenFieldsTestCase, self).setUp()
         self.target = resources.ResourceByRAModel(

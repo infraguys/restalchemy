@@ -20,7 +20,6 @@ from restalchemy.dm import types_network
 
 
 class RecordNameTestCase(unittest.TestCase):
-
     def setUp(self):
         super(RecordNameTestCase, self).setUp()
         self.test_instance = types_network.RecordName()
@@ -53,24 +52,19 @@ class RecordNameTestCase(unittest.TestCase):
 
 
 class RecordNameWithWildcardTestCase(unittest.TestCase):
-
     def setUp(self):
         super(RecordNameWithWildcardTestCase, self).setUp()
         self.test_instance = types_network.RecordNameWithWildcard()
 
     def test_validate_correct_value(self):
-        self.assertTrue(
-            self.test_instance.validate("*.ns1.ra.restalchemy.com")
-        )
+        self.assertTrue(self.test_instance.validate("*.ns1.ra.restalchemy.com"))
         self.assertTrue(self.test_instance.validate("ns1.ra.restalchemy.com"))
         self.assertTrue(self.test_instance.validate("*.restalchemy.com"))
         self.assertTrue(self.test_instance.validate("restalchemy.com"))
 
     def test_from_simple_type(self):
         self.assertEqual(self.test_instance.from_simple_type("*.x."), "*.x")
-        self.assertEqual(
-            self.test_instance.from_simple_type("*.x.x."), "*.x.x"
-        )
+        self.assertEqual(self.test_instance.from_simple_type("*.x.x."), "*.x.x")
 
     def test_to_simple_type(self):
         self.assertEqual(self.test_instance.to_simple_type("*.xxx"), "*.xxx")
@@ -120,8 +114,7 @@ class HostnameTest(unittest.TestCase):
             "a.bc",
             "1.2.3.4.com",
             "xn--kxae4bafwg.xn--pxaix.gr",
-            "a23456789-123456789-123456789-123456789-123456789-123456789-123."
-            "b23.com",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-123.b23.com",
             "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
@@ -140,25 +133,19 @@ class HostnameTest(unittest.TestCase):
         data = ["_acme-challenge.example.com", "_acme-challenge"]
 
         for fqdn in data:
-            self.assertTrue(
-                self.fqdn_with_leading_underscore.validate(fqdn), fqdn
-            )
+            self.assertTrue(self.fqdn_with_leading_underscore.validate(fqdn), fqdn)
 
     def test_validate_underscore_negative(self):
         data = ["_acme-challenge._example.com"]
 
         for fqdn in data:
-            self.assertFalse(
-                self.fqdn_with_leading_underscore.validate(fqdn), fqdn
-            )
+            self.assertFalse(self.fqdn_with_leading_underscore.validate(fqdn), fqdn)
 
     def test_validate_middle_underscore(self):
         data = ["abc_def.example.com"]
 
         for fqdn in data:
-            self.assertTrue(
-                self.fqdn_with_middle_underscore.validate(fqdn), fqdn
-            )
+            self.assertTrue(self.fqdn_with_middle_underscore.validate(fqdn), fqdn)
 
     def test_validate_middle_underscore_negative(self):
         data = [
@@ -171,9 +158,7 @@ class HostnameTest(unittest.TestCase):
         ]
 
         for fqdn in data:
-            self.assertFalse(
-                self.fqdn_with_middle_underscore.validate(fqdn), fqdn
-            )
+            self.assertFalse(self.fqdn_with_middle_underscore.validate(fqdn), fqdn)
 
     def test_validate_negative(self):
         data = [
@@ -187,8 +172,7 @@ class HostnameTest(unittest.TestCase):
             "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com",
             "-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com",
             "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com",
-            "a23456789-123456789-123456789-123456789-123456789-123456789-1234."
-            "b23.com",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-1234.b23.com",
             "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
@@ -238,8 +222,7 @@ class FQDNTest(unittest.TestCase):
             "a.bc.",
             "1.2.3.4.com.",
             "xn--kxae4bafwg.xn--pxaix.gr.",
-            "a23456789-123456789-123456789-123456789-123456789-123456789-123."
-            "b23.com.",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-123.b23.com.",
             "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
@@ -262,8 +245,7 @@ class FQDNTest(unittest.TestCase):
             "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.",
             "-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com.",
             "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.",
-            "a23456789-123456789-123456789-123456789-123456789-123456789-1234."
-            "b23.com.",
+            "a23456789-123456789-123456789-123456789-123456789-123456789-1234.b23.com.",
             "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
             "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
@@ -311,18 +293,12 @@ class IPRangeTest(unittest.TestCase):
 
     def test_to_simple_type(self):
         foo_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
-        self.assertEqual(
-            self.ip_range.to_simple_type(foo_range), "10.0.0.0-10.0.1.0"
-        )
+        self.assertEqual(self.ip_range.to_simple_type(foo_range), "10.0.0.0-10.0.1.0")
 
     def test_from_simple_type(self):
         foo_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
-        self.assertEqual(
-            self.ip_range.from_simple_type("10.0.0.0-10.0.1.0"), foo_range
-        )
+        self.assertEqual(self.ip_range.from_simple_type("10.0.0.0-10.0.1.0"), foo_range)
 
     def test_from_unicode(self):
         foo_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
-        self.assertEqual(
-            self.ip_range.from_unicode("10.0.0.0-10.0.1.0"), foo_range
-        )
+        self.assertEqual(self.ip_range.from_unicode("10.0.0.0-10.0.1.0"), foo_range)

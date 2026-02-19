@@ -60,9 +60,8 @@ def main():
 
     depends = set(CONF.depend or [])
 
-    if (
-        CONF.manual is False
-        and not engine.validate_auto_migration_dependencies(depends)
+    if CONF.manual is False and not engine.validate_auto_migration_dependencies(
+        depends
     ):
         sys.exit(1)
 

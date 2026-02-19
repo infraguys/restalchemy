@@ -18,7 +18,6 @@ from restalchemy.storage.sql import migrations
 
 
 class MigrationStep(migrations.AbstractMigrationStep):
-
     def __init__(self):
         self._depends = [""]
 
@@ -31,12 +30,14 @@ class MigrationStep(migrations.AbstractMigrationStep):
         return False
 
     def upgrade(self, session):
-        expressions = ["""
+        expressions = [
+            """
                 CREATE TABLE IF NOT EXISTS binary_data (
                     uuid CHAR(36) NOT NULL,
                     data TEXT NOT NULL,
                 PRIMARY KEY (uuid))
-            """]
+            """
+        ]
         for expression in expressions:
             session.execute(expression)
 
