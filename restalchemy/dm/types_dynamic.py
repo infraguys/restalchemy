@@ -17,8 +17,8 @@
 import abc
 import copy
 import datetime
-import json
 import logging
+import orjson
 import uuid
 
 from restalchemy.common import exceptions as ra_exc
@@ -77,7 +77,7 @@ class AbstractKindType(types.BasePythonType):
         :param value: unicode string to be deserialized
         :return: python object
         """
-        return super().from_unicode(self.from_simple_type(json.loads(value)))
+        return super().from_unicode(self.from_simple_type(orjson.loads(value)))
 
 
 class AbstractKindModel(models.Model, metaclass=abc.ABCMeta):
@@ -174,9 +174,7 @@ class KindModelType(types.BasePythonType):
                 except ra_exc.ParseError as e:
                     raise ra_exc.ParseError(value="%s=%s" % (name, e.value))
         if copied_value:
-            raise ra_exc.ParseError(
-                value="(Unknown fields: %s)" % (copied_value)
-            )
+            raise ra_exc.ParseError(value="(Unknown fields: %s)" % (copied_value))
         return self._python_type(**parsed_value)
 
     def to_simple_type(self, value):
@@ -301,12 +299,12 @@ class KindModelSelectorType(types.BaseType):
         :param value: A Unicode string representing the JSON-encoded simple
             type data.
         :return: An instance of the model type.
-        :raises json.JSONDecodeError: If the input string is not valid JSON.
+        :raises orjson.JSONDecodeError: If the input string is not valid JSON.
         :raises UnknownType: If the 'kind' field in the decoded JSON does not
             correspond to any known model type.
         """
 
-        return self.from_simple_type(json.loads(value))
+        return self.from_simple_type(orjson.loads(value))
 
     def to_openapi_spec(self, prop_kwargs):
         """
@@ -325,8 +323,7 @@ class KindModelSelectorType(types.BaseType):
         spec = {
             "type": self.openapi_type,
             "oneOf": [
-                subtype.to_openapi_spec({})
-                for subtype in self._kind_type_map.values()
+                subtype.to_openapi_spec({}) for subtype in self._kind_type_map.values()
             ],
         }
 

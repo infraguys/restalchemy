@@ -26,12 +26,10 @@ from restalchemy.storage import exceptions as exc
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql.dialect import pgsql
 
-
 LOG = logging.getLogger(__name__)
 
 
 class SessionQueryCache(object):
-
     def __init__(self, session):
         super(SessionQueryCache, self).__init__()
         self._session = session
@@ -123,7 +121,6 @@ class SessionQueryCache(object):
 
 
 class PgSQLSession(object):
-
     def __init__(self, engine):
         self._engine = engine
         self._conn = self._engine.get_connection()
@@ -184,9 +181,7 @@ class PgSQLSession(object):
             for model in models:
                 pk_values = {}
                 for name, prop in model.get_id_properties().items():
-                    pk_values[name] = prop.property_type.to_simple_type(
-                        prop.value
-                    )
+                    pk_values[name] = prop.property_type.to_simple_type(prop.value)
                 values.append(pk_values)
             operation = pgsql.PgSQLBatchDelete(
                 table=table,
@@ -194,18 +189,12 @@ class PgSQLSession(object):
                 session=self,
             )
 
-            return self.execute(
-                operation.get_statement(), operation.get_values()
-            )
+            return self.execute(operation.get_statement(), operation.get_values())
 
     def execute(self, statement, values=None):
         try:
             self._log.debug(
-                (
-                    "Execute statement %s"
-                    " with values %s"
-                    " within %s database"
-                ),
+                ("Execute statement %s with values %s within %s database"),
                 statement,
                 values,
                 self._engine.db_name,
@@ -217,11 +206,7 @@ class PgSQLSession(object):
 
     def execute_many(self, statement, values):
         self._log.debug(
-            (
-                "Execute batch statement %s"
-                " with values %s"
-                " within %s database"
-            ),
+            ("Execute batch statement %s with values %s within %s database"),
             statement,
             values,
             self._engine.db_name,
@@ -240,7 +225,6 @@ class PgSQLSession(object):
 
 
 class MySQLSession(object):
-
     def __init__(self, engine):
         self._engine = engine
         self._conn = self._engine.get_connection()
@@ -307,9 +291,7 @@ class MySQLSession(object):
             for model in models:
                 pk_values = {}
                 for name, prop in model.get_id_properties().items():
-                    pk_values[name] = prop.property_type.to_simple_type(
-                        prop.value
-                    )
+                    pk_values[name] = prop.property_type.to_simple_type(prop.value)
                 values.append(pk_values)
             operation = mysql.MySQLBatchDelete(
                 table=table,
@@ -317,18 +299,12 @@ class MySQLSession(object):
                 session=self,
             )
 
-            return self.execute(
-                operation.get_statement(), operation.get_values()
-            )
+            return self.execute(operation.get_statement(), operation.get_values())
 
     def execute(self, statement, values=None):
         try:
             self._log.debug(
-                (
-                    "Execute statement %s"
-                    " with values %s"
-                    " within %s database"
-                ),
+                ("Execute statement %s with values %s within %s database"),
                 statement,
                 values,
                 self._engine.db_name,
@@ -342,11 +318,7 @@ class MySQLSession(object):
 
     def execute_many(self, statement, values):
         self._log.debug(
-            (
-                "Execute batch statement %s"
-                " with values %s"
-                " within %s database"
-            ),
+            ("Execute batch statement %s with values %s within %s database"),
             statement,
             values,
             self._engine.db_name,
@@ -389,7 +361,6 @@ class SessionNotFound(Exception):
 
 
 class SessionThreadStorage(object):
-
     _storage = threading.local()
 
     def __init__(self):

@@ -46,7 +46,6 @@ class BaseDBEngineTestCase(db_utils.DBEngineMixin, BaseFunctionalTestCase):
 
 
 class BaseWithDbMigrationsTestCase(BaseDBEngineTestCase):
-
     __LAST_MIGRATION__ = None
     __FIRST_MIGRATION__ = None
 
@@ -68,7 +67,5 @@ class BaseWithDbMigrationsTestCase(BaseDBEngineTestCase):
     @staticmethod
     def get_migration_engine():
         migrations_path = os.path.dirname(__file__) + "/migrations/"
-        migration_engine = migrations.MigrationEngine(
-            migrations_path=migrations_path
-        )
+        migration_engine = migrations.MigrationEngine(migrations_path=migrations_path)
         return migration_engine

@@ -32,7 +32,6 @@ from restalchemy.tests.functional import base
 from restalchemy.tests.functional import consts
 from restalchemy.tests import fixtures
 
-
 FAKE_STR1 = "Fake1"
 FAKE_STR2 = "Fake2"
 FAKE_INT1 = 1
@@ -52,12 +51,10 @@ URL_TO_DB = "mysql://fake:fake@127.0.0.1/test"
 
 
 class FakeParentModel(models.ModelWithUUID, orm.SQLStorableMixin):
-
     __tablename__ = FAKE_TABLE_NAME2
 
 
 class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
-
     __tablename__ = FAKE_TABLE_NAME1
 
     test_str_field1 = properties.property(types.String(), default=FAKE_STR1)
@@ -76,7 +73,6 @@ class FakeModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class FakeModelWithValidate(FakeModel):
-
     def validate(self):
         if self.test_str_field1 == self.test_str_field2:
             raise ValueError
@@ -107,7 +103,6 @@ def escape(list_of_fields):
 
 
 class InsertCaseTestCase(base.BaseFunctionalTestCase):
-
     @mock.patch("mysql.connector.pooling.MySQLConnectionPool")
     def setUp(self, mysql_pool_mock):
         super(InsertCaseTestCase, self).setUp()
@@ -160,9 +155,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
 
         session_mock().execute.side_effect = CustomException
 
-        self.assertRaises(
-            exceptions.UnknownStorageException, self.target_model.insert
-        )
+        self.assertRaises(exceptions.UnknownStorageException, self.target_model.insert)
 
         self.assertFalse(session_mock().commit.called)
         self.assertTrue(session_mock().rollback.called)
@@ -223,23 +216,20 @@ class FakeUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class UpdateTestCase(base.BaseFunctionalTestCase):
-
     def setUp(self):
         super(UpdateTestCase, self).setUp()
 
-        engines.engine_factory.configure_factory(consts.DATABASE_URI)
+        engines.engine_factory.configure_factory(consts.get_database_uri())
         engine = engines.engine_factory.get_engine()
         self.engine = engine
         with engine.session_manager() as session:
-            session.execute(
-                """
+            session.execute("""
                 CREATE TABLE IF NOT EXISTS test_update (
                     uuid CHAR(36) PRIMARY KEY,
                     field1 VARCHAR(255) NOT NULL,
                     field2 VARCHAR(255) NOT NULL
                 )
-            """
-            )
+            """)
 
     def tearDown(self):
         super(UpdateTestCase, self).tearDown()
@@ -281,23 +271,20 @@ class SavepointModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class SavepointTestCase(base.BaseFunctionalTestCase):
-
     def setUp(self):
         super().setUp()
 
-        engines.engine_factory.configure_factory(consts.DATABASE_URI)
+        engines.engine_factory.configure_factory(consts.get_database_uri())
         engine = engines.engine_factory.get_engine()
         self.engine = engine
         with engine.session_manager() as session:
-            session.execute(
-                """
+            session.execute("""
                 CREATE TABLE IF NOT EXISTS savepoint_table (
                     uuid CHAR(36) PRIMARY KEY,
                     field1 VARCHAR(255) NOT NULL,
                     field2 VARCHAR(255) NOT NULL
                 )
-            """
-            )
+            """)
 
     def tearDown(self):
         super().tearDown()

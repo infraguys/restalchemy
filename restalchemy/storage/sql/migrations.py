@@ -50,7 +50,6 @@ class DependenciesException(Exception):
 
 
 class AbstractMigrationStep(metaclass=abc.ABCMeta):
-
     @property
     def depends(self):
         return [dep for dep in self._depends if dep]
@@ -82,9 +81,7 @@ class AbstractMigrationStep(metaclass=abc.ABCMeta):
 
     @staticmethod
     def _delete_table_if_exists(session, table_name):
-        session.execute(
-            f"DROP TABLE IF EXISTS {session.engine.escape(table_name)};"
-        )
+        session.execute(f"DROP TABLE IF EXISTS {session.engine.escape(table_name)};")
 
     @staticmethod
     def _delete_trigger_if_exists(session, trigger_name):
@@ -94,9 +91,7 @@ class AbstractMigrationStep(metaclass=abc.ABCMeta):
 
     @staticmethod
     def _delete_view_if_exists(session, view_name):
-        session.execute(
-            f"DROP VIEW IF EXISTS {session.engine.escape(view_name)};"
-        )
+        session.execute(f"DROP VIEW IF EXISTS {session.engine.escape(view_name)};")
 
 
 class AbstarctMigrationStep(AbstractMigrationStep):
@@ -108,13 +103,10 @@ class AbstarctMigrationStep(AbstractMigrationStep):
 class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = RA_MIGRATION_TABLE_NAME
 
-    applied = properties.property(
-        types.Boolean(), required=True, default=False
-    )
+    applied = properties.property(types.Boolean(), required=True, default=False)
 
 
 class MigrationStepController(object):
-
     def __init__(self, migration_step, filename, session):
         self._migration_step = migration_step
         self._filename = filename
@@ -166,9 +158,7 @@ class MigrationStepController(object):
 
         for migration in migrations.values():
             if self._filename in migration.depends_from():
-                LOG.info(
-                    "Migration '%s' dependent %r", self.name, migration.name
-                )
+                LOG.info("Migration '%s' dependent %r", self.name, migration.name)
                 migration.rollback(session, migrations, dry_run=dry_run)
 
         if dry_run:
@@ -203,13 +193,10 @@ class MigrationEngine(object):
 
         if candidates_count > 1:
             raise ValueError(
-                "Multiple file found for name '%s': %s."
-                % (part_of_name, candidates)
+                "Multiple file found for name '%s': %s." % (part_of_name, candidates)
             )
 
-        raise ValueError(
-            "Migration file for dependency %s not found" % part_of_name
-        )
+        raise ValueError("Migration file for dependency %s not found" % part_of_name)
 
     def _calculate_depends(self, depends):
         files = []
@@ -251,9 +238,7 @@ class MigrationEngine(object):
         migration_id = str(uuid.uuid4())
         filename_hash = migration_id[: self.FILENAME_HASH_LEN]
         migration_number = (
-            MANUAL_MIGRATION
-            if is_manual
-            else self._suggest_new_migration_number()
+            MANUAL_MIGRATION if is_manual else self._suggest_new_migration_number()
         )
         message = message.replace(" ", "-")
 
@@ -266,9 +251,7 @@ class MigrationEngine(object):
             migration_number = first_part_of_message
             message = message.lstrip(first_part_of_message + "-")
 
-        mfilename = (
-            "-".join([migration_number, message, filename_hash]) + ".py"
-        )
+        mfilename = "-".join([migration_number, message, filename_hash]) + ".py"
 
         mpath = os.path.join(self._migrations_path, mfilename)
 
@@ -337,14 +320,10 @@ class MigrationEngine(object):
 
             migration = migrations[filename]
             if migration.is_applied():
-                LOG.warning(
-                    "Migration '%s' is already applied", migration.name
-                )
+                LOG.warning("Migration '%s' is already applied", migration.name)
             else:
                 LOG.info("Applying migration '%s'", migration.name)
-                migrations[filename].apply(
-                    session, migrations, dry_run=dry_run
-                )
+                migrations[filename].apply(session, migrations, dry_run=dry_run)
 
     def rollback_migration(self, migration_name, dry_run=False):
         filename = self.get_file_name(migration_name)
@@ -356,9 +335,7 @@ class MigrationEngine(object):
                 LOG.warning("Migration '%s' is not applied", migration.name)
             else:
                 LOG.info("Rolling back migration '%s'", migration.name)
-                migrations[filename].rollback(
-                    session, migrations, dry_run=dry_run
-                )
+                migrations[filename].rollback(session, migrations, dry_run=dry_run)
 
     def _calculate_indexes(self):
         indexed_migrations = []

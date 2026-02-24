@@ -15,12 +15,11 @@
 #    under the License.
 
 # TODO(Eugene Frolov): Rewrite tests
-import json
+import orjson
 
 import mock
 import webob
 
-from restalchemy.api import controllers
 from restalchemy.api import field_permissions
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -47,7 +46,6 @@ class TestData(object):
 
 
 class BasePackerTestCase(base.BaseTestCase):
-
     def setUp(self):
         super(BasePackerTestCase, self).setUp()
         self._test_instance = packers.BaseResourcePacker(
@@ -103,9 +101,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
         with self.assertRaises(exceptions.FieldPermissionError) as context:
             self._test_resource_packer.unpack(new_data)
 
-        self.assertEqual(
-            "Permission denied for field field2.", str(context.exception)
-        )
+        self.assertEqual("Permission denied for field field2.", str(context.exception))
         self.assertEqual(context.exception.code, 403)
 
 
@@ -148,9 +144,7 @@ class PackerFieldPermissionsNonDefaultHiddenTestCase(base.BaseTestCase):
         with self.assertRaises(exceptions.FieldPermissionError) as context:
             self._test_resource_packer.unpack(new_data)
 
-        self.assertEqual(
-            "Permission denied for field field2.", str(context.exception)
-        )
+        self.assertEqual("Permission denied for field field2.", str(context.exception))
         self.assertEqual(context.exception.code, 403)
 
 
@@ -220,13 +214,15 @@ class JSONPackerIncludeNullTestCase(base.BaseTestCase):
             "uuid": None,
         }
 
-        result = json.loads(self._test_resource_packer.pack(new_data))
+        result = orjson.loads(self._test_resource_packer.pack(new_data))
         self.assertDictEqual(result, expected_data)
 
     def test_unpack(self):
         new_data = {"field1": None, "field2": 2}
 
-        result = self._test_resource_packer.unpack(json.dumps(new_data))
+        result = self._test_resource_packer.unpack(
+            orjson.dumps(new_data, option=orjson.OPT_NON_STR_KEYS)
+        )
         self.assertDictEqual(result, new_data)
 
 

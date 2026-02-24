@@ -20,7 +20,6 @@ LOG = logging.getLogger(__name__)
 
 
 class ResourceSchemaGenerator(object):
-
     def __init__(self, resource, route):
         super(ResourceSchemaGenerator, self).__init__()
         self._resource = resource
@@ -37,9 +36,7 @@ class ResourceSchemaGenerator(object):
         return self.resource_name + prop_name.capitalize()
 
     def get_prop_kwargs(self, name):
-        return (
-            self._resource.get_model().properties.properties[name].get_kwargs()
-        )
+        return self._resource.get_model().properties.properties[name].get_kwargs()
 
     def generate_parameter_object(self, request):
         parameters = {}

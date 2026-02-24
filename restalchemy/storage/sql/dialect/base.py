@@ -21,7 +21,6 @@ from restalchemy.storage.sql import filters as sql_filters
 
 
 class AbstractProcessResult(metaclass=abc.ABCMeta):
-
     def __init__(self, result, session):
         self._result = result
         self._session = session
@@ -67,7 +66,6 @@ class AbstractProcessResult(metaclass=abc.ABCMeta):
 
 
 class BaseProcessResult(AbstractProcessResult):
-
     def __init__(self, result, session):
         """
         Initializes the BaseProcessResult object.
@@ -106,7 +104,6 @@ class BaseProcessResult(AbstractProcessResult):
 
 
 class BaseOrmProcessResult(BaseProcessResult):
-
     def __init__(self, result, query, session):
         """
         Initializes the BaseOrmProcessResult object.
@@ -153,7 +150,6 @@ class BaseOrmProcessResult(BaseProcessResult):
 
 
 class AbstractDialectCommand(metaclass=abc.ABCMeta):
-
     def __init__(self, table, data, session):
         """
         Initializes the AbstractDialectCommand with the given table, data,
@@ -215,7 +211,6 @@ class AbstractDialectCommand(metaclass=abc.ABCMeta):
 
 
 class BaseInsertCommand(AbstractDialectCommand):
-
     EXPRESSION = "INSERT INTO `%s` (%s) VALUES (%s)"
 
     def get_values(self):
@@ -258,7 +253,6 @@ class BaseInsertCommand(AbstractDialectCommand):
 
 
 class BaseUpdateCommand(AbstractDialectCommand):
-
     EXPRESSION = "UPDATE `%s` SET %s WHERE %s"
 
     def __init__(self, table, ids, data, session):
@@ -326,7 +320,6 @@ class BaseUpdateCommand(AbstractDialectCommand):
 
 
 class BaseDeleteCommand(AbstractDialectCommand):
-
     EXPRESSION = "DELETE FROM `%s` WHERE %s"
 
     def __init__(self, table, ids, session):
@@ -378,7 +371,6 @@ class BaseDeleteCommand(AbstractDialectCommand):
 
 
 class BaseBatchDelete(AbstractDialectCommand):
-
     EXPRESSION_IN = "DELETE FROM `%s` WHERE %s in %s"
     EXPRESSION_FILTER = "DELETE FROM `%s` WHERE %s"
 
@@ -404,9 +396,7 @@ class BaseBatchDelete(AbstractDialectCommand):
         elif keys_count > 1:
             self._is_multiple_primary_key = True
         else:
-            raise ValueError(
-                f"The model with table {table!r} has 0 primary keys"
-            )
+            raise ValueError(f"The model with table {table!r} has 0 primary keys")
 
     def _get_values(self):
         """
@@ -502,9 +492,7 @@ class BaseBatchDelete(AbstractDialectCommand):
         :rtype: str
         """
         where_part = " AND ".join([f"{key} = %s" for key in self._pk_keys])
-        where_condition = " OR ".join(
-            [where_part for _ in range(len(self._snapshot))]
-        )
+        where_condition = " OR ".join([where_part for _ in range(len(self._snapshot))])
         return self.EXPRESSION_FILTER % (
             self._table.name,
             where_condition,
@@ -531,7 +519,6 @@ class BaseBatchDelete(AbstractDialectCommand):
 
 
 class BaseBasicSelectCommand(AbstractDialectCommand):
-
     EXPRESSION = "SELECT %s FROM `%s`"
 
     def __init__(
@@ -600,15 +587,12 @@ class BaseBasicSelectCommand(AbstractDialectCommand):
                 sorttype = sorttype.upper()
                 if sorttype not in ["ASC", "DESC", "", None]:
                     raise ValueError(f"Unknown order: {sorttype}.")
-                res.append(
-                    f"{self._session.engine.escape(name)} {sorttype or 'ASC'}"
-                )
+                res.append(f"{self._session.engine.escape(name)} {sorttype or 'ASC'}")
             return " ORDER BY " + ", ".join(res)
         return ""
 
 
 class BaseSelectCommand(BaseBasicSelectCommand):
-
     def __init__(
         self,
         table,
@@ -686,7 +670,6 @@ class BaseSelectCommand(BaseBasicSelectCommand):
 
 
 class BaseCustomSelectCommand(BaseBasicSelectCommand):
-
     def __init__(
         self,
         table,
@@ -773,7 +756,6 @@ class BaseCustomSelectCommand(BaseBasicSelectCommand):
 
 
 class BaseCountCommand(BaseSelectCommand):
-
     EXPRESSION = "SELECT COUNT(*) as count FROM `%s`"
 
     def __init__(self, table, session, filters=None):
@@ -803,7 +785,6 @@ class BaseCountCommand(BaseSelectCommand):
 
 
 class BaseOrmDialectCommand(AbstractDialectCommand):
-
     def __init__(self, table, query, session):
         """
         Initializes the BaseOrmDialectCommand with the given table, query, and
@@ -868,7 +849,6 @@ class BaseOrmDialectCommand(AbstractDialectCommand):
 
 
 class BaseSqlOrm(object):
-
     @staticmethod
     def select(model, session):
         """
@@ -882,7 +862,6 @@ class BaseSqlOrm(object):
 
 
 class AbstractDialect(metaclass=abc.ABCMeta):
-
     @property
     @abc.abstractmethod
     def DIALECT_NAME(self):

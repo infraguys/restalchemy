@@ -15,7 +15,7 @@
 #    under the License.
 
 import abc
-import json
+import orjson
 
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
@@ -30,7 +30,6 @@ from restalchemy.storage.sql import tables
 class ObjectCollection(
     base.AbstractObjectCollection, base.AbstractObjectCollectionCountMixin
 ):
-
     @property
     def _table(self):
         return self.model_cls.get_table()
@@ -78,10 +77,7 @@ class ObjectCollection(
             session=session,
             locked=locked,
         )
-        return [
-            self.model_cls.restore_from_storage(**params)
-            for params in result.rows
-        ]
+        return [self.model_cls.restore_from_storage(**params) for params in result.rows]
 
     @base.error_catcher
     def get_one(self, filters=None, session=None, cache=False, locked=False):
@@ -96,17 +92,11 @@ class ObjectCollection(
         if result_len == 1:
             return result[0]
         elif result_len == 0:
-            raise exceptions.RecordNotFound(
-                model=self.model_cls, filters=filters
-            )
+            raise exceptions.RecordNotFound(model=self.model_cls, filters=filters)
         else:
-            raise exceptions.HasManyRecords(
-                model=self.model_cls, filters=filters
-            )
+            raise exceptions.HasManyRecords(model=self.model_cls, filters=filters)
 
-    def get_one_or_none(
-        self, filters=None, session=None, cache=False, locked=False
-    ):
+    def get_one_or_none(self, filters=None, session=None, cache=False, locked=False):
         try:
             return self.get_one(
                 filters=filters, session=session, cache=cache, locked=locked
@@ -114,9 +104,7 @@ class ObjectCollection(
         except exceptions.RecordNotFound:
             return None
 
-    def _query(
-        self, where_conditions, where_values, session, limit, order_by, locked
-    ):
+    def _query(self, where_conditions, where_values, session, limit, order_by, locked):
         result = self._table.custom_select(
             engine=self._engine,
             where_conditions=where_conditions,
@@ -172,9 +160,7 @@ class ObjectCollection(
     @base.error_catcher
     def count(self, session=None, filters=None):
         with self._engine.session_manager(session=session) as s:
-            result = self._table.count(
-                engine=self._engine, session=s, filters=filters
-            )
+            result = self._table.count(engine=self._engine, session=s, filters=filters)
             data = list(result.fetchall())
             return data[0]["count"]
 
@@ -225,12 +211,10 @@ class SoftDeleteObjectCollection(ObjectCollection):
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):
-
     message = "Class attribute %(attr_name)s must be provided."
 
 
 class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
-
     _saved = False
 
     _ObjectCollection = ObjectCollection
@@ -305,9 +289,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
                     result = self.get_table().update(
                         engine=self._get_engine(),
                         ids=self._get_prepared_data(self.get_id_properties()),
-                        data=self._get_prepared_data(
-                            self.get_data_properties()
-                        ),
+                        data=self._get_prepared_data(self.get_data_properties()),
                         session=s,
                     )
                 except exc.Conflict as e:
@@ -319,9 +301,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
                     }
                     type(self).objects.get_one(filters=_filters, session=s)
                 if result.get_count() > 1:
-                    raise exceptions.MultipleUpdatesDetected(
-                        model=self, filters={}
-                    )
+                    raise exceptions.MultipleUpdatesDetected(model=self, filters={})
 
     @base.error_catcher
     @base.dead_lock_catcher
@@ -383,17 +363,15 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
         for field in cls.__jsonfields__:
             # Some databases' clients support JSON fields natively.
             if isinstance(kwargs[field], str):
-                kwargs[field] = json.loads(kwargs[field])
-        return super(SQLStorableWithJSONFieldsMixin, cls).restore_from_storage(
-            **kwargs
-        )
+                kwargs[field] = orjson.loads(kwargs[field])
+        return super(SQLStorableWithJSONFieldsMixin, cls).restore_from_storage(**kwargs)
 
     def _get_prepared_data(self, properties=None):
         if self.__jsonfields__ is None:
             raise UndefinedAttribute(attr_name="__jsonfields__")
-        result = super(
-            SQLStorableWithJSONFieldsMixin, self
-        )._get_prepared_data(properties)
+        result = super(SQLStorableWithJSONFieldsMixin, self)._get_prepared_data(
+            properties
+        )
         if properties is None:
             json_properties = self.__jsonfields__
         else:
@@ -401,5 +379,7 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
                 set(properties.keys())
             )
         for field in json_properties:
-            result[field] = json.dumps(result[field], separators=(",", ":"))
+            result[field] = orjson.dumps(
+                result[field], option=orjson.OPT_NON_STR_KEYS
+            ).decode()
         return result

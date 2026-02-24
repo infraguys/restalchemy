@@ -18,7 +18,6 @@ from restalchemy.storage.sql import migrations
 
 
 class MigrationStep(migrations.AbstractMigrationStep):
-
     def __init__(self):
         self._depends = ["0001-rest-service-tables-migration-e31a12.py"]
 

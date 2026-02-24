@@ -25,7 +25,6 @@ LOG = logging.getLogger(__name__)
 
 # USE IT BEFORE CONTEXT MIDDLEWARE!
 class RetryOnErrorsMiddleware(middlewares.Middleware):
-
     def __init__(self, application, exceptions, max_retry=3):
         self._exceptions = exceptions
         self._max_retry = max_retry if max_retry > 0 else 1

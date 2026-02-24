@@ -22,7 +22,6 @@ from restalchemy.common import config
 from restalchemy.common import log as ra_log
 from restalchemy.storage.sql import migrations
 
-
 cmd_opts = [
     cfg.StrOpt("message", default="", short="m", help="message to migration"),
     cfg.MultiOpt(
@@ -61,9 +60,8 @@ def main():
 
     depends = set(CONF.depend or [])
 
-    if (
-        CONF.manual is False
-        and not engine.validate_auto_migration_dependencies(depends)
+    if CONF.manual is False and not engine.validate_auto_migration_dependencies(
+        depends
     ):
         sys.exit(1)
 

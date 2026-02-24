@@ -18,7 +18,6 @@ from restalchemy.tests.functional.storage.mysql.prefetch import models
 
 
 class PrefetchTestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "prefetch-relationship-tests-data-9727f3"
     __FIRST_MIGRATION__ = "prefetch-relationship-tests-f3841e"
 

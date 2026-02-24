@@ -25,7 +25,6 @@ from restalchemy.dm import relationships as ra_relationsips
 
 
 class ResourceMap(object):
-
     resource_map = {}
     model_type_to_resource = {}
 
@@ -100,7 +99,6 @@ class ResourceMap(object):
 
 
 class AbstractResourceProperty(metaclass=abc.ABCMeta):
-
     def __init__(self, resource, model_property_name, public=True):
         super(AbstractResourceProperty, self).__init__()
         self._resource = resource
@@ -125,9 +123,7 @@ class AbstractResourceProperty(metaclass=abc.ABCMeta):
 
     @property
     def api_name(self):
-        return self._resource.get_resource_field_name(
-            self._model_property_name
-        )
+        return self._resource.get_resource_field_name(self._model_property_name)
 
     @property
     def name(self):
@@ -151,16 +147,13 @@ class ResourceProperty(AbstractResourceProperty):
 
 
 class ResourceRAProperty(ResourceProperty):
-
     def __init__(self, resource, prop_type, model_property_name, public=True):
         super(ResourceRAProperty, self).__init__(
             resource=resource,
             model_property_name=model_property_name,
             public=public,
         )
-        self._prop_type = (
-            prop_type() if inspect.isclass(prop_type) else prop_type
-        )
+        self._prop_type = prop_type() if inspect.isclass(prop_type) else prop_type
 
     def parse_value(self, req, value):
         return self._prop_type.from_simple_type(value)
@@ -173,7 +166,6 @@ class ResourceRAProperty(ResourceProperty):
 
 
 class ResourceRelationship(AbstractResourceProperty):
-
     def parse_value(self, req, value):
         return ResourceMap.get_resource(req, value)
 
@@ -188,7 +180,6 @@ class ResourceRelationship(AbstractResourceProperty):
 
 
 class BaseHiddenFieldsMap(object):
-
     def __init__(self, hidden_fields=None):
         super(BaseHiddenFieldsMap, self).__init__()
         self._hidden_fields = set(hidden_fields or [])
@@ -213,7 +204,6 @@ class HiddenFieldsCompatibleClass(BaseHiddenFieldsMap):
 
 
 class HiddenFieldMap(BaseHiddenFieldsMap):
-
     def __init__(self, **kwargs):
         """Hidden fields mapper for resource
 
@@ -271,7 +261,6 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
 
 
 class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
-
     def __init__(self, default, **kwargs):
         """The role based hidden field container
 
@@ -348,16 +337,13 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
                 req,
             ):
                 return False
-        return self._default_hidden_fields.is_hidden_field(
-            model_field_name, req
-        )
+        return self._default_hidden_fields.is_hidden_field(model_field_name, req)
 
     def is_hidden_field_by_method(self, model_field_name, method):
         return True
 
 
 class AbstractResource(metaclass=abc.ABCMeta):
-
     def __init__(
         self,
         model_class,
@@ -425,9 +411,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
             )
         )
 
-        if not isinstance(
-            self._fields_permissions, field_permissions.BasePermissions
-        ):
+        if not isinstance(self._fields_permissions, field_permissions.BasePermissions):
             raise ValueError(
                 "Fields_permissions should inherit"
                 "from BasePermissions, not {%s}" % (type(fields_permissions))
@@ -553,9 +537,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
             except KeyError:
                 prop_kwargs = {}
             if prop.is_public():
-                properties[prop.api_name] = prop.get_type().to_openapi_spec(
-                    prop_kwargs
-                )
+                properties[prop.api_name] = prop.get_type().to_openapi_spec(prop_kwargs)
                 if prop_kwargs.get("required"):
                     required.append(name)
         spec = {
@@ -568,16 +550,13 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
 
 class ResourceByRAModel(AbstractResource):
-
     def _prep_field(self, name, prop, override_is_public_field_func=None):
         is_public_field = override_is_public_field_func or self.is_public_field
         if issubclass(prop, ra_properties.BaseProperty):
             return ResourceRAProperty(
                 resource=self,
                 prop_type=(
-                    self._model_class.properties.properties[
-                        name
-                    ].get_property_type()
+                    self._model_class.properties.properties[name].get_property_type()
                 ),
                 model_property_name=name,
                 public=is_public_field(name),
@@ -607,9 +586,7 @@ class ResourceByRAModel(AbstractResource):
         """
 
         for name, prop in self._model_class.properties.items():
-            yield name, self._prep_field(
-                name, prop, override_is_public_field_func
-            )
+            yield name, self._prep_field(name, prop, override_is_public_field_func)
 
     def get_resource_id(self, model):
         # TODO(efrolov): Write code to convert value to simple value.
@@ -639,7 +616,6 @@ class ResourceByRAModel(AbstractResource):
 
 
 class ResourceByModelWithCustomProps(ResourceByRAModel):
-
     def get_field(self, name, override_is_public_field_func=None):
         try:
             return super(ResourceByModelWithCustomProps, self).get_field(
@@ -650,9 +626,7 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
             # native property doesn't exist, try custom property
             pass
         try:
-            is_public_field = (
-                override_is_public_field_func or self.is_public_field
-            )
+            is_public_field = override_is_public_field_func or self.is_public_field
             return ResourceRAProperty(
                 resource=self,
                 prop_type=self._model_class.get_custom_property_type(name),
@@ -676,11 +650,14 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
         for name, prop in fields:
             yield name, prop
         for name, prop_type in self._model_class.get_custom_properties():
-            yield name, ResourceRAProperty(
-                resource=self,
-                prop_type=prop_type,
-                model_property_name=name,
-                public=is_public_field(name),
+            yield (
+                name,
+                ResourceRAProperty(
+                    resource=self,
+                    prop_type=prop_type,
+                    model_property_name=name,
+                    public=is_public_field(name),
+                ),
             )
 
     def get_property_type(self, property_name):

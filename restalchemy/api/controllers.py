@@ -82,27 +82,19 @@ class Controller(object):
             charset=charset,
         )
 
-    def process_result(
-        self, result, status_code=200, headers=None, add_location=False
-    ):
+    def process_result(self, result, status_code=200, headers=None, add_location=False):
         headers = headers or {}
 
-        def correct(
-            body, c=status_code, h=None, h_location=add_location, *args
-        ):
+        def correct(body, c=status_code, h=None, h_location=add_location, *args):
             h = h or {}
             if h_location:
                 try:
-                    headers["Location"] = resources.ResourceMap.get_location(
-                        body
-                    )
+                    headers["Location"] = resources.ResourceMap.get_location(body)
                 except (
                     exc.UnknownResourceLocation,
                     exc.CanNotFindResourceByModel,
                 ) as e:
-                    LOG.warning(
-                        "Can't construct location header by reason: %r", e
-                    )
+                    LOG.warning("Can't construct location header by reason: %r", e)
             headers.update(h)
             return body, c, headers
 
@@ -157,9 +149,7 @@ class Controller(object):
         process = self.__resource__ and self.__resource__.is_process_filters()
         for param, value in params.items():
             filter_name, filter_value = (
-                self._prepare_filter(param, value)
-                if process
-                else (param, value)
+                self._prepare_filter(param, value) if process else (param, value)
             )
             if filter_name not in result:
                 result[filter_name] = dm_filters.EQ(filter_value)
@@ -187,9 +177,7 @@ class Controller(object):
                 params=self._req.api_context.params_filters,
             )
             kwargs = self._make_kwargs(parent_resource, filters=filters)
-            return self.process_result(
-                result=self.filter(**kwargs, order_by=order_by)
-            )
+            return self.process_result(result=self.filter(**kwargs, order_by=order_by))
         elif method == "POST":
             api_context.set_active_method(constants.CREATE)
             content_type = packers.get_content_type(self._req.headers)
@@ -201,8 +189,7 @@ class Controller(object):
             return self.process_result(
                 result=self.create(**kwargs),
                 status_code=201,
-                add_location=constants.CREATE
-                in self.__generate_location_for__,
+                add_location=constants.CREATE in self.__generate_location_for__,
             )
         else:
             raise exc.UnsupportedHttpMethod(method=method)
@@ -211,9 +198,7 @@ class Controller(object):
         kwargs = self._make_kwargs(parent_resource)
 
         parsed_id = (
-            self._parse_resource_uuid(
-                "uuid", uuid, self.get_resource().get_id_type()
-            )
+            self._parse_resource_uuid("uuid", uuid, self.get_resource().get_id_type())
             if self.__resource__
             else uuid
         )
@@ -232,9 +217,7 @@ class Controller(object):
         kwargs = self._make_kwargs(parent_resource)
 
         parsed_id = (
-            self._parse_resource_uuid(
-                "uuid", uuid, self.get_resource().get_id_type()
-            )
+            self._parse_resource_uuid("uuid", uuid, self.get_resource().get_id_type())
             if self.__resource__
             else uuid
         )
@@ -262,8 +245,7 @@ class Controller(object):
                 kwargs.pop("uuid", None)
             return self.process_result(
                 result=self.update(uuid=parsed_id, **kwargs),
-                add_location=constants.UPDATE
-                in self.__generate_location_for__,
+                add_location=constants.UPDATE in self.__generate_location_for__,
             )
         elif method == "DELETE":
             api_context.set_active_method(constants.DELETE)
@@ -289,9 +271,7 @@ class Controller(object):
         )
 
     def get(self, uuid):
-        raise exc.NotImplementedError(
-            msg="method get in %s" % self.__class__.__name__
-        )
+        raise exc.NotImplementedError(msg="method get in %s" % self.__class__.__name__)
 
     def filter(self, filters, order_by=None):
         raise exc.NotImplementedError(
@@ -316,7 +296,6 @@ class Controller(object):
 
 
 class BaseResourceController(Controller):
-
     def create(self, **kwargs):
         dm = self.model(**kwargs)
         dm.insert()
@@ -377,9 +356,7 @@ class BaseResourceController(Controller):
     def filter(self, filters, order_by=None):
         custom_filters, storage_filters = self._split_filters(filters)
 
-        result = self._process_storage_filters(
-            storage_filters, order_by=order_by
-        )
+        result = self._process_storage_filters(storage_filters, order_by=order_by)
 
         return self._process_custom_filters(result, custom_filters)
 
@@ -394,7 +371,6 @@ class BaseResourceController(Controller):
 
 
 class BaseNestedResourceController(BaseResourceController):
-
     __pr_name__ = "parent_resource"
 
     def _prepare_kwargs(self, parent_resource, **kwargs):
@@ -436,9 +412,7 @@ class PaginationFilterBuilder:
     Handles non-trivial logic for paginating by non-unique column.
     """
 
-    def __init__(
-        self, model, marker_id, sort_column=None, sort_direction="asc"
-    ):
+    def __init__(self, model, marker_id, sort_column=None, sort_direction="asc"):
         """
         Create pagination cursor from marker ID.
 
@@ -552,9 +526,7 @@ class BasePaginationMixin(object):
                     getattr(body[-1], self.model.get_id_property_name())
                 )
 
-        return super(BasePaginationMixin, self)._create_response(
-            body, status, headers
-        )
+        return super(BasePaginationMixin, self)._create_response(body, status, headers)
 
     def _prepare_pagination_meta(self):
         try:
@@ -589,9 +561,7 @@ class BasePaginationMixin(object):
 
     def _process_storage_filters(self, filters, order_by=None):
         self._validate_params(filters, order_by)
-        filters, order_by = self._build_pagination_with_cursor(
-            filters, order_by
-        )
+        filters, order_by = self._build_pagination_with_cursor(filters, order_by)
         return self.model.objects.get_all(
             filters=filters,
             limit=self._pagination_limit,
@@ -635,9 +605,7 @@ class BasePaginationMixin(object):
 
         # Get additional data from DB if some was filtered by custom props
         while len(cleaned_results) < self._pagination_limit:
-            result = self._process_storage_filters(
-                storage_filters, order_by=order_by
-            )
+            result = self._process_storage_filters(storage_filters, order_by=order_by)
 
             if not len(result):
                 break
@@ -646,9 +614,7 @@ class BasePaginationMixin(object):
                 result[-1], self.model.get_id_property_name()
             )
 
-            cleaned_results.extend(
-                self._process_custom_filters(result, custom_filters)
-            )
+            cleaned_results.extend(self._process_custom_filters(result, custom_filters))
 
         if len(cleaned_results) > self._pagination_limit:
             cleaned_results = cleaned_results[: self._pagination_limit]
@@ -685,10 +651,7 @@ class SoftDeleteControllerMixin(object):
         return resource, 200, {}
 
 
-class BaseResourceControllerPaginated(
-    BasePaginationMixin, BaseResourceController
-):
-
+class BaseResourceControllerPaginated(BasePaginationMixin, BaseResourceController):
     def filter(self, filters, order_by=None):
         # NOTE(g.melikov): if you want to add pagination and you need to
         #  override `filter` method - it's better to add custom filters into
@@ -696,15 +659,12 @@ class BaseResourceControllerPaginated(
         if self._pagination_limit:
             return self.paginated_filter(filters, order_by=order_by)
 
-        return super(BasePaginationMixin, self).filter(
-            filters, order_by=order_by
-        )
+        return super(BasePaginationMixin, self).filter(filters, order_by=order_by)
 
 
 class BaseNestedResourceControllerPaginated(
     BasePaginationMixin, BaseNestedResourceController
 ):
-
     def filter(self, parent_resource, filters, order_by=None):
         filters = filters.copy()
         filters[self.__pr_name__] = dm_filters.EQ(parent_resource)
@@ -756,7 +716,6 @@ class RoutesListController(Controller):
 
 
 class RootController(RoutesListController):
-
     def filter(self, filters, order_by=None):
         main_route = self.request.application.main_route
         req = self.request
@@ -768,7 +727,6 @@ class RootController(RoutesListController):
 
 
 class OpenApiSpecificationController(Controller):
-
     @oa_utils.extend_schema(
         summary="OpenApi specification",
         responses=oa_c.build_openapi_object_response(

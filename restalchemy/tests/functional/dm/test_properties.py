@@ -21,17 +21,11 @@ from restalchemy.tests.functional import base
 
 
 class FakeModel(models.Model):
-
-    mutable_dict = properties.property(
-        types.Dict(), required=True, mutable=True
-    )
-    mutable_list = properties.property(
-        types.List(), default=list, mutable=True
-    )
+    mutable_dict = properties.property(types.Dict(), required=True, mutable=True)
+    mutable_list = properties.property(types.List(), default=list, mutable=True)
 
 
 class DirtyPropertiesTestCase(base.BaseFunctionalTestCase):
-
     def test_dirty_for_mutable_property_append_values(self):
         target = FakeModel(mutable_dict={"test": "test"})
 

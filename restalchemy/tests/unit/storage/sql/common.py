@@ -16,7 +16,6 @@
 
 
 class AsIsType(object):
-
     def validate(self, value):
         return True
 

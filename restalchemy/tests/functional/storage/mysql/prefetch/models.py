@@ -21,7 +21,6 @@ from restalchemy.dm import relationships
 from restalchemy.dm import types
 from restalchemy.storage.sql import orm
 
-
 # root table
 FAKE_ROOT_INT = 0
 FAKE_ROOT_STR = "root"
@@ -73,7 +72,6 @@ OBJECT_COLLECTION_MOCK = mock.Mock(spec=orm.ObjectCollection)
 
 
 class ObjectCollection(orm.ObjectCollection):
-
     def get_all(
         self,
         filters=None,
@@ -101,7 +99,6 @@ class ObjectCollection(orm.ObjectCollection):
 
 
 class SQLStorableMixin(orm.SQLStorableMixin):
-
     _ObjectCollection = ObjectCollection
 
 

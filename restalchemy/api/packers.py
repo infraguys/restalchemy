@@ -17,8 +17,8 @@
 
 import collections
 import copy
-import json
 import logging
+import orjson
 import types
 
 from restalchemy.api import constants
@@ -38,7 +38,6 @@ def get_content_type(headers):
 
 
 class BaseResourcePacker(object):
-
     _skip_none = True
 
     def __init__(self, resource_type, request):
@@ -55,11 +54,8 @@ class BaseResourcePacker(object):
             result = {}
             for name, prop in self._rt.get_fields_by_request(self._req):
                 api_name = prop.api_name
-                if (
-                    prop.is_public()
-                    and not self._rt._fields_permissions.is_hidden(
-                        name, self._req
-                    )
+                if prop.is_public() and not self._rt._fields_permissions.is_hidden(
+                    name, self._req
                 ):
                     value = getattr(obj, name)
                     if value is None:
@@ -90,9 +86,7 @@ class BaseResourcePacker(object):
             prop_value = value.pop(api_name, DEFAULT_VALUE)
             if prop_value is not DEFAULT_VALUE:
                 if not prop.is_public():
-                    raise exceptions.ValidationPropertyPrivateError(
-                        property=api_name
-                    )
+                    raise exceptions.ValidationPropertyPrivateError(property=api_name)
 
                 if self._rt._fields_permissions.is_readonly(name, self._req):
                     raise exceptions.FieldPermissionError(field=name)
@@ -107,24 +101,24 @@ class BaseResourcePacker(object):
 
 
 class JSONPacker(BaseResourcePacker):
-
     def pack(self, obj):
-        return json.dumps(super(JSONPacker, self).pack(obj))
+        return orjson.dumps(
+            super(JSONPacker, self).pack(obj), option=orjson.OPT_NON_STR_KEYS
+        )
 
     def unpack(self, value):
         if isinstance(value, bytes):
             try:
                 return super(JSONPacker, self).unpack(
-                    json.loads(value.decode("utf-8")),
+                    orjson.loads(value),
                 )
-            except json.decoder.JSONDecodeError:
+            except orjson.JSONDecodeError:
                 raise exceptions.ParseBodyError()
 
-        return super(JSONPacker, self).unpack(json.loads(value))
+        return super(JSONPacker, self).unpack(orjson.loads(value))
 
 
 class JSONPackerIncludeNullFields(JSONPacker):
-
     _skip_none = False
 
 
@@ -203,9 +197,7 @@ def get_packer(content_type):
         return packer_mapping[parse_content_type(content_type)]
     except KeyError:
         # TODO(Eugene Frolov): Specify Exception Type and message
-        raise Exception(
-            "Packer can't found for content type %s " % content_type
-        )
+        raise Exception("Packer can't found for content type %s " % content_type)
 
 
 def set_packer(content_type, packer_class):

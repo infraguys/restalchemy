@@ -77,14 +77,11 @@ class PortController(controllers.BaseNestedResourceControllerPaginated):
 
 
 class PortControllerNone(PortController):
-
     def get_packer(self, content_type, resource_type=None):
         if content_type == constants.CONTENT_TYPE_APPLICATION_JSON:
             rt = resource_type or self.get_resource()
             return packers.JSONPackerIncludeNullFields(rt, request=self._req)
-        return super(PortControllerNone, self).get_packer(
-            content_type, resource_type
-        )
+        return super(PortControllerNone, self).get_packer(content_type, resource_type)
 
 
 class VMController(controllers.BaseResourceControllerPaginated):
@@ -156,26 +153,20 @@ class VMNoProcessFiltersController(VMController):
 
 
 class VMNoSortController(VMController):
-    __resource__ = resources.ResourceByRAModel(
-        models.VMNoSort, process_filters=True
-    )
+    __resource__ = resources.ResourceByRAModel(models.VMNoSort, process_filters=True)
     __sortable_fields__ = []
 
 
 class VMDefSortController(VMController):
-    __resource__ = resources.ResourceByRAModel(
-        models.VMDefSort, process_filters=True
-    )
+    __resource__ = resources.ResourceByRAModel(models.VMDefSort, process_filters=True)
     __default_sort__ = {"name": "desc"}
 
 
 class V1Controller(controllers.RoutesListController):
-
     __TARGET_PATH__ = "/v1"
 
 
 class NotImplementedMethodsController(controllers.Controller):
-
     def filter(self, filters, order_by=None):
         """
         method filter was implemented for testing base error message

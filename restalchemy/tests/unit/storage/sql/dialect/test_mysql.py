@@ -65,9 +65,7 @@ EXTENDED_FAKE_PK_VALUES = ["uuid", "tenant_id"]
 class AbstractDialectCommandTestMixin(object):
     @mock.patch(
         "restalchemy.storage.sql.dialect.base.AbstractDialectCommand.execute",
-        side_effect=errors.DatabaseError(
-            "deadlock", errno=1213, sqlstate=1213
-        ),
+        side_effect=errors.DatabaseError("deadlock", errno=1213, sqlstate=1213),
     )
     def test_execute_when_errno_1213(self, command_mock):
         with self.assertRaises(dialect_exc.DeadLock) as ctx:
@@ -77,9 +75,7 @@ class AbstractDialectCommandTestMixin(object):
 
     @mock.patch(
         "restalchemy.storage.sql.dialect.base.AbstractDialectCommand.execute",
-        side_effect=errors.DatabaseError(
-            "conflict", errno=1062, sqlstate=1062
-        ),
+        side_effect=errors.DatabaseError("conflict", errno=1062, sqlstate=1062),
     )
     def test_execute_when_errno_1062(self, command_mock):
         with self.assertRaises(dialect_exc.Conflict) as ctx:
@@ -99,7 +95,6 @@ class AbstractDialectCommandTestMixin(object):
 
 
 class MySQLInsertTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
-
     def setUp(self):
         self.target = mysql.MySQLInsert(
             FAKE_TABLE,
@@ -116,7 +111,6 @@ class MySQLInsertTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
 
 
 class MySQLUpdateTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
-
     def setUp(self):
         TABLE = FAKE_TABLE
         self.target = mysql.MySQLUpdate(
@@ -134,10 +128,7 @@ class MySQLUpdateTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
         )
 
 
-class MySQLUpdateMultipleIdTestCase(
-    base.BaseTestCase, AbstractDialectCommandTestMixin
-):
-
+class MySQLUpdateMultipleIdTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
     def setUp(self):
         TABLE = EXTENDED_FAKE_TABLE
         self.target = mysql.MySQLUpdate(
@@ -156,7 +147,6 @@ class MySQLUpdateMultipleIdTestCase(
 
 
 class MySQLDeleteTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
-
     def setUp(self):
         TABLE = FAKE_TABLE
 
@@ -173,10 +163,7 @@ class MySQLDeleteTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
         )
 
 
-class MySQLDeleteMultipleIdTestCase(
-    base.BaseTestCase, AbstractDialectCommandTestMixin
-):
-
+class MySQLDeleteMultipleIdTestCase(base.BaseTestCase, AbstractDialectCommandTestMixin):
     def setUp(self):
         TABLE = EXTENDED_FAKE_TABLE
 
@@ -194,16 +181,13 @@ class MySQLDeleteMultipleIdTestCase(
 
 
 class MySQLSelectTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._TABLE = FAKE_TABLE
 
     def test_statement_OR(self):
         session = mock.Mock()
         ord_filter = collections.OrderedDict()
-        for k, v in sorted(
-            zip(self._TABLE.get_column_names(session), FAKE_VALUES)
-        ):
+        for k, v in sorted(zip(self._TABLE.get_column_names(session), FAKE_VALUES)):
             ord_filter[k] = dm_filters.EQ(v)
         FAKE_EQ_VALUES = dm_filters.OR(ord_filter)
         target = mysql.MySQLSelect(
@@ -532,7 +516,6 @@ class MySQLSelectTestCase(base.BaseTestCase):
 
 
 class MySQLCustomSelectTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._TABLE = FAKE_TABLE
 
@@ -618,7 +601,6 @@ class MySQLCustomSelectTestCase(base.BaseTestCase):
 
 
 class MySQLCountTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._TABLE = FAKE_TABLE
 

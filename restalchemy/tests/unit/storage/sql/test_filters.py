@@ -14,10 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collections import OrderedDict
+import collections
 import uuid
-
-from urllib3._collections import HTTPHeaderDict
 
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
@@ -26,9 +24,78 @@ from restalchemy.dm import relationships
 from restalchemy.dm import types
 from restalchemy.storage.sql import filters
 from restalchemy.storage.sql import orm
+from restalchemy.tests import fixtures
 from restalchemy.tests.unit import base
 from restalchemy.tests.unit.storage.sql import common
-from restalchemy.tests import fixtures
+
+
+class MultiDict(dict):
+    """MultiDict implementation allowing multiple values per key."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._data = {}  # Store as {key: [value1, value2, ...]}
+        if args or kwargs:
+            # Initialize with provided data
+            if args:
+                other = args[0]
+                if hasattr(other, "items"):
+                    for key, value in other.items():
+                        self.add(key, value)
+                else:
+                    for key, value in other:
+                        self.add(key, value)
+            for key, value in kwargs.items():
+                self.add(key, value)
+
+    def add(self, key, value):
+        """Add value for key, append if key exists."""
+        if key in self._data:
+            self._data[key].append(value)
+        else:
+            self._data[key] = [value]
+
+    def items(self):
+        """Return all key-value pairs with duplicates."""
+        for key, values in self._data.items():
+            for value in values:
+                yield key, value
+
+    def keys(self):
+        """Return all keys with potential duplicates."""
+        for key, values in self._data.items():
+            for _ in values:
+                yield key
+
+    def values(self):
+        """Return all values."""
+        for values in self._data.values():
+            yield from values
+
+    def __getitem__(self, key):
+        """Get the list of values for a key."""
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        """Set a single value for a key (replaces all existing values)."""
+        self._data[key] = [value]
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return sum(len(values) for values in self._data.values())
+
+    def get(self, key, default=None):
+        """Get the list of values for a key."""
+        return self._data.get(key, default)
+
+
+# Alias for backward compatibility with HTTPHeaderDict
+HTTPHeaderDict = MultiDict
 
 
 TEST_NAME = "FAKE_NAME"
@@ -37,7 +104,6 @@ TEST_UUID = uuid.UUID("89d423c5-4365-4be2-bde9-2730909a9af8")
 
 
 class BaseModel(models.Model):
-
     name1 = properties.property(types.Integer())
     name2 = properties.property(types.Integer())
 
@@ -51,7 +117,6 @@ class BaseModelWithRelation(BaseModel, models.ModelWithUUID):
 
 
 class EQTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.EQ(
             column=TEST_NAME,
@@ -71,7 +136,6 @@ class EQTestCase(base.BaseTestCase):
 
 
 class NETestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.NE(
             column=TEST_NAME,
@@ -91,7 +155,6 @@ class NETestCase(base.BaseTestCase):
 
 
 class GTTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.GT(
             column=TEST_NAME,
@@ -111,7 +174,6 @@ class GTTestCase(base.BaseTestCase):
 
 
 class GETestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.GE(
             column=TEST_NAME,
@@ -131,7 +193,6 @@ class GETestCase(base.BaseTestCase):
 
 
 class LTTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.LT(
             column=TEST_NAME,
@@ -151,7 +212,6 @@ class LTTestCase(base.BaseTestCase):
 
 
 class LETestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.LE(
             column=TEST_NAME,
@@ -171,7 +231,6 @@ class LETestCase(base.BaseTestCase):
 
 
 class InTestCase(base.BaseTestCase):
-
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
@@ -193,7 +252,6 @@ class InTestCase(base.BaseTestCase):
 
 
 class NotInTestCase(base.BaseTestCase):
-
     TEST_LIST_VALUES = [1, 2, 3]
 
     def setUp(self):
@@ -215,7 +273,6 @@ class NotInTestCase(base.BaseTestCase):
 
 
 class InEmptyListTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.MySqlIn(
             column=TEST_NAME,
@@ -235,7 +292,6 @@ class InEmptyListTestCase(base.BaseTestCase):
 
 
 class IsTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.Is(
             column=TEST_NAME,
@@ -255,7 +311,6 @@ class IsTestCase(base.BaseTestCase):
 
 
 class IsNotTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.IsNot(
             column=TEST_NAME,
@@ -275,7 +330,6 @@ class IsNotTestCase(base.BaseTestCase):
 
 
 class IsPgTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.PostgreSqlIs(
             column=TEST_NAME,
@@ -295,7 +349,6 @@ class IsPgTestCase(base.BaseTestCase):
 
 
 class IsNotPgTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.PostgreSqlIsNot(
             column=TEST_NAME,
@@ -315,7 +368,6 @@ class IsNotPgTestCase(base.BaseTestCase):
 
 
 class LikeTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.Like(
             column=TEST_NAME,
@@ -335,7 +387,6 @@ class LikeTestCase(base.BaseTestCase):
 
 
 class NotLikeTestCase(base.BaseTestCase):
-
     def setUp(self):
         self._expr = filters.NotLike(
             column=TEST_NAME,
@@ -355,9 +406,8 @@ class NotLikeTestCase(base.BaseTestCase):
 
 
 class ConvertFiltersTestCase(base.BaseTestCase):
-
     def test_convert_filters_new(self):
-        d = OrderedDict()
+        d = collections.OrderedDict()
         d["name1"] = dm_filters.EQ(1)
         d["name2"] = dm_filters.EQ(2)
         filter_list = dm_filters.AND(d)
@@ -390,7 +440,7 @@ class ConvertFiltersTestCase(base.BaseTestCase):
         self.assertEqual([1, 2], processed.value)
 
     def test_convert_filters_new_nested(self):
-        d = OrderedDict()
+        d = collections.OrderedDict()
         d["name1"] = dm_filters.EQ(1)
         d["name2"] = dm_filters.EQ(2)
         filter_list = dm_filters.OR(
@@ -410,7 +460,7 @@ class ConvertFiltersTestCase(base.BaseTestCase):
         self.assertEqual([1, 2, 2], processed.value)
 
     def test_convert_filters_old(self):
-        d = OrderedDict()
+        d = collections.OrderedDict()
         d["name1"] = dm_filters.EQ(1)
         d["name2"] = dm_filters.EQ(2)
         filter_list = d

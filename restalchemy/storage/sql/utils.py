@@ -20,7 +20,6 @@ from restalchemy.common import contexts
 from restalchemy.storage.sql.dialect import mysql as mysql_dialect
 from restalchemy.storage.sql.dialect import pgsql as pgsql_dialect
 
-
 LOG = logging.getLogger(__name__)
 DEFAULT_SAVEPOINT_NAME = "default_savepoint"
 
