@@ -1,4 +1,5 @@
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2025 Genesis Corporation
 #
 # All Rights Reserved.
 #
@@ -75,6 +76,9 @@ TEMPL_POWEROFF_ACTION_ENDPOINT = parse.urljoin(
 )
 TEMPL_POWER_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "actions/power/invoke"
+)
+TEMPL_IP_ADDRESSES_ACTION_ENDPOINT = parse.urljoin(
+    utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "actions/ip_addresses"
 )
 TEMPL_POWER_STATE_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "actions/power_state"
@@ -1591,6 +1595,33 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual({"state": "on"}, response.json())
+
+    def test_vm_get_ip_addresses_action_returns_success(self):
+        vm = models.VM(uuid=UUID1, name="old", state="on")
+        vm.insert()
+        port = models.Port(uuid=UUID2, mac="00:00:00:00:00:02", vm=vm)
+        port.insert()
+        ip_address = models.IpAddress(uuid=UUID3, ip="192.168.0.3", port=port)
+        ip_address.insert()
+
+        expected_response_body = [
+            {
+                "uuid": str(UUID3),
+                "ip": "192.168.0.3",
+                "port": parse.urlparse(
+                    self.get_endpoint(
+                        TEMPL_PORT_RESOURCE_ENDPOINT, UUID1, UUID2
+                    )
+                ).path,
+            }
+        ]
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_IP_ADDRESSES_ACTION_ENDPOINT, UUID1)
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(expected_response_body, response.json())
 
         response = requests.get(
             self.get_endpoint(TEMPL_POWER_STATE_ACTION_ENDPOINT, UUID1),

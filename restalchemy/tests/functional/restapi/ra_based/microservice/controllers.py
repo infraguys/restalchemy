@@ -1,4 +1,5 @@
 # Copyright 2016 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2025 Genesis Corporation
 #
 # All Rights Reserved.
 #
@@ -20,6 +21,7 @@ from restalchemy.api import controllers
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
+from restalchemy.dm import filters
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import utils
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
@@ -143,6 +145,26 @@ class VMController(controllers.BaseResourceControllerPaginated):
     @actions.get
     def power_state(self, resource, *args, **kwargs):
         return {"state": resource.state}
+
+
+class VMIpAddressesController(controllers.BaseResourceControllerPaginated):
+    __resource__ = IpAddressController.__resource__
+
+    @actions.get
+    def ip_addresses(self, resource, *args, **kwargs):
+        ports = models.Port.objects.get_all(
+            filters={"vm": filters.EQ(resource)}
+        )
+
+        ip_addresses = []
+        for port in ports:
+            ip_addresses.extend(
+                models.IpAddress.objects.get_all(
+                    filters={"port": filters.EQ(port)}
+                )
+            )
+
+        return ip_addresses
 
 
 class VMNoProcessFiltersController(VMController):
