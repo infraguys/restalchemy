@@ -14,9 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as tp
 import contextlib
 import logging
 import threading
+
+from types import TracebackType
 
 from mysql.connector import errors
 from psycopg import rows as pg_rows
@@ -118,6 +121,128 @@ class SessionQueryCache(object):
                 locked=locked,
             )
         return self.__query_cache[query_hash]
+    
+ParamsSequenceOrDictType = tp.Union[
+    tp.Sequence[tp.Any],
+    tp.Dict[str, tp.Any]
+]
+RowType = tp.Tuple[tp.Any, ...]
+DictRowType = tp.Dict[str, tp.Any]
+
+if tp.TYPE_CHECKING:
+    from restalchemy.storage.sql.orm import SQLStorableMixin
+else:
+    SQLStorableMixin = object
+
+SQLStorableMixinType = tp.TypeVar(
+    "SQLStorableMixinType",
+    bound=SQLStorableMixin,
+)
+
+
+class AbstractContextManager(tp.Protocol):
+    _Self = tp.TypeVar("_Self", bound="AbstractContextManager")
+
+    def __enter__(self: _Self) -> _Self:
+        ...
+
+    def __exit__(
+        self,
+        exc_type: tp.Optional[tp.Type[Exception]],
+        exc_val: tp.Optional[Exception],
+        exc_tb: tp.Optional[TracebackType],
+    ) -> tp.Optional[bool]:
+        ...
+
+
+class AbstractCursor(AbstractContextManager, tp.Protocol):
+    arraysize: int
+
+    @property
+    def rowcount(self) -> int:
+        ...
+
+    def execute(
+        self,
+        operation: str,
+        params: tp.Optional[ParamsSequenceOrDictType] = None,
+    ) -> None:
+        ...
+
+    def executemany(
+        self,
+        operation: str,
+        seq_params: tp.Sequence[ParamsSequenceOrDictType],
+    ) -> None:
+        ...
+
+    def fetchone(self) -> tp.Optional[DictRowType]:
+        ...
+
+    def fetchmany(
+        self,
+        size: tp.Optional[int] = None,
+    ) -> tp.List[DictRowType]:
+        ...
+
+    def fetchall(self) -> tp.List[DictRowType]:
+        ...
+
+    def close(self) -> None:
+        ...
+
+
+class AbstractConnection(AbstractContextManager, tp.Protocol):
+    autocommit: bool
+
+    def cursor(self) -> AbstractCursor:
+        ...
+
+    def commit(self) -> None:
+        ...
+
+    def rollback(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
+
+class AbstractSession(tp.Protocol):
+    def batch_insert(
+        self,
+        models: tp.Sequence[SQLStorableMixinType],
+    ) -> AbstractCursor:
+        ...
+
+    def batch_delete(
+        self,
+        models: tp.Sequence[SQLStorableMixinType],
+    ) -> AbstractCursor:
+        ...
+
+    def execute(
+        self,
+        statement: str,
+        values: tp.Optional[ParamsSequenceOrDictType] = None,
+    ) -> AbstractCursor:
+        ...
+
+    def execute_many(
+        self,
+        statement: str,
+        values: tp.Sequence[ParamsSequenceOrDictType],
+    ) -> AbstractCursor:
+        ...
+
+    def rollback(self) -> None:
+        ...
+
+    def commit(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
 
 
 class PgSQLSession(object):

@@ -14,10 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as tp
+
 import abc
+import os
 import contextlib
 import logging
 import urllib.parse as parse
+from dataclasses import dataclass
 
 from mysql.connector import pooling
 import psycopg_pool
@@ -29,10 +33,16 @@ from restalchemy.storage.sql.dialect import adapters
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql.dialect import pgsql
 from restalchemy.storage.sql import sessions
+from restalchemy.storage.sql.env_config import (
+    SimpleGenerator as SimpleGenerator,
+    env_configs,
+    DEFAULT_NAME as DEFAULT_NAME,
+)
 
-DEFAULT_NAME = "default"
+EngineNameOrInstance = tp.Union[str, "AbstractEngine"]
 DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)
+
 
 
 class AbstractEngine(metaclass=abc.ABCMeta):
@@ -120,7 +130,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         return "`%s`" % value
 
     @property
-    def db_name(self):
+    def db_name(self) -> str:
         """
         Returns the name of the database.
 
@@ -132,7 +142,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         return self._db_name
 
     @property
-    def db_username(self):
+    def db_username(self) -> str:
         """
         Returns the username used for the database connection.
 
@@ -143,7 +153,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         return self._db_url.username
 
     @property
-    def db_password(self):
+    def db_password(self) -> str:
         """
         Returns the password used for the database connection.
 
@@ -154,7 +164,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         return self._db_url.password
 
     @property
-    def db_host(self):
+    def db_host(self) -> str:
         """
         Returns the hostname used for the database connection.
 
@@ -165,7 +175,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         return self._db_url.hostname
 
     @property
-    def db_port(self):
+    def db_port(self) -> int:
         """
         Returns the port number used for the database connection.
 
@@ -178,7 +188,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         return self._db_url.port or self.DEFAULT_PORT
 
     @property
-    def query_cache(self):
+    def query_cache(self) -> bool:
         """
         Returns a boolean indicating whether the query cache is enabled.
 
@@ -191,7 +201,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         """
         return self._query_cache
 
-    def get_connection(self):
+    def get_connection(self) -> sessions.AbstractConnection:
         """
         Establishes and returns a connection to the database from a pool.
 
@@ -208,7 +218,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def get_session(self):
+    def get_session(self) -> sessions.AbstractSession:
         """
         Returns a session object for the engine. This method can be used to
         explicitly start a session, or to get the session object from the
@@ -237,7 +247,10 @@ class AbstractEngine(metaclass=abc.ABCMeta):
             return None
 
     @contextlib.contextmanager
-    def session_manager(self, session=None):
+    def session_manager(
+        self,
+        session: tp.Optional[sessions.AbstractSession] = None,
+    ) -> SimpleGenerator[sessions.AbstractSession]:
         """
         Context manager for managing a database session.
 
@@ -282,7 +295,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         """
         return self._session_storage
 
-    def close_connection(self, conn):
+    def close_connection(self, conn: sessions.AbstractConnection) -> None:
         """
         Closes the provided connection.
 
@@ -295,6 +308,10 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         """
 
         conn.close()
+
+    @abc.abstractmethod
+    def close(self) -> None:
+        raise NotImplementedError()
 
 
 class PgDictJsonbDumper(JsonbDumper):
@@ -358,6 +375,10 @@ class PgSQLEngine(AbstractEngine):
 
         return '"' + value + '"'
 
+    def close(self) -> None:
+        if not self._pool.closed:
+            self._pool.close()
+
     def __del__(self):
         """
         Closes the connection pool to the PostgreSQL database before the
@@ -376,7 +397,7 @@ class PgSQLEngine(AbstractEngine):
         :raises psycopg2.Error: If an error occurs while closing the pool.
         """
 
-        self._pool.close()
+        self.close()
 
     def get_session(self):
         """
@@ -465,6 +486,12 @@ class MySQLEngine(AbstractEngine):
             config["pool_name"] = new_name
             self._pool = pooling.MySQLConnectionPool(**self._config)
 
+    def close(self) -> None:
+        pool = getattr(self, "_pool", None)
+        if pool is not None:
+            self._pool._remove_connections()
+
+
     def __del__(self):
         """
         Closes the connection pool to the MySQL database before the engine
@@ -474,9 +501,7 @@ class MySQLEngine(AbstractEngine):
         ensure that the connection pool is closed and any resources acquired by
         the pool are released.
         """
-        pool = getattr(self, "_pool", None)
-        if pool is not None:
-            self._pool._remove_connections()
+        self.close()
 
     def get_connection(self):
         """
@@ -516,11 +541,12 @@ class EngineFactory(singletons.InheritSingleton):
         :returns: None
         """
         super(EngineFactory, self).__init__()
-        self._engines = {}
+        self._engines: tp.Dict[str, AbstractEngine] = {}
         self._engines_map = {
             MySQLEngine.URL_SCHEMA: MySQLEngine,
             PgSQLEngine.URL_SCHEMA: PgSQLEngine,
         }
+        self._engines_using: tp.List[AbstractEngine] = []
 
     def configure_postgresql_factory(
         self,
@@ -620,7 +646,42 @@ class EngineFactory(singletons.InheritSingleton):
         except KeyError:
             raise ValueError("Can not find driver for schema %s" % schema)
 
-    def get_engine(self, name=DEFAULT_NAME):
+    def configure_factory_from_env(
+        self,
+        name: tp.Optional[str] = None,
+    ) -> None:
+        if name is None:
+            configure = iter(env_configs.setup())
+        else:
+            configure = [(name, env_configs[name])]
+
+        for name, env_config in configure:
+            self.configure_factory(
+                db_url=env_config.database_uri,
+                config=env_config.config,
+                query_cache=env_config.query_cache,
+                name=name,
+            )
+
+    @contextlib.contextmanager
+    def using(
+        self,
+        engine: EngineNameOrInstance,
+    ) -> SimpleGenerator[AbstractEngine]:
+        if isinstance(engine, str):
+            engine = self.get_engine(engine)
+
+        try:
+            self._engines_using.append(engine)
+            yield engine
+        finally:
+            self._engines_using.pop()
+
+
+    def get_engine(
+        self,
+        name: tp.Optional[str] = DEFAULT_NAME,
+    ) -> AbstractEngine:
         """
         Returns an engine instance from the factory's internal engines
         dictionary by name. If the specified engine name does not exist,
@@ -631,9 +692,14 @@ class EngineFactory(singletons.InheritSingleton):
         :raises ValueError: If the specified engine name is not found in the
                             factory's internal engines dictionary.
         """
+        name = name or DEFAULT_NAME
+        if name == DEFAULT_NAME and self._engines_using:
+            return self._engines_using[-1]
+
         engine = self._engines.get(name, None)
-        if engine:
+        if engine is not None:
             return engine
+
         raise ValueError(
             ("Can not return %s engine. Please configure EngineFactory") % name,
         )
@@ -651,6 +717,7 @@ class EngineFactory(singletons.InheritSingleton):
         """
 
         try:
+            self._engines[name].close()
             del self._engines[name]
         except KeyError:
             pass
@@ -665,6 +732,9 @@ class EngineFactory(singletons.InheritSingleton):
         ValueError until at least one engine is configured using
         configure_factory().
         """
+        for engine in self._engines.values():
+            engine.close()
+
         self._engines = {}
 
 
@@ -713,3 +783,8 @@ class DBConnectionUrl(object):
 
 
 engine_factory = EngineFactory()
+
+def using(
+    engine: EngineNameOrInstance,
+) -> contextlib.AbstractContextManager[AbstractEngine]:
+    return engine_factory.using(engine)

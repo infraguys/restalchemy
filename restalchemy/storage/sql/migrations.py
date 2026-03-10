@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import typing as tp
 
 import abc
 import logging
@@ -27,7 +28,7 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage import exceptions
-from restalchemy.storage.sql import orm
+from restalchemy.storage.sql import orm, engines
 
 HEAD_MIGRATION = "HEAD"
 MANUAL_MIGRATION = "MANUAL"
@@ -177,8 +178,13 @@ class MigrationStepController(object):
 class MigrationEngine(object):
     FILENAME_HASH_LEN = 6
 
-    def __init__(self, migrations_path):
+    def __init__(
+        self,
+        migrations_path: str,
+        engine: tp.Optional[str] = None
+    ) -> None:
         self._migrations_path = migrations_path
+        self._engine_name = engine
 
     def get_file_name(self, part_of_name):
         candidates = []
@@ -314,7 +320,10 @@ class MigrationEngine(object):
 
     def apply_migration(self, migration_name, dry_run=False):
         filename = self.get_file_name(migration_name)
-        with contexts.Context().session_manager() as session:
+        with \
+            engines.using(self._engine_name), \
+            contexts.Context().session_manager() as session \
+        :
             self._init_migration_table(session)
             migrations = self._load_migration_controllers(session)
 
@@ -327,7 +336,10 @@ class MigrationEngine(object):
 
     def rollback_migration(self, migration_name, dry_run=False):
         filename = self.get_file_name(migration_name)
-        with contexts.Context().session_manager() as session:
+        with \
+            engines.using(self._engine_name), \
+            contexts.Context().session_manager() as session \
+        :
             self._init_migration_table(session)
             migrations = self._load_migration_controllers(session)
             migration = migrations[filename]
@@ -398,12 +410,13 @@ class MigrationEngine(object):
         return True
 
     def get_unapplied_migrations(self, session, include_manual=False):
-        self._init_migration_table(session)
-        migrations = self._load_migration_controllers(session)
+        with engines.using(self._engine_name):
+            self._init_migration_table(session)
+            migrations = self._load_migration_controllers(session)
 
-        filtered_migrations = {}
-        for filename, migration in migrations.items():
-            if migration.is_applied() is False:
-                if migration.is_manual() is False or include_manual is True:
-                    filtered_migrations[filename] = migration
-        return filtered_migrations
+            filtered_migrations = {}
+            for filename, migration in migrations.items():
+                if migration.is_applied() is False:
+                    if migration.is_manual() is False or include_manual is True:
+                        filtered_migrations[filename] = migration
+            return filtered_migrations
