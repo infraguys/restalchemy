@@ -41,7 +41,6 @@ def apply_migrations(
     self_path = Path(__file__).resolve().parent
     default_migrations_path = str(self_path.joinpath("migrations"))
     second_migrations_path = str(self_path.joinpath("second_migrations"))
-    print("PATH", default_migrations_path, second_migrations_path)
 
     with migration_engine_creator(
         config=TestMigrationManagerConfig(

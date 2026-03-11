@@ -19,7 +19,7 @@ class TestMigrationManagerConfig:
 
     def __post_init__(self) -> None:
         self.migrations_path = self.migrations_path or (
-            str(Path().cwd().joinpath("/migrations/").resolve())
+            str(Path().cwd().joinpath("migrations").resolve())
         )
 
 
