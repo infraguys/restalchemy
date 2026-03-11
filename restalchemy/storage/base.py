@@ -49,15 +49,13 @@ class AbstractObjectCollection(
         filters: OptionalFilters = None,
         limit: int = None,
         order_by: OptionalOrderBy = None,
-        locked: bool = False
+        locked: bool = False,
     ) -> tp.Sequence[AbstractStorableMixinType]:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def get_one(
-        self,
-        filters: OptionalFilters = None,
-        locked: bool = False
+        self, filters: OptionalFilters = None, locked: bool = False
     ) -> AbstractStorableMixinType:
         raise NotImplementedError()
 

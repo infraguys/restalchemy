@@ -12,6 +12,8 @@ from restalchemy.storage.sql.orm import SQLStorableMixin
 
 T = tp.TypeVar("T")
 SimpleGenerator = ra_tp.SimpleGenerator
+DBEscapeFunction = tp.Callable[[str], str]
+OptionalDBEscapeFunction = tp.Optional[DBEscapeFunction]
 
 
 _DATABASE_URI_DEFAULT = "mysql://test:test@127.0.0.1:/test"
@@ -20,6 +22,7 @@ _DATABASE_POSTFIX = "test"
 
 def get_database_uri() -> str:
     return os.getenv("DATABASE_URI", _DATABASE_URI_DEFAULT)
+
 
 def get_database_postfix() -> str:
     return os.getenv("DATABASE_POSTFIX", _DATABASE_POSTFIX)
@@ -45,11 +48,15 @@ class ClearTableRecord:
     def __hash__(self) -> int:
         return hash(self._table)
 
-    def statement(self) -> str:
+    def statement(self, escape_function: OptionalDBEscapeFunction = None) -> str:
+        table = (
+            escape_function(self._table) if escape_function is not None else self._table
+        )
+
         if self._truncate:
-            return f"TRUNCATE TABLE \"{self._table}\""
+            return f"TRUNCATE TABLE {table}"
         else:
-            return f"DELETE FROM \"{self._table}\""
+            return f"DELETE FROM {table}"
 
 
 DictClearTableRecords = tp.Dict[ClearTableRecord, ClearTableRecord]
@@ -80,8 +87,11 @@ class ClearTableRecords:
     def __iter__(self) -> tp.Iterator[ClearTableRecord]:
         return (record for record in reversed(self._records.values()))
 
-    def statements(self) -> tp.Iterator[str]:
-        return (record.statement() for record in self)
+    def statements(
+        self,
+        escape_function: OptionalDBEscapeFunction = None,
+    ) -> tp.Iterator[str]:
+        return (record.statement(escape_function=escape_function) for record in self)
 
     def __enter__(self: _Self) -> _Self:
         self._level += 1
@@ -92,10 +102,9 @@ class ClearTableRecords:
         self,
         exc_type: tp.Optional[tp.Type[Exception]],
         exc_val: tp.Optional[Exception],
-        exc_tb: tp.Optional[TracebackType]
+        exc_tb: tp.Optional[TracebackType],
     ) -> None:
         self._level -= 1
-
 
 
 @dataclass()
@@ -192,7 +201,7 @@ class TestDBManager:
 
         with self.connection(autocommit=True) as connection:
             with connection.cursor() as cursor:
-                cursor.execute(f"CREATE DATABASE \"{create_db}\"")
+                cursor.execute(f"CREATE DATABASE {self._engine.escape(create_db)}")
 
     def drop_db(self) -> None:
         create_db = self.manager_config.create_db
@@ -201,7 +210,7 @@ class TestDBManager:
 
         with self.connection(autocommit=True) as connection:
             with connection.cursor() as cursor:
-                cursor.execute(f"DROP DATABASE \"{create_db}\"")
+                cursor.execute(f"DROP DATABASE {self._engine.escape(create_db)}")
 
     @contextlib.contextmanager
     def db(self: _Self) -> SimpleGenerator[_Self]:
@@ -216,11 +225,10 @@ class TestDBManager:
         if not self._clear_tables.at_lowest_level():
             return
 
-        with \
-            self.connection() as connection, \
-            connection.cursor() as cursor \
-        :
-            for statement in self._clear_tables.statements():
+        with self.connection() as connection, connection.cursor() as cursor:
+            for statement in self._clear_tables.statements(
+                escape_function=self._engine.escape,
+            ):
                 cursor.execute(statement)
 
     @contextlib.contextmanager

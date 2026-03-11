@@ -14,8 +14,7 @@ class MigrationEngineCreator(Protocol):
     def __call__(
         self,
         config: Optional[TestMigrationManagerConfig] = None,
-    ) -> AbstractContextManager[TestMigrationManager]:
-        ...
+    ) -> "AbstractContextManager[TestMigrationManager]": ...
 
 
 @pytest.fixture(scope="session")
@@ -24,10 +23,9 @@ def migration_engine_creator() -> MigrationEngineCreator:
     def _creator(
         config: Optional[TestMigrationManagerConfig] = None,
     ) -> SimpleGenerator[TestMigrationManager]:
-        with \
-            TestMigrationManager(migration_config=config) as migration_manager, \
-            migration_manager.migrations() \
-        :
+        with TestMigrationManager(
+            migration_config=config
+        ) as migration_manager, migration_manager.migrations():
             yield migration_manager
 
     return _creator

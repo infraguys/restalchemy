@@ -121,11 +121,9 @@ class SessionQueryCache(object):
                 locked=locked,
             )
         return self.__query_cache[query_hash]
-    
-ParamsSequenceOrDictType = tp.Union[
-    tp.Sequence[tp.Any],
-    tp.Dict[str, tp.Any]
-]
+
+
+ParamsSequenceOrDictType = tp.Union[tp.Sequence[tp.Any], tp.Dict[str, tp.Any]]
 RowType = tp.Tuple[tp.Any, ...]
 DictRowType = tp.Dict[str, tp.Any]
 
@@ -143,106 +141,86 @@ SQLStorableMixinType = tp.TypeVar(
 class AbstractContextManager(tp.Protocol):
     _Self = tp.TypeVar("_Self", bound="AbstractContextManager")
 
-    def __enter__(self: _Self) -> _Self:
-        ...
+    def __enter__(self: _Self) -> _Self: ...
 
     def __exit__(
         self,
         exc_type: tp.Optional[tp.Type[Exception]],
         exc_val: tp.Optional[Exception],
         exc_tb: tp.Optional[TracebackType],
-    ) -> tp.Optional[bool]:
-        ...
+    ) -> tp.Optional[bool]: ...
 
 
 class AbstractCursor(AbstractContextManager, tp.Protocol):
     arraysize: int
 
     @property
-    def rowcount(self) -> int:
-        ...
+    def rowcount(self) -> int: ...
 
     def execute(
         self,
         operation: str,
         params: tp.Optional[ParamsSequenceOrDictType] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def executemany(
         self,
         operation: str,
         seq_params: tp.Sequence[ParamsSequenceOrDictType],
-    ) -> None:
-        ...
+    ) -> None: ...
 
-    def fetchone(self) -> tp.Optional[DictRowType]:
-        ...
+    def fetchone(self) -> tp.Optional[DictRowType]: ...
 
     def fetchmany(
         self,
         size: tp.Optional[int] = None,
-    ) -> tp.List[DictRowType]:
-        ...
+    ) -> tp.List[DictRowType]: ...
 
-    def fetchall(self) -> tp.List[DictRowType]:
-        ...
+    def fetchall(self) -> tp.List[DictRowType]: ...
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
 
 class AbstractConnection(AbstractContextManager, tp.Protocol):
     autocommit: bool
 
-    def cursor(self) -> AbstractCursor:
-        ...
+    def cursor(self) -> AbstractCursor: ...
 
-    def commit(self) -> None:
-        ...
+    def commit(self) -> None: ...
 
-    def rollback(self) -> None:
-        ...
+    def rollback(self) -> None: ...
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
 
 class AbstractSession(tp.Protocol):
     def batch_insert(
         self,
         models: tp.Sequence[SQLStorableMixinType],
-    ) -> AbstractCursor:
-        ...
+    ) -> AbstractCursor: ...
 
     def batch_delete(
         self,
         models: tp.Sequence[SQLStorableMixinType],
-    ) -> AbstractCursor:
-        ...
+    ) -> AbstractCursor: ...
 
     def execute(
         self,
         statement: str,
         values: tp.Optional[ParamsSequenceOrDictType] = None,
-    ) -> AbstractCursor:
-        ...
+    ) -> AbstractCursor: ...
 
     def execute_many(
         self,
         statement: str,
         values: tp.Sequence[ParamsSequenceOrDictType],
-    ) -> AbstractCursor:
-        ...
+    ) -> AbstractCursor: ...
 
-    def rollback(self) -> None:
-        ...
+    def rollback(self) -> None: ...
 
-    def commit(self) -> None:
-        ...
+    def commit(self) -> None: ...
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
 
 class PgSQLSession(object):

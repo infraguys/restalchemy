@@ -45,9 +45,7 @@ class ObjectCollection(
 
     @property
     def _engine(self):
-        return engines.engine_factory.get_engine(
-            name=self.model_cls.get_engine_name()
-        )
+        return engines.engine_factory.get_engine(name=self.model_cls.get_engine_name())
 
     @base.error_catcher
     def get_all(
@@ -254,9 +252,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
     @base.error_catcher
     @base.dead_lock_catcher
     def update(
-        self,
-        session: OptionalAbstractSession = None,
-        force: bool = False
+        self, session: OptionalAbstractSession = None, force: bool = False
     ) -> None:
         # TODO(efrolov): Add filters parameters.
         if self.is_dirty() or force:

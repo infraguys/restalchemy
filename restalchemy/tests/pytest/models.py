@@ -15,6 +15,3 @@ class SecondModel(models.Model, SQLStorableMixin):
     __engine_name__ = "second"
 
     name = properties.property(String())
-
-
-

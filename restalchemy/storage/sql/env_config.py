@@ -8,7 +8,6 @@ from typing import (
     Set,
     TypeVar,
     Tuple,
-    Union,
     Final,
     final,
 )
@@ -25,12 +24,10 @@ SimpleGenerator = Generator[T, None, None]
 VALID_TRUE_VALUES: Final[Set] = {"true", "True", "yes", "1"}
 
 
-class ENVConfigurationError(Exception):
-    ...
+class ENVConfigurationError(Exception): ...
 
 
-class ENVConfigParseError(ENVConfigurationError):
-    ...
+class ENVConfigParseError(ENVConfigurationError): ...
 
 
 @dataclass(frozen=True)
@@ -48,11 +45,10 @@ class ENVConfigNotFoundError(ENVConfigurationError):
 
     def __str__(self) -> str:
         return (
-            f"No valid configuration found for Engine '{self.engine_name}'"
-            + "" if not self.exceptions else (
-                " due exceptions:\n\t"
-                + "\t\n".join(e for e in self.exceptions)
-                + "\n"
+            f"No valid configuration found for Engine '{self.engine_name}'" + ""
+            if not self.exceptions
+            else (
+                " due exceptions:\n\t" + "\t\n".join(e for e in self.exceptions) + "\n"
             )
         )
 
@@ -94,9 +90,7 @@ class EngineENVConfig:
         if (database_uri := os.environ.get(field := f"{prefix}_URI", None)) is None:
             raise ENVConfigMissingFieldError(field=field)
 
-        query_cache = (
-            os.environ.get(f"{prefix}_QUERY_CACHE", None) in VALID_TRUE_VALUES
-        )
+        query_cache = os.environ.get(f"{prefix}_QUERY_CACHE", None) in VALID_TRUE_VALUES
 
         return {
             "database_uri": database_uri,
@@ -126,17 +120,15 @@ class EngineENVConfigs:
 
     def setup(self: _Self) -> _Self:
         self._configs = {
-            name: EngineENVConfig.from_env(name)
-            for name in self._get_engine_names()
+            name: EngineENVConfig.from_env(name) for name in self._get_engine_names()
         }
 
         return self
 
     def _get_engine_names(self) -> Iterable[str]:
         return {DEFAULT_NAME}.union(
-            name.strip() for name in (
-                os.environ.get(self.ENGINES_ENV_VAR, DEFAULT_NAME).split(",")
-            )
+            name.strip()
+            for name in (os.environ.get(self.ENGINES_ENV_VAR, DEFAULT_NAME).split(","))
         )
 
 

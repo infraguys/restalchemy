@@ -8,7 +8,6 @@ from types import TracebackType
 from restalchemy.storage.sql.migrations import MigrationEngine
 
 from restalchemy.testing.typing import OptionalStr, SimpleGenerator
-from restalchemy.testing.utils.db import TestDBManager
 
 
 @dataclass()
@@ -19,15 +18,8 @@ class TestMigrationManagerConfig:
     engine_alias: OptionalStr = None
 
     def __post_init__(self) -> None:
-        self.migrations_path = (
-            self.migrations_path
-            or (
-                str(
-                    Path().cwd()
-                    .joinpath("/migrations/")
-                    .resolve()
-                )
-            )
+        self.migrations_path = self.migrations_path or (
+            str(Path().cwd().joinpath("/migrations/").resolve())
         )
 
 

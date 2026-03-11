@@ -13,8 +13,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import typing as tp
-
 import abc
 import logging
 import os
@@ -181,7 +179,7 @@ class MigrationEngine(object):
     def __init__(
         self,
         migrations_path: str,
-        engine: tp.Optional[str] = None
+        engine: str = engines.DEFAULT_NAME,
     ) -> None:
         self._migrations_path = migrations_path
         self._engine_name = engine
@@ -320,10 +318,9 @@ class MigrationEngine(object):
 
     def apply_migration(self, migration_name, dry_run=False):
         filename = self.get_file_name(migration_name)
-        with \
-            engines.using(self._engine_name), \
-            contexts.Context().session_manager() as session \
-        :
+        with engines.using(
+            self._engine_name
+        ), contexts.Context().session_manager() as session:
             self._init_migration_table(session)
             migrations = self._load_migration_controllers(session)
 
@@ -336,10 +333,9 @@ class MigrationEngine(object):
 
     def rollback_migration(self, migration_name, dry_run=False):
         filename = self.get_file_name(migration_name)
-        with \
-            engines.using(self._engine_name), \
-            contexts.Context().session_manager() as session \
-        :
+        with engines.using(
+            self._engine_name
+        ), contexts.Context().session_manager() as session:
             self._init_migration_table(session)
             migrations = self._load_migration_controllers(session)
             migration = migrations[filename]

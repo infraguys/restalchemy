@@ -17,11 +17,9 @@
 import typing as tp
 
 import abc
-import os
 import contextlib
 import logging
 import urllib.parse as parse
-from dataclasses import dataclass
 
 from mysql.connector import pooling
 import psycopg_pool
@@ -42,7 +40,6 @@ from restalchemy.storage.sql.env_config import (
 EngineNameOrInstance = tp.Union[str, "AbstractEngine"]
 DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)
-
 
 
 class AbstractEngine(metaclass=abc.ABCMeta):
@@ -491,7 +488,6 @@ class MySQLEngine(AbstractEngine):
         if pool is not None:
             self._pool._remove_connections()
 
-
     def __del__(self):
         """
         Closes the connection pool to the MySQL database before the engine
@@ -677,7 +673,6 @@ class EngineFactory(singletons.InheritSingleton):
         finally:
             self._engines_using.pop()
 
-
     def get_engine(
         self,
         name: tp.Optional[str] = DEFAULT_NAME,
@@ -784,7 +779,8 @@ class DBConnectionUrl(object):
 
 engine_factory = EngineFactory()
 
+
 def using(
     engine: EngineNameOrInstance,
-) -> contextlib.AbstractContextManager[AbstractEngine]:
+) -> "contextlib.AbstractContextManager[AbstractEngine]":
     return engine_factory.using(engine)

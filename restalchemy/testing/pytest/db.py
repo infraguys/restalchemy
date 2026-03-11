@@ -1,4 +1,3 @@
-import os
 import typing as tp
 from dataclasses import dataclass
 from urllib.parse import urlparse
@@ -15,7 +14,6 @@ from restalchemy.testing.typing import SimpleGenerator, WorkerID
 from restalchemy.testing.utils.db import (
     TestDBManagerConfig,
     TestDBManager,
-    get_database_uri,
     get_database_postfix,
 )
 
@@ -43,8 +41,7 @@ class DBConfig:
 
 
 class SetupEngineFromENV(tp.Protocol):
-    def __call__(self, name: str) -> EngineENVConfig:
-        ...
+    def __call__(self, name: str) -> EngineENVConfig: ...
 
 
 @pytest.fixture(scope="session")
@@ -56,8 +53,7 @@ def setup_engine_from_env() -> SetupEngineFromENV:
 
 
 class DatabaseConfigFromENV(tp.Protocol):
-    def __call__(self, name: str, postfix: tp.Optional[str] = None) -> DBConfig:
-        ...
+    def __call__(self, name: str, postfix: tp.Optional[str] = None) -> DBConfig: ...
 
 
 @pytest.fixture(scope="session")
@@ -81,8 +77,7 @@ class TestDBManagerCreator(tp.Protocol):
     def __call__(
         self,
         engine_alias: str = DEFAULT_NAME,
-    ) -> AbstractContextManager[TestDBManager]:
-        ...
+    ) -> "AbstractContextManager[TestDBManager]": ...
 
 
 @pytest.fixture(scope="session")
@@ -106,10 +101,9 @@ def db_manager_creator(
             engine_alias=engine_alias,
         )
 
-        with \
-            TestDBManager(manager_config=db_manager_config) as db_manager, \
-            db_manager.db() \
-        :
+        with TestDBManager(
+            manager_config=db_manager_config
+        ) as db_manager, db_manager.db():
             with TestDBManager(
                 manager_config=test_db_manager_config,
             ) as test_db_manager:
@@ -124,5 +118,3 @@ def default_db_manager(
 ) -> SimpleGenerator[TestDBManager]:
     with db_manager_creator() as db_manager:
         yield db_manager
-
-
