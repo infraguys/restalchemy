@@ -1,28 +1,20 @@
 import typing as tp
-from dataclasses import dataclass
+import dataclasses
 from urllib.parse import urlparse
-from contextlib import AbstractContextManager, contextmanager
+import contextlib
 
 import pytest
 
-from restalchemy.storage.sql.env_config import (
-    EngineENVConfig,
-    env_configs,
-    DEFAULT_NAME,
-)
-from restalchemy.testing.typing import SimpleGenerator, WorkerID
-from restalchemy.testing.utils.db import (
-    TestDBManagerConfig,
-    TestDBManager,
-    get_database_postfix,
-)
+from restalchemy.storage.sql import env_config
+from restalchemy.testing import typing as testing_tp
+from restalchemy.testing.utils import db as testing_utils_db
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class DBConfig:
     database_uri: str
     database_postfix: str = "test"
-    worker_id: WorkerID = None
+    worker_id: testing_tp.WorkerID = None
 
     def test_database_postfix(self) -> str:
         return (
@@ -41,13 +33,13 @@ class DBConfig:
 
 
 class SetupEngineFromENV(tp.Protocol):
-    def __call__(self, name: str) -> EngineENVConfig: ...
+    def __call__(self, name: str) -> env_config.EngineENVConfig: ...
 
 
 @pytest.fixture(scope="session")
 def setup_engine_from_env() -> SetupEngineFromENV:
-    def _setup(name: str) -> EngineENVConfig:
-        return env_configs[name]
+    def _setup(name: str) -> env_config.EngineENVConfig:
+        return env_config.env_configs[name]
 
     return _setup
 
@@ -59,14 +51,14 @@ class DatabaseConfigFromENV(tp.Protocol):
 @pytest.fixture(scope="session")
 def database_config_from_env(
     setup_engine_from_env: SetupEngineFromENV,
-    xdist_worker_id: WorkerID,
+    xdist_worker_id: testing_tp.WorkerID,
 ) -> DatabaseConfigFromENV:
     def _config(name: str, postfix: tp.Optional[str] = None) -> DBConfig:
         config = setup_engine_from_env(name)
 
         return DBConfig(
             database_uri=config.database_uri,
-            database_postfix=postfix or get_database_postfix(),
+            database_postfix=postfix or testing_utils_db.get_database_postfix(),
             worker_id=xdist_worker_id,
         )
 
@@ -76,35 +68,35 @@ def database_config_from_env(
 class TestDBManagerCreator(tp.Protocol):
     def __call__(
         self,
-        engine_alias: str = DEFAULT_NAME,
-    ) -> "AbstractContextManager[TestDBManager]": ...
+        engine_alias: str = env_config.DEFAULT_NAME,
+    ) -> "contextlib.AbstractContextManager[testing_utils_db.TestDBManager]": ...
 
 
 @pytest.fixture(scope="session")
 def db_manager_creator(
     database_config_from_env: DatabaseConfigFromENV,
 ) -> TestDBManagerCreator:
-    @contextmanager
+    @contextlib.contextmanager
     def _creator(
-        engine_alias: str = DEFAULT_NAME,
-    ) -> SimpleGenerator[TestDBManager]:
+        engine_alias: str = env_config.DEFAULT_NAME,
+    ) -> testing_tp.SimpleGenerator[testing_utils_db.TestDBManager]:
         database_config = database_config_from_env(engine_alias)
 
-        db_manager_config = TestDBManagerConfig(
+        db_manager_config = testing_utils_db.TestDBManagerConfig(
             database_url=database_config.database_uri,
             create_db=database_config.test_database_name(),
             engine_alias=engine_alias,
         )
 
-        test_db_manager_config = TestDBManagerConfig(
+        test_db_manager_config = testing_utils_db.TestDBManagerConfig(
             database_url=database_config.test_database_uri(),
             engine_alias=engine_alias,
         )
 
-        with TestDBManager(
+        with testing_utils_db.TestDBManager(
             manager_config=db_manager_config
         ) as db_manager, db_manager.db():
-            with TestDBManager(
+            with testing_utils_db.TestDBManager(
                 manager_config=test_db_manager_config,
             ) as test_db_manager:
                 yield test_db_manager
@@ -115,6 +107,6 @@ def db_manager_creator(
 @pytest.fixture(scope="session")
 def default_db_manager(
     db_manager_creator: TestDBManagerCreator,
-) -> SimpleGenerator[TestDBManager]:
+) -> testing_tp.SimpleGenerator[testing_utils_db.TestDBManager]:
     with db_manager_creator() as db_manager:
         yield db_manager

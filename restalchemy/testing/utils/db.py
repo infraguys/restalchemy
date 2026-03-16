@@ -6,8 +6,7 @@ from types import TracebackType
 from dataclasses import dataclass
 
 from restalchemy.testing import typing as ra_tp
-from restalchemy.storage.sql import engines, sessions
-from restalchemy.storage.sql.orm import SQLStorableMixin
+from restalchemy.storage.sql import engines, sessions, orm
 
 
 T = tp.TypeVar("T")
@@ -28,7 +27,7 @@ def get_database_postfix() -> str:
     return os.getenv("DATABASE_POSTFIX", _DATABASE_POSTFIX)
 
 
-TableNameOrModel = tp.Union[str, tp.Type[SQLStorableMixin]]
+TableNameOrModel = tp.Union[str, tp.Type[orm.SQLStorableMixin]]
 
 
 class ClearTableRecord:
@@ -37,7 +36,7 @@ class ClearTableRecord:
         table: TableNameOrModel,
         truncate: bool = True,
     ) -> None:
-        if issubclass(table, SQLStorableMixin):
+        if issubclass(table, orm.SQLStorableMixin):
             table = table.__tablename__
             if table is None:
                 raise ValueError(f"'{table}' has no valid '__tablename__' attribute")

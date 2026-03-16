@@ -16,7 +16,7 @@
 
 import abc
 import orjson
-from typing import ClassVar, Generic, Optional, Type, TypeVar
+import typing as tp
 
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
@@ -26,18 +26,18 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import tables
-from restalchemy.storage.sql.sessions import AbstractSession
+from restalchemy.storage.sql import sessions
 from restalchemy.storage.base import OptionalFilters, OptionalOrderBy
 
 
-SQLStorableMixinType = TypeVar("SQLStorableMixinType", bound="SQLStorableMixin")
-OptionalAbstractSession = Optional[AbstractSession]
+SQLStorableMixinType = tp.TypeVar("SQLStorableMixinType", bound="SQLStorableMixin")
+OptionalAbstractSession = tp.Optional[sessions.AbstractSession]
 
 
 class ObjectCollection(
     base.AbstractObjectCollection[SQLStorableMixinType],
     base.AbstractObjectCollectionCountMixin,
-    Generic[SQLStorableMixinType],
+    tp.Generic[SQLStorableMixinType],
 ):
     @property
     def _table(self):
@@ -51,7 +51,7 @@ class ObjectCollection(
     def get_all(
         self,
         filters: OptionalFilters = None,
-        session: AbstractSession = None,
+        session: sessions.AbstractSession = None,
         cache: bool = False,
         limit: int = None,
         order_by: OptionalOrderBy = None,
@@ -179,14 +179,14 @@ class UndefinedAttribute(common_exc.RestAlchemyException):
 
 
 class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
-    _Self = TypeVar("_Self", bound="SQLStorableMixin")
+    _Self = tp.TypeVar("_Self", bound="SQLStorableMixin")
 
     _saved: bool = False
 
     _ObjectCollection = ObjectCollection
 
-    __tablename__: ClassVar[Optional[str]] = None
-    __engine_name__: ClassVar[Optional[str]] = None
+    __tablename__: tp.ClassVar[tp.Optional[str]] = None
+    __engine_name__: tp.ClassVar[tp.Optional[str]] = None
 
     @classmethod
     def get_table(cls):
@@ -209,7 +209,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
         return table
 
     @classmethod
-    def get_engine_name(cls) -> Optional[str]:
+    def get_engine_name(cls) -> tp.Optional[str]:
         return cls.__engine_name__
 
     @classmethod
@@ -217,7 +217,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
         return engines.engine_factory.get_engine(cls.get_engine_name())
 
     @classmethod
-    def restore_from_storage(cls: Type[_Self], **kwargs) -> _Self:
+    def restore_from_storage(cls: tp.Type[_Self], **kwargs) -> _Self:
         model_format = {}
         for name, value in kwargs.items():
             model_format[name] = (

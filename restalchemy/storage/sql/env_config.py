@@ -1,27 +1,15 @@
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    Iterator,
-    Generator,
-    Optional,
-    Set,
-    TypeVar,
-    Tuple,
-    Final,
-    final,
-)
+import typing as tp
 
 import os
-from dataclasses import dataclass
+import dataclasses
 
 
 DEFAULT_NAME = "default"
 
-DictStrAny = Dict[str, Any]
-T = TypeVar("T")
-SimpleGenerator = Generator[T, None, None]
-VALID_TRUE_VALUES: Final[Set] = {"true", "True", "yes", "1"}
+DictStrAny = tp.Dict[str, tp.Any]
+T = tp.TypeVar("T")
+SimpleGenerator = tp.Generator[T, None, None]
+VALID_TRUE_VALUES: tp.Final[tp.Set[str]] = {"true", "True", "yes", "1"}
 
 
 class ENVConfigurationError(Exception): ...
@@ -30,7 +18,7 @@ class ENVConfigurationError(Exception): ...
 class ENVConfigParseError(ENVConfigurationError): ...
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ENVConfigMissingFieldError(ENVConfigParseError):
     field: str
 
@@ -38,10 +26,10 @@ class ENVConfigMissingFieldError(ENVConfigParseError):
         return f"Missing required field '{self.field}'"
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ENVConfigNotFoundError(ENVConfigurationError):
     engine_name: str
-    exceptions: Optional[Iterable[ENVConfigurationError]] = None
+    exceptions: tp.Optional[tp.Iterable[ENVConfigurationError]] = None
 
     def __str__(self) -> str:
         return (
@@ -53,13 +41,13 @@ class ENVConfigNotFoundError(ENVConfigurationError):
         )
 
 
-@final
-@dataclass(frozen=True)
+@tp.final
+@dataclasses.dataclass(frozen=True)
 class EngineENVConfig:
     name: str
     database_uri: str
     query_cache: bool = False
-    config: Optional[DictStrAny] = None  # TODO: write driver specific parsers
+    config: tp.Optional[DictStrAny] = None  # TODO: write driver specific parsers
 
     @classmethod
     def from_env(cls, name: str) -> "EngineENVConfig":
@@ -78,7 +66,7 @@ class EngineENVConfig:
             )
 
     @staticmethod
-    def _prefix_aliases(name: str) -> Iterable[str]:
+    def _prefix_aliases(name: str) -> tp.Iterable[str]:
         return (
             [f"DATABASE_{name.upper()}"]
             if name != DEFAULT_NAME
@@ -98,14 +86,14 @@ class EngineENVConfig:
         }
 
 
-@final
+@tp.final
 class EngineENVConfigs:
-    _Self = TypeVar("_Self", bound="EngineENVConfigs")
+    _Self = tp.TypeVar("_Self", bound="EngineENVConfigs")
 
-    ENGINES_ENV_VAR: Final[str] = "DATABASE_ENGINES"
+    ENGINES_ENV_VAR: tp.Final[str] = "DATABASE_ENGINES"
 
     def __init__(self) -> None:
-        self._configs: Dict[str, EngineENVConfig] = {}
+        self._configs: tp.Dict[str, EngineENVConfig] = {}
 
     def __getitem__(self, item: str) -> EngineENVConfig:
         if (config := self._configs.get(item)) is not None:
@@ -115,7 +103,7 @@ class EngineENVConfigs:
         self._configs[item] = config
         return config
 
-    def __iter__(self) -> Iterator[Tuple[str, EngineENVConfig]]:
+    def __iter__(self) -> tp.Iterator[tp.Tuple[str, EngineENVConfig]]:
         return ((name, config) for name, config in self._configs.items())
 
     def setup(self: _Self) -> _Self:
@@ -125,11 +113,11 @@ class EngineENVConfigs:
 
         return self
 
-    def _get_engine_names(self) -> Iterable[str]:
+    def _get_engine_names(self) -> tp.Iterable[str]:
         return {DEFAULT_NAME}.union(
             name.strip()
             for name in (os.environ.get(self.ENGINES_ENV_VAR, DEFAULT_NAME).split(","))
         )
 
 
-env_configs: Final[EngineENVConfigs] = EngineENVConfigs()
+env_configs: tp.Final[EngineENVConfigs] = EngineENVConfigs()
