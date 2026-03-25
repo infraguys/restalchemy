@@ -27,7 +27,12 @@ from collections import abc as collections_abc
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
 from restalchemy.dm import types
-from restalchemy.storage.sql.orm import AllObjectsCollection, SoftDeleteObjectCollection
+from restalchemy.storage.sql.orm import (
+    AllObjectsCollection,
+    SoftDeleteObjectCollection,
+    SoftDeleteObjectCollectionWithInclude,
+    SQLStorableSoftDeleteMixin,
+)
 
 
 class DmOperationalStorage(object):
@@ -425,7 +430,7 @@ class ModelSoftDelete(Model):
     ---------
     Models using this mixin expose two collections:
 
-    - ``objects`` (SoftDeleteObjectCollection)
+    - ``objects`` (SoftDeleteObjectCollectionWithInclude)
         The default collection.
         Automatically filters out soft-deleted rows by adding::
 
@@ -435,6 +440,8 @@ class ModelSoftDelete(Model):
         - ``get_all()``
         - ``get_one()``
         - ``count()``
+
+        Supports ``include_deleted=True`` parameter to bypass filtering.
 
     - ``all_objects`` (AllObjectsCollection)
         A raw collection that does **not** apply soft-delete filtering.
@@ -447,6 +454,11 @@ class ModelSoftDelete(Model):
     the model.
 
     Repeated calls to ``delete()`` are idempotent.
+
+    Restoring records
+    -----------------
+    Call ``restore()`` to clear the ``deleted_at`` timestamp and make the
+    record visible again through the default ``objects`` collection.
 
     Database & indexing requirements
     --------------------------------
@@ -504,9 +516,9 @@ class ModelSoftDelete(Model):
     Important implications:
 
     - Multiple soft-deleted rows may share the same unique field values.
-    - Attempting to "undelete" a record may fail with a uniqueness violation
+    - Attempting to "restore" a record may fail with a uniqueness violation
       if another active row already exists with the same values.
-    - Applications must treat undelete as a potentially failing operation
+    - Applications must treat restore as a potentially failing operation
       and handle it explicitly (e.g. conflict resolution, validation, or
       forced cleanup of duplicates).
 
@@ -525,9 +537,30 @@ class ModelSoftDelete(Model):
         super().__init_subclass__(**kwargs)
 
         cls.all_objects = AllObjectsCollection(cls)
-        cls.objects = SoftDeleteObjectCollection(cls)
+        cls.objects = SoftDeleteObjectCollectionWithInclude(cls)
 
     def delete(self, session=None, **kwargs):
+        """
+        Perform soft delete by setting deleted_at timestamp.
+
+        This method is idempotent - calling it multiple times has no effect
+        if the record is already soft-deleted.
+        """
         if self.deleted_at is None:
             self.deleted_at = datetime.datetime.now(datetime.timezone.utc)
             self.save(session)
+
+    def restore(self, session=None):
+        """
+        Restore a soft-deleted record by clearing deleted_at timestamp.
+
+        This method is idempotent - calling it multiple times has no effect
+        if the record is not soft-deleted.
+        """
+        if self.deleted_at is not None:
+            self.deleted_at = None
+            self.save(session)
+
+    def is_deleted(self):
+        """Check if this record is soft-deleted."""
+        return self.deleted_at is not None

@@ -15,6 +15,7 @@
 #    under the License.
 
 import abc
+import datetime
 import json
 
 from restalchemy.common import exceptions as common_exc
@@ -403,3 +404,124 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
         for field in json_properties:
             result[field] = json.dumps(result[field], separators=(",", ":"))
         return result
+
+
+class SoftDeleteObjectCollectionWithInclude(SoftDeleteObjectCollection):
+    """
+    Soft-delete aware collection that supports include_deleted parameter.
+
+    When include_deleted=True, bypasses soft-delete filtering and returns
+    all records including deleted ones.
+    """
+
+    def get_all(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        limit=None,
+        order_by=None,
+        locked=False,
+        include_deleted=False,
+    ):
+        if not include_deleted:
+            filters = self._with_soft_delete_filter(filters)
+        return super(ObjectCollection, self).get_all(
+            filters=filters,
+            session=session,
+            cache=cache,
+            limit=limit,
+            order_by=order_by,
+            locked=locked,
+        )
+
+    def get_one(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        locked=False,
+        include_deleted=False,
+    ):
+        if not include_deleted:
+            filters = self._with_soft_delete_filter(filters)
+        return super(ObjectCollection, self).get_one(
+            filters=filters,
+            session=session,
+            cache=cache,
+            locked=locked,
+        )
+
+    def count(self, session=None, filters=None, include_deleted=False):
+        if not include_deleted:
+            filters = self._with_soft_delete_filter(filters)
+        return super(ObjectCollection, self).count(session=session, filters=filters)
+
+
+class SQLStorableSoftDeleteMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
+    """
+    Storage mixin for soft-delete functionality.
+
+    This mixin overrides the delete() method to perform soft deletion by
+    setting the deleted_at timestamp instead of removing the record from
+    the database.
+
+    Usage:
+        class MyModel(ModelSoftDelete, SQLStorableSoftDeleteMixin):
+            __tablename__ = 'my_table'
+            # ... model properties ...
+
+    Database Requirements:
+        - Table must have a 'deleted_at' column (TIMESTAMP, nullable)
+        - Indexes should be updated to include deleted_at column
+        - See ModelSoftDelete documentation for migration guidelines
+
+    Methods:
+        delete(session) - Sets deleted_at timestamp (soft delete)
+        restore(session) - Clears deleted_at timestamp (restore record)
+        is_deleted() - Check if record is soft-deleted
+    """
+
+    SOFT_DELETE_FIELD = "deleted_at"
+
+    def _get_engine(self):
+        return engines.engine_factory.get_engine()
+
+    @base.error_catcher
+    @base.dead_lock_catcher
+    def delete(self, session=None):
+        """
+        Perform soft delete by setting deleted_at timestamp.
+
+        This method is idempotent - calling it multiple times has no effect
+        if the record is already soft-deleted.
+        """
+        if getattr(self, self.SOFT_DELETE_FIELD, None) is None:
+            setattr(
+                self,
+                self.SOFT_DELETE_FIELD,
+                datetime.datetime.now(datetime.timezone.utc),
+            )
+            self.save(session=session)
+
+    @base.error_catcher
+    @base.dead_lock_catcher
+    def restore(self, session=None):
+        """
+        Restore a soft-deleted record by clearing deleted_at timestamp.
+
+        Raises:
+            exceptions.RecordNotFound: If the record is not soft-deleted
+        """
+        if getattr(self, self.SOFT_DELETE_FIELD, None) is not None:
+            setattr(self, self.SOFT_DELETE_FIELD, None)
+            self.save(session=session)
+
+    def is_deleted(self):
+        """Check if this record is soft-deleted."""
+        return getattr(self, self.SOFT_DELETE_FIELD, None) is not None
+
+    @classmethod
+    def _get_collection_class(cls):
+        """Get the appropriate collection class for this model."""
+        return SoftDeleteObjectCollectionWithInclude

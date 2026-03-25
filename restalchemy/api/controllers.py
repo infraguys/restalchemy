@@ -664,24 +664,28 @@ class SoftDeleteControllerMixin(object):
         return super()._prepare_filter(param_name, value)
 
     def _get_objects_collection(self, filters):
-        deleted = filters.pop("all_objects", None)
-        if deleted is None:
-            return self.model.objects
-
-        return self.model.all_objects
+        include_deleted = filters.pop("include_deleted", None)
+        if include_deleted:
+            return self.model.all_objects
+        return self.model.objects
 
     def _process_storage_filters(self, filters, order_by=None):
         collection = self._get_objects_collection(filters)
         return collection.get_all(filters=filters, order_by=order_by)
 
     @actions.post
-    def undelete(self, resource, **kwargs):
+    def restore(self, resource, **kwargs):
+        """
+        Restore a soft-deleted resource.
+
+        Clears the deleted_at timestamp, making the resource visible again
+        through the default objects collection.
+        """
         self._enforce_and_override_project_id_in_kwargs(
-            "update:undelete", kwargs
+            "update:restore", kwargs
         )
         if resource.deleted_at is not None:
-            resource.deleted_at = None
-            resource.save()
+            resource.restore()
         return resource, 200, {}
 
 
