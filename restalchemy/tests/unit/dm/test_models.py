@@ -112,7 +112,7 @@ class BaseModel(models.Model):
 
 class FakeModel(BaseModel):
     property1 = properties.property(types.String())
-    property3 = relationships.relationship(Model3)
+    property3 = relationships.relationship(Model3, required=True)
 
 
 class SimpleViewModel(models.ModelWithUUID, models.SimpleViewMixin):
@@ -137,6 +137,24 @@ class InheritModelTestCase(base.BaseTestCase):
         self.assertIsInstance(props["property2"]._property_type, types.Integer)
         self.assertEqual(props["property3"]._property_type, Model3)
         self.assertEqual(props["property4"]._property_type, Model2)
+
+    def test_required_relationship(self):
+        with self.assertRaises(exceptions.PropertyRequired):
+            FakeModel(
+                property1="fake_string",
+                property2=2,
+                property4=Model2(),
+            )
+
+        m3 = Model3()
+        model = FakeModel(
+            property1="fake_string",
+            property2=2,
+            property3=m3,
+            property4=Model2(),
+        )
+
+        assert model.property3 is m3
 
 
 class DirtyModelTestCase(base.BaseTestCase):
