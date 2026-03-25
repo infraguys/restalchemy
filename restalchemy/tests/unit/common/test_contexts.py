@@ -28,7 +28,6 @@ class SomeError(Exception):
 
 @mock.patch("restalchemy.storage.sql.engines.engine_factory")
 class TestContext(unittest.TestCase):
-
     def _configure_mocks(self, engine_factory_mock):
         self._engine = mock.Mock(spec=engines.MySQLEngine)
         self._storage = mock.Mock(spec=sessions.SessionThreadStorage)
@@ -101,9 +100,7 @@ class TestContext(unittest.TestCase):
         self._session.close.assert_called_once()
         self._storage.remove_session.assert_called_once()
 
-    def test_context_manager_commit_and_rollback_exception(
-        self, engine_factory_mock
-    ):
+    def test_context_manager_commit_and_rollback_exception(self, engine_factory_mock):
         self._configure_mocks(engine_factory_mock)
         self._session.configure_mock(
             **{

@@ -18,7 +18,6 @@ import unittest
 
 
 class BaseTestCase(unittest.TestCase):
-
     FAKE_STRING = "FakeString"
 
     def string_generator(self, size=6):

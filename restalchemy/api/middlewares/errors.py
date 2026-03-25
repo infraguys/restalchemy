@@ -33,20 +33,12 @@ def exception2dict(exception):
     code = (
         exception.get_code()
         if hasattr(exception, "get_code")
-        else (
-            exception.code
-            if hasattr(exception, "code")
-            else UNKNOWN_ERROR_CODE
-        )
+        else (exception.code if hasattr(exception, "code") else UNKNOWN_ERROR_CODE)
     )
     message = (
         exception.msg
         if hasattr(exception, "msg")
-        else (
-            exception.message
-            if hasattr(exception, "message")
-            else str(exception)
-        )
+        else (exception.message if hasattr(exception, "message") else str(exception))
     )
     return {
         "type": exception.__class__.__name__,
@@ -56,7 +48,6 @@ def exception2dict(exception):
 
 
 class ErrorsHandlerMiddleware(middlewares.Middleware):
-
     not_found_exc = (ra_exceptions.RecordNotFound,)
     conflict_exc = (ra_exceptions.ConflictRecords,)
     common_exc = (comm_exc.RestAlchemyException,)

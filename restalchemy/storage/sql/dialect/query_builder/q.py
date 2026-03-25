@@ -22,7 +22,6 @@ from restalchemy.storage.sql import filters as sql_filters
 
 
 class Table(common.AbstractClause):
-
     def __init__(self, model, session):
         super(Table, self).__init__(session)
         self._name = model.__tablename__
@@ -66,7 +65,6 @@ class Table(common.AbstractClause):
 
 
 class Limit(common.AbstractClause):
-
     def __init__(self, value, session):
         super(Limit, self).__init__(session)
         self._value = value
@@ -76,7 +74,6 @@ class Limit(common.AbstractClause):
 
 
 class For(common.AbstractClause):
-
     def __init__(self, session, share=False):
         super(For, self).__init__(session)
         self._is_share = share
@@ -86,7 +83,6 @@ class For(common.AbstractClause):
 
 
 class Criteria(common.AbstractClause, metaclass=abc.ABCMeta):
-
     def __init__(self, clause1, clause2, session):
         super(Criteria, self).__init__(session)
         self._clause1 = clause1
@@ -94,7 +90,6 @@ class Criteria(common.AbstractClause, metaclass=abc.ABCMeta):
 
 
 class EQCriteria(Criteria):
-
     def compile(self):
         return "%s = %s" % (
             self._clause1.original.compile(),
@@ -103,7 +98,6 @@ class EQCriteria(Criteria):
 
 
 class On(common.AbstractClause):
-
     def __init__(self, list_of_criteria, session):
         super(On, self).__init__(session)
         self._list_of_criteria = list_of_criteria
@@ -113,7 +107,6 @@ class On(common.AbstractClause):
 
 
 class LeftJoin(common.AbstractClause):
-
     def __init__(self, table, on, session):
         # type: (common.TableAlias, On) -> LeftJoin
         super(LeftJoin, self).__init__(session)
@@ -196,7 +189,6 @@ class OrderByValue(common.AbstractClause):
 
 
 class ResultField(object):
-
     def __init__(self, alias_name):
         super(ResultField, self).__init__()
         self._alias_name = alias_name
@@ -206,7 +198,6 @@ class ResultField(object):
 
 
 class ResultNode(object):
-
     def __init__(self):
         super(ResultNode, self).__init__()
         self._child_nodes = {}
@@ -227,7 +218,6 @@ class ResultNode(object):
 
 
 class ResultParser(object):
-
     def __init__(self):
         super(ResultParser, self).__init__()
         self._root = ResultNode()
@@ -238,7 +228,6 @@ class ResultParser(object):
 
 
 class SelectQ(common.AbstractClause):
-
     def __init__(self, model, session):
         super(SelectQ, self).__init__(session)
         self._autoinc = 0
@@ -402,7 +391,6 @@ class SelectQ(common.AbstractClause):
 
 
 class Q(object):
-
     @staticmethod
     def select(model, session):
         return SelectQ(model, session)

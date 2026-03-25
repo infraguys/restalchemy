@@ -21,13 +21,10 @@ from restalchemy.tests.unit import base
 
 
 class TestEngineTestCase(base.BaseTestCase):
-
     @mock.patch("mysql.connector.pooling.MySQLConnectionPool")
     def setUp(self, *args):
         super(TestEngineTestCase, self).setUp()
-        self._engine = engines.MySQLEngine(
-            db_url="mysql://test:test@test/test"
-        )
+        self._engine = engines.MySQLEngine(db_url="mysql://test:test@test/test")
 
     def tearDown(self):
         super(TestEngineTestCase, self).tearDown()
@@ -37,7 +34,6 @@ class TestEngineTestCase(base.BaseTestCase):
         session = mock.Mock()
 
         with self._engine.session_manager(session=session) as s:
-
             self.assertEqual(s, session)
 
     def test_session_manager_session_as_thread_storage(self):
@@ -47,17 +43,13 @@ class TestEngineTestCase(base.BaseTestCase):
             self._engine, "_get_session_from_storage", return_value=session
         ):
             with self._engine.session_manager() as s:
-
                 self.assertEqual(s, session)
 
     def test_session_manager_get_new_session(self):
         session = mock.Mock()
 
-        with mock.patch.object(
-            self._engine, "get_session", return_value=session
-        ):
+        with mock.patch.object(self._engine, "get_session", return_value=session):
             with self._engine.session_manager() as s:
-
                 self.assertEqual(s, session)
 
 
@@ -68,9 +60,7 @@ class DBConnectionUrlTestCase(base.BaseTestCase):
     _DB_URL_CENSORED = _DB_URL_TEMPLATE % engines.DBConnectionUrl._CENSORED
 
     def test_repr_with_password(self):
-        db_url = engines.DBConnectionUrl(
-            self._DB_URL_TEMPLATE % ":my_cool_secret@"
-        )
+        db_url = engines.DBConnectionUrl(self._DB_URL_TEMPLATE % ":my_cool_secret@")
 
         actual_repr = repr(db_url)
         actual_str = str(db_url)

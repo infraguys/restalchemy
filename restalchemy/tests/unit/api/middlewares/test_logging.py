@@ -21,7 +21,6 @@ from restalchemy.tests.unit import base
 
 
 class LoggingMiddlewareTestCase(base.BaseTestCase):
-
     def test_sanitize_authorization_header(self):
         request_mock = mock.MagicMock()
         request_mock.headers = {

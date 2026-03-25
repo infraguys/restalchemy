@@ -193,9 +193,7 @@ class Route(BaseRoute):
         for name in route_names:
             next_route = self.get_route(name)(self._req)
             route_path = posixpath.join(current_path, name + "/")
-            yield next_route.build_openapi_specification(
-                route_path, parameters
-            )
+            yield next_route.build_openapi_specification(route_path, parameters)
 
     @staticmethod
     def _build_operation_id(method, current_path):
@@ -231,9 +229,7 @@ class Route(BaseRoute):
         summary_name = (
             model_name
             if res
-            else "{} {}".format(
-                self.__class__.__name__, controller.__class__.__name__
-            )
+            else "{} {}".format(self.__class__.__name__, controller.__class__.__name__)
         )
         if method_name == constants.FILTER:
             summary_name += "s"
@@ -251,9 +247,7 @@ class Route(BaseRoute):
         # Fill responses
         if not responses:
             responses = parsed_doc["returns"]
-        method_model_name = "{}_{}".format(
-            model_name, method_name.capitalize()
-        )
+        method_model_name = "{}_{}".format(model_name, method_name.capitalize())
         if not responses:
             if method_name in [constants.UPDATE, constants.GET]:
                 if res:
@@ -270,13 +264,9 @@ class Route(BaseRoute):
                 else:
                     responses = oa_c.OPENAPI_FILTER_RESPONSE
             elif method_name == constants.CREATE:
-                responses = oa_c.build_openapi_create_response(
-                    method_model_name
-                )
+                responses = oa_c.build_openapi_create_response(method_model_name)
             elif method_name == constants.DELETE:
-                responses = oa_c.build_openapi_delete_response(
-                    method_model_name
-                )
+                responses = oa_c.build_openapi_delete_response(method_model_name)
             else:
                 responses = oa_c.OPENAPI_DEFAULT_RESPONSE
 
@@ -294,11 +284,7 @@ class Route(BaseRoute):
                 if param:
                     param["name"] = path_param
                     params.append(param)
-            if (
-                res
-                and self.is_collection_route()
-                and (method_name == constants.FILTER)
-            ):
+            if res and self.is_collection_route() and (method_name == constants.FILTER):
                 for name, prop in res.get_fields_by_request(self._req):
                     param = (
                         parameters.get("components", {})
@@ -333,9 +319,7 @@ class Route(BaseRoute):
         if r_body:
             result["requestBody"] = r_body
         elif method_name in [constants.CREATE, constants.UPDATE]:
-            result["requestBody"] = oa_c.build_openapi_json_req_body(
-                method_model_name
-            )
+            result["requestBody"] = oa_c.build_openapi_json_req_body(method_model_name)
 
         return result
 
@@ -367,9 +351,7 @@ class Route(BaseRoute):
                     )
                 )
             routes = [
-                r
-                for r in self.get_routes()
-                if self.get_route(r).is_collection_route()
+                r for r in self.get_routes() if self.get_route(r).is_collection_route()
             ]
             route_gen = self._build_openapi_routes_specification(
                 routes, current_path, parameters
@@ -470,7 +452,6 @@ class Route(BaseRoute):
             return result
 
         class ResourceLocator(object):
-
             def __init__(self, path_stack, controller):
                 self.path_stack = path_stack
                 self._controller = controller
@@ -514,23 +495,17 @@ class Route(BaseRoute):
                             piece.get_model(), model, resource
                         )
                         resource = piece
-                        path = posixpath.join(
-                            resource.get_resource_id(model), path
-                        )
+                        path = posixpath.join(resource.get_resource_id(model), path)
                 # FIXME(Eugene Frolov): Header must be string. Not unicode.
                 return str(posixpath.join("/", path))
 
             def get_resource(self, request, uri, parent_resource=None):
                 uuid = posixpath.basename(uri)
                 if parent_resource:
-                    return self._controller(
-                        request=request
-                    ).get_resource_by_uuid(
+                    return self._controller(request=request).get_resource_by_uuid(
                         uuid=uuid, parent_resource=parent_resource
                     )
-                return self._controller(request=request).get_resource_by_uuid(
-                    uuid
-                )
+                return self._controller(request=request).get_resource_by_uuid(uuid)
 
         resource_map = {}
 
@@ -586,9 +561,7 @@ class Route(BaseRoute):
         elif name != "" and path is not None:
             # Intermediate resource route
             worker = self.get_controller(self._req)
-            parent_resource = worker.get_resource_by_uuid(
-                name, parent_resource
-            )
+            parent_resource = worker.get_resource_by_uuid(name, parent_resource)
             name, path = self._req.path_info_pop(), self._req.path_info_peek()
             route = self.get_route(name)
             if route.is_collection_route():
@@ -635,9 +608,7 @@ class Action(BaseRoute):
         elif invoke_info is None:
             invoke = False
         else:
-            raise exc.UnsupportedMethod(
-                method=invoke_info, object_name=action_name
-            )
+            raise exc.UnsupportedMethod(method=invoke_info, object_name=action_name)
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
         content_type = self._req.headers.get("Content-Type")
@@ -656,9 +627,7 @@ class Action(BaseRoute):
         ):
             action_method = getattr(action, "do_%s" % method.lower())
             self.restore_path_info(self._req)
-            return action_method(
-                controller=controller, resource=resource, **kwargs
-            )
+            return action_method(controller=controller, resource=resource, **kwargs)
         else:
             raise exc.IncorrectActionCall(action=action, method=method)
 

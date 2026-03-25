@@ -21,7 +21,6 @@ import traceback
 
 from restalchemy.api import middlewares
 
-
 LOG = logging.getLogger(__name__)
 
 

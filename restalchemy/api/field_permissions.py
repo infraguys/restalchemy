@@ -34,9 +34,7 @@ class BasePermissions(object):
     def __init__(self, permission=Permissions.RW):
         self._permission = permission
 
-    def meets_field_permission(
-        self, model_field_name, req, current_permission
-    ):
+    def meets_field_permission(self, model_field_name, req, current_permission):
         raise NotImplementedError()
 
     def is_readonly(self, model_field_name, req):
@@ -72,9 +70,7 @@ class UniversalPermissions(BasePermissions):
         """
         super(UniversalPermissions, self).__init__(permission)
 
-    def meets_field_permission(
-        self, model_field_name, req, current_permission
-    ):
+    def meets_field_permission(self, model_field_name, req, current_permission):
         return self._permission <= current_permission
 
 
@@ -123,9 +119,7 @@ class FieldsPermissions(BasePermissions):
         super(FieldsPermissions, self).__init__(permission=default)
         self.fields = fields
 
-    def meets_field_permission(
-        self, model_field_name, req, current_permission
-    ):
+    def meets_field_permission(self, model_field_name, req, current_permission):
 
         method = req.api_context.get_active_method()
         field_permission = self.fields.get(model_field_name, {})
@@ -181,8 +175,7 @@ class FieldsPermissionsByRole(BasePermissions):
         for role, permissions in kwargs.items():
             if not isinstance(permissions, BasePermissions):
                 raise NotImplementedError(
-                    "Permissions for %s must be "
-                    "inherited BasePermissions class" % role
+                    "Permissions for %s must be inherited BasePermissions class" % role
                 )
         self.default = default
         self.role_fields = kwargs
@@ -197,9 +190,7 @@ class FieldsPermissionsByRole(BasePermissions):
             else []
         )
 
-    def meets_field_permission(
-        self, model_field_name, req, current_permission
-    ):
+    def meets_field_permission(self, model_field_name, req, current_permission):
 
         for current_role in self._get_roles(req):
             if current_role in self.role_fields:

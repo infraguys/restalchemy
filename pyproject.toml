@@ -1,0 +1,196 @@
+[project]
+name = "restalchemy"
+description = "REST HTTP Abstraction Library"
+readme = "README.rst"
+authors = [{name = "Genesis Corporation", email = "eugene@frolov.net.ru"}]
+dynamic = ["version"]
+license = {text = "Apache-2.0"}
+requires-python = ">=3.8"
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "oslo.config>=3.22.2,<10.0.0",  # Apache-2.0
+    "WebOb>=1.8.9,<1.9.0",  # MIT
+    "requests>=2.32.4,<3.0.0",  # Apache-2.0
+    "mysql-connector-python==8.4.0",  # GPLv2
+    "PyYAML>=6.0",  # MIT
+    "netaddr>=0.7.18",  # BSD
+    "psycopg[binary,pool]>=3.2.4,<4.0.0",  # GNU Lesser General Public License v3 (LGPLv3)
+    "email-validator>=2.2.0,<3.0.0",  # Free, The Unlicense
+    "orjson>=3.10.0,<4.0.0",  # MIT
+]
+[project.urls]
+homepage = "https://github.com/infraguys/restalchemy/"
+
+[build-system]
+requires = [
+    "setuptools>=75.3.3",  # last version for python3.8
+    "setuptools_scm>=8"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[project.optional-dependencies]
+dev = [
+    "tox>=4.0.0",
+    "tox-uv",
+    "pytest>=7.0.0",
+]
+test = [
+    "coverage>=4.0",
+    "mock>=3.0.5,<4.0.0",
+    "pytest>=8.0.0,<9.0.0",
+    "parameterized>=0.9.0,<1.0.0",  # BSD
+    "pytest-xdist[psutil]>=3.6.1,<4.0.0",  # MIT License (MIT)
+    "pytest-timer>=1.0.0,<2.0.0",  # MIT License (MIT)
+    "pytest-cov>=5.0.0,<7.0.0",  # MIT License (MIT)
+]
+mypy = [
+    "mypy",
+]
+ruff = [
+    "ruff",
+]
+shellcheck = [
+    "shellcheck-py",
+]
+testenv = [
+    "setuptools-git>=0.4.0"
+]
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "docs",
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+# Assume Python 3.8
+target-version = "py38"
+[lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+[format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[project.scripts]
+ra-new-migration = "restalchemy.cmd.new_migration:main"
+ra-apply-migration = "restalchemy.cmd.apply_migration:main"
+ra-rollback-migration = "restalchemy.cmd.rollback_migration:main"
+ra-rename-migrations = "restalchemy.cmd.rename_migrations:main"
+
+[tool.uv]
+package = true
+
+[tool.mypy]
+exclude = [
+    '.venv',
+    'restalchemy/tests',
+]
+python_version = "3.12"
+disallow_untyped_defs = true
+show_error_codes = true
+no_implicit_optional = true
+warn_return_any = false
+warn_unused_ignores = true
+ignore_missing_imports = true
+
+[tool.setuptools.package-data]
+restalchemy = ["*.yaml", "*.md"]
+
+[tool.coverage.run]
+branch = true
+source = [
+    "restalchemy"
+]
+command_line = "-m pytest -s restalchemy/tests/unit"
+omit = [
+    "restalchemy/tests/*",
+    ".venv",
+    "memory:0x"
+]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+    "if settings\\.DEBUG",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    "if TYPE_CHECKING:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+    ]
+
+ignore_errors = true
+
+[tool.coverage.html]
+directory = "cover"
+
+[tool.coverage.xml]
+output = "cover/coverage.xml"

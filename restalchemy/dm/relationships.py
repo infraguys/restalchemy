@@ -46,7 +46,6 @@ class BaseRelationship(properties.AbstractProperty, metaclass=abc.ABCMeta):
 
 
 class Relationship(BaseRelationship):
-
     def __init__(
         self,
         property_type,
@@ -56,9 +55,7 @@ class Relationship(BaseRelationship):
         value=None,
     ):
         if value and not isinstance(value, property_type):
-            raise TypeError(
-                "Expected '%s' type; value: %r" % (property_type, value)
-            )
+            raise TypeError("Expected '%s' type; value: %r" % (property_type, value))
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
@@ -68,7 +65,10 @@ class Relationship(BaseRelationship):
             self._default = (
                 (default()) if callable(default) else self._safe_value(default)
             )
-        self._value = value
+        if self._default is None:
+            self.set_value_force(value)
+        else:
+            self._value = None
         self.__first_value = self.value
 
     def is_dirty(self):
@@ -118,7 +118,6 @@ class Relationship(BaseRelationship):
 
 
 class PrefetchRelationship(Relationship):
-
     @classmethod
     def is_prefetch(cls):
         return True

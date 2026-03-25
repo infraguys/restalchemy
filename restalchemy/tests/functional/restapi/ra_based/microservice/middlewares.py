@@ -20,7 +20,6 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import contexts
 
 
 class ContextMiddleware(middlewares.ContextMiddleware):
-
     def process_request(self, req):
         ctx = contexts.Context()
         req.context = ctx

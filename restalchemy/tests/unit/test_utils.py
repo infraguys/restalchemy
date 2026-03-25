@@ -19,7 +19,6 @@ from restalchemy.tests.unit import base
 
 
 class ReadOnlyDictProxyTestCase(base.BaseTestCase):
-
     def test_is(self):
         self.assertFalse(
             utils.ReadOnlyDictProxy({1: 2}) is utils.ReadOnlyDictProxy({1: 2})

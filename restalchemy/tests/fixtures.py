@@ -18,14 +18,12 @@ import mock
 
 
 class DialectFixture(mock.Mock):
-
     @property
     def name(self):
         return "mysql"
 
 
 class EngineFixture(mock.Mock):
-
     def escape(self, value):
         return f"`{value}`"
 
@@ -35,7 +33,6 @@ class EngineFixture(mock.Mock):
 
 
 class SessionFixture(mock.Mock):
-
     @property
     def engine(self):
         return EngineFixture()

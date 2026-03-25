@@ -16,7 +16,6 @@
 
 
 class Singleton(type):
-
     _instance = None
 
     def __call__(cls, *args, **kwargs):

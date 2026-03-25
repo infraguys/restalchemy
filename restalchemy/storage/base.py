@@ -24,7 +24,6 @@ from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 
 
 class AbstractObjectCollection(metaclass=abc.ABCMeta):
-
     def __init__(self, model_cls):
         super(AbstractObjectCollection, self).__init__()
         self.model_cls = model_cls
@@ -45,14 +44,12 @@ class AbstractObjectCollection(metaclass=abc.ABCMeta):
 
 
 class AbstractObjectCollectionCountMixin(metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
     def count(self, filters=None):
         raise NotImplementedError()
 
 
 class AbstractStorableMixin(metaclass=abc.ABCMeta):
-
     _ObjectCollection = AbstractObjectCollection
 
     def _get_prepared_data(self, properties=None):

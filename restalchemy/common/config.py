@@ -24,7 +24,7 @@ def parse(args):
     cfg.CONF(
         args=args,
         project="restalchemy",
-        version="RESTAlchemy %s" % version.version_info.release_string(),
+        version="RESTAlchemy %s" % version.version_info,
     )
     return cfg.CONF.config_file
 

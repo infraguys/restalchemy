@@ -28,7 +28,6 @@ from restalchemy.dm import types
 
 
 class AbstractProperty(metaclass=abc.ABCMeta):
-
     @property
     @abc.abstractmethod
     def value(self):
@@ -52,7 +51,6 @@ class BaseProperty(AbstractProperty):
 
 
 class Property(BaseProperty):
-
     def __init__(
         self,
         property_type,
@@ -64,9 +62,7 @@ class Property(BaseProperty):
         example=None,
     ):
         if not isinstance(property_type, types.BaseType):
-            raise TypeError(
-                "Property type must be instance of %s" % types.BaseType
-            )
+            raise TypeError("Property type must be instance of %s" % types.BaseType)
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
@@ -76,9 +72,7 @@ class Property(BaseProperty):
             self.set_value_force(default())
         else:
             self.set_value_force(default)
-        self.__first_value = (
-            copy.deepcopy(self.value) if mutable else self.value
-        )
+        self.__first_value = copy.deepcopy(self.value) if mutable else self.value
         self._example = example
 
     def is_dirty(self):
@@ -113,7 +107,8 @@ class Property(BaseProperty):
     @value.setter
     def value(self, value):
         if self.is_read_only() or self.is_id_property():
-            raise exc.ReadOnlyProperty()
+            if value != self._value:
+                raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 
     def set_value_force(self, value):
@@ -131,14 +126,12 @@ class Property(BaseProperty):
 
 
 class IDProperty(Property):
-
     @classmethod
     def is_id_property(cls):
         return True
 
 
 class PropertyCreator(object):
-
     def __init__(self, prop_class, prop_type, args, kwargs):
         self._property = prop_class
         self._property_type = prop_type
@@ -148,10 +141,7 @@ class PropertyCreator(object):
 
     def __call__(self, value):
         return self._property(
-            value=value,
-            property_type=self._property_type,
-            *self._args,
-            **self._kwargs
+            value=value, property_type=self._property_type, *self._args, **self._kwargs
         )
 
     def get_property_class(self):
@@ -168,7 +158,6 @@ class PropertyCreator(object):
 
 
 class PropertyMapping(collections_abc.Mapping, metaclass=abc.ABCMeta):
-
     @property
     @abc.abstractmethod
     def properties(self):
@@ -185,7 +174,6 @@ class PropertyMapping(collections_abc.Mapping, metaclass=abc.ABCMeta):
 
 
 class PropertyCollection(PropertyMapping):
-
     def __init__(self, **kwargs):
         self._properties = kwargs
         super(PropertyCollection, self).__init__()
@@ -238,7 +226,6 @@ class PropertyCollection(PropertyMapping):
 
 
 class PropertyManager(PropertyMapping):
-
     def __init__(self, property_collection, **kwargs):
         self._properties = {}
         for name, item in property_collection.properties.items():
@@ -280,9 +267,7 @@ def property(property_type, *args, **kwargs):
     property_class = kwargs.pop(
         "property_class", IDProperty if id_property else Property
     )
-    if inspect.isclass(property_class) and issubclass(
-        property_class, AbstractProperty
-    ):
+    if inspect.isclass(property_class) and issubclass(property_class, AbstractProperty):
         return PropertyCreator(
             prop_class=property_class,
             prop_type=property_type,
@@ -301,9 +286,7 @@ def container(**kwargs):
     kwargs = copy.deepcopy(kwargs)
     for prop in kwargs.values():
         if not isinstance(prop, (PropertyCreator, PropertyCollection)):
-            raise Exception(
-                "Only property, relationship " "and container are allowed."
-            )
+            raise Exception("Only property, relationship and container are allowed.")
     return PropertyCollection(**kwargs)
 
 

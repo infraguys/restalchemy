@@ -23,7 +23,6 @@ class CanNotGetActiveMethod(exceptions.RestAlchemyException):
 
 
 class RequestContext(object):
-
     _special_params = frozenset(
         ("fields", "page_limit", "page_marker", "sort_key", "sort_dir")
     )

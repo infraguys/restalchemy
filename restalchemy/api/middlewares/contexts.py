@@ -21,7 +21,6 @@ from restalchemy.common import contexts
 
 
 class ContextMiddleware(middlewares.Middleware):
-
     def __init__(
         self, application, context_class=contexts.Context, context_kwargs=None
     ):

@@ -21,7 +21,6 @@ from restalchemy.tests.unit import base
 
 
 class FilterEqualityTestCase(base.BaseTestCase):
-
     def test_filters_equal(self):
         f1 = filters.EQ(4)
         f2 = filters.EQ(4)

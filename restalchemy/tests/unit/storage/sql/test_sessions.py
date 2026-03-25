@@ -24,7 +24,6 @@ from restalchemy.tests.unit import base
 
 
 class TestLocalThreadStorage(base.BaseTestCase):
-
     def setUp(self):
         super(TestLocalThreadStorage, self).setUp()
         self._storage = sessions.SessionThreadStorage()
@@ -44,7 +43,6 @@ class TestLocalThreadStorage(base.BaseTestCase):
         session = mock.Mock()
 
         with patch.object(self._storage, "get_session", return_value=session):
-
             self.assertRaises(
                 sessions.SessionConflict, self._storage.store_session, session
             )
@@ -92,8 +90,7 @@ class TestLocalThreadStorage(base.BaseTestCase):
         with self.assertRaises(exc.DeadLock) as ctx:
             session.execute("update foo set bar = 'baz'")
         self.assertEqual(
-            "Deadlock found when trying to get lock. "
-            "Original message: deadlock",
+            "Deadlock found when trying to get lock. Original message: deadlock",
             str(ctx.exception),
         )
 

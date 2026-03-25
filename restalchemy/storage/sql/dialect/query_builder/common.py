@@ -17,7 +17,6 @@ import abc
 
 
 class AbstractClause(metaclass=abc.ABCMeta):
-
     def __init__(self, session):
         self._session = session
 
@@ -31,7 +30,6 @@ class AbstractClause(metaclass=abc.ABCMeta):
 
 
 class BaseAlias(AbstractClause):
-
     def __init__(self, clause, name, session):
         super(BaseAlias, self).__init__(session)
         self._clause = clause
@@ -57,14 +55,12 @@ class BaseAlias(AbstractClause):
 
 
 class ColumnAlias(BaseAlias):
-
     @property
     def model_property(self):
         return self.original.model_property
 
 
 class TableAlias(BaseAlias):
-
     def _wrap(self, column):
         return ColumnAlias(
             column,
@@ -94,7 +90,6 @@ class TableAlias(BaseAlias):
 
 
 class Column(AbstractClause):
-
     def __init__(self, name, prop, session):
         self._name = name
         self._prop = prop
@@ -117,7 +112,6 @@ class Column(AbstractClause):
 
 
 class ColumnFullPath(AbstractClause):
-
     def __init__(self, table, column, session):
         super(ColumnFullPath, self).__init__(session)
         self._table = table

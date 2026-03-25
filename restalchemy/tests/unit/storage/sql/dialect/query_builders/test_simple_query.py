@@ -37,7 +37,6 @@ SimpleModel.properties.sort_properties()
 
 
 class MySQLQueryBuilderTestCase(unittest.TestCase):
-
     def setUp(self):
         super(MySQLQueryBuilderTestCase, self).setUp()
         self.Q = q.Q
@@ -116,9 +115,7 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
     def test_select_with_filters_with_or(self):
         my_filter = filters.OR(
             filters.AND({"field_int": filters.LT(9)}),
-            filters.AND(
-                {"field_int": filters.GE(1), "field_str": filters.IsNot(None)}
-            ),
+            filters.AND({"field_int": filters.GE(1), "field_str": filters.IsNot(None)}),
         )
         query = self.Q.select(
             model=SimpleModel,
@@ -314,7 +311,6 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
 
 class MySQLResultParserTestCase(unittest.TestCase):
-
     def test_simple_model_result_parser(self):
         row_from_db = {
             "t1_field_bool": "FakeBool",

@@ -33,9 +33,7 @@ class MetaSingleton(type):
         if cls._instance is None:
             with cls._lock:
                 if not cls._instance:
-                    cls._instance = super(MetaSingleton, cls).__call__(
-                        *args, **kwargs
-                    )
+                    cls._instance = super(MetaSingleton, cls).__call__(*args, **kwargs)
         return cls._instance
 
 

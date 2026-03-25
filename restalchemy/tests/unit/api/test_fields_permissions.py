@@ -47,27 +47,18 @@ class FakeEmptyContext(object):
 
 
 class ResourceByRAModelFieldsPermissions(unittest.TestCase):
-
     def setUp(self):
         super(ResourceByRAModelFieldsPermissions, self).setUp()
 
         self.resource = resources.ResourceByRAModel(
             FakeModel,
             fields_permissions=fp.FieldsPermissionsByRole(
-                default=fp.UniversalPermissions(
-                    permission=fp.Permissions.HIDDEN
-                ),
+                default=fp.UniversalPermissions(permission=fp.Permissions.HIDDEN),
                 admin=fp.FieldsPermissions(
                     {
-                        "standard_field1": {
-                            constants.ALL: fp.Permissions.HIDDEN
-                        },
-                        "standard_field2": {
-                            constants.CREATE: (fp.Permissions.HIDDEN)
-                        },
-                        "standard_field3": {
-                            constants.GET: fp.Permissions.HIDDEN
-                        },
+                        "standard_field1": {constants.ALL: fp.Permissions.HIDDEN},
+                        "standard_field2": {constants.CREATE: (fp.Permissions.HIDDEN)},
+                        "standard_field3": {constants.GET: fp.Permissions.HIDDEN},
                         "standard_field5": {
                             constants.FILTER: (fp.Permissions.HIDDEN),
                             constants.DELETE: (fp.Permissions.HIDDEN),
@@ -110,13 +101,9 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
     def _test_fields_is_shown(self, expected_fields):
         result = [
             name
-            for name, prop in self.resource.get_fields_by_request(
-                self._request
-            )
+            for name, prop in self.resource.get_fields_by_request(self._request)
             if prop.is_public()
-            and not self.resource._fields_permissions.is_hidden(
-                name, self._request
-            )
+            and not self.resource._fields_permissions.is_hidden(name, self._request)
         ]
 
         self.assertEqual(sorted(expected_fields), sorted(result))
@@ -124,13 +111,9 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
     def _test_fields_is_hidden(self, expected_fields):
         result = [
             name
-            for name, prop in self.resource.get_fields_by_request(
-                self._request
-            )
+            for name, prop in self.resource.get_fields_by_request(self._request)
             if prop.is_public()
-            and self.resource._fields_permissions.is_hidden(
-                name, self._request
-            )
+            and self.resource._fields_permissions.is_hidden(name, self._request)
         ]
 
         self.assertEqual(sorted(expected_fields), sorted(result))
@@ -138,13 +121,9 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
     def _test_fields_is_readonly(self, expected_fields):
         result = [
             name
-            for name, prop in self.resource.get_fields_by_request(
-                self._request
-            )
+            for name, prop in self.resource.get_fields_by_request(self._request)
             if prop.is_public()
-            and self.resource._fields_permissions.is_readonly(
-                name, self._request
-            )
+            and self.resource._fields_permissions.is_readonly(name, self._request)
         ]
 
         self.assertEqual(sorted(expected_fields), sorted(result))
@@ -153,37 +132,27 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
         resource = resources.ResourceByRAModel(
             FakeModel,
             fields_permissions=fp.FieldsPermissionsByRole(
-                default=fp.UniversalPermissions(
-                    permission=fp.Permissions.HIDDEN
-                ),
+                default=fp.UniversalPermissions(permission=fp.Permissions.HIDDEN),
                 admin=fp.FieldsPermissions(
                     {
-                        "standard_field1": {
-                            constants.ALL: fp.Permissions.HIDDEN
-                        },
+                        "standard_field1": {constants.ALL: fp.Permissions.HIDDEN},
                     },
                 ),
             ),
         )
 
         self.assertFalse(
-            resource._fields_permissions.is_readonly(
-                "standard_field2", self._request
-            )
+            resource._fields_permissions.is_readonly("standard_field2", self._request)
         )
 
     def _test_default_custom_value(self):
         resource = resources.ResourceByRAModel(
             FakeModel,
             fields_permissions=fp.FieldsPermissionsByRole(
-                default=fp.UniversalPermissions(
-                    permission=fp.Permissions.HIDDEN
-                ),
+                default=fp.UniversalPermissions(permission=fp.Permissions.HIDDEN),
                 admin=fp.FieldsPermissions(
                     {
-                        "standard_field1": {
-                            constants.ALL: fp.Permissions.HIDDEN
-                        },
+                        "standard_field1": {constants.ALL: fp.Permissions.HIDDEN},
                     },
                     default=fp.Permissions.RO,
                 ),
@@ -191,16 +160,11 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
         )
 
         self.assertTrue(
-            resource._fields_permissions.is_readonly(
-                "standard_field2", self._request
-            )
+            resource._fields_permissions.is_readonly("standard_field2", self._request)
         )
 
 
-class ResourceByRAModelFieldsPermissionsRoleAdmin(
-    ResourceByRAModelFieldsPermissions
-):
-
+class ResourceByRAModelFieldsPermissionsRoleAdmin(ResourceByRAModelFieldsPermissions):
     def setUp(self):
         super(ResourceByRAModelFieldsPermissionsRoleAdmin, self).setUp()
         admin_context = FakeAdminContext()
@@ -334,10 +298,7 @@ class ResourceByRAModelFieldsPermissionsRoleAdmin(
         self._test_fields_is_readonly(expected_hidden_fields)
 
 
-class ResourceByRAModelFieldsPermissionsNoRole(
-    ResourceByRAModelFieldsPermissions
-):
-
+class ResourceByRAModelFieldsPermissionsNoRole(ResourceByRAModelFieldsPermissions):
     def setUp(self):
         super(ResourceByRAModelFieldsPermissionsNoRole, self).setUp()
         empty_context = FakeEmptyContext()
@@ -410,10 +371,7 @@ class ResourceByRAModelFieldsPermissionsNoRole(
         self._test_fields_is_readonly(self.expected_hidden_fields)
 
 
-class ResourceByRAModelFieldsPermissionsRoleMember(
-    ResourceByRAModelFieldsPermissions
-):
-
+class ResourceByRAModelFieldsPermissionsRoleMember(ResourceByRAModelFieldsPermissions):
     def setUp(self):
         super(ResourceByRAModelFieldsPermissionsRoleMember, self).setUp()
         member_context = FakeMemberContext()

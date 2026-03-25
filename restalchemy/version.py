@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import pbr.version
+from importlib.metadata import version
 
-version_info = pbr.version.VersionInfo("restalchemy")
+version_info = version("restalchemy")
+
+if __name__ == "__main__":
+    print(version_info)

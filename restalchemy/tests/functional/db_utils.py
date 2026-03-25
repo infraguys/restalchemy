@@ -14,13 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import gc
+
 from restalchemy.common import utils
 from restalchemy.storage.sql import engines
 from restalchemy.tests.functional import consts
 
 
 class DBEngineMixin(object):
-
     __ENGINE__ = None
 
     @utils.classproperty
@@ -29,7 +30,7 @@ class DBEngineMixin(object):
 
     @classmethod
     def init_engine(cls):
-        engines.engine_factory.configure_factory(db_url=consts.DATABASE_URI)
+        engines.engine_factory.configure_factory(db_url=consts.get_database_uri())
         cls.__ENGINE__ = engines.engine_factory.get_engine()
 
     @classmethod
@@ -39,28 +40,26 @@ class DBEngineMixin(object):
         #                from MySQL
         del cls.__ENGINE__
         engines.engine_factory.destroy_engine()
+        # Force GC collection to free database active connections
+        gc.collect()
 
     @classmethod
     def get_all_tables(cls, session=None):
         with cls.engine.session_manager(session=session) as s:
             if session.engine.dialect.name == "mysql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.tables
                     where table_schema = database();
-                """
-                ).fetchall()
+                """).fetchall()
             elif session.engine.dialect.name == "postgresql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.tables
                     where table_schema = current_schema();
-                """
-                ).fetchall()
+                """).fetchall()
             else:
                 raise NotImplementedError("Unsupported dialect")
         tables = {row["table_name"] for row in res}
@@ -97,23 +96,19 @@ class DBEngineMixin(object):
     def get_all_views(cls, session=None):
         with cls.engine.session_manager(session=session) as s:
             if session.engine.dialect.name == "mysql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.views
                     where table_schema = database();
-                """
-                ).fetchall()
+                """).fetchall()
             elif session.engine.dialect.name == "postgresql":
-                res = s.execute(
-                    """
+                res = s.execute("""
                     select
                         table_name as table_name
                     from information_schema.views
                     where table_schema = current_schema();
-                """
-                ).fetchall()
+                """).fetchall()
             else:
                 raise NotImplementedError("Unsupported dialect")
         return {row["table_name"] for row in res}
@@ -128,6 +123,4 @@ class DBEngineMixin(object):
     @classmethod
     def drop_view(cls, view_name, session=None):
         with cls.engine.session_manager(session=session) as s:
-            s.execute(
-                f"drop view if exists {session.engine.escape(view_name)}"
-            )
+            s.execute(f"drop view if exists {session.engine.escape(view_name)}")

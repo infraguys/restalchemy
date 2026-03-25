@@ -51,9 +51,7 @@ class PortRoute(routes.Route):
         routes.UPDATE,
         routes.DELETE,
     ]
-    __tags__ = [
-        structures.OpenApiTag(name="PortTestTag", description="port_descr")
-    ]
+    __tags__ = [structures.OpenApiTag(name="PortTestTag", description="port_descr")]
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
@@ -163,5 +161,4 @@ class V1Route(routes.Route):
 
 
 class Root(routes.RootRoute):
-
     v1 = routes.route(V1Route)

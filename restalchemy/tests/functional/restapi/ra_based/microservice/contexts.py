@@ -19,7 +19,6 @@ from restalchemy.storage.sql import engines
 
 
 class Context(contexts.Context):
-
     _engine = None
     _session = None
 

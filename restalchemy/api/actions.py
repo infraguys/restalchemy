@@ -20,7 +20,6 @@ from restalchemy.common import exceptions as exc
 
 
 class ActionHandler(object):
-
     def __init__(self, get=None, post=None, put=None):
         self._get = get
         self._post = post

@@ -59,7 +59,6 @@ def handle_database_errors(func):
 
 
 class PgSQLInsert(base.BaseInsertCommand):
-
     EXPRESSION = 'INSERT INTO "%s" (%s) VALUES (%s)'
 
     @handle_database_errors
@@ -78,7 +77,6 @@ class PgSQLInsert(base.BaseInsertCommand):
 
 
 class PgSQLUpdate(base.BaseUpdateCommand):
-
     EXPRESSION = 'UPDATE "%s" SET %s WHERE %s'
 
     @handle_database_errors
@@ -97,7 +95,6 @@ class PgSQLUpdate(base.BaseUpdateCommand):
 
 
 class PgSQLDelete(base.BaseDeleteCommand):
-
     EXPRESSION = 'DELETE FROM "%s" WHERE %s'
 
     @handle_database_errors
@@ -116,7 +113,6 @@ class PgSQLDelete(base.BaseDeleteCommand):
 
 
 class PgSQLBatchDelete(base.BaseBatchDelete):
-
     EXPRESSION_IN = 'DELETE FROM "%s" WHERE %s = ANY(%s)'
     EXPRESSION_FILTER = 'DELETE FROM "%s" WHERE %s'
 
@@ -136,7 +132,6 @@ class PgSQLBatchDelete(base.BaseBatchDelete):
 
 
 class PgSQLSelect(base.BaseSelectCommand):
-
     EXPRESSION = 'SELECT %s FROM "%s"'
 
     @handle_database_errors
@@ -155,7 +150,6 @@ class PgSQLSelect(base.BaseSelectCommand):
 
 
 class PgSQLCustomSelect(base.BaseCustomSelectCommand):
-
     EXPRESSION = 'SELECT %s FROM "%s"'
 
     @handle_database_errors
@@ -174,7 +168,6 @@ class PgSQLCustomSelect(base.BaseCustomSelectCommand):
 
 
 class PgSQLCount(base.BaseCountCommand):
-
     EXPRESSION = 'SELECT COUNT(*) as count FROM "%s"'
 
     @handle_database_errors
@@ -193,7 +186,6 @@ class PgSQLCount(base.BaseCountCommand):
 
 
 class PgSqlOrmDialectCommand(base.BaseOrmDialectCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -214,7 +206,6 @@ class PgSqlOrmDialectCommand(base.BaseOrmDialectCommand):
 
 
 class PgSQLDialect(base.AbstractDialect):
-
     DIALECT_NAME = "postgresql"
 
     def orm_command(self, table, query, session):

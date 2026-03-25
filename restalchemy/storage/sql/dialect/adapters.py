@@ -20,7 +20,6 @@ from mysql.connector import conversion
 
 
 class MySQLConverter(conversion.MySQLConverter):
-
     def _list_to_mysql(self, value):
         """Convert list value to mysql driver type
 

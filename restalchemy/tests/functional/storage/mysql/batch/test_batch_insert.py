@@ -30,7 +30,6 @@ class BatchInsertModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class InsertTestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "test-batch-migration-9e335f"
     __FIRST_MIGRATION__ = "test-batch-migration-9e335f"
 
@@ -48,13 +47,9 @@ class InsertTestCase(base.BaseWithDbMigrationsTestCase):
 
     def test_duplicate_primary_key_batch_insert(self):
         dup_uuid = uuid.uuid4()
-        model1 = BatchInsertModel(
-            uuid=dup_uuid, foo_field1=1, foo_field2="Model1"
-        )
+        model1 = BatchInsertModel(uuid=dup_uuid, foo_field1=1, foo_field2="Model1")
         model2 = BatchInsertModel(foo_field1=2, foo_field2="Model2")
-        model3 = BatchInsertModel(
-            uuid=dup_uuid, foo_field1=3, foo_field2="Model3"
-        )
+        model3 = BatchInsertModel(uuid=dup_uuid, foo_field1=3, foo_field2="Model3")
         # NOTE(efrolov): PRIMARY - is value from table structure,
         #   unique index for any primary key. Constant in mysql database.
         key_name = "PRIMARY" if self.engine.dialect.name == "mysql" else "uuid"
@@ -64,7 +59,6 @@ class InsertTestCase(base.BaseWithDbMigrationsTestCase):
                 try:
                     session.batch_insert([model1, model2, model3])
                 except exc.ConflictRecords as e:
-
                     self.assertEqual(key_name, e.key)
                     # NOTE(efrolov): all values from exception in string type
                     self.assertEqual(str(dup_uuid), e.value)

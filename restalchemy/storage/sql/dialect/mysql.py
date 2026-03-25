@@ -58,7 +58,6 @@ def handle_database_errors(func):
 
 
 class MySQLInsert(base.BaseInsertCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -77,7 +76,6 @@ class MySQLInsert(base.BaseInsertCommand):
 
 
 class MySQLUpdate(base.BaseUpdateCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -95,7 +93,6 @@ class MySQLUpdate(base.BaseUpdateCommand):
 
 
 class MySQLDelete(base.BaseDeleteCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -113,7 +110,6 @@ class MySQLDelete(base.BaseDeleteCommand):
 
 
 class MySQLBatchDelete(base.BaseBatchDelete):
-
     @handle_database_errors
     def execute(self):
         """
@@ -131,7 +127,6 @@ class MySQLBatchDelete(base.BaseBatchDelete):
 
 
 class MySQLSelect(base.BaseSelectCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -148,7 +143,6 @@ class MySQLSelect(base.BaseSelectCommand):
 
 
 class MySQLCustomSelect(base.BaseCustomSelectCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -167,7 +161,6 @@ class MySQLCustomSelect(base.BaseCustomSelectCommand):
 
 
 class MySQLCount(base.BaseCountCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -185,7 +178,6 @@ class MySQLCount(base.BaseCountCommand):
 
 
 class MySqlOrmDialectCommand(base.BaseOrmDialectCommand):
-
     @handle_database_errors
     def execute(self):
         """
@@ -206,7 +198,6 @@ class MySqlOrmDialectCommand(base.BaseOrmDialectCommand):
 
 
 class MySQLDialect(base.AbstractDialect):
-
     DIALECT_NAME = "mysql"
 
     def orm_command(self, table, query, session):
@@ -302,9 +293,7 @@ class MySQLDialect(base.AbstractDialect):
             session=session,
         )
 
-    def select(
-        self, table, filters, session, limit=None, order_by=None, locked=False
-    ):
+    def select(self, table, filters, session, limit=None, order_by=None, locked=False):
         """
         Retrieves records from the specified table using a MySQL dialect
         command.

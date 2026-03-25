@@ -28,7 +28,6 @@ class CountModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 class WithDbMigrationsCountTestCase(base.BaseWithDbMigrationsTestCase):
-
     __LAST_MIGRATION__ = "test-count-migration-502944"
     __FIRST_MIGRATION__ = "test-count-migration-502944"
 
