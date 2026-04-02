@@ -1028,6 +1028,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field2": "some_field2",
             "some-field3": "some_field3",
             "some-field4": "some_field4",
+            "name-after": "some name",
         }
         LOCATION = self.get_endpoint(
             TEMPL_PORT_RESOURCE_ENDPOINT, VM_RESOURCE_ID, PORT_RESOURCE_ID
@@ -1057,6 +1058,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field1": "some_field1",
             "some-field2": "some_field2",
             "some-field3": "some_field3",
+            "name-after": "some name",
         }
 
         response = requests.put(
@@ -1083,6 +1085,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field1": "some_field1",
             "some-field2": "some_field2",
             "some-field4": "some_field4",
+            "name-after": "some name",
         }
 
         response = requests.get(
@@ -1109,6 +1112,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field2": "some_field2",
             "some-field4": "some_field4",
             "some-field5": None,
+            "name-after": "some name",
         }
 
         response = requests.get(
@@ -1173,6 +1177,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field3": "some_field3",
                 "some-field4": "some_field4",
                 "unique-field": str(PORT1_RESOURCE_ID),
+                "name-after": "some name",
             },
             {
                 "uuid": str(PORT2_RESOURCE_ID),
@@ -1184,6 +1189,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field3": "some_field3",
                 "some-field4": "some_field4",
                 "unique-field": str(PORT2_RESOURCE_ID),
+                "name-after": "some name",
             },
         ]
 
@@ -1241,6 +1247,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field3": "some_field3",
                 "some-field4": "some_field4",
                 "unique-field": str(PORT2_RESOURCE_ID),
+                "name-after": "some name",
             }
         ]
 
