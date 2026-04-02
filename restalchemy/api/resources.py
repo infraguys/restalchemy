@@ -539,7 +539,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
             if prop.is_public():
                 properties[prop.api_name] = prop.get_type().to_openapi_spec(prop_kwargs)
                 if prop_kwargs.get("required"):
-                    required.append(name)
+                    required.append(prop.api_name)
         spec = {
             "type": "object",
             "properties": properties,

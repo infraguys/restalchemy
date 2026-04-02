@@ -72,6 +72,9 @@ class PortController(controllers.BaseNestedResourceControllerPaginated):
             get=["never_call", "some_field3", "unique_field"],
             update=["never_call", "some_field4", "unique_field"],
         ),
+        name_map={
+            "name_before": "name_after",
+        },
     )
     __pr_name__ = "vm"
 
