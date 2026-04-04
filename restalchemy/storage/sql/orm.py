@@ -16,6 +16,7 @@
 
 import abc
 import orjson
+import typing as tp
 
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
@@ -25,10 +26,18 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import tables
+from restalchemy.storage.sql import sessions
+from restalchemy.storage.base import OptionalFilters, OptionalOrderBy
+
+
+SQLStorableMixinType = tp.TypeVar("SQLStorableMixinType", bound="SQLStorableMixin")
+OptionalAbstractSession = tp.Optional[sessions.AbstractSession]
 
 
 class ObjectCollection(
-    base.AbstractObjectCollection, base.AbstractObjectCollectionCountMixin
+    base.AbstractObjectCollection[SQLStorableMixinType],
+    base.AbstractObjectCollectionCountMixin,
+    tp.Generic[SQLStorableMixinType],
 ):
     @property
     def _table(self):
@@ -36,18 +45,18 @@ class ObjectCollection(
 
     @property
     def _engine(self):
-        return engines.engine_factory.get_engine()
+        return engines.engine_factory.get_engine(name=self.model_cls.get_engine_name())
 
     @base.error_catcher
     def get_all(
         self,
-        filters=None,
-        session=None,
-        cache=False,
-        limit=None,
-        order_by=None,
-        locked=False,
-    ):
+        filters: OptionalFilters = None,
+        session: sessions.AbstractSession = None,
+        cache: bool = False,
+        limit: int = None,
+        order_by: OptionalOrderBy = None,
+        locked: bool = False,
+    ) -> SQLStorableMixinType:
         with self._engine.session_manager(session=session) as s:
             if cache is True:
                 return s.cache.get_all(
@@ -170,11 +179,14 @@ class UndefinedAttribute(common_exc.RestAlchemyException):
 
 
 class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
-    _saved = False
+    _Self = tp.TypeVar("_Self", bound="SQLStorableMixin")
+
+    _saved: bool = False
 
     _ObjectCollection = ObjectCollection
 
-    __tablename__ = None
+    __tablename__: tp.ClassVar[tp.Optional[str]] = None
+    __engine_name__: tp.ClassVar[tp.Optional[str]] = None
 
     @classmethod
     def get_table(cls):
@@ -197,11 +209,15 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
         return table
 
     @classmethod
-    def _get_engine(cls):
-        return engines.engine_factory.get_engine()
+    def get_engine_name(cls) -> tp.Optional[str]:
+        return cls.__engine_name__
 
     @classmethod
-    def restore_from_storage(cls, **kwargs):
+    def _get_engine(cls) -> engines.AbstractEngine:
+        return engines.engine_factory.get_engine(cls.get_engine_name())
+
+    @classmethod
+    def restore_from_storage(cls: tp.Type[_Self], **kwargs) -> _Self:
         model_format = {}
         for name, value in kwargs.items():
             model_format[name] = (
@@ -215,7 +231,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
 
     @base.error_catcher
     @base.dead_lock_catcher
-    def insert(self, session=None):
+    def insert(self, session: OptionalAbstractSession = None) -> None:
         # TODO(efrolov): Add filters parameters.
         with self._get_engine().session_manager(session=session) as s:
             try:
@@ -229,13 +245,15 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
                 raise exceptions.ConflictRecords(model=self, msg=str(e))
             self._saved = True
 
-    def save(self, session=None):
+    def save(self, session: OptionalAbstractSession = None) -> None:
         # TODO(efrolov): Add filters parameters.
         self.update(session) if self._saved else self.insert(session)
 
     @base.error_catcher
     @base.dead_lock_catcher
-    def update(self, session=None, force=False):
+    def update(
+        self, session: OptionalAbstractSession = None, force: bool = False
+    ) -> None:
         # TODO(efrolov): Add filters parameters.
         if self.is_dirty() or force:
             self.validate()
@@ -260,7 +278,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
 
     @base.error_catcher
     @base.dead_lock_catcher
-    def delete(self, session=None):
+    def delete(self, session: OptionalAbstractSession = None) -> None:
         # TODO(efrolov): Add filters parameters.
         with self._get_engine().session_manager(session=session) as s:
             result = self.get_table().delete(
@@ -299,7 +317,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
                 .get_property_type()
                 .from_simple_type(value)
             )
-            engine = engines.engine_factory.get_engine()
+            engine = cls._get_engine()
             return cls.objects.get_one(
                 filters={name: dm_filters.EQ(value)}, cache=engine.query_cache
             )
