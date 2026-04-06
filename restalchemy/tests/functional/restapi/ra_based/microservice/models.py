@@ -54,6 +54,7 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
         "some_field5": types.AllowNone(types.String()),
         "unique_field": types.String(),
         "name_before": types.String(),
+        "name_any": types.AnySimpleType(),
     }
 
     mac = properties.property(types.Mac(), default="00:00:00:00:00:00")
@@ -94,6 +95,10 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
     @property
     def name_before(self):
         return "some name"
+
+    @property
+    def name_any(self):
+        return "any name"
 
 
 class IpAddress(models.ModelWithUUID):
