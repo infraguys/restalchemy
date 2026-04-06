@@ -174,7 +174,7 @@ class KindModelType(types.BasePythonType):
                 except ra_exc.ParseError as e:
                     raise ra_exc.ParseError(value="%s=%s" % (name, e.value))
         if copied_value:
-            raise ra_exc.ParseError(value="(Unknown fields: %s)" % (copied_value))
+            raise ra_exc.ParseError(value="(Unknown fields: %s)" % copied_value)
         return self._python_type(**parsed_value)
 
     def to_simple_type(self, value):
@@ -209,9 +209,13 @@ class KindModelType(types.BasePythonType):
             for name, prop in self._python_type.properties.properties.items()
         }
         props["kind"] = {"type": "string", "enum": [self.kind]}
-        spec = {"type": self.openapi_type, "properties": props}
+        spec = {"type": self.openapi_type, "properties": props, "example": self.example}
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        return {"key": "value"}
 
 
 class KindModelSelectorType(types.BaseType):
@@ -325,7 +329,12 @@ class KindModelSelectorType(types.BaseType):
             "oneOf": [
                 subtype.to_openapi_spec({}) for subtype in self._kind_type_map.values()
             ],
+            "example": self.example,
         }
 
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        return {"key": "value"}

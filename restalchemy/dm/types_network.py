@@ -61,6 +61,10 @@ class IPAddress(types.BaseType):
         )
         return spec
 
+    @property
+    def example(self):
+        return "127.0.0.1"
+
 
 class Network(types.BaseType):
     def __init__(self, **kwargs):
@@ -78,6 +82,18 @@ class Network(types.BaseType):
     def from_unicode(self, value):
         return self.from_simple_type(value)
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+        }
+        spec.update(
+            types.build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
+        return spec
+
 
 class IpWithMask(types.BaseType):
     def validate(self, value):
@@ -92,9 +108,24 @@ class IpWithMask(types.BaseType):
     def from_unicode(self, value):
         return self.from_simple_type(value)
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+        }
+        spec.update(
+            types.build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
+        return spec
+
 
 class OUI(types.BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){2,2}[0-9a-fA-F]{2,2}$")
+
+    def example(self):
+        return "00:00:00"
 
 
 class RecordName(types.BaseCompiledRegExpTypeFromAttr):
@@ -108,10 +139,16 @@ class RecordName(types.BaseCompiledRegExpTypeFromAttr):
         converted_value = super(RecordName, self).to_simple_type(value)
         return converted_value if len(converted_value) > 0 else "@"
 
+    def example(self):
+        return "restalchemy.com"
+
 
 class RecordNameWithWildcard(RecordName):
     # Difference - allow wildcard at the beginning of domain name.
     pattern = re.compile(r"^(\*\.){0,1}([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")
+
+    def example(self):
+        return "*.restalchemy.com"
 
 
 class SrvName(RecordName):
@@ -133,6 +170,9 @@ class SrvName(RecordName):
 
         return True
 
+    def example(self):
+        return "_service._tcp.example.com"
+
 
 class FQDN(types.BaseCompiledRegExpTypeFromAttr):
     """FQDN type. Allows 1 level too. Root only is prohibited.
@@ -151,6 +191,9 @@ class FQDN(types.BaseCompiledRegExpTypeFromAttr):
                 FQDN_TEMPLATE % (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, min_levels)
             )
         super(FQDN, self).__init__(**kwargs)
+
+    def example(self):
+        return "example.com"
 
 
 class Hostname(types.BaseCompiledRegExpTypeFromAttr):
@@ -179,6 +222,9 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
         )
         super(Hostname, self).__init__(**kwargs)
 
+    def example(self):
+        return "example.com"
+
 
 class IPRange(types.BaseType):
     """IPRange type.
@@ -204,3 +250,6 @@ class IPRange(types.BaseType):
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
+
+    def example(self):
+        return "10.0.0.0-10.0.1.0"

@@ -64,6 +64,7 @@ KWARGS_OPENAPI_MAP = {
     "example": "example",
 }
 MYSQL_DATETIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
+DEFAULT_UUID = str(uuid.UUID("00000000-0000-0000-0000-000000000000"))
 DEFAULT_DATE = datetime.datetime.strptime(
     "2006-01-02 15:04:05.000576", MYSQL_DATETIME_FMT
 )
@@ -137,13 +138,17 @@ class BaseType(metaclass=abc.ABCMeta):
         return self._openapi_format
 
     def to_openapi_spec(self, prop_kwargs):
-        spec = {"type": self._openapi_type}
+        spec = {"type": self._openapi_type, "example": self.example}
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
         spec.update(
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.to_simple_type)
         )
         return spec
+
+    @property
+    def example(self):
+        return None
 
 
 class BasePythonType(BaseType):
@@ -174,6 +179,10 @@ class Boolean(BasePythonType):
     def from_unicode(self, value):
         return value.lower() in ["yes", "true", "1"]
 
+    @property
+    def example(self):
+        return True
+
 
 class String(BasePythonType):
     def __init__(self, min_length=0, max_length=sys.maxsize, **kwargs):
@@ -194,9 +203,19 @@ class String(BasePythonType):
             "type": self.openapi_type,
             "minLength": self.min_length,
             "maxLength": self.max_length,
+            "example": self.example,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        default_example = "any_string"
+        if self.min_length != 0 and self.min_length > len(default_example):
+            return "s" * self.min_length
+        elif self.max_length != sys.maxsize and self.max_length < len(default_example):
+            return "s" * self.max_length
+        return default_example
 
 
 class Email(String):
@@ -243,6 +262,10 @@ class Email(String):
             return False
         return result
 
+    @property
+    def example(self):
+        return "user@example.com"
+
 
 class Integer(BasePythonType):
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
@@ -276,14 +299,27 @@ class Integer(BasePythonType):
             "type": self.openapi_type,
             "minimum": self.min_openapi_value,
             "maximum": self.max_openapi_value,
+            "example": self.example,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        if self.min_value == -INFINITI and self.max_value != INFINITI:
+            return self.max_openapi_value
+        elif self.min_value != -INFINITI and self.max_value == INFINITI:
+            return self.min_openapi_value
+        return (self.max_openapi_value + self.min_openapi_value) // 2
 
 
 class Int8(Integer):
     def __init__(self):
         super(Int8, self).__init__(min_value=0, max_value=2**8 - 1)
+
+    @property
+    def example(self):
+        return 1
 
 
 class Float(BasePythonType):
@@ -318,9 +354,18 @@ class Float(BasePythonType):
             "format": self.openapi_format,
             "minimum": self.min_openapi_value,
             "maximum": self.max_openapi_value,
+            "example": self.example,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        if self.min_value == -INFINITI and self.max_value != INFINITI:
+            return self.max_openapi_value
+        elif self.min_value != -INFINITI and self.max_value == INFINITI:
+            return self.min_openapi_value
+        return round((self.max_openapi_value + self.min_openapi_value) / 2, 1)
 
 
 class Decimal(BasePythonType):
@@ -374,6 +419,7 @@ class Decimal(BasePythonType):
             "type": self.openapi_type,
             "minimum": self.min_openapi_value,
             "maximum": self.max_openapi_value,
+            "example": self.example,
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
@@ -381,6 +427,14 @@ class Decimal(BasePythonType):
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.to_simple_type)
         )
         return spec
+
+    @property
+    def example(self):
+        if self.min_value == -INFINITI and self.max_value != INFINITI:
+            return self.max_openapi_value
+        elif self.min_value != -INFINITI and self.max_value == INFINITI:
+            return self.min_openapi_value
+        return (self.max_openapi_value + self.min_openapi_value) // 2
 
 
 class UUID(BaseType):
@@ -400,6 +454,10 @@ class UUID(BaseType):
 
     def from_unicode(self, value):
         return uuid.UUID(value)
+
+    @property
+    def example(self):
+        return DEFAULT_UUID
 
 
 class ComplexPythonType(BasePythonType):
@@ -434,9 +492,14 @@ class List(ComplexPythonType):
             "type": self.openapi_type,
             "format": self.openapi_format,
             "items": {"type": "string"},
+            "example": self.example,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        return ["1"]
 
 
 class TypedList(List):
@@ -470,11 +533,17 @@ class TypedList(List):
         spec = {
             "type": self.openapi_type,
             "items": self._nested_type.to_openapi_spec({}),
+            "example": self.example,
         }
         spec.update(
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.to_simple_type)
         )
         return spec
+
+    @property
+    def example(self):
+        # Return a list containing an example of the nested type
+        return [self._nested_type.example]
 
 
 class Dict(ComplexPythonType):
@@ -498,9 +567,14 @@ class Dict(ComplexPythonType):
                     {"type": "array", "items": {}},
                 ]
             },
+            "example": self.example,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        return {"key": "value"}
 
 
 def _validate_scheme(scheme):
@@ -552,10 +626,19 @@ class SoftSchemeDict(Dict):
         return {k: self._scheme[k].from_simple_type(v) for k, v in value.items()}
 
     def to_openapi_spec(self, prop_kwargs):
-        spec = {"type": "object", "properties": {}}
+        spec = {
+            "type": "object",
+            "properties": {},
+            "example": self.example,
+        }
         for k, v in self._scheme.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
         return spec
+
+    @property
+    def example(self):
+        # Generate example based on scheme
+        return {key: typ.example for key, typ in self._scheme.items()}
 
 
 class SchemeDict(Dict):
@@ -585,10 +668,19 @@ class SchemeDict(Dict):
         }
 
     def to_openapi_spec(self, prop_kwargs):
-        spec = {"type": "object", "properties": {}}
+        spec = {
+            "type": "object",
+            "properties": {},
+            "example": self.example,
+        }
         for k, v in self._scheme.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
         return spec
+
+    @property
+    def example(self):
+        # Generate example based on scheme
+        return {key: typ.example for key, typ in self._scheme.items()}
 
 
 class TypedDict(Dict):
@@ -616,6 +708,7 @@ class TypedDict(Dict):
         spec = {
             "type": self._openapi_type,
             "additionalProperties": self._nested_type.to_openapi_spec({}),
+            "example": self.example,
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
@@ -623,6 +716,11 @@ class TypedDict(Dict):
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.to_simple_type)
         )
         return spec
+
+    @property
+    def example(self):
+        # Return a dict with a single key-value pair using nested type example
+        return {"key": self._nested_type.example}
 
 
 class UTCDateTime(BasePythonType):
@@ -670,6 +768,7 @@ class UTCDateTime(BasePythonType):
             "type": self._openapi_type,
             # https://github.com/ogen-go/ogen/blob/main/_testdata/positive/time_extension.yml#L29
             "x-ogen-time-format": self.dump_value(DEFAULT_DATE),
+            "example": self.example,
         }
         if self._openapi_format is not None:
             spec["format"] = self._openapi_format
@@ -677,6 +776,10 @@ class UTCDateTime(BasePythonType):
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.dump_value)
         )
         return spec
+
+    @property
+    def example(self):
+        return self.dump_value(DEFAULT_DATE_Z)
 
 
 class UTCDateTimeZ(UTCDateTime):
@@ -693,6 +796,10 @@ class UTCDateTimeZ(UTCDateTime):
             return result.astimezone(datetime.timezone.utc)
         # If datetime is naive, it's assumed that timezone is UTC, add it
         return result.replace(tzinfo=datetime.timezone.utc)
+
+    @property
+    def example(self):
+        return self.dump_value(DEFAULT_DATE_Z)
 
 
 class TimeDelta(BasePythonType):
@@ -750,11 +857,16 @@ class TimeDelta(BasePythonType):
             "format": self.openapi_format,
             "minimum": self.min_openapi_value,
             "maximum": self.max_openapi_value,
+            "example": self.example,
         }
         spec.update(
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.to_simple_type)
         )
         return spec
+
+    @property
+    def example(self):
+        return self.to_simple_type(datetime.timedelta(days=1))
 
 
 class DateTime(BasePythonType):
@@ -769,6 +881,10 @@ class DateTime(BasePythonType):
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
+
+    @property
+    def example(self):
+        return DEFAULT_DATE_Z
 
 
 class Enum(BaseType):
@@ -802,9 +918,15 @@ class Enum(BaseType):
         spec = {
             "type": self.openapi_type,
             "enum": sorted(list(self.values)),
+            "example": self.example,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        # Return first enum value as example
+        return self.values[0]
 
 
 class BaseRegExpType(BaseType):
@@ -834,9 +956,20 @@ class BaseRegExpType(BaseType):
         return self._pattern.pattern
 
     def to_openapi_spec(self, prop_kwargs):
-        spec = {"type": self.openapi_type, "pattern": self.pattern_openapi}
+        spec = {
+            "type": self.openapi_type,
+            "pattern": self.pattern_openapi,
+            "example": self.example,
+        }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+    @property
+    def example(self):
+        # return example from self._pattern
+        return self._pattern.pattern
+
+        # return "my_regexp_string"
 
 
 class BaseCompiledRegExpType(BaseRegExpType):
@@ -863,6 +996,10 @@ class Uri(BaseCompiledRegExpTypeFromAttr):
             openapi_format="uri",
         )
 
+    @property
+    def example(self):
+        return "http://example.com"
+
 
 class Mac(BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
@@ -872,6 +1009,10 @@ class Mac(BaseCompiledRegExpTypeFromAttr):
             openapi_type="string",
             openapi_format="mac",
         )
+
+    @property
+    def example(self):
+        return "00:00:00:00:00:00"
 
 
 class Hostname(BaseCompiledRegExpTypeFromAttr):
@@ -883,6 +1024,10 @@ class Hostname(BaseCompiledRegExpTypeFromAttr):
         super(Hostname, self).__init__(
             openapi_type="hostname",
         )
+
+    @property
+    def example(self):
+        return "example.com"
 
 
 class Url(BaseCompiledRegExpTypeFromAttr):
@@ -901,6 +1046,10 @@ class Url(BaseCompiledRegExpTypeFromAttr):
         r"(?:/?|[/?]\S+)$",
         re.IGNORECASE,
     )
+
+    @property
+    def example(self):
+        return "http://example.com"
 
 
 class AllowNone(BaseType):
@@ -934,6 +1083,10 @@ class AllowNone(BaseType):
         spec["nullable"] = True
         return spec
 
+    @property
+    def example(self):
+        return None
+
 
 class AnySimpleType(BasePythonType):
     """Accepts any simple type.
@@ -962,3 +1115,21 @@ class AnySimpleType(BasePythonType):
             return orjson.loads(value)
         except orjson.JSONDecodeError:
             raise TypeError(f"Incorrect value {value} for type {type(self)}")
+
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "oneOf": [
+                {"type": "string"},
+                {"type": "integer"},
+                {"type": "array"},
+                {"type": "boolean"},
+                {"type": "object"},
+            ],
+            "example": self.example,
+        }
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
+        return spec
+
+    @property
+    def example(self):
+        return "string"

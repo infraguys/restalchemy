@@ -179,8 +179,10 @@ class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
         res = response.json()
         # NOTE(v.burygin): to save openapi.yaml
         # import yaml
+        #
         # with open("microservice/openapi.yaml", "w") as f:
-        #     yaml.safe_dump(res, f, encoding='utf-8', allow_unicode=True)
+        #     yaml.safe_dump(res, f, encoding="utf-8", allow_unicode=True)
+
         self.assertEqual(res["openapi"], "3.0.3")
         self.assertEqual(res["info"], info)
 
@@ -1029,6 +1031,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field3": "some_field3",
             "some-field4": "some_field4",
             "name-after": "some name",
+            "name-any": "any name",
         }
         LOCATION = self.get_endpoint(
             TEMPL_PORT_RESOURCE_ENDPOINT, VM_RESOURCE_ID, PORT_RESOURCE_ID
@@ -1059,6 +1062,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field2": "some_field2",
             "some-field3": "some_field3",
             "name-after": "some name",
+            "name-any": "any name",
         }
 
         response = requests.put(
@@ -1086,6 +1090,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field2": "some_field2",
             "some-field4": "some_field4",
             "name-after": "some name",
+            "name-any": "any name",
         }
 
         response = requests.get(
@@ -1113,6 +1118,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field4": "some_field4",
             "some-field5": None,
             "name-after": "some name",
+            "name-any": "any name",
         }
 
         response = requests.get(
@@ -1178,6 +1184,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field4": "some_field4",
                 "unique-field": str(PORT1_RESOURCE_ID),
                 "name-after": "some name",
+                "name-any": "any name",
             },
             {
                 "uuid": str(PORT2_RESOURCE_ID),
@@ -1190,6 +1197,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field4": "some_field4",
                 "unique-field": str(PORT2_RESOURCE_ID),
                 "name-after": "some name",
+                "name-any": "any name",
             },
         ]
 
@@ -1248,6 +1256,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field4": "some_field4",
                 "unique-field": str(PORT2_RESOURCE_ID),
                 "name-after": "some name",
+                "name-any": "any name",
             }
         ]
 
