@@ -16,8 +16,12 @@
 #    under the License.
 
 from collections import abc as collections_abc
+import typing as tp
 
 from restalchemy.common import exceptions as ra_exc
+
+
+T = tp.TypeVar("T")
 
 
 class ReadOnlyDictProxy(collections_abc.Mapping):
@@ -54,7 +58,7 @@ class ReadOnlyDictProxy(collections_abc.Mapping):
         return "%s(%s)" % (self.__class__.__name__, self._d)
 
 
-class classproperty(property):
+class classproperty(property, tp.Generic[T]):
     """Property for classes
 
     Standard property cannot be used on classes only on instances.
@@ -71,7 +75,10 @@ class classproperty(property):
         test = A.test  # method 'test' will be called with A class argument
     """
 
-    def __get__(self, obj, cls):
+    def __init__(self, func: tp.Callable[..., T]) -> None:
+        super().__init__(func)
+
+    def __get__(self, obj, cls) -> T:
         # Calls property function
         return self.fget(cls)
 
