@@ -158,8 +158,16 @@ class OpenApiPaths(object):
     def __init__(self):
         super(OpenApiPaths, self).__init__()
 
-    def _build_api_paths(self, route, current_path, request, parameters=None):
+    def _build_api_paths(
+        self, route, current_path, paths_traveled, request, parameters=None
+    ):
         result_spec = collections.defaultdict(dict)
+
+        # check if path has been traveled before
+        path_name = f"{current_path}_{route.__class__.__name__}"
+        if paths_traveled.get(path_name):
+            return result_spec
+        paths_traveled[path_name] = True
 
         # process collection paths
         for http_method, ra_method in c.HTTP_TO_RA_COLLECTION_METHODS.items():
@@ -181,7 +189,7 @@ class OpenApiPaths(object):
                     )
                     result_spec.update(
                         self._build_api_paths(
-                            next_route, next_path, request, parameters
+                            next_route, next_path, paths_traveled, request, parameters
                         )
                     )
                     paths, schemas = next_route(request).build_openapi_specification(
@@ -193,9 +201,10 @@ class OpenApiPaths(object):
 
     def build(self, request, parameters=None):
         paths_spec = {}
-
         main_route = request.application.main_route
-        paths_spec.update(self._build_api_paths(main_route, "/", request, parameters))
+        paths_spec.update(
+            self._build_api_paths(main_route, "/", {}, request, parameters)
+        )
 
         return {"paths": paths_spec}
 

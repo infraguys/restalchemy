@@ -4,7 +4,7 @@ components:
       in: query
       name: -hidden-field
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -13,7 +13,7 @@ components:
       name: IpAddressUuid
       required: true
       schema:
-        example: f6a3aa69-1285-47a2-ac9a-42f329ea60e0
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
         type: string
     PortUuid:
@@ -21,7 +21,7 @@ components:
       name: PortUuid
       required: true
       schema:
-        example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
         type: string
     TagName:
@@ -29,7 +29,7 @@ components:
       name: TagName
       required: true
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -38,7 +38,7 @@ components:
       name: TagUuid
       required: true
       schema:
-        example: 537e528c-98ee-4ce9-835e-54880b2f002a
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
         type: string
     VMDefSortUuid:
@@ -46,7 +46,7 @@ components:
       name: VMDefSortUuid
       required: true
       schema:
-        example: e4266bdd-def5-498c-823d-c2b20bc745d3
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
         type: string
     VMNoProcessFiltersUuid:
@@ -54,7 +54,7 @@ components:
       name: VMNoProcessFiltersUuid
       required: true
       schema:
-        example: 4a43a773-b3f1-4744-bce7-45888dc0e614
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
         type: string
     VMNoSortUuid:
@@ -62,7 +62,7 @@ components:
       name: VMNoSortUuid
       required: true
       schema:
-        example: 32530931-f3aa-443b-b502-49b1aa219f92
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
         type: string
     VMUuid:
@@ -70,7 +70,7 @@ components:
       name: VMUuid
       required: true
       schema:
-        example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
         type: string
     created:
@@ -78,7 +78,7 @@ components:
       name: created
       schema:
         default: '2006-01-02T15:04:05.000576Z'
-        example: '2006-01-02T15:04:05.000576+00:00'
+        example: '2006-01-02T15:04:05.000576Z'
         format: date-time
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -87,7 +87,7 @@ components:
       name: ip
       schema:
         default: 192.168.0.1
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -95,7 +95,7 @@ components:
       in: query
       name: just-none
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         nullable: true
@@ -120,7 +120,7 @@ components:
       in: query
       name: name-after
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -139,7 +139,7 @@ components:
       in: query
       name: never-call
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -152,7 +152,7 @@ components:
       in: query
       name: some-field1
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -160,7 +160,7 @@ components:
       in: query
       name: some-field2
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -168,7 +168,7 @@ components:
       in: query
       name: some-field3
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -176,7 +176,7 @@ components:
       in: query
       name: some-field4
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -184,7 +184,7 @@ components:
       in: query
       name: some-field5
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         nullable: true
@@ -194,7 +194,7 @@ components:
       name: state
       schema:
         default: 'off'
-        example: string
+        example: any_string
         maxLength: 10
         minLength: 0
         type: string
@@ -212,7 +212,7 @@ components:
       in: query
       name: unique-field
       schema:
-        example: string
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -221,7 +221,7 @@ components:
       name: updated
       schema:
         default: '2006-01-02T15:04:05.000576Z'
-        example: '2006-01-02T15:04:05.000576+00:00'
+        example: '2006-01-02T15:04:05.000576Z'
         format: date-time
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -290,14 +290,14 @@ components:
       properties:
         ip:
           default: 192.168.0.1
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         port:
           type: string
         uuid:
-          example: 0a73cd5a-da7e-47a6-8639-1a7a9e8b4da4
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -307,14 +307,14 @@ components:
       properties:
         ip:
           default: 192.168.0.1
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         port:
           type: string
         uuid:
-          example: 6b22432e-b76e-4cbc-94e2-6af6a5828e4d
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -324,14 +324,14 @@ components:
       properties:
         ip:
           default: 192.168.0.1
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         port:
           type: string
         uuid:
-          example: 148f943e-ffe9-4c65-b0dd-56c8cb650f57
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -345,7 +345,7 @@ components:
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
         name-after:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -358,28 +358,28 @@ components:
           - type: boolean
           - type: object
         some-field2:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field3:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field4:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
         uuid:
-          example: 341bf472-e6ba-46f2-bf33-d625d4ffd7cf
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         vm:
@@ -395,7 +395,7 @@ components:
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
         name-after:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -408,33 +408,33 @@ components:
           - type: boolean
           - type: object
         some-field1:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field3:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field4:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
         unique-field:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
-          example: 834ba2e3-6f21-4f6f-8679-13cec690dde8
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         vm:
@@ -450,7 +450,7 @@ components:
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
         name-after:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -463,28 +463,28 @@ components:
           - type: boolean
           - type: object
         some-field1:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field2:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field4:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
         uuid:
-          example: 4075637b-1e3c-476b-aaf2-10b0ab530d56
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         vm:
@@ -500,7 +500,7 @@ components:
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
         name-after:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -513,28 +513,28 @@ components:
           - type: boolean
           - type: object
         some-field1:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field2:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field3:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
         uuid:
-          example: 15dc3aeb-6fc3-4f2b-8185-d5e3c99d1c3e
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         vm:
@@ -545,12 +545,12 @@ components:
     Tag_Create:
       properties:
         name:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
-          example: 62897586-5bf5-4ab9-b57c-5c360caf6785
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         visible:
@@ -566,12 +566,12 @@ components:
     Tag_Filter:
       properties:
         name:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
-          example: d251dcb3-81f7-4a30-ae54-65bb5237bfe4
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         visible:
@@ -587,12 +587,12 @@ components:
     Tag_Get:
       properties:
         name:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
-          example: d8f58244-b9c3-4c68-8c27-3c03bada54b6
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         visible:
@@ -608,12 +608,12 @@ components:
     Tag_Update:
       properties:
         name:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
-          example: 6cf9b980-3e0f-4a35-b9c2-5b12eb2bbd61
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
         visible:
@@ -630,12 +630,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -647,7 +647,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -660,12 +660,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 8859a8eb-f571-4e19-a2f1-70c45ef6f436
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -677,12 +677,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -694,7 +694,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -707,12 +707,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 87f37691-2864-4eaf-a39d-b8595dd4d404
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -724,12 +724,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -741,7 +741,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -754,12 +754,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: d71f889a-6b77-4b64-83e2-9df35cbf8225
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -771,12 +771,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -788,7 +788,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -801,12 +801,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 8d5d670a-5c31-4ff1-bc8b-e581d6bd62bd
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -818,12 +818,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -835,7 +835,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -848,12 +848,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 92f702da-d107-44af-94de-2a08dc78f502
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -865,12 +865,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -882,7 +882,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -895,12 +895,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 6af90fd3-7697-4ba6-85d9-6c7115b3d961
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -912,12 +912,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -929,7 +929,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -942,12 +942,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: efb15b4b-32ce-4fa9-a4ef-dacb9c6cbe5d
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -959,12 +959,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -976,7 +976,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -989,12 +989,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 8dc672cb-dae6-42ee-b980-a36b5d8cf655
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -1006,12 +1006,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -1023,7 +1023,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -1036,12 +1036,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: af556bd7-9e51-4c8c-a74b-d5479fd61d3e
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -1053,12 +1053,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -1070,7 +1070,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -1083,12 +1083,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 6bb29b85-8c2d-419f-a3a6-9b7175931467
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -1100,12 +1100,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -1117,7 +1117,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -1130,12 +1130,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: e8c9bb81-15ba-4593-989a-f9148e73c37d
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -1147,12 +1147,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -1164,7 +1164,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -1177,12 +1177,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 2181a3ef-1feb-433d-879a-627e25371203
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -1194,12 +1194,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -1211,7 +1211,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -1224,12 +1224,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: b1d5479e-a084-453c-8d7e-6e4bd5b3bb1f
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -1241,12 +1241,12 @@ components:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -1258,7 +1258,7 @@ components:
           type: string
         state:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -1271,12 +1271,12 @@ components:
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
-          example: 5ac4f414-bb8b-4782-8b30-4b6602af4b95
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       required:
@@ -1427,7 +1427,7 @@ paths:
         name: state
         schema:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -1441,7 +1441,7 @@ paths:
       - in: query
         name: just-none
         schema:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -1459,7 +1459,7 @@ paths:
         name: created
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -1467,7 +1467,7 @@ paths:
         name: updated
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -1515,7 +1515,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1533,7 +1533,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1555,7 +1555,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -1585,7 +1585,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1607,7 +1607,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1673,7 +1673,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1697,7 +1697,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -1727,14 +1727,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1752,14 +1752,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1781,14 +1781,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -1818,14 +1818,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1849,14 +1849,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -1886,21 +1886,21 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
-          example: f6a3aa69-1285-47a2-ac9a-42f329ea60e0
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1918,21 +1918,21 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
-          example: f6a3aa69-1285-47a2-ac9a-42f329ea60e0
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1955,7 +1955,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -1979,7 +1979,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -2009,14 +2009,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2034,14 +2034,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2063,14 +2063,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -2100,14 +2100,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2131,14 +2131,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -2168,21 +2168,21 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
-          example: f6a3aa69-1285-47a2-ac9a-42f329ea60e0
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2200,21 +2200,21 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
-          example: 0ef04ac8-e785-4c87-ac87-655bd6d6e818
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
-          example: f6a3aa69-1285-47a2-ac9a-42f329ea60e0
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2237,7 +2237,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2261,7 +2261,7 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -2291,14 +2291,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: TagName
         required: true
         schema:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -2317,14 +2317,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: TagName
         required: true
         schema:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -2347,14 +2347,14 @@ paths:
         name: VMUuid
         required: true
         schema:
-          example: 49d6c654-cd52-42c3-8b99-7c2eca65a5c3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       - in: path
         name: TagName
         required: true
         schema:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -2385,7 +2385,7 @@ paths:
         name: state
         schema:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -2399,7 +2399,7 @@ paths:
       - in: query
         name: just-none
         schema:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -2417,7 +2417,7 @@ paths:
         name: created
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -2425,7 +2425,7 @@ paths:
         name: updated
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -2473,7 +2473,7 @@ paths:
         name: VMDefSortUuid
         required: true
         schema:
-          example: e4266bdd-def5-498c-823d-c2b20bc745d3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2491,7 +2491,7 @@ paths:
         name: VMDefSortUuid
         required: true
         schema:
-          example: e4266bdd-def5-498c-823d-c2b20bc745d3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2513,7 +2513,7 @@ paths:
         name: VMDefSortUuid
         required: true
         schema:
-          example: e4266bdd-def5-498c-823d-c2b20bc745d3
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -2543,7 +2543,7 @@ paths:
         name: state
         schema:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -2557,7 +2557,7 @@ paths:
       - in: query
         name: just-none
         schema:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -2575,7 +2575,7 @@ paths:
         name: created
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -2583,7 +2583,7 @@ paths:
         name: updated
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -2609,7 +2609,7 @@ paths:
         name: VMNoProcessFiltersUuid
         required: true
         schema:
-          example: 4a43a773-b3f1-4744-bce7-45888dc0e614
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2632,7 +2632,7 @@ paths:
         name: state
         schema:
           default: 'off'
-          example: string
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -2646,7 +2646,7 @@ paths:
       - in: query
         name: just-none
         schema:
-          example: string
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -2664,7 +2664,7 @@ paths:
         name: created
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -2672,7 +2672,7 @@ paths:
         name: updated
         schema:
           default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576+00:00'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -2720,7 +2720,7 @@ paths:
         name: VMNoSortUuid
         required: true
         schema:
-          example: 32530931-f3aa-443b-b502-49b1aa219f92
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2738,7 +2738,7 @@ paths:
         name: VMNoSortUuid
         required: true
         schema:
-          example: 32530931-f3aa-443b-b502-49b1aa219f92
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       responses:
@@ -2760,7 +2760,7 @@ paths:
         name: VMNoSortUuid
         required: true
         schema:
-          example: 32530931-f3aa-443b-b502-49b1aa219f92
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
           type: string
       requestBody:
@@ -2784,7 +2784,7 @@ paths:
       - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:49221
+  url: http://127.0.0.1:38999
   variables:
     version:
       default: v1
