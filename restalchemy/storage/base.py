@@ -16,6 +16,7 @@
 
 import abc
 import functools
+import typing as tp
 
 from restalchemy.common import exceptions as common_exc
 from restalchemy.common import utils
@@ -23,20 +24,45 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 
 
-class AbstractObjectCollection(metaclass=abc.ABCMeta):
-    def __init__(self, model_cls):
+AbstractStorableMixinType = tp.TypeVar(
+    "AbstractStorableMixinType",
+    bound="AbstractStorableMixin",
+)
+Filters = tp.Dict[str, tp.Any]
+OptionalFilters = tp.Optional[Filters]
+OrderByDirections = tp.Literal["asc", "desc", "ASC", "DESC", "", None]
+OrderBy = tp.Dict[str, OrderByDirections]
+OptionalOrderBy = tp.Optional[OrderBy]
+
+
+class AbstractObjectCollection(
+    tp.Generic[AbstractStorableMixinType],
+    metaclass=abc.ABCMeta,
+):
+    def __init__(self, model_cls: tp.Type[AbstractStorableMixinType]):
         super(AbstractObjectCollection, self).__init__()
         self.model_cls = model_cls
 
     @abc.abstractmethod
-    def get_all(self, filters=None, limit=None, order_by=None, locked=False):
+    def get_all(
+        self,
+        filters: OptionalFilters = None,
+        limit: int = None,
+        order_by: OptionalOrderBy = None,
+        locked: bool = False,
+    ) -> tp.Sequence[AbstractStorableMixinType]:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_one(self, filters=None, locked=False):
+    def get_one(
+        self, filters: OptionalFilters = None, locked: bool = False
+    ) -> AbstractStorableMixinType:
         raise NotImplementedError()
 
-    def get_one_or_none(self, filters=None):
+    def get_one_or_none(
+        self,
+        filters: OptionalFilters = None,
+    ) -> tp.Optional[AbstractStorableMixinType]:
         try:
             return self.get_one(filters=filters)
         except exceptions.RecordNotFound:
@@ -45,11 +71,13 @@ class AbstractObjectCollection(metaclass=abc.ABCMeta):
 
 class AbstractObjectCollectionCountMixin(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def count(self, filters=None):
+    def count(self, filters: OptionalFilters = None) -> int:
         raise NotImplementedError()
 
 
 class AbstractStorableMixin(metaclass=abc.ABCMeta):
+    _Self = tp.TypeVar("_Self", bound="AbstractStorableMixin")
+
     _ObjectCollection = AbstractObjectCollection
 
     def _get_prepared_data(self, properties=None):
@@ -60,23 +88,23 @@ class AbstractStorableMixin(metaclass=abc.ABCMeta):
         return result
 
     @utils.classproperty
-    def objects(cls):
+    def objects(cls: tp.Type[_Self]) -> AbstractObjectCollection[_Self]:
         return cls._ObjectCollection(cls)
 
     @abc.abstractmethod
-    def insert(self):
+    def insert(self) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def update(self):
+    def update(self) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def save(self):
+    def save(self) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def delete(self):
+    def delete(self) -> None:
         raise NotImplementedError()
 
     def get_storable_snapshot(self, properties=None):

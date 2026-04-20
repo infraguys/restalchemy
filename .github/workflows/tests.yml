@@ -64,6 +64,24 @@ jobs:
         ports:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
+      postgresql-second:
+        image: postgres:latest
+        # Provide the password for postgres
+        env:
+          POSTGRES_DB: ra_database
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_INITDB_ARGS: "-c max_connections=100"
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5433:5432
 
     steps:
       - uses: actions/checkout@v6
@@ -87,3 +105,10 @@ jobs:
           DATABASE_URI: "postgresql://postgres:test_password@localhost:5432/ra_database"
         run: |
           tox -e ${{ matrix.python-version }}-functional
+      - name: Functional Pytest fixtures tests
+        env:
+          DATABASE_URI: "postgresql://postgres:test_password@localhost:5432/ra_database"
+          DATABASE_SECOND_URI: "postgresql://postgres:test_password@localhost:5433/ra_database"
+          DATABASE_ENGINES: "default,second"
+        run: |
+          tox -e ${{ matrix.python-version }}-pytest

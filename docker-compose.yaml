@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mariadb:latest
+    environment:
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 1
+      MARIADB_DATABASE: radatabase
+      MARIADB_USER: root
+      MYSQL_ROOT_PASSWORD: test_password
+    ports:
+      - "3306:3306"
+  mysql-second:
+    image: mariadb:latest
+    environment:
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 1
+      MARIADB_DATABASE: radatabase
+      MARIADB_USER: root
+      MYSQL_ROOT_PASSWORD: test_password
+    ports:
+      - "3307:3306"
+  postgres:
+    image: postgres:latest
+    command: -c 'max_connections=100'
+    environment:
+      POSTGRES_USER: ra
+      POSTGRES_PASSWORD: ra
+      POSTGRES_DB: ra
+    ports:
+      - "5432:5432"
+  postgres-second:
+    image: postgres:latest
+    command: -c 'max_connections=100'
+    environment:
+      POSTGRES_USER: ra
+      POSTGRES_PASSWORD: ra
+      POSTGRES_DB: ra
+    ports:
+      - "5433:5432"
