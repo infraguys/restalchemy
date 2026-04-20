@@ -124,6 +124,7 @@ class IpWithMask(types.BaseType):
 class OUI(types.BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){2,2}[0-9a-fA-F]{2,2}$")
 
+    @property
     def example(self):
         return "00:00:00"
 
@@ -139,6 +140,7 @@ class RecordName(types.BaseCompiledRegExpTypeFromAttr):
         converted_value = super(RecordName, self).to_simple_type(value)
         return converted_value if len(converted_value) > 0 else "@"
 
+    @property
     def example(self):
         return "restalchemy.com"
 
@@ -147,6 +149,7 @@ class RecordNameWithWildcard(RecordName):
     # Difference - allow wildcard at the beginning of domain name.
     pattern = re.compile(r"^(\*\.){0,1}([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")
 
+    @property
     def example(self):
         return "*.restalchemy.com"
 
@@ -170,6 +173,7 @@ class SrvName(RecordName):
 
         return True
 
+    @property
     def example(self):
         return "_service._tcp.example.com"
 
@@ -192,6 +196,7 @@ class FQDN(types.BaseCompiledRegExpTypeFromAttr):
             )
         super(FQDN, self).__init__(**kwargs)
 
+    @property
     def example(self):
         return "example.com"
 
@@ -222,6 +227,7 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
         )
         super(Hostname, self).__init__(**kwargs)
 
+    @property
     def example(self):
         return "example.com"
 
@@ -251,5 +257,6 @@ class IPRange(types.BaseType):
     def from_unicode(self, value):
         return self.from_simple_type(value)
 
+    @property
     def example(self):
         return "10.0.0.0-10.0.1.0"
