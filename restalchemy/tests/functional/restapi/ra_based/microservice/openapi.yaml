@@ -560,7 +560,6 @@ components:
           type: string
       required:
       - name
-      - visible
       - vm
       type: object
     Tag_Filter:
@@ -581,7 +580,6 @@ components:
           type: string
       required:
       - name
-      - visible
       - vm
       type: object
     Tag_Get:
@@ -602,7 +600,6 @@ components:
           type: string
       required:
       - name
-      - visible
       - vm
       type: object
     Tag_Update:
@@ -623,7 +620,6 @@ components:
           type: string
       required:
       - name
-      - visible
       - vm
       type: object
     VMDefSort_Create:
@@ -669,9 +665,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMDefSort_Filter:
       properties:
@@ -716,9 +710,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMDefSort_Get:
       properties:
@@ -763,9 +755,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMDefSort_Update:
       properties:
@@ -810,9 +800,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMNoProcessFilters_Filter:
       properties:
@@ -857,9 +845,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMNoProcessFilters_Get:
       properties:
@@ -904,9 +890,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMNoSort_Create:
       properties:
@@ -951,9 +935,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMNoSort_Filter:
       properties:
@@ -998,9 +980,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMNoSort_Get:
       properties:
@@ -1045,9 +1025,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VMNoSort_Update:
       properties:
@@ -1092,9 +1070,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VM_Create:
       properties:
@@ -1139,9 +1115,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VM_Filter:
       properties:
@@ -1186,9 +1160,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VM_Get:
       properties:
@@ -1233,9 +1205,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
     VM_Update:
       properties:
@@ -1280,9 +1250,7 @@ components:
           format: uuid
           type: string
       required:
-      - state
       - name
-      - status
       type: object
 info:
   contact:
@@ -2784,7 +2752,7 @@ paths:
       - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:38999
+  url: http://127.0.0.1:56953
   variables:
     version:
       default: v1
