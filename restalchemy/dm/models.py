@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import abc
 import copy
-import datetime
 import uuid
 import inspect
 import typing as tp
@@ -377,3 +376,115 @@ class RestoreFromSimpleViewMixin:
 
 class SimpleViewMixin(DumpToSimpleViewMixin, RestoreFromSimpleViewMixin):
     pass
+
+
+class ModelSoftDelete(Model):
+    """
+    Soft-delete field definition for models.
+
+    This mixin declares the ``deleted_at`` field used by soft-delete aware
+    storage backends.
+
+    Behaviour
+    ---------
+    When combined with ``SQLStorableSoftDeleteMixin``, the default
+    ``objects`` collection becomes soft-delete aware:
+
+    - ``objects`` (SoftDeleteObjectCollection)
+        The default collection.
+        Automatically filters out soft-deleted rows by adding::
+
+            deleted_at IS NULL
+
+        to all read queries, including:
+        - ``get_all()``
+        - ``get_one()``
+        - ``count()``
+
+        Supports ``include_deleted=True`` parameter to bypass filtering.
+
+    Soft deletion
+    -------------
+    Calling ``delete()`` on a model that also inherits from
+    ``SQLStorableSoftDeleteMixin`` does not remove the row from the database.
+    Instead, it sets ``deleted_at`` to the current UTC timestamp and saves
+    the model.
+
+    Repeated calls to ``delete()`` are idempotent.
+
+    Restoring records
+    -----------------
+    Call ``restore()`` to clear the ``deleted_at`` timestamp and make the
+    record visible again through the default ``objects`` collection.
+
+    Database & indexing requirements
+    --------------------------------
+    Soft delete changes the effective uniqueness and filtering semantics
+    of the table. All indexes **must be designed with ``deleted_at`` in mind**.
+
+    Required index changes:
+
+    1. Index on ``deleted_at``
+       Enables fast filtering of active and deleted rows.
+
+       Example:
+           CREATE INDEX idx_<table>_deleted_at
+           ON <table>(deleted_at);
+
+    2. Update existing indexes to include ``deleted_at``
+       - Non-unique indexes should append ``deleted_at`` as the last column.
+       - Unique indexes must become composite unique indexes including
+         ``deleted_at`` to ensure uniqueness applies only to non-deleted rows.
+
+       Example:
+           -- Original:
+           CREATE UNIQUE INDEX idx_<table>_email
+           ON <table>(email);
+
+           -- Soft-delete aware:
+           CREATE UNIQUE INDEX idx_<table>_email_deleted
+           ON <table>(email, deleted_at);
+
+    3. (Optional, PostgreSQL) Partial index for active rows
+       Strongly recommended for frequently queried tables.
+
+       Example:
+           CREATE INDEX idx_<table>_active
+           ON <table>(id)
+           WHERE deleted_at IS NULL;
+
+    Notes
+    -----
+    - This mixin does **not** create or manage indexes automatically.
+      All index changes must be applied explicitly via migrations.
+    - Any business constraint that should apply only to active records
+      must be implemented as a composite or partial index.
+    - Query-time filtering is implemented at the collection level via
+      ``objects`` and its ``include_deleted`` flag, not at the database layer.
+
+    Uniqueness and undelete semantics
+    --------------------------------
+    Including ``deleted_at`` in unique indexes intentionally allows duplicate
+    values among soft-deleted rows.
+
+    This is a deliberate trade-off required to preserve uniqueness guarantees
+    for active records while still allowing soft deletion.
+
+    Important implications:
+
+    - Multiple soft-deleted rows may share the same unique field values.
+    - Attempting to "restore" a record may fail with a uniqueness violation
+      if another active row already exists with the same values.
+    - Applications must treat restore as a potentially failing operation
+      and handle it explicitly (e.g. conflict resolution, validation, or
+      forced cleanup of duplicates).
+
+    Alternative approaches (such as hard uniqueness across all rows) are
+    incompatible with soft delete semantics and are intentionally not supported
+    by this mixin.
+    """
+
+    deleted_at = properties.property(
+        types.AllowNone(types.UTCDateTimeZ()),
+        default=None,
+    )

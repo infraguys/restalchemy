@@ -15,6 +15,7 @@
 #    under the License.
 
 import abc
+import datetime
 import orjson
 
 from restalchemy.common import exceptions as common_exc
@@ -47,6 +48,7 @@ class ObjectCollection(
         limit=None,
         order_by=None,
         locked=False,
+        include_deleted=False,
     ):
         with self._engine.session_manager(session=session) as s:
             if cache is True:
@@ -80,13 +82,21 @@ class ObjectCollection(
         return [self.model_cls.restore_from_storage(**params) for params in result.rows]
 
     @base.error_catcher
-    def get_one(self, filters=None, session=None, cache=False, locked=False):
+    def get_one(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        locked=False,
+        include_deleted=False,
+    ):
         result = self.get_all(
             filters=filters,
             session=session,
             cache=cache,
             limit=2,
             locked=locked,
+            include_deleted=include_deleted,
         )
         result_len = len(result)
         if result_len == 1:
@@ -96,10 +106,21 @@ class ObjectCollection(
         else:
             raise exceptions.HasManyRecords(model=self.model_cls, filters=filters)
 
-    def get_one_or_none(self, filters=None, session=None, cache=False, locked=False):
+    def get_one_or_none(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        locked=False,
+        include_deleted=False,
+    ):
         try:
             return self.get_one(
-                filters=filters, session=session, cache=cache, locked=locked
+                filters=filters,
+                session=session,
+                cache=cache,
+                locked=locked,
+                include_deleted=include_deleted,
             )
         except exceptions.RecordNotFound:
             return None
@@ -158,11 +179,47 @@ class ObjectCollection(
             )
 
     @base.error_catcher
-    def count(self, session=None, filters=None):
+    def count(self, session=None, filters=None, include_deleted=False):
         with self._engine.session_manager(session=session) as s:
             result = self._table.count(engine=self._engine, session=s, filters=filters)
             data = list(result.fetchall())
             return data[0]["count"]
+
+
+class SoftDeleteObjectCollection(ObjectCollection):
+    SOFT_DELETE_FIELD = "deleted_at"
+
+    def _with_soft_delete_filter(self, filters):
+        filters = filters or {}
+        filters[self.SOFT_DELETE_FIELD] = dm_filters.Is(None)
+        return filters
+
+    def get_all(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        limit=None,
+        order_by=None,
+        locked=False,
+        include_deleted=False,
+    ):
+        if not include_deleted:
+            filters = self._with_soft_delete_filter(filters)
+        return ObjectCollection.get_all(
+            self,
+            filters=filters,
+            session=session,
+            cache=cache,
+            limit=limit,
+            order_by=order_by,
+            locked=locked,
+        )
+
+    def count(self, session=None, filters=None, include_deleted=False):
+        if not include_deleted:
+            filters = self._with_soft_delete_filter(filters)
+        return ObjectCollection.count(self, session=session, filters=filters)
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):
@@ -338,3 +395,80 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
                 result[field], option=orjson.OPT_NON_STR_KEYS
             ).decode()
         return result
+
+
+class _SoftDeleteRestoreDescriptor:
+    def __get__(self, obj, cls):
+        if obj is None:
+            return lambda **kwargs: models.Model.restore.__func__(cls, **kwargs)
+        return cls._restore_soft_deleted.__get__(obj, cls)
+
+
+class SQLStorableSoftDeleteMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
+    """
+    Storage mixin for soft-delete functionality.
+
+    This mixin overrides the delete() method to perform soft deletion by
+    setting the deleted_at timestamp instead of removing the record from
+    the database.
+
+    Usage:
+        class MyModel(ModelSoftDelete, SQLStorableSoftDeleteMixin):
+            __tablename__ = 'my_table'
+            # ... model properties ...
+
+    Database Requirements:
+        - Table must have a 'deleted_at' column (TIMESTAMP, nullable)
+        - Indexes should be updated to include deleted_at column
+        - See ModelSoftDelete documentation for migration guidelines
+
+    Methods:
+        delete(session) - Sets deleted_at timestamp (soft delete)
+        restore(session) - Clears deleted_at timestamp (restore record)
+        is_deleted() - Check if record is soft-deleted
+    """
+
+    SOFT_DELETE_FIELD = "deleted_at"
+    _ObjectCollection = SoftDeleteObjectCollection
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        cls.restore = _SoftDeleteRestoreDescriptor()
+
+    def _get_engine(self):
+        return engines.engine_factory.get_engine()
+
+    @base.error_catcher
+    @base.dead_lock_catcher
+    def delete(self, session=None, **kwargs):
+        """
+        Perform soft delete by setting deleted_at timestamp.
+
+        This method is idempotent - calling it multiple times has no effect
+        if the record is already soft-deleted.
+        """
+        if getattr(self, self.SOFT_DELETE_FIELD, None) is None:
+            setattr(
+                self,
+                self.SOFT_DELETE_FIELD,
+                datetime.datetime.now(datetime.timezone.utc),
+            )
+            self.save(session=session)
+
+    @base.error_catcher
+    @base.dead_lock_catcher
+    def _restore_soft_deleted(self, session=None):
+        """
+        Restore a soft-deleted record by clearing deleted_at timestamp.
+
+        Raises:
+            exceptions.RecordNotFound: If the record is not soft-deleted
+        """
+        if getattr(self, self.SOFT_DELETE_FIELD, None) is not None:
+            setattr(self, self.SOFT_DELETE_FIELD, None)
+            self.save(session=session)
+
+    def is_deleted(self):
+        """Check if this record is soft-deleted."""
+        return getattr(self, self.SOFT_DELETE_FIELD, None) is not None
