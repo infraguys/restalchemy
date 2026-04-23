@@ -48,6 +48,7 @@ class ObjectCollection(
         limit=None,
         order_by=None,
         locked=False,
+        include_deleted=False,
     ):
         with self._engine.session_manager(session=session) as s:
             if cache is True:
@@ -81,13 +82,21 @@ class ObjectCollection(
         return [self.model_cls.restore_from_storage(**params) for params in result.rows]
 
     @base.error_catcher
-    def get_one(self, filters=None, session=None, cache=False, locked=False):
+    def get_one(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        locked=False,
+        include_deleted=False,
+    ):
         result = self.get_all(
             filters=filters,
             session=session,
             cache=cache,
             limit=2,
             locked=locked,
+            include_deleted=include_deleted,
         )
         result_len = len(result)
         if result_len == 1:
@@ -97,10 +106,21 @@ class ObjectCollection(
         else:
             raise exceptions.HasManyRecords(model=self.model_cls, filters=filters)
 
-    def get_one_or_none(self, filters=None, session=None, cache=False, locked=False):
+    def get_one_or_none(
+        self,
+        filters=None,
+        session=None,
+        cache=False,
+        locked=False,
+        include_deleted=False,
+    ):
         try:
             return self.get_one(
-                filters=filters, session=session, cache=cache, locked=locked
+                filters=filters,
+                session=session,
+                cache=cache,
+                locked=locked,
+                include_deleted=include_deleted,
             )
         except exceptions.RecordNotFound:
             return None
@@ -159,15 +179,11 @@ class ObjectCollection(
             )
 
     @base.error_catcher
-    def count(self, session=None, filters=None):
+    def count(self, session=None, filters=None, include_deleted=False):
         with self._engine.session_manager(session=session) as s:
             result = self._table.count(engine=self._engine, session=s, filters=filters)
             data = list(result.fetchall())
             return data[0]["count"]
-
-
-class AllObjectsCollection(ObjectCollection):
-    pass
 
 
 class SoftDeleteObjectCollection(ObjectCollection):
@@ -186,9 +202,12 @@ class SoftDeleteObjectCollection(ObjectCollection):
         limit=None,
         order_by=None,
         locked=False,
+        include_deleted=False,
     ):
-        filters = self._with_soft_delete_filter(filters)
-        return super().get_all(
+        if not include_deleted:
+            filters = self._with_soft_delete_filter(filters)
+        return ObjectCollection.get_all(
+            self,
             filters=filters,
             session=session,
             cache=cache,
@@ -197,18 +216,10 @@ class SoftDeleteObjectCollection(ObjectCollection):
             locked=locked,
         )
 
-    def get_one(self, filters=None, session=None, cache=False, locked=False):
-        filters = self._with_soft_delete_filter(filters)
-        return super().get_one(
-            filters=filters,
-            session=session,
-            cache=cache,
-            locked=locked,
-        )
-
-    def count(self, session=None, filters=None):
-        filters = self._with_soft_delete_filter(filters)
-        return super().count(session=session, filters=filters)
+    def count(self, session=None, filters=None, include_deleted=False):
+        if not include_deleted:
+            filters = self._with_soft_delete_filter(filters)
+        return ObjectCollection.count(self, session=session, filters=filters)
 
 
 class UndefinedAttribute(common_exc.RestAlchemyException):
@@ -386,56 +397,11 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
         return result
 
 
-class SoftDeleteObjectCollectionWithInclude(SoftDeleteObjectCollection):
-    """
-    Soft-delete aware collection that supports include_deleted parameter.
-
-    When include_deleted=True, bypasses soft-delete filtering and returns
-    all records including deleted ones.
-    """
-
-    def get_all(
-        self,
-        filters=None,
-        session=None,
-        cache=False,
-        limit=None,
-        order_by=None,
-        locked=False,
-        include_deleted=False,
-    ):
-        if not include_deleted:
-            filters = self._with_soft_delete_filter(filters)
-        return super(ObjectCollection, self).get_all(
-            filters=filters,
-            session=session,
-            cache=cache,
-            limit=limit,
-            order_by=order_by,
-            locked=locked,
-        )
-
-    def get_one(
-        self,
-        filters=None,
-        session=None,
-        cache=False,
-        locked=False,
-        include_deleted=False,
-    ):
-        if not include_deleted:
-            filters = self._with_soft_delete_filter(filters)
-        return super(ObjectCollection, self).get_one(
-            filters=filters,
-            session=session,
-            cache=cache,
-            locked=locked,
-        )
-
-    def count(self, session=None, filters=None, include_deleted=False):
-        if not include_deleted:
-            filters = self._with_soft_delete_filter(filters)
-        return super(ObjectCollection, self).count(session=session, filters=filters)
+class _SoftDeleteRestoreDescriptor:
+    def __get__(self, obj, cls):
+        if obj is None:
+            return lambda **kwargs: models.Model.restore.__func__(cls, **kwargs)
+        return cls._restore_soft_deleted.__get__(obj, cls)
 
 
 class SQLStorableSoftDeleteMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
@@ -463,13 +429,19 @@ class SQLStorableSoftDeleteMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
     """
 
     SOFT_DELETE_FIELD = "deleted_at"
+    _ObjectCollection = SoftDeleteObjectCollection
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        cls.restore = _SoftDeleteRestoreDescriptor()
 
     def _get_engine(self):
         return engines.engine_factory.get_engine()
 
     @base.error_catcher
     @base.dead_lock_catcher
-    def delete(self, session=None):
+    def delete(self, session=None, **kwargs):
         """
         Perform soft delete by setting deleted_at timestamp.
 
@@ -486,7 +458,7 @@ class SQLStorableSoftDeleteMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
 
     @base.error_catcher
     @base.dead_lock_catcher
-    def restore(self, session=None):
+    def _restore_soft_deleted(self, session=None):
         """
         Restore a soft-deleted record by clearing deleted_at timestamp.
 
@@ -500,8 +472,3 @@ class SQLStorableSoftDeleteMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
     def is_deleted(self):
         """Check if this record is soft-deleted."""
         return getattr(self, self.SOFT_DELETE_FIELD, None) is not None
-
-    @classmethod
-    def _get_collection_class(cls):
-        """Get the appropriate collection class for this model."""
-        return SoftDeleteObjectCollectionWithInclude

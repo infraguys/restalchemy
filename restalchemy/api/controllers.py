@@ -629,15 +629,14 @@ class SoftDeleteControllerMixin(object):
             return param_name, True
         return super()._prepare_filter(param_name, value)
 
-    def _get_objects_collection(self, filters):
-        include_deleted = filters.pop("include_deleted", None)
-        if include_deleted:
-            return self.model.all_objects
-        return self.model.objects
-
     def _process_storage_filters(self, filters, order_by=None):
-        collection = self._get_objects_collection(filters)
-        return collection.get_all(filters=filters, order_by=order_by)
+        filters = filters or {}
+        include_deleted = filters.pop("include_deleted", False)
+        return self.model.objects.get_all(
+            filters=filters,
+            order_by=order_by,
+            include_deleted=include_deleted,
+        )
 
     @actions.post
     def restore(self, resource, **kwargs):

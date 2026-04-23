@@ -80,6 +80,7 @@ class ObjectCollection(orm.ObjectCollection):
         limit=None,
         order_by=None,
         locked=False,
+        include_deleted=False,
     ):
         OBJECT_COLLECTION_MOCK.get_all(
             filters=filters,
@@ -88,6 +89,7 @@ class ObjectCollection(orm.ObjectCollection):
             limit=limit,
             order_by=order_by,
             locked=locked,
+            include_deleted=include_deleted,
         )
         return super(ObjectCollection, self).get_all(
             filters=filters,
@@ -95,6 +97,7 @@ class ObjectCollection(orm.ObjectCollection):
             limit=limit,
             order_by=order_by,
             locked=locked,
+            include_deleted=include_deleted,
         )
 
 

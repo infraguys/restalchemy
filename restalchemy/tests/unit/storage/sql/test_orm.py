@@ -59,7 +59,11 @@ class FakeDirtyRestoreModelWithUUID(FakeRestoreModel, models.ModelWithUUID):
         return True
 
 
-class FakeRestoreModelWithSoftDelete(FakeRestoreModelWithUUID, ModelSoftDelete):
+class FakeRestoreModelWithSoftDelete(
+    FakeRestoreModelWithUUID,
+    ModelSoftDelete,
+    orm.SQLStorableSoftDeleteMixin,
+):
     pass
 
 
@@ -275,7 +279,7 @@ class TestSoftDelete(base.BaseTestCase):
         self.assertEqual(list(filters.keys()), ["deleted_at"])
         self.assertIsInstance(filters["deleted_at"], dm_filters.Is)
 
-    def test_all_objects_does_not_add_soft_delete(self, engine_factory_mock):
+    def test_include_deleted_does_not_add_soft_delete(self, engine_factory_mock):
         table = mock.Mock()
         table.select.return_value = mock.Mock(rows=[])
 
@@ -285,7 +289,10 @@ class TestSoftDelete(base.BaseTestCase):
         user_filters = {
             "uuid": dm_filters.EQ(filter_uuid),
         }
-        FakeRestoreModelWithSoftDelete.all_objects.get_all(filters=user_filters)
+        FakeRestoreModelWithSoftDelete.objects.get_all(
+            filters=user_filters,
+            include_deleted=True,
+        )
 
         _, kwargs = table.select.call_args
         filters = kwargs["filters"]

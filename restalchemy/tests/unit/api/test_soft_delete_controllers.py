@@ -93,28 +93,6 @@ class SoftDeleteControllerMixinTestCase(unittest.TestCase):
         self.assertEqual(result, ("name", "test"))
 
     @mock.patch.object(FakeSoftDeleteModel, "objects")
-    def test_get_objects_collection_without_include_deleted(
-        self, objects_mock
-    ):
-        """Test that default collection excludes deleted records."""
-        filters = {"name": "test"}
-        collection = self.controller._get_objects_collection(filters)
-
-        self.assertEqual(collection, FakeSoftDeleteModel.objects)
-        # Filter should not be modified
-        self.assertEqual(filters, {"name": "test"})
-
-    @mock.patch.object(FakeSoftDeleteModel, "all_objects")
-    def test_get_objects_collection_with_include_deleted(self, all_objects_mock):
-        """Test that include_deleted=True uses all_objects collection."""
-        filters = {"name": "test", "include_deleted": True}
-        collection = self.controller._get_objects_collection(filters)
-
-        self.assertEqual(collection, FakeSoftDeleteModel.all_objects)
-        # include_deleted should be removed from filters
-        self.assertNotIn("include_deleted", filters)
-
-    @mock.patch.object(FakeSoftDeleteModel, "objects")
     def test_process_storage_filters_excludes_deleted(self, objects_mock):
         """Test that _process_storage_filters uses correct collection."""
         collection_mock = mock.Mock()
@@ -124,22 +102,22 @@ class SoftDeleteControllerMixinTestCase(unittest.TestCase):
         result = self.controller._process_storage_filters(filters)
 
         objects_mock.get_all.assert_called_once_with(
-            filters=filters, order_by=None
+            filters=filters, order_by=None, include_deleted=False
         )
         self.assertEqual(result, collection_mock)
 
-    @mock.patch.object(FakeSoftDeleteModel, "all_objects")
+    @mock.patch.object(FakeSoftDeleteModel, "objects")
     def test_process_storage_filters_with_include_deleted(
-        self, all_objects_mock
+        self, objects_mock
     ):
         """Test that _process_storage_filters includes deleted when requested."""
         collection_mock = mock.Mock()
-        all_objects_mock.get_all.return_value = collection_mock
+        objects_mock.get_all.return_value = collection_mock
 
         filters = {"name": "test", "include_deleted": True}
         result = self.controller._process_storage_filters(filters)
 
-        all_objects_mock.get_all.assert_called_once_with(
-            filters={"name": "test"}, order_by=None
+        objects_mock.get_all.assert_called_once_with(
+            filters={"name": "test"}, order_by=None, include_deleted=True
         )
         self.assertEqual(result, collection_mock)

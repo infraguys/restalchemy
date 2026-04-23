@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import abc
 import copy
-import datetime
 import uuid
 import inspect
 import typing as tp
@@ -27,12 +26,6 @@ from collections import abc as collections_abc
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
 from restalchemy.dm import types
-from restalchemy.storage.sql.orm import (
-    AllObjectsCollection,
-    SoftDeleteObjectCollection,
-    SoftDeleteObjectCollectionWithInclude,
-    SQLStorableSoftDeleteMixin,
-)
 
 
 class DmOperationalStorage(object):
@@ -389,16 +382,17 @@ class SimpleViewMixin(DumpToSimpleViewMixin, RestoreFromSimpleViewMixin):
 
 class ModelSoftDelete(Model):
     """
-    Soft-delete support for models.
+    Soft-delete field definition for models.
 
-    This mixin implements logical deletion via the ``deleted_at`` column and
-    transparently affects how model collections build queries.
+    This mixin declares the ``deleted_at`` field used by soft-delete aware
+    storage backends.
 
     Behaviour
     ---------
-    Models using this mixin expose two collections:
+    When combined with ``SQLStorableSoftDeleteMixin``, the default
+    ``objects`` collection becomes soft-delete aware:
 
-    - ``objects`` (SoftDeleteObjectCollectionWithInclude)
+    - ``objects`` (SoftDeleteObjectCollection)
         The default collection.
         Automatically filters out soft-deleted rows by adding::
 
@@ -411,13 +405,10 @@ class ModelSoftDelete(Model):
 
         Supports ``include_deleted=True`` parameter to bypass filtering.
 
-    - ``all_objects`` (AllObjectsCollection)
-        A raw collection that does **not** apply soft-delete filtering.
-        Use it when deleted records must be visible.
-
     Soft deletion
     -------------
-    Calling ``delete()`` does not remove the row from the database.
+    Calling ``delete()`` on a model that also inherits from
+    ``SQLStorableSoftDeleteMixin`` does not remove the row from the database.
     Instead, it sets ``deleted_at`` to the current UTC timestamp and saves
     the model.
 
@@ -470,8 +461,8 @@ class ModelSoftDelete(Model):
       All index changes must be applied explicitly via migrations.
     - Any business constraint that should apply only to active records
       must be implemented as a composite or partial index.
-    - Query-time filtering is implemented at the collection level
-      (``objects`` / ``all_objects``), not at the database layer.
+    - Query-time filtering is implemented at the collection level via
+      ``objects`` and its ``include_deleted`` flag, not at the database layer.
 
     Uniqueness and undelete semantics
     --------------------------------
@@ -499,36 +490,3 @@ class ModelSoftDelete(Model):
         types.AllowNone(types.UTCDateTimeZ()),
         default=None,
     )
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-
-        cls.all_objects = AllObjectsCollection(cls)
-        cls.objects = SoftDeleteObjectCollectionWithInclude(cls)
-
-    def delete(self, session=None, **kwargs):
-        """
-        Perform soft delete by setting deleted_at timestamp.
-
-        This method is idempotent - calling it multiple times has no effect
-        if the record is already soft-deleted.
-        """
-        if self.deleted_at is None:
-            self.deleted_at = datetime.datetime.now(datetime.timezone.utc)
-            self.save(session)
-
-    def restore(self, session=None):
-        """
-        Restore a soft-deleted record by clearing deleted_at timestamp.
-
-        This method is idempotent - calling it multiple times has no effect
-        if the record is not soft-deleted.
-        """
-        if self.deleted_at is not None:
-            self.deleted_at = None
-            self.save(session)
-
-    def is_deleted(self):
-        """Check if this record is soft-deleted."""
-        return self.deleted_at is not None
