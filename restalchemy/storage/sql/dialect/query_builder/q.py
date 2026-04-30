@@ -17,8 +17,8 @@ import collections
 import threading
 
 from restalchemy.storage import base
-from restalchemy.storage.sql.dialect.query_builder import common
 from restalchemy.storage.sql import filters as sql_filters
+from restalchemy.storage.sql.dialect.query_builder import common
 
 
 class Table(common.AbstractClause):

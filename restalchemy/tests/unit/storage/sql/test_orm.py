@@ -14,16 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import orjson
-
 import mock
+import orjson
 
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.storage import exceptions
-from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql import orm
+from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.tests.unit import base
 
 FAKE_VALUE_A = "FAKE_A"

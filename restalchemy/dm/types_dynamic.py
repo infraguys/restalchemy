@@ -18,8 +18,9 @@ import abc
 import copy
 import datetime
 import logging
-import orjson
 import uuid
+
+import orjson
 
 from restalchemy.common import exceptions as ra_exc
 from restalchemy.dm import models

@@ -20,15 +20,16 @@ import logging
 import urllib.parse as parse
 
 from mysql.connector import pooling
+from psycopg.types.json import Jsonb
+from psycopg.types.json import JsonbDumper
 import psycopg_pool
-from psycopg.types.json import Jsonb, JsonbDumper
 
 from restalchemy.common import constants as c
 from restalchemy.common import singletons
+from restalchemy.storage.sql import sessions
 from restalchemy.storage.sql.dialect import adapters
 from restalchemy.storage.sql.dialect import mysql
 from restalchemy.storage.sql.dialect import pgsql
-from restalchemy.storage.sql import sessions
 
 DEFAULT_NAME = "default"
 DEFAULT_CONNECTION_TIMEOUT = 10

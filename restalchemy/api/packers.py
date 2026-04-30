@@ -18,8 +18,9 @@
 import collections
 import copy
 import logging
-import orjson
 import types
+
+import orjson
 
 from restalchemy.api import constants
 from restalchemy.common import exceptions

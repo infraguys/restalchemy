@@ -15,18 +15,19 @@
 #    under the License.
 
 import collections
-import mock
 
+import mock
 from mysql.connector import errors
+
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.storage.sql import tables
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.dialect import mysql
-from restalchemy.storage.sql import tables
-from restalchemy.tests.unit import base
 from restalchemy.tests import fixtures
+from restalchemy.tests.unit import base
 
 
 class BaseModel(models.ModelWithUUID):

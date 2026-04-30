@@ -15,13 +15,13 @@
 #    under the License.
 
 import logging
+
 import mock
+from webob import request
 
 from restalchemy.api.middlewares import logging_http
 from restalchemy.common import exceptions
 from restalchemy.tests.unit import base
-
-from webob import request
 
 
 class LoggingHttpMiddlewareTestCase(base.BaseTestCase):

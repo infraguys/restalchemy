@@ -15,6 +15,7 @@
 #    under the License.
 
 import abc
+
 import orjson
 
 from restalchemy.common import exceptions as common_exc
@@ -22,9 +23,9 @@ from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
-from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import tables
+from restalchemy.storage.sql.dialect import exceptions as exc
 
 
 class ObjectCollection(

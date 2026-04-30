@@ -19,8 +19,8 @@ import logging
 import threading
 
 from mysql.connector import errors
-from psycopg import rows as pg_rows
 from psycopg import errors as pg_errors
+from psycopg import rows as pg_rows
 
 from restalchemy.storage import exceptions as exc
 from restalchemy.storage.sql.dialect import mysql
