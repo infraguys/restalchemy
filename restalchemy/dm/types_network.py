@@ -54,6 +54,7 @@ class IPAddress(types.BaseType):
         spec = {
             "type": self.openapi_type,
             "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+            "example": self.example,
         }
         spec.update(
             types.build_prop_kwargs(
@@ -87,6 +88,7 @@ class Network(types.BaseType):
         spec = {
             "type": self.openapi_type,
             "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+            "example": self.example,
         }
         spec.update(
             types.build_prop_kwargs(
@@ -95,8 +97,14 @@ class Network(types.BaseType):
         )
         return spec
 
+    def example(self):
+        return "10.0.0.0/24"
+
 
 class IpWithMask(types.BaseType):
+    def __init__(self, **kwargs):
+        super(IpWithMask, self).__init__(openapi_type="string", **kwargs)
+
     def validate(self, value):
         return isinstance(value, netaddr.IPNetwork)
 
@@ -113,6 +121,7 @@ class IpWithMask(types.BaseType):
         spec = {
             "type": self.openapi_type,
             "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+            "example": self.example,
         }
         spec.update(
             types.build_prop_kwargs(
@@ -120,6 +129,10 @@ class IpWithMask(types.BaseType):
             )
         )
         return spec
+
+    @property
+    def example(self):
+        return "10.0.0.1/32"
 
 
 class OUI(types.BaseCompiledRegExpTypeFromAttr):
