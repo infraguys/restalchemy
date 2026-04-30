@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import unittest
+
+import netaddr
 
 from restalchemy.dm import types_network
 

@@ -2752,7 +2752,7 @@ paths:
       - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:56953
+  url: http://127.0.0.1:56077
   variables:
     version:
       default: v1

@@ -16,8 +16,8 @@
 
 import abc
 
-from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.storage.sql import filters as sql_filters
+from restalchemy.storage.sql.dialect.query_builder import q
 
 
 class AbstractProcessResult(metaclass=abc.ABCMeta):

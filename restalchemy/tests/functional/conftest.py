@@ -17,11 +17,10 @@
 import os
 from urllib.parse import urlparse
 
-
 import pytest
 
-from restalchemy.tests.functional import consts
 from restalchemy.storage.sql import engines
+from restalchemy.tests.functional import consts
 
 
 @pytest.fixture(scope="session", autouse=True)

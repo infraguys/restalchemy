@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 import unittest
 
-from restalchemy.storage.sql import engines
-from restalchemy.storage.sql import sessions
+import mock
 
 from restalchemy.common import contexts
+from restalchemy.storage.sql import engines
+from restalchemy.storage.sql import sessions
 
 
 class SomeError(Exception):

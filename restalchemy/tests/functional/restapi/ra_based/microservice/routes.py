@@ -15,9 +15,7 @@
 #    under the License.
 from restalchemy.api import routes
 from restalchemy.openapi import structures
-from restalchemy.tests.functional.restapi.ra_based.microservice import (
-    controllers,
-)
+from restalchemy.tests.functional.restapi.ra_based.microservice import controllers
 
 
 class TagRoute(routes.Route):

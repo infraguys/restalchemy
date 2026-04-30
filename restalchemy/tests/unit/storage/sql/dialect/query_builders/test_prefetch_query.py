@@ -24,9 +24,9 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
-from restalchemy.tests import fixtures
-from restalchemy.storage.sql.dialect.query_builder import q
 from restalchemy.storage.sql import orm
+from restalchemy.storage.sql.dialect.query_builder import q
+from restalchemy.tests import fixtures
 from restalchemy.tests.utils import make_test_name
 
 FAKE_UUID0 = uuid.UUID("00000000-0000-0000-0000-000000000000")

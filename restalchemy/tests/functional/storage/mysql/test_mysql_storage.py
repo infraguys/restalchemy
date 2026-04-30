@@ -19,18 +19,18 @@ import uuid
 
 import mock
 
+from restalchemy.common import contexts
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
-from restalchemy.common import contexts
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import orm
 from restalchemy.storage.sql import utils
+from restalchemy.tests import fixtures
 from restalchemy.tests.functional import base
 from restalchemy.tests.functional import consts
-from restalchemy.tests import fixtures
 
 FAKE_STR1 = "Fake1"
 FAKE_STR2 = "Fake2"

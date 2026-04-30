@@ -16,7 +16,6 @@
 
 
 from restalchemy.api import middlewares
-
 from restalchemy.common import contexts
 
 

@@ -20,13 +20,13 @@ import copy
 import ctypes
 import datetime
 import decimal
-import orjson
 import re
 import sys
 import time
 import uuid
 
 import email_validator
+import orjson
 
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack

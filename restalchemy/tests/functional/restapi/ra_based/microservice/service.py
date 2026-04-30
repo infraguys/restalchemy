@@ -18,19 +18,14 @@ import threading
 from wsgiref import simple_server
 
 from restalchemy.api import applications
-from restalchemy.api.middlewares import (
-    retry_on_error as retry_error_middleware,
-)
-
 from restalchemy.api.middlewares import errors as errors_middleware
+from restalchemy.api.middlewares import retry_on_error as retry_error_middleware
 from restalchemy.openapi import engines as openapi_engines
 from restalchemy.openapi import structures as openapi_structures
 from restalchemy.storage import exceptions as storage_exc
 from restalchemy.storage.sql import engines
 from restalchemy.tests.functional import consts
-from restalchemy.tests.functional.restapi.ra_based.microservice import (
-    middlewares,
-)
+from restalchemy.tests.functional.restapi.ra_based.microservice import middlewares
 from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 
 
