@@ -62,6 +62,7 @@ class RecordNameWithWildcardTestCase(unittest.TestCase):
         self.assertTrue(self.test_instance.validate("ns1.ra.restalchemy.com"))
         self.assertTrue(self.test_instance.validate("*.restalchemy.com"))
         self.assertTrue(self.test_instance.validate("restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("@"))
 
     def test_from_simple_type(self):
         self.assertEqual(self.test_instance.from_simple_type("*.x."), "*.x")

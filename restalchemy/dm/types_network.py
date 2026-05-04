@@ -161,7 +161,7 @@ class RecordName(types.BaseCompiledRegExpTypeFromAttr):
 
 class RecordNameWithWildcard(RecordName):
     # Difference - allow wildcard at the beginning of domain name.
-    pattern = re.compile(r"^(\*\.){0,1}([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")
+    pattern = re.compile(r"^(@|(\*\.){0,1}([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30})$")
 
     @property
     def example(self):
