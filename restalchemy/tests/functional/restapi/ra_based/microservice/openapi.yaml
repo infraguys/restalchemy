@@ -143,6 +143,14 @@ components:
         maxLength: 9223372036854775807
         minLength: 0
         type: string
+    permission-field:
+      in: query
+      name: permission-field
+      schema:
+        example: any_string
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
     port:
       in: query
       name: port
@@ -357,6 +365,11 @@ components:
           - type: array
           - type: boolean
           - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field2:
           example: any_string
           maxLength: 9223372036854775807
@@ -407,6 +420,11 @@ components:
           - type: array
           - type: boolean
           - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field1:
           example: any_string
           maxLength: 9223372036854775807
@@ -462,6 +480,11 @@ components:
           - type: array
           - type: boolean
           - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field1:
           example: any_string
           maxLength: 9223372036854775807
@@ -512,6 +535,11 @@ components:
           - type: array
           - type: boolean
           - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field1:
           example: any_string
           maxLength: 9223372036854775807
@@ -2752,7 +2780,7 @@ paths:
       - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:56077
+  url: http://127.0.0.1:39617
   variables:
     version:
       default: v1

@@ -55,6 +55,7 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
         "unique_field": types.String(),
         "name_before": types.String(),
         "name_any": types.AnySimpleType(),
+        "permission_field": types.String(),
     }
 
     mac = properties.property(types.Mac(), default="00:00:00:00:00:00")
@@ -99,6 +100,10 @@ class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
     @property
     def name_any(self):
         return "any name"
+
+    @property
+    def permission_field(self):
+        return "my permission name"
 
 
 class IpAddress(models.ModelWithUUID):
