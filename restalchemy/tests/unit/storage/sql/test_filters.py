@@ -15,8 +15,8 @@
 #    under the License.
 
 import collections
-import uuid
 from unittest import mock
+import uuid
 
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
