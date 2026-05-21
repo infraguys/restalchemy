@@ -78,7 +78,9 @@ class ErrorsHandlerMiddleware(middlewares.Middleware):
         try:
             return req.get_response(self.application)
         except Exception as e:
-            LOG.exception(
-                "Unknown error has occurred on url: %s %s", req.method, req.url
-            )
-            return self._construct_error_response(req, e)
+            resp = self._construct_error_response(req, e)
+            if resp.status_code >= 500:
+                LOG.exception(
+                    "Unknown error has occurred on url: %s %s", req.method, req.url
+                )
+            return resp
