@@ -147,7 +147,9 @@ class Context(object):
                 LOG.debug("Session %r has been committed", session)
         except Exception:
             session.rollback()
-            LOG.exception("Session %r has been rolled back by reason:", session)
+            LOG.debug(
+                "Session %r has been rolled back by reason:", session, exc_info=True
+            )
             raise
         finally:
             self.session_close()

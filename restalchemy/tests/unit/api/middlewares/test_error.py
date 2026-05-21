@@ -28,6 +28,7 @@ from restalchemy.tests.unit import base
 class FakeResponse(object):
     def __init__(self, status, json, **kwargs):
         self.status = status
+        self.status_code = int(status)
         self.json = json
 
 
