@@ -14,16 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
-
 import http.client as http_client
+
+import mock
+from webob import request
 
 from restalchemy.api.middlewares import errors
 from restalchemy.common import exceptions as comm_exc
 from restalchemy.storage import exceptions as ra_exceptions
 from restalchemy.tests.unit import base
-
-from webob import request
 
 
 class FakeResponse(object):

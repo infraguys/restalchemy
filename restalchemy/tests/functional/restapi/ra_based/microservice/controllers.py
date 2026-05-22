@@ -17,6 +17,7 @@
 from restalchemy.api import actions
 from restalchemy.api import constants
 from restalchemy.api import controllers
+from restalchemy.api import field_permissions as fp
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
@@ -71,6 +72,14 @@ class PortController(controllers.BaseNestedResourceControllerPaginated):
             filter=["never_call", "some_field2"],
             get=["never_call", "some_field3", "unique_field"],
             update=["never_call", "some_field4", "unique_field"],
+        ),
+        name_map={
+            "name_before": "name_after",
+        },
+        fields_permissions=fp.FieldsPermissionsByRole(
+            default=fp.FieldsPermissions(
+                {"permission_field": {constants.ALL: fp.Permissions.RO}}
+            )
         ),
     )
     __pr_name__ = "vm"

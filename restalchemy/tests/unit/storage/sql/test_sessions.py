@@ -16,8 +16,8 @@
 
 import mock
 from mock import patch
-
 from mysql.connector import errors
+
 from restalchemy.storage import exceptions as exc
 from restalchemy.storage.sql import sessions
 from restalchemy.tests.unit import base

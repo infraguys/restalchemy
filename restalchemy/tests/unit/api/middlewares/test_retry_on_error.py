@@ -16,12 +16,11 @@
 
 
 import mock
+from webob import request
 
 from restalchemy.api.middlewares import retry_on_error
 from restalchemy.storage import exceptions as ra_exceptions
 from restalchemy.tests.unit import base
-
-from webob import request
 
 
 class FakeDeadLock(ra_exceptions.DeadLock):

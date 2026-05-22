@@ -20,20 +20,18 @@ from wsgiref.simple_server import make_server
 
 from restalchemy.api import actions
 from restalchemy.api import applications
+from restalchemy.api import constants
 from restalchemy.api import controllers
 from restalchemy.api import middlewares
 from restalchemy.api import resources
 from restalchemy.api import routes
-from restalchemy.api import constants
-
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
-
+from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import engines as openapi_engines
 from restalchemy.openapi import structures as openapi_structures
 from restalchemy.openapi import utils as oa_utils
-from restalchemy.openapi import constants as oa_c
 
 HOST = "0.0.0.0"
 PORT = 8000

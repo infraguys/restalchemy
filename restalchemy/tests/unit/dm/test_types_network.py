@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import unittest
+
+import netaddr
 
 from restalchemy.dm import types_network
 
@@ -61,6 +62,7 @@ class RecordNameWithWildcardTestCase(unittest.TestCase):
         self.assertTrue(self.test_instance.validate("ns1.ra.restalchemy.com"))
         self.assertTrue(self.test_instance.validate("*.restalchemy.com"))
         self.assertTrue(self.test_instance.validate("restalchemy.com"))
+        self.assertTrue(self.test_instance.validate("@"))
 
     def test_from_simple_type(self):
         self.assertEqual(self.test_instance.from_simple_type("*.x."), "*.x")

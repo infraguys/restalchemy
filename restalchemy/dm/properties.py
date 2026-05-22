@@ -15,12 +15,11 @@
 #    under the License.
 
 import abc
+import builtins
 import collections
+from collections import abc as collections_abc
 import copy
 import inspect
-
-import builtins
-from collections import abc as collections_abc
 
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils

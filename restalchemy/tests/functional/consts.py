@@ -16,7 +16,7 @@
 
 import os
 
-_DATABASE_URI_DEFAULT = "mysql://test:test@127.0.0.1:/test"
+_DATABASE_URI_DEFAULT = "mysql://test_user:test_password@127.0.0.1:3306/ra_database"
 
 # Use get_database_uri() if you want xdist workers to parallelize!
 DATABASE_URI = os.getenv("DATABASE_URI", _DATABASE_URI_DEFAULT)

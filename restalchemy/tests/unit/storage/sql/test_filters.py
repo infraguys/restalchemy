@@ -15,6 +15,7 @@
 #    under the License.
 
 import collections
+from unittest import mock
 import uuid
 
 from restalchemy.dm import filters as dm_filters
@@ -270,6 +271,89 @@ class NotInTestCase(base.BaseTestCase):
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
+
+
+class _PostgreSqlDialectFixture(mock.Mock):
+    @property
+    def name(self):
+        return "postgresql"
+
+
+class _PostgreSqlEngineFixture(mock.Mock):
+    def escape(self, value):
+        return '"' + value + '"'
+
+    @property
+    def dialect(self):
+        return _PostgreSqlDialectFixture()
+
+
+class _PostgreSqlSessionFixture(mock.Mock):
+    @property
+    def engine(self):
+        return _PostgreSqlEngineFixture()
+
+    @engine.setter
+    def engine(self, value):
+        pass
+
+
+class PostgreSqlInTestCase(base.BaseTestCase):
+    TEST_LIST_VALUES = [1, 2, 3]
+
+    def setUp(self):
+        self._expr = filters.PostgreSqlIn(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=self.TEST_LIST_VALUES,
+            session=fixtures.SessionFixture(),
+        )
+
+    def test_construct_expression(self):
+        result = self._expr.construct_expression()
+        self.assertEqual(TEST_NAME + " = ANY(%s)", result)
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
+
+
+class PostgreSqlNotInTestCase(base.BaseTestCase):
+    """NOT IN must not use != ANY (PostgreSQL OR semantics)."""
+
+    TEST_LIST_VALUES = ["pending", "cancelled"]
+
+    def setUp(self):
+        self._expr = filters.PostgreSqlNotIn(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=self.TEST_LIST_VALUES,
+            session=fixtures.SessionFixture(),
+        )
+
+    def test_construct_expression_uses_negated_any(self):
+        result = self._expr.construct_expression()
+        self.assertEqual("NOT (%s = ANY(%%s))" % TEST_NAME, result)
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
+
+
+class PgNotInFilterModel(models.Model):
+    status = properties.property(types.String())
+
+
+class PostgreSqlNotInConvertFiltersTestCase(base.BaseTestCase):
+    def test_notin_status_uses_not_equals_any(self):
+        processed = filters.convert_filters(
+            PgNotInFilterModel,
+            {"status": dm_filters.NotIn(["pending", "cancelled"])},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            'NOT ("status" = ANY(%s))',
+            processed.construct_expression(),
+        )
+        self.assertEqual([["pending", "cancelled"]], processed.value)
 
 
 class InEmptyListTestCase(base.BaseTestCase):

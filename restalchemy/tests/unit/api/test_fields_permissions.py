@@ -14,6 +14,7 @@
 #    under the License.
 
 import unittest
+
 import webob
 
 from restalchemy.api import constants

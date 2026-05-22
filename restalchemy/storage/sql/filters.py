@@ -116,7 +116,9 @@ class MySqlNotIn(In):
 
 class PostgreSqlNotIn(In):
     def construct_expression(self):
-        return f"{self.column} != ANY(%s)"
+        # Use NOT (= ANY(...)), not != ANY(...): in PostgreSQL, expr != ANY(arr)
+        # is true if expr differs from *any* array element (OR of !=), not NOT IN.
+        return f"NOT ({self.column} = ANY(%s))"
 
 
 class PostgreSqlIs(Is):

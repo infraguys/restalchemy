@@ -4,6 +4,7 @@ components:
       in: query
       name: -hidden-field
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -12,22 +13,23 @@ components:
       name: IpAddressUuid
       required: true
       schema:
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
-        readOnly: true
         type: string
     PortUuid:
       in: path
       name: PortUuid
       required: true
       schema:
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
-        readOnly: true
         type: string
     TagName:
       in: path
       name: TagName
       required: true
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -36,22 +38,47 @@ components:
       name: TagUuid
       required: true
       schema:
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
-        readOnly: true
+        type: string
+    VMDefSortUuid:
+      in: path
+      name: VMDefSortUuid
+      required: true
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        type: string
+    VMNoProcessFiltersUuid:
+      in: path
+      name: VMNoProcessFiltersUuid
+      required: true
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        type: string
+    VMNoSortUuid:
+      in: path
+      name: VMNoSortUuid
+      required: true
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
         type: string
     VMUuid:
       in: path
       name: VMUuid
       required: true
       schema:
+        example: 00000000-0000-0000-0000-000000000000
         format: uuid
-        readOnly: true
         type: string
     created:
       in: query
       name: created
       schema:
         default: '2006-01-02T15:04:05.000576Z'
+        example: '2006-01-02T15:04:05.000576Z'
         format: date-time
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -60,6 +87,7 @@ components:
       name: ip
       schema:
         default: 192.168.0.1
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -67,6 +95,7 @@ components:
       in: query
       name: just-none
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         nullable: true
@@ -76,6 +105,7 @@ components:
       name: mac
       schema:
         default: 00:00:00:00:00:00
+        example: 00:00:00:00:00:00
         pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
         type: string
     name:
@@ -86,10 +116,38 @@ components:
         maxLength: 255
         minLength: 0
         type: string
+    name-after:
+      in: query
+      name: name-after
+      schema:
+        example: any_string
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    name-any:
+      in: query
+      name: name-any
+      schema:
+        example: string
+        oneOf:
+        - type: string
+        - type: integer
+        - type: array
+        - type: boolean
+        - type: object
     never-call:
       in: query
       name: never-call
       schema:
+        example: any_string
+        maxLength: 9223372036854775807
+        minLength: 0
+        type: string
+    permission-field:
+      in: query
+      name: permission-field
+      schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -102,6 +160,7 @@ components:
       in: query
       name: some-field1
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -109,6 +168,7 @@ components:
       in: query
       name: some-field2
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -116,6 +176,7 @@ components:
       in: query
       name: some-field3
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -123,6 +184,7 @@ components:
       in: query
       name: some-field4
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         type: string
@@ -130,6 +192,7 @@ components:
       in: query
       name: some-field5
       schema:
+        example: any_string
         maxLength: 9223372036854775807
         minLength: 0
         nullable: true
@@ -139,6 +202,7 @@ components:
       name: state
       schema:
         default: 'off'
+        example: any_string
         maxLength: 10
         minLength: 0
         type: string
@@ -150,12 +214,22 @@ components:
         enum:
         - active
         - disabled
+        example: active
+        type: string
+    unique-field:
+      in: query
+      name: unique-field
+      schema:
+        example: any_string
+        maxLength: 9223372036854775807
+        minLength: 0
         type: string
     updated:
       in: query
       name: updated
       schema:
         default: '2006-01-02T15:04:05.000576Z'
+        example: '2006-01-02T15:04:05.000576Z'
         format: date-time
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
@@ -163,7 +237,7 @@ components:
       in: query
       name: visible
       schema:
-        default: true
+        example: true
         type: boolean
     vm:
       in: query
@@ -224,14 +298,15 @@ components:
       properties:
         ip:
           default: 192.168.0.1
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         port:
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       required:
       - port
@@ -240,14 +315,15 @@ components:
       properties:
         ip:
           default: 192.168.0.1
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         port:
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       required:
       - port
@@ -256,14 +332,15 @@ components:
       properties:
         ip:
           default: 192.168.0.1
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         port:
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       required:
       - port
@@ -272,28 +349,51 @@ components:
       properties:
         mac:
           default: 00:00:00:00:00:00
+          example: 00:00:00:00:00:00
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
+        name-after:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        name-any:
+          example: string
+          oneOf:
+          - type: string
+          - type: integer
+          - type: array
+          - type: boolean
+          - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field2:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field3:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field4:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         vm:
           type: string
@@ -304,28 +404,56 @@ components:
       properties:
         mac:
           default: 00:00:00:00:00:00
+          example: 00:00:00:00:00:00
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
+        name-after:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        name-any:
+          example: string
+          oneOf:
+          - type: string
+          - type: integer
+          - type: array
+          - type: boolean
+          - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field1:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field3:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field4:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
+        unique-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         vm:
           type: string
@@ -336,28 +464,51 @@ components:
       properties:
         mac:
           default: 00:00:00:00:00:00
+          example: 00:00:00:00:00:00
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
+        name-after:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        name-any:
+          example: string
+          oneOf:
+          - type: string
+          - type: integer
+          - type: array
+          - type: boolean
+          - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field1:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field2:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field4:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         vm:
           type: string
@@ -368,28 +519,51 @@ components:
       properties:
         mac:
           default: 00:00:00:00:00:00
+          example: 00:00:00:00:00:00
           pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
           type: string
+        name-after:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
+        name-any:
+          example: string
+          oneOf:
+          - type: string
+          - type: integer
+          - type: array
+          - type: boolean
+          - type: object
+        permission-field:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          type: string
         some-field1:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field2:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field3:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         some-field5:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         vm:
           type: string
@@ -399,91 +573,543 @@ components:
     Tag_Create:
       properties:
         name:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         visible:
-          default: true
+          example: true
           type: boolean
         vm:
           type: string
       required:
-      - visible
-      - vm
       - name
+      - vm
       type: object
     Tag_Filter:
       properties:
         name:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         visible:
-          default: true
+          example: true
           type: boolean
         vm:
           type: string
       required:
-      - visible
-      - vm
       - name
+      - vm
       type: object
     Tag_Get:
       properties:
         name:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         visible:
-          default: true
+          example: true
           type: boolean
         vm:
           type: string
       required:
-      - visible
-      - vm
       - name
+      - vm
       type: object
     Tag_Update:
       properties:
         name:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
         visible:
-          default: true
+          example: true
           type: boolean
         vm:
           type: string
       required:
-      - visible
+      - name
       - vm
+      type: object
+    VMDefSort_Create:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMDefSort_Filter:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMDefSort_Get:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMDefSort_Update:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMNoProcessFilters_Filter:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMNoProcessFilters_Get:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMNoSort_Create:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMNoSort_Filter:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMNoSort_Get:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
+      - name
+      type: object
+    VMNoSort_Update:
+      properties:
+        created:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        just-none:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+        name:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+        state:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+        status:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+        updated:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        uuid:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      required:
       - name
       type: object
     VM_Create:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -495,6 +1121,7 @@ components:
           type: string
         state:
           default: 'off'
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -503,29 +1130,31 @@ components:
           enum:
           - active
           - disabled
+          example: active
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       required:
-      - status
-      - state
       - name
       type: object
     VM_Filter:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -537,6 +1166,7 @@ components:
           type: string
         state:
           default: 'off'
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -545,29 +1175,31 @@ components:
           enum:
           - active
           - disabled
+          example: active
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       required:
-      - status
-      - state
       - name
       type: object
     VM_Get:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -579,6 +1211,7 @@ components:
           type: string
         state:
           default: 'off'
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -587,29 +1220,31 @@ components:
           enum:
           - active
           - disabled
+          example: active
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       required:
-      - status
-      - state
       - name
       type: object
     VM_Update:
       properties:
         created:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           nullable: true
@@ -621,6 +1256,7 @@ components:
           type: string
         state:
           default: 'off'
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -629,19 +1265,19 @@ components:
           enum:
           - active
           - disabled
+          example: active
           type: string
         updated:
           default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
           format: date-time
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         uuid:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       required:
-      - status
-      - state
       - name
       type: object
 info:
@@ -709,7 +1345,25 @@ paths:
   /v1/:
     get:
       operationId: Filter_v1
-      parameters: []
+      parameters:
+      - description: 'the filters to apply when filtering the routes (Is not
+
+          implemented now)
+
+          '
+        in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'fields to order the routes by (Is not implemented
+
+          now)
+
+          '
+        in: query
+        name: order_by
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -721,7 +1375,7 @@ paths:
           description: Get nested urls
         default:
           $ref: '#/components/responses/Error'
-      summary: Get V1Route V1Controllers
+      summary: Returns a list of all routes in the main route that are collection
       tags: []
   /v1/notimplementedmethods/:
     get:
@@ -766,38 +1420,10 @@ paths:
       operationId: Filter_v1_vms
       parameters:
       - in: query
-        name: status
-        schema:
-          default: active
-          enum:
-          - active
-          - disabled
-          type: string
-      - in: query
-        name: updated
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-      - in: query
-        name: just-none
-        schema:
-          maxLength: 9223372036854775807
-          minLength: 0
-          nullable: true
-          type: string
-      - in: query
-        name: created
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-      - in: query
         name: state
         schema:
           default: 'off'
+          example: any_string
           maxLength: 10
           minLength: 0
           type: string
@@ -808,6 +1434,39 @@ paths:
           maxLength: 255
           minLength: 0
           type: string
+      - in: query
+        name: just-none
+        schema:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+      - in: query
+        name: status
+        schema:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+      - in: query
+        name: created
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      - in: query
+        name: updated
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
       responses:
         '200':
           content:
@@ -852,8 +1511,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '204':
@@ -870,8 +1529,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -892,8 +1551,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -922,8 +1581,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -944,8 +1603,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1010,8 +1669,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1034,8 +1693,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -1064,15 +1723,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '204':
@@ -1089,15 +1748,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1118,15 +1777,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -1155,15 +1814,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1186,15 +1845,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -1223,22 +1882,22 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '204':
@@ -1255,22 +1914,22 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1292,8 +1951,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1316,8 +1975,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -1346,15 +2005,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '204':
@@ -1371,15 +2030,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1400,15 +2059,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -1437,15 +2096,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1468,15 +2127,15 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -1505,22 +2164,22 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '204':
@@ -1537,22 +2196,22 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: PortUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1574,8 +2233,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       responses:
         '200':
@@ -1598,8 +2257,8 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       requestBody:
         content:
@@ -1628,13 +2287,14 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: TagName
         required: true
         schema:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -1653,13 +2313,14 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: TagName
         required: true
         schema:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -1682,13 +2343,14 @@ paths:
         name: VMUuid
         required: true
         schema:
+          example: 00000000-0000-0000-0000-000000000000
           format: uuid
-          readOnly: true
           type: string
       - in: path
         name: TagName
         required: true
         schema:
+          example: any_string
           maxLength: 9223372036854775807
           minLength: 0
           type: string
@@ -1711,9 +2373,414 @@ paths:
       summary: Update Tag
       tags:
       - Tag
+  /v1/vmsdefsort/:
+    get:
+      operationId: Filter_v1_vmsdefsort
+      parameters:
+      - in: query
+        name: state
+        schema:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+      - in: query
+        name: name
+        schema:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+      - in: query
+        name: just-none
+        schema:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+      - in: query
+        name: status
+        schema:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+      - in: query
+        name: created
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      - in: query
+        name: updated
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VMDefSort_Filter'
+                type: array
+          description: VMDefSort_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VMDefSorts
+      tags:
+      - VMDefSort
+    post:
+      operationId: Create_v1_vmsdefsort
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VMDefSort_Create'
+        description: VMDefSort_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMDefSort_Create'
+          description: VMDefSort_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create VM resource
+      tags:
+      - VMDefSort
+  /v1/vmsdefsort/{VMDefSortUuid}:
+    delete:
+      operationId: Delete_v1_vmsdefsort_VMDefSortUuid
+      parameters:
+      - in: path
+        name: VMDefSortUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: VMDefSort_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete VMDefSort
+      tags:
+      - VMDefSort
+    get:
+      operationId: Get_v1_vmsdefsort_VMDefSortUuid
+      parameters:
+      - in: path
+        name: VMDefSortUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMDefSort_Get'
+          description: VMDefSort_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VMDefSort
+      tags:
+      - VMDefSort
+    put:
+      operationId: Update_v1_vmsdefsort_VMDefSortUuid
+      parameters:
+      - in: path
+        name: VMDefSortUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VMDefSort_Update'
+        description: VMDefSort_Update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMDefSort_Update'
+          description: VMDefSort_Update
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Update VMDefSort
+      tags:
+      - VMDefSort
+  /v1/vmsnoproccessfilters/:
+    get:
+      operationId: Filter_v1_vmsnoproccessfilters
+      parameters:
+      - in: query
+        name: state
+        schema:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+      - in: query
+        name: name
+        schema:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+      - in: query
+        name: just-none
+        schema:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+      - in: query
+        name: status
+        schema:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+      - in: query
+        name: created
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      - in: query
+        name: updated
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VMNoProcessFilters_Filter'
+                type: array
+          description: VMNoProcessFilters_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VMNoProcessFilterss
+      tags:
+      - VMNoProcessFilters
+  /v1/vmsnoproccessfilters/{VMNoProcessFiltersUuid}:
+    get:
+      operationId: Get_v1_vmsnoproccessfilters_VMNoProcessFiltersUuid
+      parameters:
+      - in: path
+        name: VMNoProcessFiltersUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMNoProcessFilters_Get'
+          description: VMNoProcessFilters_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VMNoProcessFilters
+      tags:
+      - VMNoProcessFilters
+  /v1/vmsnosort/:
+    get:
+      operationId: Filter_v1_vmsnosort
+      parameters:
+      - in: query
+        name: state
+        schema:
+          default: 'off'
+          example: any_string
+          maxLength: 10
+          minLength: 0
+          type: string
+      - in: query
+        name: name
+        schema:
+          example: testname
+          maxLength: 255
+          minLength: 0
+          type: string
+      - in: query
+        name: just-none
+        schema:
+          example: any_string
+          maxLength: 9223372036854775807
+          minLength: 0
+          nullable: true
+          type: string
+      - in: query
+        name: status
+        schema:
+          default: active
+          enum:
+          - active
+          - disabled
+          example: active
+          type: string
+      - in: query
+        name: created
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      - in: query
+        name: updated
+        schema:
+          default: '2006-01-02T15:04:05.000576Z'
+          example: '2006-01-02T15:04:05.000576Z'
+          format: date-time
+          type: string
+          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VMNoSort_Filter'
+                type: array
+          description: VMNoSort_Filter
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VMNoSorts
+      tags:
+      - VMNoSort
+    post:
+      operationId: Create_v1_vmsnosort
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VMNoSort_Create'
+        description: VMNoSort_Create
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMNoSort_Create'
+          description: VMNoSort_Create
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Create VM resource
+      tags:
+      - VMNoSort
+  /v1/vmsnosort/{VMNoSortUuid}:
+    delete:
+      operationId: Delete_v1_vmsnosort_VMNoSortUuid
+      parameters:
+      - in: path
+        name: VMNoSortUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: VMNoSort_Delete
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Delete VMNoSort
+      tags:
+      - VMNoSort
+    get:
+      operationId: Get_v1_vmsnosort_VMNoSortUuid
+      parameters:
+      - in: path
+        name: VMNoSortUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMNoSort_Get'
+          description: VMNoSort_Get
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Get VMNoSort
+      tags:
+      - VMNoSort
+    put:
+      operationId: Update_v1_vmsnosort_VMNoSortUuid
+      parameters:
+      - in: path
+        name: VMNoSortUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VMNoSort_Update'
+        description: VMNoSort_Update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMNoSort_Update'
+          description: VMNoSort_Update
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Update VMNoSort
+      tags:
+      - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:5973
+  url: http://127.0.0.1:39617
   variables:
     version:
       default: v1
@@ -1735,3 +2802,9 @@ tags:
   name: Tag
 - description: ''
   name: VM
+- description: ''
+  name: VMDefSort
+- description: ''
+  name: VMNoProcessFilters
+- description: ''
+  name: VMNoSort

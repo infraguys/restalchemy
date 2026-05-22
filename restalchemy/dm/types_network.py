@@ -14,8 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import re
+
+import netaddr
 
 from restalchemy.dm import types
 
@@ -53,6 +54,7 @@ class IPAddress(types.BaseType):
         spec = {
             "type": self.openapi_type,
             "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+            "example": self.example,
         }
         spec.update(
             types.build_prop_kwargs(
@@ -60,6 +62,10 @@ class IPAddress(types.BaseType):
             )
         )
         return spec
+
+    @property
+    def example(self):
+        return "127.0.0.1"
 
 
 class Network(types.BaseType):
@@ -78,8 +84,27 @@ class Network(types.BaseType):
     def from_unicode(self, value):
         return self.from_simple_type(value)
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+            "example": self.example,
+        }
+        spec.update(
+            types.build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
+        return spec
+
+    def example(self):
+        return "10.0.0.0/24"
+
 
 class IpWithMask(types.BaseType):
+    def __init__(self, **kwargs):
+        super(IpWithMask, self).__init__(openapi_type="string", **kwargs)
+
     def validate(self, value):
         return isinstance(value, netaddr.IPNetwork)
 
@@ -92,9 +117,30 @@ class IpWithMask(types.BaseType):
     def from_unicode(self, value):
         return self.from_simple_type(value)
 
+    def to_openapi_spec(self, prop_kwargs):
+        spec = {
+            "type": self.openapi_type,
+            "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
+            "example": self.example,
+        }
+        spec.update(
+            types.build_prop_kwargs(
+                kwargs=prop_kwargs, to_simple_type=self.to_simple_type
+            )
+        )
+        return spec
+
+    @property
+    def example(self):
+        return "10.0.0.1/32"
+
 
 class OUI(types.BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){2,2}[0-9a-fA-F]{2,2}$")
+
+    @property
+    def example(self):
+        return "00:00:00"
 
 
 class RecordName(types.BaseCompiledRegExpTypeFromAttr):
@@ -108,10 +154,18 @@ class RecordName(types.BaseCompiledRegExpTypeFromAttr):
         converted_value = super(RecordName, self).to_simple_type(value)
         return converted_value if len(converted_value) > 0 else "@"
 
+    @property
+    def example(self):
+        return "restalchemy.com"
+
 
 class RecordNameWithWildcard(RecordName):
     # Difference - allow wildcard at the beginning of domain name.
-    pattern = re.compile(r"^(\*\.){0,1}([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")
+    pattern = re.compile(r"^(@|(\*\.){0,1}([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30})$")
+
+    @property
+    def example(self):
+        return "*.restalchemy.com"
 
 
 class SrvName(RecordName):
@@ -133,6 +187,10 @@ class SrvName(RecordName):
 
         return True
 
+    @property
+    def example(self):
+        return "_service._tcp.example.com"
+
 
 class FQDN(types.BaseCompiledRegExpTypeFromAttr):
     """FQDN type. Allows 1 level too. Root only is prohibited.
@@ -151,6 +209,10 @@ class FQDN(types.BaseCompiledRegExpTypeFromAttr):
                 FQDN_TEMPLATE % (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, min_levels)
             )
         super(FQDN, self).__init__(**kwargs)
+
+    @property
+    def example(self):
+        return "example.com"
 
 
 class Hostname(types.BaseCompiledRegExpTypeFromAttr):
@@ -179,6 +241,10 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
         )
         super(Hostname, self).__init__(**kwargs)
 
+    @property
+    def example(self):
+        return "example.com"
+
 
 class IPRange(types.BaseType):
     """IPRange type.
@@ -204,3 +270,7 @@ class IPRange(types.BaseType):
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
+
+    @property
+    def example(self):
+        return "10.0.0.0-10.0.1.0"

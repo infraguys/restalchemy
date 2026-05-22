@@ -17,7 +17,10 @@
 import abc
 import inspect
 
+from webob.request import Request
+
 from restalchemy.api import constants
+from restalchemy.api import contexts
 from restalchemy.api import field_permissions
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties as ra_properties
@@ -531,15 +534,32 @@ class AbstractResource(metaclass=abc.ABCMeta):
     def generate_schema_object(self, method):
         properties = {}
         required = []
+
+        req = Request(environ={})
+        req.api_context = contexts.RequestContext(req)
+        req.api_context.set_active_method(method)
+
         for name, prop in self.get_fields_by_method(method):
             try:
                 prop_kwargs = self.get_prop_kwargs(name)
             except KeyError:
                 prop_kwargs = {}
-            if prop.is_public():
+
+            is_readonly = self._fields_permissions.is_readonly(name, req)
+            is_hidden = self._fields_permissions.is_hidden(name, req)
+            if prop.is_public() and not is_hidden:
+                if is_readonly:
+                    prop_kwargs["read_only"] = True
                 properties[prop.api_name] = prop.get_type().to_openapi_spec(prop_kwargs)
-                if prop_kwargs.get("required"):
-                    required.append(name)
+                if (
+                    prop_kwargs.get("required")
+                    and "default" not in prop_kwargs
+                    and (
+                        method not in [constants.CREATE, constants.UPDATE]
+                        or not is_readonly
+                    )
+                ):
+                    required.append(prop.api_name)
         spec = {
             "type": "object",
             "properties": properties,

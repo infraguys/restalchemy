@@ -14,20 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import contextlib
+from functools import partial
 import socket
+from urllib import parse
 import uuid as pyuuid
 
-
-import collections
 import mock
-import requests
-from urllib import parse
-from webob import request
 from parameterized import parameterized
+import requests
+from webob import request
 
-
-from functools import partial
 from restalchemy.api import constants
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -38,11 +36,11 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.tables import SQLTable
 from restalchemy.tests.functional import base
+from restalchemy.tests.functional.restapi.ra_based.microservice import routes
+from restalchemy.tests.functional.restapi.ra_based.microservice import service
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models,
 )
-from restalchemy.tests.functional.restapi.ra_based.microservice import routes
-from restalchemy.tests.functional.restapi.ra_based.microservice import service
 from restalchemy.tests.utils import make_test_name
 
 TEMPL_SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:%s/")
@@ -179,8 +177,13 @@ class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
         res = response.json()
         # NOTE(v.burygin): to save openapi.yaml
         # import yaml
-        # with open("microservice/openapi.yaml", "w") as f:
-        #     yaml.safe_dump(res, f, encoding='utf-8', allow_unicode=True)
+        #
+        # with open(
+        #     "/home/user/PycharmProjects/genesis/restalchemy/restalchemy/tests/functional/restapi/ra_based/microservice/openapi.yaml",
+        #     "w",
+        # ) as f:
+        #     yaml.safe_dump(res, f, encoding="utf-8", allow_unicode=True)
+
         self.assertEqual(res["openapi"], "3.0.3")
         self.assertEqual(res["info"], info)
 
@@ -1028,6 +1031,9 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field2": "some_field2",
             "some-field3": "some_field3",
             "some-field4": "some_field4",
+            "name-after": "some name",
+            "name-any": "any name",
+            'permission-field': 'my permission name',
         }
         LOCATION = self.get_endpoint(
             TEMPL_PORT_RESOURCE_ENDPOINT, VM_RESOURCE_ID, PORT_RESOURCE_ID
@@ -1057,6 +1063,9 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field1": "some_field1",
             "some-field2": "some_field2",
             "some-field3": "some_field3",
+            "name-after": "some name",
+            "name-any": "any name",
+            'permission-field': 'my permission name',
         }
 
         response = requests.put(
@@ -1083,6 +1092,9 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field1": "some_field1",
             "some-field2": "some_field2",
             "some-field4": "some_field4",
+            "name-after": "some name",
+            "name-any": "any name",
+            'permission-field': 'my permission name',
         }
 
         response = requests.get(
@@ -1109,6 +1121,9 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
             "some-field2": "some_field2",
             "some-field4": "some_field4",
             "some-field5": None,
+            "name-after": "some name",
+            "name-any": "any name",
+            'permission-field': 'my permission name',
         }
 
         response = requests.get(
@@ -1173,6 +1188,9 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field3": "some_field3",
                 "some-field4": "some_field4",
                 "unique-field": str(PORT1_RESOURCE_ID),
+                "name-after": "some name",
+                "name-any": "any name",
+                'permission-field': 'my permission name',
             },
             {
                 "uuid": str(PORT2_RESOURCE_ID),
@@ -1184,6 +1202,9 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field3": "some_field3",
                 "some-field4": "some_field4",
                 "unique-field": str(PORT2_RESOURCE_ID),
+                "name-after": "some name",
+                "name-any": "any name",
+                'permission-field': 'my permission name',
             },
         ]
 
@@ -1241,6 +1262,9 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
                 "some-field3": "some_field3",
                 "some-field4": "some_field4",
                 "unique-field": str(PORT2_RESOURCE_ID),
+                "name-after": "some name",
+                "name-any": "any name",
+                'permission-field': 'my permission name',
             }
         ]
 

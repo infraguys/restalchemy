@@ -15,9 +15,8 @@
 #    under the License.
 
 # TODO(Eugene Frolov): Rewrite tests
-import orjson
-
 import mock
+import orjson
 import webob
 
 from restalchemy.api import field_permissions

@@ -16,12 +16,13 @@
 from __future__ import annotations
 
 import abc
+from collections import abc as collections_abc
 import copy
 import uuid
+import datetime
 import inspect
 import typing as tp
-
-from collections import abc as collections_abc
+import uuid
 
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
@@ -274,13 +275,11 @@ class CustomPropertiesMixin(object):
 class ModelWithTimestamp(Model):
     created_at = properties.property(
         types.UTCDateTimeZ(),
-        required=True,
         read_only=True,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
     updated_at = properties.property(
         types.UTCDateTimeZ(),
-        required=True,
         read_only=True,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )

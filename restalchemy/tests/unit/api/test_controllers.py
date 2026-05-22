@@ -18,8 +18,8 @@ import unittest
 
 import mock
 
-from restalchemy.api import packers
 from restalchemy.api import controllers
+from restalchemy.api import packers
 
 FAKE_LOCATION_PATH = "fake location path"
 
