@@ -1,4 +1,6 @@
+# Copyright (c) 2025 Genesis Corporation
 # Copyright (c) 2014 Eugene Frolov <efrolov@mirantis.com>
+# Copyright (c) 2022 George Melikov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,57 +18,68 @@
 from __future__ import absolute_import
 
 import logging
-import sys
+import time
 import traceback
 
 from restalchemy.api import middlewares
 
-LOG = logging.getLogger(__name__)
-
 
 class LoggingMiddleware(middlewares.Middleware):
-    """API logging middleware."""
+    """API logging middleware.
 
-    SENSITIVE_HEADERS = {
-        "AUTHORIZATION",
-    }
+    In DEBUG mode: logs full request/response details.
+    In INFO mode: logs in nginx-like format, includes response body
+    for status codes > 300.
+    """
+
+    SENSITIVE_HEADERS = frozenset(("AUTHORIZATION",))
+    MAX_BODY_SIZE = 4096
+
+    def _truncate_body(self, body, max_size=None):
+        if max_size is None:
+            max_size = self.MAX_BODY_SIZE
+        if body is None:
+            return None
+        total_size = len(body)
+        if isinstance(body, bytes):
+            body = body[:max_size].decode("utf-8", "replace")
+        if total_size > max_size:
+            return body + "... [%d bytes total]" % total_size
+        return body
 
     def __init__(self, application, logger_name=__name__):
         super(LoggingMiddleware, self).__init__(application)
         self.logger = logging.getLogger(logger_name)
 
     def process_request(self, req):
-        req_chunk = self._request_chunk(req)
-        sanitized_headers = self._sanitize_headers(req.headers)
+        start_s = time.perf_counter()
+
+        if self.logger.isEnabledFor(logging.DEBUG):
+            return self._process_debug(req, start_s)
+        if self.logger.isEnabledFor(logging.INFO):
+            return self._process_info(req, start_s)
+        return req.get_response(self.application)
+
+    def _process_debug(self, req, start_s):
+        req_chunk = "%s %s" % (req.method, req.url)
+
         self.logger.debug(
             "API > %s headers=%s body=%r",
             req_chunk,
-            self._headers_chunk(sanitized_headers),
-            req.body,
+            self._sanitize_headers(req.headers),
+            self._truncate_body(req.body),
         )
+
         try:
-            res = req.get_response(self.application)
-            # XXX(Eugeny Flolov):
-            # :py:method:`middlewares.ContextMiddleware#process_response`
-            # unreachable if
-            # :py:method:`middlewares.ContextMiddleware#process_request`
-            # returns response.
-            self.logger.debug(
-                "API < %s %s headers=%s body=%r",
-                res.status_code,
-                self._request_chunk(req),
-                self._headers_chunk(res.headers),
-                res.body,
-            )
-            return res
-        except Exception:
-            e_type, e_value, e_tb = sys.exc_info()
-            e_file, e_lineno, e_fn, e_line = traceback.extract_tb(e_tb)[-1]
+            res = self._process_info(req, start_s)
+        except Exception as e:
+            tb = traceback.extract_tb(e.__traceback__)
+            e_file, e_lineno, e_fn, e_line = tb[-1] if tb else ("-", "-", "-", "-")
             self.logger.error(
-                "API Error %s %s %s %s:%s:%s> %s",
+                "API Error >< %s %s %s %s:%s:%s> %s",
                 req_chunk,
-                e_type,
-                e_value,
+                type(e),
+                e,
                 e_file,
                 e_lineno,
                 e_fn,
@@ -74,18 +87,69 @@ class LoggingMiddleware(middlewares.Middleware):
             )
             raise
 
-    @staticmethod
-    def _request_chunk(req):
-        return "%s %s" % (req.method, req.url)
+        self.logger.debug(
+            "API < %s %s headers=%s body=%r",
+            res.status_code,
+            req_chunk,
+            self._sanitize_headers(res.headers),
+            self._truncate_body(res.body),
+        )
+        return res
 
-    @staticmethod
-    def _headers_chunk(headers):
-        return ["%s: %s" % (h, headers[h]) for h in headers]
+    def _process_info(self, req, start_s):
+        try:
+            res = req.get_response(self.application)
+        except Exception:
+            self.logger.info(
+                self._format_nginx_log(req, 500, 0, None, self._duration_ms(start_s))
+            )
+            raise
+
+        if res.status_code > 300 and res.body:
+            body = self._truncate_body(res.body)
+        else:
+            body = None
+
+        self.logger.info(
+            self._format_nginx_log(
+                req,
+                res.status_code,
+                res.content_length,
+                body,
+                self._duration_ms(start_s),
+            )
+        )
+        return res
+
+    def _get_real_ip(self, req):
+        xff = req.headers.get("X-Forwarded-For")
+        if xff:
+            return xff.split(",", 1)[0].strip()
+        xri = req.headers.get("X-Real-IP")
+        if xri:
+            return xri
+        return req.client_addr or "-"
+
+    def _format_nginx_log(self, req, status, size, body, duration_ms):
+        proto = req.environ.get("SERVER_PROTOCOL", "HTTP/1.1") or "HTTP/1.1"
+        if isinstance(proto, bytes):
+            proto = proto.decode("utf-8", "replace")
+        protocol = proto.strip()
+
+        msg = (
+            f'RESP: {self._get_real_ip(req)} "{req.method} {req.url}" '
+            f'{protocol} {status} {size} "{req.referer or "-"}" '
+            f'"{req.user_agent or "-"}" {duration_ms}ms'
+            f"{f' body={body!r}' if body else ''}"
+        )
+
+        return msg
+
+    def _duration_ms(self, start_s):
+        return int((time.perf_counter() - start_s) * 1000)
 
     def _sanitize_headers(self, headers):
-        def _sanitized(header, header_value):
-            if str(header).upper() in self.SENSITIVE_HEADERS:
-                return "***"
-            return header_value
-
-        return {k: _sanitized(k, v) for k, v in headers.items()}
+        return [
+            "%s: %s" % (h, "***" if h.upper() in self.SENSITIVE_HEADERS else v)
+            for h, v in headers.items()
+        ]
