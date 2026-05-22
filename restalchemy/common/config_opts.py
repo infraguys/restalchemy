@@ -16,8 +16,10 @@
 
 
 from oslo_config import cfg
+from oslo_config.cfg import Locations
 
 from restalchemy.common import constants as c
+from restalchemy.storage.sql import engines
 
 CONF = cfg.CONF
 
@@ -60,7 +62,7 @@ def register_common_db_opts(
     conf.register_cli_opts(db_opt, group=config_section)
 
 
-def register_posgresql_db_opts(
+def register_postgresql_db_opts(
     conf=CONF,
     username=c.RA_POSTGRESQL_USERNAME,
     password=c.RA_POSTGRESQL_PASSWORD,
@@ -194,6 +196,10 @@ def register_posgresql_db_opts(
     conf.register_cli_opts(db_opt, config_section)
 
 
+# Deprecated name with typo
+register_posgresql_db_opts = register_postgresql_db_opts
+
+
 def register_mysql_db_opts(
     conf=CONF,
     username=c.RA_MYSQL_USERNAME,
@@ -241,3 +247,159 @@ def register_mysql_db_opts(
     ]
 
     conf.register_cli_opts(db_opt, config_section)
+
+
+def register_postgresql_readonly_db_opts(
+    conf=CONF,
+    username=c.RA_POSTGRESQL_USERNAME,
+    password=c.RA_POSTGRESQL_PASSWORD,
+    host=c.RA_POSTGRESQL_DB_HOST,
+    port=c.RA_POSTGRESQL_DB_PORT,
+    db_name=c.RA_POSTGRESQL_DB_NAME,
+):
+    """
+    Registers the configuration options for a PostgreSQL read-only replica.
+
+    Delegates to register_postgresql_db_opts with the readonly config section.
+
+    :param conf: The configuration object to register the options with.
+    :param username: The username to use for the connection.
+    :param password: The password to use for the connection.
+    :param host: The host to connect to.
+    :param port: The port to connect to.
+    :param db_name: The name of the database to connect to.
+    """
+    register_postgresql_db_opts(
+        conf=conf,
+        username=username,
+        password=password,
+        host=host,
+        port=port,
+        db_name=db_name,
+        config_section=c.DB_READONLY_CONFIG_SECTION,
+    )
+
+
+def register_mysql_readonly_db_opts(
+    conf=CONF,
+    username=c.RA_MYSQL_USERNAME,
+    password=c.RA_MYSQL_PASSWORD,
+    host=c.RA_MYSQL_DB_HOST,
+    port=c.RA_MYSQL_DB_PORT,
+    db_name=c.RA_MYSQL_DB_NAME,
+):
+    """
+    Registers the configuration options for a MySQL read-only replica.
+
+    Delegates to register_mysql_db_opts with the readonly config section.
+
+    :param conf: The configuration object to register the options with.
+    :param username: The username to use for the connection.
+    :param password: The password to use for the connection.
+    :param host: The host to connect to.
+    :param port: The port to connect to.
+    :param db_name: The name of the database to connect to.
+    """
+    register_mysql_db_opts(
+        conf=conf,
+        username=username,
+        password=password,
+        host=host,
+        port=port,
+        db_name=db_name,
+        config_section=c.DB_READONLY_CONFIG_SECTION,
+    )
+
+
+def configure_postgresql_with_readonly(
+    conf,
+    primary_section=c.DB_CONFIG_SECTION,
+    readonly_section=c.DB_READONLY_CONFIG_SECTION,
+    readonly_engine_name="readonly",
+):
+    """
+    Configures both primary and read-only PostgreSQL engines from config.
+
+    This is a convenience function that configures the primary engine from
+    the primary config section and the read-only engine from the readonly
+    config section. If the readonly section is not configured, the readonly
+    engine will use the same connection parameters as the primary but with
+    readonly mode enabled.
+
+    :param conf: The configuration object.
+    :param primary_section: The config section for the primary DB.
+    :param readonly_section: The config section for the read-only DB.
+    :param readonly_engine_name: The name to use for the readonly engine.
+    :return: The readonly_engine_name to pass to context_kwargs.
+    :rtype: str
+    """
+    # Configure primary engine
+    engines.engine_factory.configure_postgresql_factory(
+        conf=conf,
+        section=primary_section,
+        name=engines.DEFAULT_NAME,
+    )
+
+    # Configure readonly engine using readonly section if available,
+    # otherwise fall back to primary section parameters
+    has_readonly = False
+    try:
+        loc = conf.get_location("connection_url", group=readonly_section)
+        has_readonly = loc.location != Locations.opt_default
+    except Exception:
+        pass
+    target_section = readonly_section if has_readonly else primary_section
+    engines.engine_factory.configure_postgresql_factory(
+        conf=conf,
+        section=target_section,
+        name=readonly_engine_name,
+        readonly=True,
+    )
+    return readonly_engine_name
+
+
+def configure_mysql_with_readonly(
+    conf,
+    primary_section=c.DB_CONFIG_SECTION,
+    readonly_section=c.DB_READONLY_CONFIG_SECTION,
+    readonly_engine_name="readonly",
+):
+    """
+    Configures both primary and read-only MySQL engines from config.
+
+    This is a convenience function that configures the primary engine from
+    the primary config section and the read-only engine from the readonly
+    config section. If the readonly section is not configured, the readonly
+    engine will use the same connection parameters as the primary but with
+    readonly mode enabled.
+
+    :param conf: The configuration object.
+    :param primary_section: The config section for the primary DB.
+    :param readonly_section: The config section for the read-only DB.
+    :param readonly_engine_name: The name to use for the readonly engine.
+    :return: The readonly_engine_name to pass to context_kwargs.
+    :rtype: str
+    """
+    # Configure primary engine
+    engines.engine_factory.configure_mysql_factory(
+        conf=conf,
+        section=primary_section,
+        name=engines.DEFAULT_NAME,
+    )
+
+    # Configure readonly engine using readonly section if available,
+    # otherwise fall back to primary section parameters
+    has_readonly = False
+    try:
+        loc = conf.get_location("connection_url", group=readonly_section)
+        has_readonly = loc.location != Locations.opt_default
+    except Exception:
+        pass
+    target_section = readonly_section if has_readonly else primary_section
+    engines.engine_factory.configure_mysql_factory(
+        conf=conf,
+        section=target_section,
+        name=readonly_engine_name,
+        readonly=True,
+    )
+    return readonly_engine_name
