@@ -50,7 +50,7 @@ class BarModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 engines.engine_factory.configure_factory(
-    db_url="postgresql://posgres:password@127.0.0.1:5432/ra_tests"
+    db_url="postgresql://postgres:password@127.0.0.1:5432/ra_tests"
 )
 
 # Create new foo object and store it

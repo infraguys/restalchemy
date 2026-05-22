@@ -25,16 +25,25 @@ LOG = logging.getLogger(__name__)
 
 
 class Context(object):
-    def __init__(self, engine_name=engines.DEFAULT_NAME):
+    def __init__(
+        self,
+        engine_name=engines.DEFAULT_NAME,
+        readonly_engine_name="readonly",
+    ):
         """
         Initializes the context with a given engine name.
 
         :param engine_name: The name of the engine to use. Defaults to
             DEFAULT_NAME.
         :type engine_name: str
+        :param readonly_engine_name: The name of the read-only engine to
+            use when the context is in read-only mode.
+        :type readonly_engine_name: str
         """
         super(Context, self).__init__()
         self._engine_name = engine_name
+        self._readonly_engine_name = readonly_engine_name
+        self._is_readonly = False
 
     def start_new_session(self):
         """
@@ -55,16 +64,58 @@ class Context(object):
         LOG.debug("New session %r has been started", session)
         return session
 
+    def set_readonly(self, value):
+        """
+        Set the read-only mode for the context.
+
+        When set to True, the context will use the read-only engine
+        (if configured) and the session manager will skip commit
+        operations.
+
+        :param value: Whether the context should be in read-only mode.
+        :type value: bool
+        """
+        self._is_readonly = value
+
     @property
     def _engine(self):
         """
         Property that returns the current engine instance.
 
         The engine instance is retrieved from the engine factory based on the
-        engine name provided during object initialization. If the engine
-        instance does not exist, a ValueError is raised.
+        engine name provided during object initialization. If the context is
+        in read-only mode and a read-only engine name is configured, the
+        read-only engine is returned instead.
 
         :returns: The current engine instance.
+        :rtype: AbstractEngine
+        :raises ValueError: If the engine instance does not exist.
+        """
+        if self._is_readonly:
+            return engines.engine_factory.get_engine(name=self._readonly_engine_name)
+        return engines.engine_factory.get_engine(name=self._engine_name)
+
+    def get_readonly_engine(self):
+        """
+        Get the read-only engine explicitly.
+
+        Returns the read-only engine if configured, otherwise raises ValueError.
+
+        :returns: The read-only engine instance.
+        :rtype: AbstractEngine
+        :raises ValueError: If no read-only engine is configured.
+        """
+        if not self._readonly_engine_name:
+            raise ValueError("Read-only engine is not configured")
+        return engines.engine_factory.get_engine(name=self._readonly_engine_name)
+
+    def get_readwrite_engine(self):
+        """
+        Get the read-write engine explicitly.
+
+        Returns the primary read-write engine.
+
+        :returns: The read-write engine instance.
         :rtype: AbstractEngine
         :raises ValueError: If the engine instance does not exist.
         """
@@ -88,8 +139,12 @@ class Context(object):
         session = self.start_new_session()
         try:
             yield session
-            session.commit()
-            LOG.debug("Session %r has been committed", session)
+            if self._is_readonly:
+                session.rollback()
+                LOG.debug("Session %r has been rolled back (readonly)", session)
+            else:
+                session.commit()
+                LOG.debug("Session %r has been committed", session)
         except Exception:
             session.rollback()
             LOG.exception("Session %r has been rolled back by reason:", session)
@@ -242,6 +297,7 @@ class ContextWithStorage(Context):
         self,
         engine_name: str = engines.DEFAULT_NAME,
         context_storage: Storage = None,
+        readonly_engine_name: str = "readonly",
     ):
         """
         Initialize the context with storage.
@@ -252,8 +308,14 @@ class ContextWithStorage(Context):
         :param context_storage: The storage object to use. Defaults to None,
             which means a new Storage object will be created.
         :type context_storage: Storage
+        :param readonly_engine_name: The name of the read-only engine to
+            use when the context is in read-only mode. Defaults to None.
+        :type readonly_engine_name: str or None
         """
-        super(ContextWithStorage, self).__init__(engine_name=engine_name)
+        super(ContextWithStorage, self).__init__(
+            engine_name=engine_name,
+            readonly_engine_name=readonly_engine_name,
+        )
         self._context_storage = context_storage or Storage()
 
     @property

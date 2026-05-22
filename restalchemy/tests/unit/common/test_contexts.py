@@ -118,3 +118,102 @@ class TestContext(unittest.TestCase):
         self._session.rollback.assert_called_once()
         self._session.close.assert_called_once()
         self._storage.remove_session.assert_called_once()
+
+    def test_readonly_session_manager_skips_commit(self, engine_factory_mock):
+        self._configure_mocks(engine_factory_mock)
+        context = contexts.Context(readonly_engine_name="readonly")
+
+        context.set_readonly(True)
+        with context.session_manager():
+            pass
+
+        self._session.commit.assert_not_called()
+        self._session.close.assert_called_once()
+        self._storage.remove_session.assert_called_once()
+
+    def test_readonly_session_manager_rollback_on_error(self, engine_factory_mock):
+        self._configure_mocks(engine_factory_mock)
+        context = contexts.Context(readonly_engine_name="readonly")
+
+        context.set_readonly(True)
+        with self.assertRaises(SomeError):
+            with context.session_manager():
+                raise SomeError()
+
+        self._session.commit.assert_not_called()
+        self._session.rollback.assert_called_once()
+        self._session.close.assert_called_once()
+        self._storage.remove_session.assert_called_once()
+
+    def test_readonly_engine_used_when_readonly_set(self, engine_factory_mock):
+        readonly_engine = mock.Mock(spec=engines.MySQLEngine)
+        readonly_storage = mock.Mock(spec=sessions.SessionThreadStorage)
+        readonly_session = mock.Mock(spec=sessions.MySQLSession)
+
+        readonly_engine.configure_mock(
+            **{
+                "get_session.return_value": readonly_session,
+                "get_session_storage.return_value": readonly_storage,
+            }
+        )
+        readonly_storage.configure_mock(
+            **{
+                "get_session.return_value": readonly_session,
+            }
+        )
+
+        self._configure_mocks(engine_factory_mock)
+
+        def _get_engine(name=engines.DEFAULT_NAME):
+            if name == "readonly":
+                return readonly_engine
+            return self._engine
+
+        engine_factory_mock.get_engine.side_effect = _get_engine
+
+        context = contexts.Context(readonly_engine_name="readonly")
+        context.set_readonly(True)
+
+        with context.session_manager():
+            pass
+
+        readonly_session.close.assert_called_once()
+        readonly_storage.remove_session.assert_called_once()
+        readonly_session.commit.assert_not_called()
+        self._session.commit.assert_not_called()
+
+    def test_readonly_not_set_uses_default_engine(self, engine_factory_mock):
+        self._configure_mocks(engine_factory_mock)
+        context = contexts.Context(readonly_engine_name="readonly")
+
+        # Not setting readonly, should use default engine
+        with context.session_manager():
+            pass
+
+        self._session.commit.assert_called_once()
+        self._session.close.assert_called_once()
+
+    def test_readonly_without_readonly_engine_name_skips_commit(
+        self, engine_factory_mock
+    ):
+        self._configure_mocks(engine_factory_mock)
+        context = contexts.Context()
+
+        context.set_readonly(True)
+        with context.session_manager():
+            pass
+
+        # Even without a readonly engine name, readonly mode skips commit
+        self._session.commit.assert_not_called()
+        self._session.close.assert_called_once()
+        self._storage.remove_session.assert_called_once()
+
+    def test_set_readonly_toggle(self, engine_factory_mock):
+        self._configure_mocks(engine_factory_mock)
+        context = contexts.Context()
+
+        context.set_readonly(True)
+        self.assertTrue(context._is_readonly)
+
+        context.set_readonly(False)
+        self.assertFalse(context._is_readonly)

@@ -66,6 +66,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         session_storage,
         config=None,
         query_cache=False,
+        readonly=False,
     ):
         """
         Initializes the database engine.
@@ -76,6 +77,8 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         :param config: A dictionary of configuration options for the engine.
         :param query_cache: A boolean indicating whether the engine should
                             cache query results.
+        :param readonly: A boolean indicating whether the engine should
+                         operate in readonly mode.
 
         :raises ValueError: If the database URL does not match the expected
             format.
@@ -96,6 +99,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         self._dialect = dialect
         self._session_storage = session_storage
         self._query_cache = query_cache
+        self._readonly = readonly
 
     @property
     def dialect(self):
@@ -106,6 +110,16 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         :rtype: AbstractDialect
         """
         return self._dialect
+
+    @property
+    def readonly(self):
+        """
+        Returns whether the engine is in readonly mode.
+
+        :return: True if the engine is in readonly mode, False otherwise.
+        :rtype: bool
+        """
+        return self._readonly
 
     def escape(self, value):
         """
@@ -307,7 +321,7 @@ class PgSQLEngine(AbstractEngine):
     URL_SCHEMA = c.RA_POSTGRESQL_PROTO_NAME
     DEFAULT_PORT = c.RA_POSTGRESQL_DB_PORT
 
-    def __init__(self, db_url, config=None, query_cache=False):
+    def __init__(self, db_url, config=None, query_cache=False, readonly=False):
         """
         Initializes the PostgreSQL engine.
 
@@ -315,6 +329,10 @@ class PgSQLEngine(AbstractEngine):
         :param config: A dictionary of configuration options for the engine.
         :param query_cache: A boolean indicating whether the engine should
             cache query results.
+        :param readonly: A boolean indicating whether the engine should
+                         operate in readonly mode. Note: Actual DB-level
+                         readonly enforcement requires using a database user
+                         with readonly permissions.
 
         :return: The initialized engine.
         """
@@ -325,6 +343,7 @@ class PgSQLEngine(AbstractEngine):
             session_storage=sessions.SessionThreadStorage(),
             config=config,
             query_cache=query_cache,
+            readonly=readonly,
         )
 
         # RA expects the pool to be ready to use
@@ -340,6 +359,8 @@ class PgSQLEngine(AbstractEngine):
 
     def _conn_configure_callback(self, conn):
         conn.adapters.register_dumper(dict, PgDictJsonbDumper)
+        if self.readonly:
+            conn.read_only = True
 
     def escape(self, value):
         """
@@ -424,7 +445,7 @@ class MySQLEngine(AbstractEngine):
     URL_SCHEMA = c.RA_MYSQL_PROTO_NAME
     DEFAULT_PORT = c.RA_MYSQL_DB_PORT
 
-    def __init__(self, db_url, config=None, query_cache=False):
+    def __init__(self, db_url, config=None, query_cache=False, readonly=False):
         """
         Initializes the MySQL engine.
 
@@ -432,6 +453,8 @@ class MySQLEngine(AbstractEngine):
         :param config: A dictionary of configuration options for the engine.
         :param query_cache: A boolean indicating whether the engine should
             cache query results.
+        :param readonly: A boolean indicating whether the engine should
+                         operate in readonly mode.
 
         :raises ValueError: If the database URL does not match the expected
             format.
@@ -442,6 +465,7 @@ class MySQLEngine(AbstractEngine):
             session_storage=sessions.SessionThreadStorage(),
             config=config,
             query_cache=query_cache,
+            readonly=readonly,
         )
 
         if "connection_timeout" not in self._config:
@@ -456,6 +480,10 @@ class MySQLEngine(AbstractEngine):
                 "converter_class": adapters.MySQLConverter,
             }
         )
+
+        # Set readonly mode for MySQL
+        if self._readonly:
+            self._config["init_command"] = "SET SESSION TRANSACTION READ ONLY"
 
         try:
             self._pool = pooling.MySQLConnectionPool(**self._config)
@@ -528,6 +556,7 @@ class EngineFactory(singletons.InheritSingleton):
         conf,
         section=c.DB_CONFIG_SECTION,
         name=DEFAULT_NAME,
+        readonly=False,
     ):
         """
         Configures the engine factory for a PostgreSQL database.
@@ -540,6 +569,8 @@ class EngineFactory(singletons.InheritSingleton):
         :param conf: The configuration object to read from.
         :param section: The section of the configuration object to read from.
         :param name: The name of the engine to configure.
+        :param readonly: A boolean indicating whether the engine should
+                         operate in readonly mode. Defaults to False.
         """
         self.configure_factory(
             db_url=conf[section].connection_url,
@@ -556,6 +587,7 @@ class EngineFactory(singletons.InheritSingleton):
             },
             query_cache=conf[section].connection_query_cache,
             name=name,
+            readonly=readonly,
         )
 
     def configure_mysql_factory(
@@ -563,6 +595,7 @@ class EngineFactory(singletons.InheritSingleton):
         conf,
         section=c.DB_CONFIG_SECTION,
         name=DEFAULT_NAME,
+        readonly=False,
     ):
         """
         Configures the engine factory for a MySQL database.
@@ -575,6 +608,8 @@ class EngineFactory(singletons.InheritSingleton):
         :param conf: The configuration object to read from.
         :param section: The section of the configuration object to read from.
         :param name: The name of the engine to configure.
+        :param readonly: A boolean indicating whether the engine should
+                         operate in readonly mode. Defaults to False.
         """
         self.configure_factory(
             db_url=conf[section].connection_url,
@@ -583,6 +618,7 @@ class EngineFactory(singletons.InheritSingleton):
             },
             query_cache=conf[section].connection_query_cache,
             name=name,
+            readonly=readonly,
         )
 
     def configure_factory(
@@ -591,6 +627,7 @@ class EngineFactory(singletons.InheritSingleton):
         config=None,
         query_cache=False,
         name=DEFAULT_NAME,
+        readonly=False,
     ):
         """
         Configures and creates a new database engine instance for the given
@@ -608,6 +645,8 @@ class EngineFactory(singletons.InheritSingleton):
                             cache query results. Defaults to False.
         :param name: The name under which to store the initialized engine in
                      the factory. Defaults to 'default'.
+        :param readonly: A boolean indicating whether the engine should
+                         operate in readonly mode. Defaults to False.
 
         :raises ValueError: If the schema from the db_url is not supported
                             or if no driver is found for the schema.
@@ -616,7 +655,7 @@ class EngineFactory(singletons.InheritSingleton):
         schema = db_url.split(":")[0]
         try:
             self._engines[name] = self._engines_map[schema.lower()](
-                db_url=db_url, config=config, query_cache=query_cache
+                db_url=db_url, config=config, query_cache=query_cache, readonly=readonly
             )
         except KeyError:
             raise ValueError("Can not find driver for schema %s" % schema)
