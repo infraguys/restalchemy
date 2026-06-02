@@ -377,13 +377,13 @@ class MigrationEngine(object):
 
         for migration in list(migrations.values()):
             for depend in migration._depends:
-                if depend in migrations:
-                    migrations.pop(depend, None)
+                migrations.pop(depend, None)
         if len(migrations) == 1:
             return migrations.popitem()[0]
 
         raise HeadMigrationNotFoundException(
-            "Head migration for current migrations couldn't be found"
+            "Head migration couldn't be found, candidates: %r"
+            % {k: v._depends for k, v in migrations.items()}
         )
 
     def validate_auto_migration_dependencies(self, depends):
