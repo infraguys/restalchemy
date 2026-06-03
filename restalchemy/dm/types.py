@@ -80,9 +80,11 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
     for k, v in KWARGS_OPENAPI_MAP.items():
         if k in kwargs.keys():
             value = kwargs[k]() if callable(kwargs[k]) else kwargs[k]
-            if isinstance(value, (UUID, uuid.UUID, bool)):
-                # No default value for uuid and bool
+            if isinstance(value, (UUID, uuid.UUID)):
+                # No default value for uuid
                 continue
+            elif isinstance(value, bool):
+                pass
             elif isinstance(value, datetime.datetime):
                 value = DEFAULT_DATE.strftime(OPENAPI_DATETIME_FMT)
             elif hasattr(value, "__dict__"):

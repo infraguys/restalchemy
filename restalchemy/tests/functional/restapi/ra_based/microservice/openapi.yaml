@@ -15,6 +15,7 @@ components:
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
+        readOnly: true
         type: string
     PortUuid:
       in: path
@@ -23,6 +24,7 @@ components:
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
+        readOnly: true
         type: string
     TagName:
       in: path
@@ -40,6 +42,7 @@ components:
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
+        readOnly: true
         type: string
     VMDefSortUuid:
       in: path
@@ -48,6 +51,7 @@ components:
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
+        readOnly: true
         type: string
     VMNoProcessFiltersUuid:
       in: path
@@ -56,6 +60,7 @@ components:
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
+        readOnly: true
         type: string
     VMNoSortUuid:
       in: path
@@ -64,6 +69,7 @@ components:
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
+        readOnly: true
         type: string
     VMUuid:
       in: path
@@ -72,6 +78,7 @@ components:
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
+        readOnly: true
         type: string
     created:
       in: query
@@ -80,6 +87,7 @@ components:
         default: '2006-01-02T15:04:05.000576Z'
         example: '2006-01-02T15:04:05.000576Z'
         format: date-time
+        readOnly: true
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
     ip:
@@ -237,6 +245,7 @@ components:
       in: query
       name: visible
       schema:
+        default: true
         example: true
         type: boolean
     vm:
@@ -307,6 +316,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - port
@@ -324,6 +334,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - port
@@ -341,6 +352,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - port
@@ -369,6 +381,7 @@ components:
           example: any_string
           maxLength: 9223372036854775807
           minLength: 0
+          readOnly: true
           type: string
         some-field2:
           example: any_string
@@ -394,6 +407,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         vm:
           type: string
@@ -424,6 +438,7 @@ components:
           example: any_string
           maxLength: 9223372036854775807
           minLength: 0
+          readOnly: true
           type: string
         some-field1:
           example: any_string
@@ -454,6 +469,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         vm:
           type: string
@@ -484,6 +500,7 @@ components:
           example: any_string
           maxLength: 9223372036854775807
           minLength: 0
+          readOnly: true
           type: string
         some-field1:
           example: any_string
@@ -509,6 +526,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         vm:
           type: string
@@ -539,6 +557,7 @@ components:
           example: any_string
           maxLength: 9223372036854775807
           minLength: 0
+          readOnly: true
           type: string
         some-field1:
           example: any_string
@@ -564,6 +583,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         vm:
           type: string
@@ -580,8 +600,10 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         visible:
+          default: true
           example: true
           type: boolean
         vm:
@@ -600,8 +622,10 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         visible:
+          default: true
           example: true
           type: boolean
         vm:
@@ -620,8 +644,10 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         visible:
+          default: true
           example: true
           type: boolean
         vm:
@@ -640,8 +666,10 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
         visible:
+          default: true
           example: true
           type: boolean
         vm:
@@ -656,6 +684,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -691,6 +720,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -701,6 +731,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -736,6 +767,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -746,6 +778,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -781,6 +814,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -791,6 +825,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -826,6 +861,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -836,6 +872,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -871,6 +908,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -881,6 +919,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -916,6 +955,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -926,6 +966,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -961,6 +1002,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -971,6 +1013,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -1006,6 +1049,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -1016,6 +1060,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -1051,6 +1096,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -1061,6 +1107,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -1096,6 +1143,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -1106,6 +1154,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -1141,6 +1190,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -1151,6 +1201,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -1186,6 +1237,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -1196,6 +1248,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -1231,6 +1284,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -1241,6 +1295,7 @@ components:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
@@ -1276,6 +1331,7 @@ components:
         uuid:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       required:
       - name
@@ -1457,6 +1513,7 @@ paths:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
       - in: query
@@ -1513,6 +1570,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '204':
@@ -1531,6 +1589,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1553,6 +1612,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -1583,6 +1643,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1605,6 +1666,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1671,6 +1733,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1695,6 +1758,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -1725,6 +1789,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -1732,6 +1797,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '204':
@@ -1750,6 +1816,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -1757,6 +1824,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1779,6 +1847,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -1786,6 +1855,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -1816,6 +1886,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -1823,6 +1894,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1847,6 +1919,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -1854,6 +1927,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -1884,6 +1958,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -1891,6 +1966,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
@@ -1898,6 +1974,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '204':
@@ -1916,6 +1993,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -1923,6 +2001,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
@@ -1930,6 +2009,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1953,6 +2033,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -1977,6 +2058,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -2007,6 +2089,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -2014,6 +2097,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '204':
@@ -2032,6 +2116,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -2039,6 +2124,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -2061,6 +2147,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -2068,6 +2155,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -2098,6 +2186,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -2105,6 +2194,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -2129,6 +2219,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -2136,6 +2227,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -2166,6 +2258,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -2173,6 +2266,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
@@ -2180,6 +2274,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '204':
@@ -2198,6 +2293,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: PortUuid
@@ -2205,6 +2301,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: IpAddressUuid
@@ -2212,6 +2309,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -2235,6 +2333,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -2259,6 +2358,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -2289,6 +2389,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: TagName
@@ -2315,6 +2416,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: TagName
@@ -2345,6 +2447,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       - in: path
         name: TagName
@@ -2415,6 +2518,7 @@ paths:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
       - in: query
@@ -2471,6 +2575,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '204':
@@ -2489,6 +2594,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -2511,6 +2617,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -2573,6 +2680,7 @@ paths:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
       - in: query
@@ -2607,6 +2715,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -2662,6 +2771,7 @@ paths:
           default: '2006-01-02T15:04:05.000576Z'
           example: '2006-01-02T15:04:05.000576Z'
           format: date-time
+          readOnly: true
           type: string
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
       - in: query
@@ -2718,6 +2828,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '204':
@@ -2736,6 +2847,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       responses:
         '200':
@@ -2758,6 +2870,7 @@ paths:
         schema:
           example: 00000000-0000-0000-0000-000000000000
           format: uuid
+          readOnly: true
           type: string
       requestBody:
         content:
@@ -2780,7 +2893,7 @@ paths:
       - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:39617
+  url: http://127.0.0.1:40963
   variables:
     version:
       default: v1

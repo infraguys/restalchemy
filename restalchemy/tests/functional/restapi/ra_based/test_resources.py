@@ -176,10 +176,10 @@ class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
 
         res = response.json()
         # NOTE(v.burygin): to save openapi.yaml
+        # import os
         # import yaml
-        #
         # with open(
-        #     "/home/user/PycharmProjects/genesis/restalchemy/restalchemy/tests/functional/restapi/ra_based/microservice/openapi.yaml",
+        #     os.path.dirname(__file__) + "/microservice/openapi.yaml",
         #     "w",
         # ) as f:
         #     yaml.safe_dump(res, f, encoding="utf-8", allow_unicode=True)
