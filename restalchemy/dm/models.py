@@ -295,6 +295,14 @@ class ModelWithProject(Model):
     project_id = properties.property(types.UUID(), required=True, read_only=True)
 
 
+class ModelWithTags(Model):
+    # Migration: tags TEXT[] NOT NULL DEFAULT '{}'
+    # Indexes: btree on project_id + GIN on tags (combined via bitmap AND by planner)
+    #   CREATE INDEX idx_{table}_project_id ON {table} (project_id);
+    #   CREATE INDEX idx_{table}_tags ON {table} USING GIN (tags);
+    tags = properties.property(types.List(), default=list)
+
+
 class ModelWithNameDesc(Model):
     name = properties.property(types.String(max_length=255), default="")
     description = properties.property(types.String(max_length=255), default="")
