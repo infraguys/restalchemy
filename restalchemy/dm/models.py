@@ -300,7 +300,7 @@ class ModelWithTags(Model):
     # Indexes: btree on project_id + GIN on tags (combined via bitmap AND by planner)
     #   CREATE INDEX idx_{table}_project_id ON {table} (project_id);
     #   CREATE INDEX idx_{table}_tags ON {table} USING GIN (tags);
-    tags = properties.property(types.List(), default=list)
+    tags = properties.property(types.TypedList(types.String()), default=list)
 
 
 class ModelWithNameDesc(Model):
