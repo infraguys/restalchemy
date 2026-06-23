@@ -489,6 +489,68 @@ class NotLikeTestCase(base.BaseTestCase):
         self.assertEqual(self._expr.value, TEST_VALUE)
 
 
+class TaggedModel(models.Model):
+    tags = properties.property(types.TypedList(types.String()), default=list)
+
+
+class PostgreSqlContainsAllTestCase(base.BaseTestCase):
+    TEST_TAGS = ["env:prod", "region:us"]
+
+    def setUp(self):
+        self._expr = filters.PostgreSqlContainsAll(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=self.TEST_TAGS,
+            session=fixtures.SessionFixture(),
+        )
+
+    def test_construct_expression(self):
+        self.assertEqual(TEST_NAME + " @> %s", self._expr.construct_expression())
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, self.TEST_TAGS)
+
+
+class PostgreSqlContainsAnyTestCase(base.BaseTestCase):
+    TEST_TAGS = ["env:prod", "region:us"]
+
+    def setUp(self):
+        self._expr = filters.PostgreSqlContainsAny(
+            column=TEST_NAME,
+            value_type=common.AsIsType(),
+            value=self.TEST_TAGS,
+            session=fixtures.SessionFixture(),
+        )
+
+    def test_construct_expression(self):
+        self.assertEqual(TEST_NAME + " && %s", self._expr.construct_expression())
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, self.TEST_TAGS)
+
+
+class PostgreSqlContainsAllConvertFiltersTestCase(base.BaseTestCase):
+    def test_containsall_uses_at_gt_operator(self):
+        processed = filters.convert_filters(
+            TaggedModel,
+            {"tags": dm_filters.ContainsAll(["env:prod", "region:us"])},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual('"tags" @> %s', processed.construct_expression())
+        self.assertEqual([["env:prod", "region:us"]], processed.value)
+
+
+class PostgreSqlContainsAnyConvertFiltersTestCase(base.BaseTestCase):
+    def test_containsany_uses_overlap_operator(self):
+        processed = filters.convert_filters(
+            TaggedModel,
+            {"tags": dm_filters.ContainsAny(["env:prod", "env:staging"])},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual('"tags" && %s', processed.construct_expression())
+        self.assertEqual([["env:prod", "env:staging"]], processed.value)
+
+
 class ConvertFiltersTestCase(base.BaseTestCase):
     def test_convert_filters_new(self):
         d = collections.OrderedDict()

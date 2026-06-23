@@ -84,6 +84,18 @@ class NotLike(AbstractClause):
     pass
 
 
+class ContainsAll(AbstractClause):
+    """Array @> operator: column contains all specified elements."""
+
+    pass
+
+
+class ContainsAny(AbstractClause):
+    """Array && operator: column contains at least one of the specified elements."""
+
+    pass
+
+
 class AbstractExpression(metaclass=abc.ABCMeta):
     def __init__(self, *clauses):
         super(AbstractExpression, self).__init__()
