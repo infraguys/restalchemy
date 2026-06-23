@@ -29,23 +29,30 @@ class AbstractObjectCollection(metaclass=abc.ABCMeta):
         self.model_cls = model_cls
 
     @abc.abstractmethod
-    def get_all(self, filters=None, limit=None, order_by=None, locked=False):
+    def get_all(
+        self,
+        filters=None,
+        limit=None,
+        order_by=None,
+        locked=False,
+        include_deleted=False,
+    ):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_one(self, filters=None, locked=False):
+    def get_one(self, filters=None, locked=False, include_deleted=False):
         raise NotImplementedError()
 
-    def get_one_or_none(self, filters=None):
+    def get_one_or_none(self, filters=None, include_deleted=False):
         try:
-            return self.get_one(filters=filters)
+            return self.get_one(filters=filters, include_deleted=include_deleted)
         except exceptions.RecordNotFound:
             return None
 
 
 class AbstractObjectCollectionCountMixin(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def count(self, filters=None):
+    def count(self, filters=None, include_deleted=False):
         raise NotImplementedError()
 
 

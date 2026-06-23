@@ -19,7 +19,7 @@ import logging
 
 import webob
 
-from restalchemy.api import constants
+from restalchemy.api import constants, actions
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
@@ -620,6 +620,38 @@ class BasePaginationMixin(object):
             cleaned_results = cleaned_results[: self._pagination_limit]
 
         return cleaned_results
+
+
+class SoftDeleteControllerMixin(object):
+
+    def _prepare_filter(self, param_name, value):
+        if param_name == "include_deleted":
+            return param_name, True
+        return super()._prepare_filter(param_name, value)
+
+    def _process_storage_filters(self, filters, order_by=None):
+        filters = filters or {}
+        include_deleted = filters.pop("include_deleted", False)
+        return self.model.objects.get_all(
+            filters=filters,
+            order_by=order_by,
+            include_deleted=include_deleted,
+        )
+
+    @actions.post
+    def restore(self, resource, **kwargs):
+        """
+        Restore a soft-deleted resource.
+
+        Clears the deleted_at timestamp, making the resource visible again
+        through the default objects collection.
+        """
+        self._enforce_and_override_project_id_in_kwargs(
+            "update:restore", kwargs
+        )
+        if resource.deleted_at is not None:
+            resource.restore()
+        return resource, 200, {}
 
 
 class BaseResourceControllerPaginated(BasePaginationMixin, BaseResourceController):
