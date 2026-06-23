@@ -100,6 +100,10 @@ Actions represent operations that are not pure CRUD on the primary resource. Typ
 - `/v1/files/<id>/actions/download` — download a file.
 - `/v1/objects/<id>/actions/some_business_operation`.
 
+See also action result serialization nuances:
+
+- [Nuances of action result serialization](actions-serialization.md)
+
 ### 2.1. Defining an action using ActionHandler
 
 Module: `restalchemy.api.actions`
