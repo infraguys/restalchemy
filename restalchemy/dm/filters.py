@@ -87,13 +87,25 @@ class NotLike(AbstractClause):
 class ContainsAll(AbstractClause):
     """Array @> operator: column contains all specified elements."""
 
-    pass
+    def __init__(self, value):
+        if not isinstance(value, (list, tuple, set)):
+            raise TypeError(
+                "%s value must be a list, tuple, or set, not %s"
+                % (type(self).__name__, type(value).__name__)
+            )
+        super().__init__(value)
 
 
 class ContainsAny(AbstractClause):
     """Array && operator: column contains at least one of the specified elements."""
 
-    pass
+    def __init__(self, value):
+        if not isinstance(value, (list, tuple, set)):
+            raise TypeError(
+                "%s value must be a list, tuple, or set, not %s"
+                % (type(self).__name__, type(value).__name__)
+            )
+        super().__init__(value)
 
 
 class AbstractExpression(metaclass=abc.ABCMeta):
