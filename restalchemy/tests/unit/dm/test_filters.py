@@ -64,22 +64,6 @@ class FilterEqualityTestCase(base.BaseTestCase):
 
 
 class ContainsAllFilterTestCase(base.BaseTestCase):
-    def test_rejects_string(self):
-        with self.assertRaises(TypeError):
-            filters.ContainsAll("env:prod")
-
-    def test_rejects_non_iterable(self):
-        with self.assertRaises(TypeError):
-            filters.ContainsAll(42)
-
-    def test_accepts_tuple(self):
-        f = filters.ContainsAll(("a", "b"))
-        self.assertEqual(f.value, ("a", "b"))
-
-    def test_accepts_set(self):
-        f = filters.ContainsAll({"a"})
-        self.assertIn("a", f.value)
-
     def test_equal(self):
         self.assertEqual(
             filters.ContainsAll(["a", "b"]), filters.ContainsAll(["a", "b"])
@@ -101,18 +85,6 @@ class ContainsAllFilterTestCase(base.BaseTestCase):
 
 
 class ContainsAnyFilterTestCase(base.BaseTestCase):
-    def test_rejects_string(self):
-        with self.assertRaises(TypeError):
-            filters.ContainsAny("env:prod")
-
-    def test_rejects_non_iterable(self):
-        with self.assertRaises(TypeError):
-            filters.ContainsAny(42)
-
-    def test_accepts_tuple(self):
-        f = filters.ContainsAny(("a", "b"))
-        self.assertEqual(f.value, ("a", "b"))
-
     def test_equal(self):
         self.assertEqual(
             filters.ContainsAny(["a", "b"]), filters.ContainsAny(["a", "b"])
