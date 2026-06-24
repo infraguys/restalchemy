@@ -36,6 +36,9 @@ class MigrationStep(migrations.AbstractMigrationStep):
                 PRIMARY KEY (uuid)
             )
         """)
+        session.execute(
+            "CREATE INDEX idx_test_tagged_tags ON test_tagged USING GIN (tags)"
+        )
 
     def downgrade(self, session):
         self._delete_table_if_exists(session, "test_tagged")
