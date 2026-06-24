@@ -20,6 +20,7 @@ import mock
 
 from restalchemy.api import controllers
 from restalchemy.api import packers
+from restalchemy.dm import filters as dm_filters
 
 FAKE_LOCATION_PATH = "fake location path"
 
@@ -105,4 +106,243 @@ class TestRawResponses(unittest.TestCase):
         self.assertEqual(
             result.headers["Content-Disposition"],
             headers["Content-Disposition"],
+        )
+
+
+class FakeResource(object):
+    def __init__(self, model):
+        self._model = model
+
+    def get_model(self):
+        return self._model
+
+
+class FakeModel(object):
+    objects = mock.Mock()
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        self.insert = mock.Mock()
+
+    @classmethod
+    def get_id_property_name(cls):
+        return "uuid"
+
+
+class FakeItem(object):
+    uuid = "resource-id"
+
+
+class AutoBaseController(controllers.BaseResourceController):
+    __resource__ = FakeResource(FakeModel)
+
+    def get_autofilters(self):
+        return {"project_id": dm_filters.EQ("project-id")}
+
+    def get_autovalues(self):
+        return {
+            "project_id": "project-id",
+            "updated_by": "user-id",
+        }
+
+
+class AutoNestedController(controllers.BaseNestedResourceController):
+    __resource__ = FakeResource(FakeModel)
+    __pr_name__ = "parent"
+
+    def get_autofilters(self):
+        return {"project_id": dm_filters.EQ("project-id")}
+
+    def get_autovalues(self):
+        return {
+            "project_id": "project-id",
+            "updated_by": "user-id",
+        }
+
+
+class AutoPaginatedController(
+    controllers.BaseResourceControllerPaginated,
+):
+    __resource__ = FakeResource(FakeModel)
+
+    def get_autofilters(self):
+        return {"project_id": dm_filters.EQ("project-id")}
+
+
+class TestAutoFiltersAndValues(unittest.TestCase):
+    def setUp(self):
+        super(TestAutoFiltersAndValues, self).setUp()
+        FakeModel.objects = mock.Mock()
+
+    def test_empty_autofilters_do_not_copy_filters(self):
+        controller = controllers.Controller(None)
+        filters = {"state": dm_filters.EQ("active")}
+
+        result = controller._apply_autofilters(filters)
+
+        self.assertIs(filters, result)
+
+    def test_empty_autovalues_do_not_copy_values(self):
+        controller = controllers.Controller(None)
+        values = {"name": "server"}
+
+        result = controller._apply_autovalues(values)
+
+        self.assertIs(values, result)
+
+    def test_base_create_applies_autovalues(self):
+        controller = AutoBaseController(None)
+
+        result = controller.create(name="server", project_id="request-project")
+
+        self.assertEqual(
+            {
+                "name": "server",
+                "project_id": "project-id",
+                "updated_by": "user-id",
+            },
+            result.kwargs,
+        )
+        result.insert.assert_called_once_with()
+
+    def test_base_get_applies_autofilters(self):
+        controller = AutoBaseController(None)
+        expected = mock.Mock()
+        FakeModel.objects.get_one.return_value = expected
+
+        result = controller.get(uuid="resource-id")
+
+        self.assertIs(expected, result)
+        filters = FakeModel.objects.get_one.call_args[1]["filters"]
+        self.assertEqual(
+            {
+                "uuid": dm_filters.EQ("resource-id"),
+                "project_id": dm_filters.EQ("project-id"),
+            },
+            filters,
+        )
+
+    def test_base_filter_applies_autofilters(self):
+        controller = AutoBaseController(None)
+        FakeModel.objects.get_all.return_value = []
+
+        controller.filter(filters={"state": dm_filters.EQ("active")})
+
+        filters = FakeModel.objects.get_all.call_args[1]["filters"]
+        self.assertEqual(
+            {
+                "state": dm_filters.EQ("active"),
+                "project_id": dm_filters.EQ("project-id"),
+            },
+            filters,
+        )
+
+    def test_base_update_applies_autovalues(self):
+        controller = AutoBaseController(None)
+        dm = mock.Mock()
+        FakeModel.objects.get_one.return_value = dm
+
+        controller.update(
+            uuid="resource-id",
+            name="server",
+            project_id="request-project",
+        )
+
+        dm.update_dm.assert_called_once_with(
+            values={
+                "name": "server",
+                "project_id": "project-id",
+                "updated_by": "user-id",
+            },
+        )
+        dm.update.assert_called_once_with()
+
+    def test_nested_filter_applies_parent_and_autofilters(self):
+        controller = AutoNestedController(None)
+        FakeModel.objects.get_all.return_value = []
+
+        controller.filter(
+            parent_resource="parent-id",
+            filters={"state": dm_filters.EQ("active")},
+        )
+
+        filters = FakeModel.objects.get_all.call_args[1]["filters"]
+        self.assertEqual(
+            {
+                "state": dm_filters.EQ("active"),
+                "parent": dm_filters.EQ("parent-id"),
+                "project_id": dm_filters.EQ("project-id"),
+            },
+            filters,
+        )
+
+    def test_nested_update_applies_parent_autofilters_and_autovalues(self):
+        controller = AutoNestedController(None)
+        dm = mock.Mock()
+        FakeModel.objects.get_one.return_value = dm
+
+        controller.update(
+            parent_resource="parent-id",
+            uuid="resource-id",
+            name="server",
+        )
+
+        filters = FakeModel.objects.get_one.call_args[1]["filters"]
+        self.assertEqual(
+            {
+                "parent": "parent-id",
+                "uuid": dm_filters.EQ("resource-id"),
+                "project_id": dm_filters.EQ("project-id"),
+            },
+            filters,
+        )
+        dm.update_dm.assert_called_once_with(
+            values={
+                "name": "server",
+                "project_id": "project-id",
+                "updated_by": "user-id",
+            },
+        )
+        dm.update.assert_called_once_with()
+
+    def test_paginated_filter_applies_autofilters(self):
+        controller = AutoPaginatedController(None)
+        controller._pagination_limit = 1
+        controller._pagination_marker = None
+        FakeModel.objects.get_all.return_value = [FakeItem()]
+
+        result = controller.filter(filters={"state": dm_filters.EQ("active")})
+
+        self.assertEqual([FakeItem.uuid], [item.uuid for item in result])
+        filters = FakeModel.objects.get_all.call_args[1]["filters"]
+        self.assertEqual(
+            {
+                "state": dm_filters.EQ("active"),
+                "project_id": dm_filters.EQ("project-id"),
+            },
+            filters,
+        )
+
+    def test_paginated_marker_lookup_applies_autofilters(self):
+        controller = AutoPaginatedController(None)
+        controller._pagination_limit = 1
+        controller._pagination_marker = "marker-id"
+        marker = mock.Mock()
+        marker.name = "marker-name"
+        FakeModel.objects.get_one.return_value = marker
+        FakeModel.objects.get_all.return_value = []
+
+        controller.filter(
+            filters={"state": dm_filters.EQ("active")},
+            order_by={"name": "asc"},
+        )
+
+        filters = FakeModel.objects.get_one.call_args[1]["filters"]
+        self.assertEqual(
+            {
+                "state": dm_filters.EQ("active"),
+                "project_id": dm_filters.EQ("project-id"),
+                "uuid": dm_filters.EQ("marker-id"),
+            },
+            filters,
         )
