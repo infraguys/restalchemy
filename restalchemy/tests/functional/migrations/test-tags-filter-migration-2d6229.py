@@ -31,11 +31,15 @@ class MigrationStep(migrations.AbstractMigrationStep):
         session.execute("""
             CREATE TABLE test_tagged (
                 uuid UUID NOT NULL,
+                project_id UUID NOT NULL,
                 name VARCHAR(255) NOT NULL DEFAULT '',
                 tags TEXT[] NOT NULL DEFAULT '{}',
                 PRIMARY KEY (uuid)
             )
         """)
+        session.execute(
+            "CREATE INDEX idx_test_tagged_project_id ON test_tagged (project_id)"
+        )
         session.execute(
             "CREATE INDEX idx_test_tagged_tags ON test_tagged USING GIN (tags)"
         )
