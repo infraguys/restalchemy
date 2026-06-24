@@ -82,6 +82,55 @@ class Controller(object):
             charset=charset,
         )
 
+    def get_autofilters(self):
+        """Return filters that must be applied when selecting resources.
+
+        Override this method in a controller to restrict the objects visible
+        to controller methods such as ``get``, ``filter``, ``update`` and
+        ``delete``. Returned values should use the same format as regular
+        controller filters: field names mapped to ``restalchemy.dm.filters``
+        clauses.
+
+        Example:
+            def get_autofilters(self):
+                project_id = self.request.context.project_id
+                return {"project_id": dm_filters.EQ(project_id)}
+        """
+        return {}
+
+    def get_autovalues(self):
+        """Return values that must be applied to every create/update request.
+
+        Override this method in a controller to inject server-side values into
+        payloads before they are passed to ``create`` or ``update``. Returned
+        values should be plain model field values, not filter clauses.
+
+        Example:
+            def get_autovalues(self):
+                context = self.request.context
+                return {
+                    "project_id": context.project_id,
+                    "updated_by": context.user_id,
+                }
+        """
+        return {}
+
+    def _apply_autofilters(self, filters):
+        autofilters = self.get_autofilters()
+        if not autofilters:
+            return filters
+        filters = filters.copy()
+        filters.update(autofilters)
+        return filters
+
+    def _apply_autovalues(self, values):
+        autovalues = self.get_autovalues()
+        if not autovalues:
+            return values
+        values = values.copy()
+        values.update(autovalues)
+        return values
+
     def process_result(self, result, status_code=200, headers=None, add_location=False):
         headers = headers or {}
 
@@ -297,14 +346,17 @@ class Controller(object):
 
 class BaseResourceController(Controller):
     def create(self, **kwargs):
+        kwargs = self._apply_autovalues(kwargs)
         dm = self.model(**kwargs)
         dm.insert()
         return dm
 
     def get(self, uuid, **kwargs):
         # TODO(d.burmistrov): replace this hack with normal argument passing
-        kwargs[self.model.get_id_property_name()] = dm_filters.EQ(uuid)
-        return self.model.objects.get_one(filters=kwargs)
+        filters = kwargs.copy()
+        filters[self.model.get_id_property_name()] = dm_filters.EQ(uuid)
+        filters = self._apply_autofilters(filters)
+        return self.model.objects.get_one(filters=filters)
 
     def _split_filters(self, filters):
         if hasattr(self.model, "get_custom_properties"):
@@ -354,6 +406,7 @@ class BaseResourceController(Controller):
         return filters
 
     def filter(self, filters, order_by=None):
+        filters = self._apply_autofilters(filters)
         custom_filters, storage_filters = self._split_filters(filters)
 
         result = self._process_storage_filters(storage_filters, order_by=order_by)
@@ -365,6 +418,7 @@ class BaseResourceController(Controller):
 
     def update(self, uuid, **kwargs):
         dm = self.get(uuid=uuid)
+        kwargs = self._apply_autovalues(kwargs)
         dm.update_dm(values=kwargs)
         dm.update()
         return dm
@@ -401,6 +455,7 @@ class BaseNestedResourceController(BaseResourceController):
 
     def update(self, parent_resource, uuid, **kwargs):
         dm = self.get(parent_resource=parent_resource, uuid=uuid)
+        kwargs = self._apply_autovalues(kwargs)
         dm.update_dm(values=kwargs)
         dm.update()
         return dm
@@ -412,7 +467,14 @@ class PaginationFilterBuilder:
     Handles non-trivial logic for paginating by non-unique column.
     """
 
-    def __init__(self, model, marker_id, sort_column=None, sort_direction="asc"):
+    def __init__(
+        self,
+        model,
+        marker_id,
+        sort_column=None,
+        sort_direction="asc",
+        marker_filters=None,
+    ):
         """
         Create pagination cursor from marker ID.
 
@@ -441,11 +503,13 @@ class PaginationFilterBuilder:
             marker_id: The ID of the last row from previous page
             sort_column: Column name to sort by (None for ID-only sort)
             sort_direction: "asc" or "desc"
+            marker_filters: Filters that must also match the marker row
         """
         self.marker_id = marker_id
         self.sort_col = sort_column
         self.sort_dir = sort_direction
         self.id_name = model.get_id_property_name()
+        self.marker_filters = marker_filters
         self.sort_value = self._fetch_sort_val(model)
 
     def _fetch_sort_val(self, model):
@@ -454,10 +518,13 @@ class PaginationFilterBuilder:
         if self.sort_col in (None, self.id_name):
             return self.marker_id
 
-        # Get last seen row
-        marker_row = model.objects.get_one(
-            filters={self.id_name: dm_filters.EQ(self.marker_id)}
-        )
+        if self.marker_filters:
+            marker_filters = self.marker_filters.copy()
+        else:
+            marker_filters = {}
+        marker_filters[self.id_name] = dm_filters.EQ(self.marker_id)
+
+        marker_row = model.objects.get_one(filters=marker_filters)
         return getattr(marker_row, self.sort_col)
 
     def build_filter(self):
@@ -582,6 +649,7 @@ class BasePaginationMixin(object):
                 self._pagination_marker,
                 sort_col,
                 sort_dir,
+                marker_filters=filters,
             )
             pagination_filters = cursor.build_filter()
             filters = dm_filters.AND(pagination_filters, filters)
@@ -599,6 +667,7 @@ class BasePaginationMixin(object):
         return filters, order_by
 
     def paginated_filter(self, filters, order_by=None):
+        filters = self._apply_autofilters(filters)
         custom_filters, storage_filters = self._split_filters(filters)
 
         cleaned_results = []
