@@ -61,3 +61,41 @@ class FilterEqualityTestCase(base.BaseTestCase):
         f2 = filters.AND([filters.EQ(4), filters.NE(10)])
 
         self.assertNotEqual(f1, f2)
+
+
+class ContainsAllFilterTestCase(base.BaseTestCase):
+    def test_equal(self):
+        self.assertEqual(
+            filters.ContainsAll(["a", "b"]), filters.ContainsAll(["a", "b"])
+        )
+
+    def test_not_equal_value(self):
+        self.assertNotEqual(filters.ContainsAll(["a"]), filters.ContainsAll(["b"]))
+
+    def test_not_equal_type(self):
+        self.assertNotEqual(filters.ContainsAll(["a"]), filters.ContainsAny(["a"]))
+
+    def test_repr(self):
+        f = filters.ContainsAll(["x"])
+        self.assertIn("ContainsAll", repr(f))
+
+    def test_str(self):
+        f = filters.ContainsAll(["x", "y"])
+        self.assertEqual(str(f), str(["x", "y"]))
+
+
+class ContainsAnyFilterTestCase(base.BaseTestCase):
+    def test_equal(self):
+        self.assertEqual(
+            filters.ContainsAny(["a", "b"]), filters.ContainsAny(["a", "b"])
+        )
+
+    def test_not_equal_value(self):
+        self.assertNotEqual(filters.ContainsAny(["a"]), filters.ContainsAny(["b"]))
+
+    def test_not_equal_type(self):
+        self.assertNotEqual(filters.ContainsAny(["a"]), filters.ContainsAll(["a"]))
+
+    def test_repr(self):
+        f = filters.ContainsAny(["x"])
+        self.assertIn("ContainsAny", repr(f))

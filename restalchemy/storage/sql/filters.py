@@ -141,6 +141,20 @@ class NotLike(AbstractClause):
         return ("%s NOT LIKE " % self.column) + "%s"
 
 
+class PostgreSqlContainsAll(AbstractClause):
+    """Array @>: column contains all elements of the given array."""
+
+    def construct_expression(self):
+        return f"{self.column} @> %s"
+
+
+class PostgreSqlContainsAny(AbstractClause):
+    """Array &&: column overlaps with (shares at least one element of) the given array."""
+
+    def construct_expression(self):
+        return f"{self.column} && %s"
+
+
 class AbstractExpression(metaclass=abc.ABCMeta):
     def __init__(self, *clauses):
         super(AbstractExpression, self).__init__()
@@ -228,6 +242,8 @@ FILTER_MAPPING = {
         filters.NotIn: PostgreSqlNotIn,
         filters.Like: Like,
         filters.NotLike: NotLike,
+        filters.ContainsAll: PostgreSqlContainsAll,
+        filters.ContainsAny: PostgreSqlContainsAny,
     },
 }
 
