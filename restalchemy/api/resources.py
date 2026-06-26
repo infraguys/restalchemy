@@ -86,10 +86,14 @@ class ResourceMap(object):
     @classmethod
     def add_model_to_resource_mapping(cls, model_class, resource):
         if model_class in cls.model_type_to_resource:
-            raise ValueError(
-                "model (%s) for resource (%s) already added. %s"
-                % (model_class, resource, cls.model_type_to_resource)
-            )
+            if (
+                cls.model_type_to_resource[model_class].get_model()
+                is not resource.get_model()
+            ):
+                raise ValueError(
+                    "model (%s) is already mapped to a different resource (%s)."
+                    % (model_class, cls.model_type_to_resource[model_class])
+                )
         cls.model_type_to_resource[model_class] = resource
 
     @classmethod
