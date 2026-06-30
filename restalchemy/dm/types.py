@@ -50,13 +50,13 @@ TIMEDELTA_INFINITY = (1 << (ctypes.sizeof(ctypes.c_int()) * 8) - 1) - 1
 # the regexp has issue https://github.com/kvesteri/validators/issues/185
 HOSTNAME_RE_TEMPLATE = (
     # First character of the domain
-    "^(?:[a-zA-Z0-9]"
+    r"^(?:[a-zA-Z0-9]"
     # Sub domain + hostname
-    "(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)"  # noqa
+    r"(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)"
     # First 61 characters of the gTLD
-    "+[A-Za-z0-9][A-Za-z0-9-_]{0,61}"
+    r"+[A-Za-z0-9][A-Za-z0-9-_]{0,61}"
     # Last character of the gTLD
-    "[A-Za-z]$"
+    r"[A-Za-z]$"
 )
 KWARGS_OPENAPI_MAP = {
     "read_only": "readOnly",
