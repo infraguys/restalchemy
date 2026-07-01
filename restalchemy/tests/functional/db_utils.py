@@ -32,6 +32,32 @@ class DBEngineMixin(object):
     def init_engine(cls):
         engines.engine_factory.configure_factory(db_url=consts.get_database_uri())
         cls.__ENGINE__ = engines.engine_factory.get_engine()
+        cls._disable_prepared_statements()
+
+    @classmethod
+    def _disable_prepared_statements(cls):
+        """Disable psycopg3 server-side statement preparation (postgres only).
+
+        Tests that rebuild the schema between methods give every table a
+        new OID each time. psycopg3 auto-prepares a query after 5 identical
+        executions (`prepare_threshold`); replaying that prepared plan
+        against a recreated table then fails with `FeatureNotSupported:
+        cached plan must not change result type`. `DISCARD PLANS` doesn't
+        reliably fix this -- it forces a replan, but the query's binding to
+        specific table/column OIDs was fixed at PREPARE time. Wrapping
+        get_connection() instead covers every connection the pool hands
+        out, new or reused, regardless of pool size.
+        """
+        if cls.engine.dialect.name != "postgresql":
+            return
+        get_connection = cls.engine.get_connection
+
+        def get_connection_without_prepare():
+            conn = get_connection()
+            conn.prepare_threshold = None
+            return conn
+
+        cls.engine.get_connection = get_connection_without_prepare
 
     @classmethod
     def destroy_engine(cls):
