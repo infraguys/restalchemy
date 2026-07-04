@@ -416,9 +416,7 @@ class Route(BaseRoute):
             if action_names:
                 for action_name in action_names:
                     action_controller, action_handler = (
-                        self._get_openapi_action_controller_and_handler(
-                            action_name
-                        )
+                        self._get_openapi_action_controller_and_handler(action_name)
                     )
 
                     is_invoke = getattr(self, action_handler.name).is_invoke()
@@ -437,13 +435,13 @@ class Route(BaseRoute):
                             "actions",
                             action_handler.name,
                         )
-                    paths_result[action_path][
-                        action_handler.method.lower()
-                    ] = self._build_openapi_method_specification(
-                        action_handler,
-                        parameters,
-                        action_path,
-                        controller=action_controller,
+                    paths_result[action_path][action_handler.method.lower()] = (
+                        self._build_openapi_method_specification(
+                            action_handler,
+                            parameters,
+                            action_path,
+                            controller=action_controller,
+                        )
                     )
         return paths_result, schemas_result
 
