@@ -161,16 +161,12 @@ class VMIpAddressesController(controllers.BaseResourceControllerPaginated):
 
     @actions.get
     def ip_addresses(self, resource, *args, **kwargs):
-        ports = models.Port.objects.get_all(
-            filters={"vm": filters.EQ(resource)}
-        )
+        ports = models.Port.objects.get_all(filters={"vm": filters.EQ(resource)})
 
         ip_addresses = []
         for port in ports:
             ip_addresses.extend(
-                models.IpAddress.objects.get_all(
-                    filters={"port": filters.EQ(port)}
-                )
+                models.IpAddress.objects.get_all(filters={"port": filters.EQ(port)})
             )
 
         return ip_addresses

@@ -1633,9 +1633,7 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
                 "uuid": str(UUID3),
                 "ip": "192.168.0.3",
                 "port": parse.urlparse(
-                    self.get_endpoint(
-                        TEMPL_PORT_RESOURCE_ENDPOINT, UUID1, UUID2
-                    )
+                    self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT, UUID1, UUID2)
                 ).path,
             }
         ]

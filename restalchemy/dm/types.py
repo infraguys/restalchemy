@@ -1039,9 +1039,10 @@ class Url(BaseCompiledRegExpTypeFromAttr):
     (https://github.com/django/django/blob/stable/1.3.x/django/core/validators.py#L45):
     """
 
+    # Since OpenAPI patterns do not support Python's re.IGNORECASE flag, lowercase a-z symbols are explicitly added to the regex pattern.
     pattern = re.compile(
         r"^(?:http|ftp)s?://"
-        r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # noqa
+        r"(?:(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:[A-Za-z]{2,6}\.?|[A-Za-z0-9-]{2,}\.?)|"  # noqa
         r"localhost|"
         r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
         r"(?::\d+)?"
