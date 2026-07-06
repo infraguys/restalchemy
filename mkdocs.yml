@@ -1,0 +1,120 @@
+site_name: restalchemy
+site_url: https://github.com/infraguys/restalchemy
+repo_name: restalchemy
+repo_url: https://github.com/infraguys/restalchemy
+edit_uri: browse/docs/
+
+theme:
+  name: material
+  language: ru
+  features:
+    - search.suggest
+    - search.highlight
+    - toc.integrate
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode
+
+plugins:
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ru
+          name: Russian
+          build: true
+        - locale: de
+          name: Deutsch
+          build: true
+        - locale: zh
+          name: Chinese
+          build: true
+  - search:
+      lang:
+        - en
+        - ru
+        - de
+        - zh
+  - glightbox
+
+extra:
+  repo_icon: github
+
+markdown_extensions:
+  - meta
+  - admonition
+  - footnotes
+  - attr_list
+  - codehilite:
+      guess_lang: false
+  - toc:
+      slugify: !!python/name:pymdownx.slugs.uslugify
+      permalink: '#'
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.keys
+  - pymdownx.emoji:
+      emoji_index: !!python/name:pymdownx.emoji.gemoji
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      preserve_tabs: true
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Installation: installation.md
+  - Concepts:
+    - API Layer: concepts/api-layer.md
+    - Migrations: concepts/migrations.md
+    - Storage Layer: concepts/storage-layer.md
+  - How-to Guides:
+    - Actions Serialization: how-to/actions-serialization.md
+    - API Basic CRUD: how-to/api-basic-crud.md
+    - API Nested Resources and Actions: how-to/api-nested-resources-and-actions.md
+    - API OpenAPI: how-to/api-openapi.md
+    - DM SQL Storage: how-to/dm-sql-storage.md
+    - Migrations Workflow: how-to/migrations-workflow.md
+  - Reference:
+    - API:
+      - Overview: reference/api/index.md
+    - Data Models:
+      - Overview: reference/dm/index.md
+      - Filters: reference/dm/filters.md
+      - Models: reference/dm/models.md
+      - Properties: reference/dm/properties.md
+      - Relationships: reference/dm/relationships.md
+      - Types: reference/dm/types.md
+    - Migrations:
+      - CLI: reference/migrations/cli.md
+    - Storage:
+      - Overview: reference/storage/index.md
+      - SQL Engines: reference/storage/sql-engines.md
+      - SQL ORM: reference/storage/sql-orm.md
+      - SQL Sessions: reference/storage/sql-sessions.md
