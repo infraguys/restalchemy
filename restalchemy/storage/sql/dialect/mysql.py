@@ -18,7 +18,10 @@ from __future__ import absolute_import  # noqa
 
 from functools import wraps
 
-from mysql.connector import errors
+try:
+    from mysql.connector import errors
+except ImportError:
+    errors = None
 
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -45,6 +48,11 @@ def handle_database_errors(func):
         :return: A function that wraps `func` and handles database errors.
         :rtype: callable
         """
+        if errors is None:
+            raise ModuleNotFoundError(
+                "No module named 'mysql.connector'. "
+                "Install it via: pip install restalchemy[mysql]"
+            )
         try:
             return func(self, *args, **kwargs)
         except errors.DatabaseError as e:

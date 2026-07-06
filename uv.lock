@@ -2189,15 +2189,12 @@ name = "restalchemy"
 source = { editable = "." }
 dependencies = [
     { name = "email-validator" },
-    { name = "mysql-connector-python" },
     { name = "netaddr" },
     { name = "orjson", version = "3.10.15", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "orjson", version = "3.11.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
     { name = "orjson", version = "3.11.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "oslo-config", version = "9.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "oslo-config", version = "9.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "psycopg", version = "3.2.13", source = { registry = "https://pypi.org/simple" }, extra = ["binary", "pool"], marker = "python_full_version < '3.10'" },
-    { name = "psycopg", version = "3.3.3", source = { registry = "https://pypi.org/simple" }, extra = ["binary", "pool"], marker = "python_full_version >= '3.10'" },
     { name = "pyyaml" },
     { name = "requests", version = "2.32.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "requests", version = "2.32.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -2205,6 +2202,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+all = [
+    { name = "mysql-connector-python" },
+    { name = "psycopg", version = "3.2.13", source = { registry = "https://pypi.org/simple" }, extra = ["binary", "pool"], marker = "python_full_version < '3.10'" },
+    { name = "psycopg", version = "3.3.3", source = { registry = "https://pypi.org/simple" }, extra = ["binary", "pool"], marker = "python_full_version >= '3.10'" },
+]
 dev = [
     { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -2221,6 +2223,13 @@ docs = [
 mypy = [
     { name = "mypy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "mypy", version = "1.19.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+]
+mysql = [
+    { name = "mysql-connector-python" },
+]
+pgsql = [
+    { name = "psycopg", version = "3.2.13", source = { registry = "https://pypi.org/simple" }, extra = ["binary", "pool"], marker = "python_full_version < '3.10'" },
+    { name = "psycopg", version = "3.3.3", source = { registry = "https://pypi.org/simple" }, extra = ["binary", "pool"], marker = "python_full_version >= '3.10'" },
 ]
 ruff = [
     { name = "ruff" },
@@ -2253,12 +2262,12 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.2.0,<3.0.0" },
     { name = "mock", marker = "extra == 'test'", specifier = ">=3.0.5,<6.0.0" },
     { name = "mypy", marker = "extra == 'mypy'" },
-    { name = "mysql-connector-python", specifier = "==8.4.0" },
+    { name = "mysql-connector-python", marker = "extra == 'mysql'", specifier = "==8.4.0" },
     { name = "netaddr", specifier = ">=0.7.18" },
     { name = "orjson", specifier = ">=3.10.0,<4.0.0" },
     { name = "oslo-config", specifier = ">=3.22.2,<10.0.0" },
     { name = "parameterized", marker = "extra == 'test'", specifier = ">=0.9.0,<1.0.0" },
-    { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.2.4,<4.0.0" },
+    { name = "psycopg", extras = ["binary", "pool"], marker = "extra == 'pgsql'", specifier = ">=3.2.4,<4.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0.0,<9.0.0" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=5.0.0,<7.0.0" },
@@ -2266,6 +2275,7 @@ requires-dist = [
     { name = "pytest-xdist", extras = ["psutil"], marker = "extra == 'test'", specifier = ">=3.6.1,<4.0.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.32.4,<3.0.0" },
+    { name = "restalchemy", extras = ["mysql", "pgsql"], marker = "extra == 'all'" },
     { name = "ruff", marker = "extra == 'ruff'" },
     { name = "setuptools-git", marker = "extra == 'testenv'", specifier = ">=0.4.0" },
     { name = "shellcheck-py", marker = "extra == 'shellcheck'" },
@@ -2274,7 +2284,7 @@ requires-dist = [
     { name = "webob", specifier = ">=1.8.9,<1.9.0" },
     { name = "zensical", marker = "python_full_version >= '3.10' and extra == 'docs'", specifier = ">=0.0.32" },
 ]
-provides-extras = ["dev", "test", "mypy", "ruff", "shellcheck", "testenv", "docs"]
+provides-extras = ["mysql", "pgsql", "all", "dev", "test", "mypy", "ruff", "shellcheck", "testenv", "docs"]
 
 [[package]]
 name = "rfc3986"
