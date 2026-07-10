@@ -40,6 +40,36 @@ Dieses Modul enthält die Engine-Factory und konkrete Engines für MySQL und Pos
 - Dialekt: `pgsql.PgSQLDialect()`.
 - Session: `sessions.PgSQLSession`.
 
+### Verbindungs-Timeouts
+
+`register_postgresql_db_opts()` registriert Einstellungen für Verbindungs-,
+Server- und TCP-Timeouts. Zeiträume werden in Sekunden angegeben; `0` behält
+den jeweiligen Standardwert von libpq, PostgreSQL oder dem Betriebssystem bei.
+
+- `connection_connect_timeout`: Zeit zum Aufbau einer Verbindung.
+- `connection_statement_timeout`: maximale Ausführungszeit einer Anweisung.
+- `connection_transaction_timeout`: maximale Transaktionsdauer; erfordert
+  PostgreSQL 17 oder neuer.
+- `connection_idle_in_transaction_session_timeout`: maximale Leerlaufzeit einer
+  Sitzung innerhalb einer Transaktion.
+- `connection_tcp_user_timeout`: maximale Zeit für unbestätigte TCP-Daten.
+- `connection_keepalives_idle`, `connection_keepalives_interval` und
+  `connection_keepalives_count`: Parameter zur TCP-Keepalive-Erkennung.
+
+Beispiel:
+
+```ini
+[db]
+connection_connect_timeout = 30
+connection_statement_timeout = 240
+connection_transaction_timeout = 300
+connection_idle_in_transaction_session_timeout = 240
+connection_tcp_user_timeout = 300
+connection_keepalives_idle = 60
+connection_keepalives_interval = 30
+connection_keepalives_count = 5
+```
+
 ---
 
 ## MySQLEngine
