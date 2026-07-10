@@ -68,6 +68,10 @@ def _postgresql_connection_kwargs(conf: tp.Any, section: str) -> tp.Dict[str, tp
         if value is not None:
             server_options.append(f"-c {name}={value * 1000}")
     if server_options:
+        connection_url = parse.urlsplit(section_conf.connection_url)
+        url_options = dict(parse.parse_qsl(connection_url.query)).get("options")
+        if url_options:
+            server_options.insert(0, url_options)
         kwargs["options"] = " ".join(server_options)
 
     return kwargs
