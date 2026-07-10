@@ -43,7 +43,8 @@ limitations under the License.
 ### 连接超时
 
 `register_postgresql_db_opts()` 注册连接、服务器和 TCP 超时设置。时长以秒为
-单位；`0` 表示保留 libpq、PostgreSQL 或操作系统的相应默认值。
+单位。省略选项时保留 libpq、PostgreSQL 或操作系统的相应设置。显式的 `0`
+会传递给驱动程序；对于 PostgreSQL 服务器超时，它会禁用超时。
 
 - `connection_connect_timeout`：建立连接的最长时间。
 - `connection_statement_timeout`：单条语句的最长执行时间。
