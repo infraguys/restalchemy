@@ -82,6 +82,39 @@ Methods:
 
 The engine is created internally by `EngineFactory`.
 
+### Connection timeouts
+
+`register_postgresql_db_opts()` registers connection, server, and TCP timeout
+options. Durations are configured in seconds; `0` keeps the corresponding
+libpq, PostgreSQL, or operating-system default.
+
+- `connection_connect_timeout`: time allowed to establish a connection.
+- `connection_statement_timeout`: maximum statement execution time.
+- `connection_transaction_timeout`: maximum transaction duration; requires
+  PostgreSQL 17 or newer.
+- `connection_idle_in_transaction_session_timeout`: maximum time a session may
+  remain idle in a transaction.
+- `connection_tcp_user_timeout`: maximum time transmitted data may remain
+  unacknowledged.
+- `connection_keepalives_idle`, `connection_keepalives_interval`, and
+  `connection_keepalives_count`: TCP keepalive detection parameters.
+
+For example, the following configuration keeps statement and idle-transaction
+waits below four minutes and bounds transactions and unacknowledged TCP data at
+five minutes:
+
+```ini
+[db]
+connection_connect_timeout = 30
+connection_statement_timeout = 240
+connection_transaction_timeout = 300
+connection_idle_in_transaction_session_timeout = 240
+connection_tcp_user_timeout = 300
+connection_keepalives_idle = 60
+connection_keepalives_interval = 30
+connection_keepalives_count = 5
+```
+
 ---
 
 ## MySQL engine

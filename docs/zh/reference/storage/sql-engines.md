@@ -40,6 +40,35 @@ limitations under the License.
 - 方言：`pgsql.PgSQLDialect()`。
 - 会话类：`sessions.PgSQLSession`。
 
+### 连接超时
+
+`register_postgresql_db_opts()` 注册连接、服务器和 TCP 超时设置。时长以秒为
+单位；`0` 表示保留 libpq、PostgreSQL 或操作系统的相应默认值。
+
+- `connection_connect_timeout`：建立连接的最长时间。
+- `connection_statement_timeout`：单条语句的最长执行时间。
+- `connection_transaction_timeout`：事务的最长持续时间；需要 PostgreSQL 17
+  或更高版本。
+- `connection_idle_in_transaction_session_timeout`：会话在事务中保持空闲的
+  最长时间。
+- `connection_tcp_user_timeout`：已发送数据未被确认的最长时间。
+- `connection_keepalives_idle`、`connection_keepalives_interval` 和
+  `connection_keepalives_count`：TCP keepalive 检测参数。
+
+示例：
+
+```ini
+[db]
+connection_connect_timeout = 30
+connection_statement_timeout = 240
+connection_transaction_timeout = 300
+connection_idle_in_transaction_session_timeout = 240
+connection_tcp_user_timeout = 300
+connection_keepalives_idle = 60
+connection_keepalives_interval = 30
+connection_keepalives_count = 5
+```
+
 ---
 
 ## MySQLEngine

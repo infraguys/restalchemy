@@ -17,6 +17,7 @@
 import abc
 import contextlib
 import logging
+import typing as tp
 import urllib.parse as parse
 
 from mysql.connector import pooling
@@ -34,6 +35,41 @@ from restalchemy.storage.sql.dialect import pgsql
 DEFAULT_NAME = "default"
 DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)
+
+
+def _postgresql_connection_kwargs(conf: tp.Any, section: str) -> tp.Dict[str, tp.Any]:
+    """Build psycopg connection parameters from PostgreSQL config options."""
+    section_conf = conf[section]
+    kwargs = {}
+
+    connection_parameters = {
+        "connect_timeout": section_conf.connection_connect_timeout,
+        "keepalives_idle": section_conf.connection_keepalives_idle,
+        "keepalives_interval": section_conf.connection_keepalives_interval,
+        "keepalives_count": section_conf.connection_keepalives_count,
+    }
+    for name, value in connection_parameters.items():
+        if value > 0:
+            kwargs[name] = value
+
+    if section_conf.connection_tcp_user_timeout > 0:
+        kwargs["tcp_user_timeout"] = section_conf.connection_tcp_user_timeout * 1000
+
+    server_options = []
+    server_timeouts = {
+        "statement_timeout": section_conf.connection_statement_timeout,
+        "transaction_timeout": section_conf.connection_transaction_timeout,
+        "idle_in_transaction_session_timeout": (
+            section_conf.connection_idle_in_transaction_session_timeout
+        ),
+    }
+    for name, value in server_timeouts.items():
+        if value > 0:
+            server_options.append(f"-c {name}={value * 1000}")
+    if server_options:
+        kwargs["options"] = " ".join(server_options)
+
+    return kwargs
 
 
 class AbstractEngine(metaclass=abc.ABCMeta):
@@ -572,19 +608,24 @@ class EngineFactory(singletons.InheritSingleton):
         :param readonly: A boolean indicating whether the engine should
                          operate in readonly mode. Defaults to False.
         """
+        pool_config = {
+            "min_size": conf[section].connection_pool_min_size,
+            "max_size": conf[section].connection_pool_max_size,
+            "open": conf[section].connection_pool_open,
+            "timeout": conf[section].connection_pool_client_timeout,
+            "max_waiting": conf[section].connection_pool_max_waiting,
+            "max_lifetime": conf[section].connection_max_lifetime,
+            "max_idle": conf[section].connection_max_idle,
+            "reconnect_timeout": conf[section].connection_pool_reconnect_timeout,
+            "num_workers": conf[section].connection_pool_num_workers,
+        }
+        connection_kwargs = _postgresql_connection_kwargs(conf, section)
+        if connection_kwargs:
+            pool_config["kwargs"] = connection_kwargs
+
         self.configure_factory(
             db_url=conf[section].connection_url,
-            config={
-                "min_size": conf[section].connection_pool_min_size,
-                "max_size": conf[section].connection_pool_max_size,
-                "open": conf[section].connection_pool_open,
-                "timeout": conf[section].connection_pool_client_timeout,
-                "max_waiting": conf[section].connection_pool_max_waiting,
-                "max_lifetime": conf[section].connection_max_lifetime,
-                "max_idle": conf[section].connection_max_idle,
-                "reconnect_timeout": conf[section].connection_pool_reconnect_timeout,
-                "num_workers": conf[section].connection_pool_num_workers,
-            },
+            config=pool_config,
             query_cache=conf[section].connection_query_cache,
             name=name,
             readonly=readonly,

@@ -15,7 +15,9 @@
 #    under the License.
 
 import mock
+from oslo_config import cfg
 
+from restalchemy.common import config_opts
 from restalchemy.storage.sql import engines
 from restalchemy.tests.unit import base
 
@@ -85,3 +87,53 @@ class DBConnectionUrlTestCase(base.BaseTestCase):
 
         self.assertEqual(actual_repr, self._DB_URL_CENSORED)
         self.assertEqual(actual_str, actual_repr)
+
+
+class PostgreSQLFactoryConfigTestCase(base.BaseTestCase):
+    def setUp(self):
+        super(PostgreSQLFactoryConfigTestCase, self).setUp()
+        self.conf = cfg.ConfigOpts()
+        config_opts.register_postgresql_db_opts(self.conf)
+        self.conf([])
+
+    def _configure(self):
+        with mock.patch.object(
+            engines.engine_factory, "configure_factory"
+        ) as configure_factory:
+            engines.engine_factory.configure_postgresql_factory(self.conf)
+        return configure_factory.call_args.kwargs["config"]
+
+    def test_connection_kwargs_are_omitted_by_default(self):
+        config = self._configure()
+
+        self.assertNotIn("kwargs", config)
+
+    def test_connection_timeouts_are_passed_to_psycopg(self):
+        self.conf.set_override("connection_connect_timeout", 30, group="db")
+        self.conf.set_override("connection_statement_timeout", 240, group="db")
+        self.conf.set_override("connection_transaction_timeout", 300, group="db")
+        self.conf.set_override(
+            "connection_idle_in_transaction_session_timeout", 240, group="db"
+        )
+        self.conf.set_override("connection_tcp_user_timeout", 300, group="db")
+        self.conf.set_override("connection_keepalives_idle", 60, group="db")
+        self.conf.set_override("connection_keepalives_interval", 30, group="db")
+        self.conf.set_override("connection_keepalives_count", 5, group="db")
+
+        config = self._configure()
+
+        self.assertEqual(
+            {
+                "connect_timeout": 30,
+                "keepalives_idle": 60,
+                "keepalives_interval": 30,
+                "keepalives_count": 5,
+                "tcp_user_timeout": 300000,
+                "options": (
+                    "-c statement_timeout=240000"
+                    " -c transaction_timeout=300000"
+                    " -c idle_in_transaction_session_timeout=240000"
+                ),
+            },
+            config["kwargs"],
+        )

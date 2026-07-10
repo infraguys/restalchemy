@@ -66,6 +66,40 @@ PgSQLEngine(db_url, config=None, query_cache=False)
 - `get_connection()`: берёт соединение из пула.
 - `close_connection(conn)`: возвращает соединение в пул.
 
+### Таймауты соединения
+
+`register_postgresql_db_opts()` регистрирует настройки таймаутов соединения,
+сервера и TCP. Продолжительность задаётся в секундах; значение `0` сохраняет
+соответствующее значение по умолчанию libpq, PostgreSQL или операционной
+системы.
+
+- `connection_connect_timeout`: время на установление соединения.
+- `connection_statement_timeout`: максимальное время выполнения SQL-запроса.
+- `connection_transaction_timeout`: максимальная длительность транзакции;
+  требуется PostgreSQL 17 или новее.
+- `connection_idle_in_transaction_session_timeout`: максимальное время простоя
+  сессии внутри транзакции.
+- `connection_tcp_user_timeout`: максимальное время без подтверждения
+  переданных TCP-данных.
+- `connection_keepalives_idle`, `connection_keepalives_interval` и
+  `connection_keepalives_count`: параметры обнаружения разрыва через TCP
+  keepalive.
+
+Пример ограничивает выполнение запроса и простой транзакции четырьмя минутами,
+а транзакцию целиком и неподтверждённые TCP-данные — пятью минутами:
+
+```ini
+[db]
+connection_connect_timeout = 30
+connection_statement_timeout = 240
+connection_transaction_timeout = 300
+connection_idle_in_transaction_session_timeout = 240
+connection_tcp_user_timeout = 300
+connection_keepalives_idle = 60
+connection_keepalives_interval = 30
+connection_keepalives_count = 5
+```
+
 ---
 
 ## MySQL-движок
