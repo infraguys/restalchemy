@@ -85,8 +85,10 @@ The engine is created internally by `EngineFactory`.
 ### Connection timeouts
 
 `register_postgresql_db_opts()` registers connection, server, and TCP timeout
-options. Durations are configured in seconds; `0` keeps the corresponding
-libpq, PostgreSQL, or operating-system default.
+options. Durations are configured in seconds. An omitted option keeps the
+corresponding libpq, PostgreSQL, or operating-system setting. An explicit `0`
+is passed to the driver; for PostgreSQL server timeouts, it disables the
+timeout.
 
 - `connection_connect_timeout`: time allowed to establish a connection.
 - `connection_statement_timeout`: maximum statement execution time.

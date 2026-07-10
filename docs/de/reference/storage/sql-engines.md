@@ -43,8 +43,10 @@ Dieses Modul enthält die Engine-Factory und konkrete Engines für MySQL und Pos
 ### Verbindungs-Timeouts
 
 `register_postgresql_db_opts()` registriert Einstellungen für Verbindungs-,
-Server- und TCP-Timeouts. Zeiträume werden in Sekunden angegeben; `0` behält
-den jeweiligen Standardwert von libpq, PostgreSQL oder dem Betriebssystem bei.
+Server- und TCP-Timeouts. Zeiträume werden in Sekunden angegeben. Eine nicht
+gesetzte Option behält die jeweilige Einstellung von libpq, PostgreSQL oder dem
+Betriebssystem bei. Ein expliziter Wert von `0` wird an den Treiber übergeben;
+bei PostgreSQL-Server-Timeouts deaktiviert er den Timeout.
 
 - `connection_connect_timeout`: Zeit zum Aufbau einer Verbindung.
 - `connection_statement_timeout`: maximale Ausführungszeit einer Anweisung.

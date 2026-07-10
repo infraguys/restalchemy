@@ -108,6 +108,38 @@ class PostgreSQLFactoryConfigTestCase(base.BaseTestCase):
 
         self.assertNotIn("kwargs", config)
 
+    def test_explicit_zero_connection_timeouts_are_passed_to_psycopg(self):
+        timeout_options = (
+            "connection_connect_timeout",
+            "connection_statement_timeout",
+            "connection_transaction_timeout",
+            "connection_idle_in_transaction_session_timeout",
+            "connection_tcp_user_timeout",
+            "connection_keepalives_idle",
+            "connection_keepalives_interval",
+            "connection_keepalives_count",
+        )
+        for option in timeout_options:
+            self.conf.set_override(option, 0, group="db")
+
+        config = self._configure()
+
+        self.assertEqual(
+            {
+                "connect_timeout": 0,
+                "keepalives_idle": 0,
+                "keepalives_interval": 0,
+                "keepalives_count": 0,
+                "tcp_user_timeout": 0,
+                "options": (
+                    "-c statement_timeout=0"
+                    " -c transaction_timeout=0"
+                    " -c idle_in_transaction_session_timeout=0"
+                ),
+            },
+            config["kwargs"],
+        )
+
     def test_connection_timeouts_are_passed_to_psycopg(self):
         self.conf.set_override("connection_connect_timeout", 30, group="db")
         self.conf.set_override("connection_statement_timeout", 240, group="db")

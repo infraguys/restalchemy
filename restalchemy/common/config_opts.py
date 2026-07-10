@@ -193,75 +193,77 @@ def register_postgresql_db_opts(
         ),
         cfg.IntOpt(
             "connection_connect_timeout",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Maximum time in seconds to establish a PostgreSQL connection."
-                " 0 uses the libpq default."
+                " Unset uses the libpq default; 0 disables the libpq timeout."
             ),
         ),
         cfg.IntOpt(
             "connection_statement_timeout",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Maximum time in seconds a PostgreSQL statement may run."
-                " 0 disables the timeout."
+                " Unset uses the PostgreSQL setting; 0 disables the timeout."
             ),
         ),
         cfg.IntOpt(
             "connection_transaction_timeout",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Maximum time in seconds a PostgreSQL transaction may run."
-                " 0 disables the timeout. Requires PostgreSQL 17 or newer."
+                " Unset uses the PostgreSQL setting; 0 disables the timeout."
+                " Requires PostgreSQL 17 or newer."
             ),
         ),
         cfg.IntOpt(
             "connection_idle_in_transaction_session_timeout",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Maximum time in seconds a PostgreSQL session may remain idle"
-                " in a transaction. 0 disables the timeout."
+                " in a transaction. Unset uses the PostgreSQL setting; 0"
+                " disables the timeout."
             ),
         ),
         cfg.IntOpt(
             "connection_tcp_user_timeout",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Maximum time in seconds transmitted data may remain"
                 " unacknowledged before PostgreSQL closes the connection."
-                " 0 uses the operating system default."
+                " Unset or 0 uses the operating system default."
             ),
         ),
         cfg.IntOpt(
             "connection_keepalives_idle",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Seconds of inactivity before PostgreSQL sends a TCP keepalive."
-                " 0 uses the operating system default."
+                " Unset or 0 uses the operating system default."
             ),
         ),
         cfg.IntOpt(
             "connection_keepalives_interval",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Seconds between unacknowledged PostgreSQL TCP keepalives."
-                " 0 uses the operating system default."
+                " Unset or 0 uses the operating system default."
             ),
         ),
         cfg.IntOpt(
             "connection_keepalives_count",
-            default=0,
+            default=None,
             min=0,
             help=(
                 "Number of lost PostgreSQL TCP keepalives before the connection"
-                " is closed. 0 uses the operating system default."
+                " is closed. Unset or 0 uses the operating system default."
             ),
         ),
     ]

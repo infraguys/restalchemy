@@ -49,11 +49,12 @@ def _postgresql_connection_kwargs(conf: tp.Any, section: str) -> tp.Dict[str, tp
         "keepalives_count": section_conf.connection_keepalives_count,
     }
     for name, value in connection_parameters.items():
-        if value > 0:
+        if value is not None:
             kwargs[name] = value
 
-    if section_conf.connection_tcp_user_timeout > 0:
-        kwargs["tcp_user_timeout"] = section_conf.connection_tcp_user_timeout * 1000
+    tcp_user_timeout = section_conf.connection_tcp_user_timeout
+    if tcp_user_timeout is not None:
+        kwargs["tcp_user_timeout"] = tcp_user_timeout * 1000
 
     server_options = []
     server_timeouts = {
@@ -64,7 +65,7 @@ def _postgresql_connection_kwargs(conf: tp.Any, section: str) -> tp.Dict[str, tp
         ),
     }
     for name, value in server_timeouts.items():
-        if value > 0:
+        if value is not None:
             server_options.append(f"-c {name}={value * 1000}")
     if server_options:
         kwargs["options"] = " ".join(server_options)
