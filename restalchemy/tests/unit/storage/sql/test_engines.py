@@ -169,3 +169,19 @@ class PostgreSQLFactoryConfigTestCase(base.BaseTestCase):
             },
             config["kwargs"],
         )
+
+    def test_connection_timeouts_preserve_url_options(self):
+        self.conf.set_override(
+            "connection_url",
+            "postgresql://user:password@localhost/db"
+            "?options=-c%20search_path%3Dapplication",
+            group="db",
+        )
+        self.conf.set_override("connection_statement_timeout", 240, group="db")
+
+        config = self._configure()
+
+        self.assertEqual(
+            "-c search_path=application -c statement_timeout=240000",
+            config["kwargs"]["options"],
+        )
