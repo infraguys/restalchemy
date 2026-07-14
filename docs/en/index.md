@@ -108,6 +108,7 @@ Recommended reading order if you are new to RESTAlchemy:
    - Basic CRUD
    - Filtering, sorting, pagination
    - Relationships between models
+   - [Batch requests](how-to/api-batch-requests.md)
 5. Reference:
    - `restalchemy.api.*`
    - `restalchemy.dm.*`
