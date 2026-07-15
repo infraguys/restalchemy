@@ -99,3 +99,44 @@ class ContainsAnyFilterTestCase(base.BaseTestCase):
     def test_repr(self):
         f = filters.ContainsAny(["x"])
         self.assertIn("ContainsAny", repr(f))
+
+
+class JSONFieldsFilterTestCase(base.BaseTestCase):
+    def test_plain_scalar_becomes_eq(self):
+        f = filters.JSONFields({"kind": "foo"})
+
+        self.assertEqual({"kind": filters.EQ("foo")}, f.value)
+
+    def test_explicit_clause_is_kept_as_is(self):
+        f = filters.JSONFields({"value": filters.GT(10)})
+
+        self.assertEqual({"value": filters.GT(10)}, f.value)
+
+    def test_mixed_fields(self):
+        f = filters.JSONFields({"kind": "foo", "value": filters.GT(10)})
+
+        self.assertEqual({"kind": filters.EQ("foo"), "value": filters.GT(10)}, f.value)
+
+    def test_equal(self):
+        self.assertEqual(
+            filters.JSONFields({"kind": "foo"}), filters.JSONFields({"kind": "foo"})
+        )
+
+    def test_not_equal_value(self):
+        self.assertNotEqual(
+            filters.JSONFields({"kind": "foo"}), filters.JSONFields({"kind": "bar"})
+        )
+
+    def test_and_expression_value_raises(self):
+        self.assertRaises(
+            ValueError,
+            filters.JSONFields,
+            {"kind": filters.AND({"a": filters.EQ(1)})},
+        )
+
+    def test_or_expression_value_raises(self):
+        self.assertRaises(
+            ValueError,
+            filters.JSONFields,
+            {"kind": filters.OR({"a": filters.EQ(1)})},
+        )

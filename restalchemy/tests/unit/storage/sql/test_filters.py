@@ -15,6 +15,7 @@
 #    under the License.
 
 import collections
+import decimal
 from unittest import mock
 import uuid
 
@@ -549,6 +550,112 @@ class PostgreSqlContainsAnyConvertFiltersTestCase(base.BaseTestCase):
         )
         self.assertEqual('"tags" && %s', processed.construct_expression())
         self.assertEqual([["env:prod", "env:staging"]], processed.value)
+
+
+class JSONFieldModel(models.Model):
+    spec = properties.property(types.Dict(), default=dict)
+
+
+class JSONFieldsConvertFiltersTestCase(base.BaseTestCase):
+    def test_single_key_equality(self):
+        processed = filters.convert_filters(
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({"kind": "foo"})},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            "(\"spec\"->>'kind') = %s",
+            processed.construct_expression(),
+        )
+        self.assertEqual(["foo"], processed.value)
+
+    def test_range_on_int_value_adds_bigint_cast(self):
+        processed = filters.convert_filters(
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({"value": dm_filters.GT(10)})},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            "(\"spec\"->>'value')::bigint > %s",
+            processed.construct_expression(),
+        )
+        self.assertEqual([10], processed.value)
+
+    def test_range_on_decimal_value_adds_numeric_cast(self):
+        processed = filters.convert_filters(
+            JSONFieldModel,
+            {
+                "spec": dm_filters.JSONFields(
+                    {"price": dm_filters.GT(decimal.Decimal("9.99"))}
+                )
+            },
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            "(\"spec\"->>'price')::numeric > %s",
+            processed.construct_expression(),
+        )
+        self.assertEqual([decimal.Decimal("9.99")], processed.value)
+
+    def test_multiple_keys_are_anded_value_order_preserved(self):
+        d = collections.OrderedDict()
+        d["kind"] = "foo"
+        d["value"] = dm_filters.GT(10)
+        processed = filters.convert_filters(
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields(d)},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            "((\"spec\"->>'kind') = %s AND (\"spec\"->>'value')::bigint > %s)",
+            processed.construct_expression(),
+        )
+        self.assertEqual(["foo", 10], processed.value)
+
+    def test_bool_value_gets_boolean_cast(self):
+        processed = filters.convert_filters(
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({"active": True})},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            "(\"spec\"->>'active')::boolean = %s",
+            processed.construct_expression(),
+        )
+        self.assertEqual([True], processed.value)
+
+    def test_none_value_downgrades_to_null_safe_is(self):
+        processed = filters.convert_filters(
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({"label": None})},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            "(\"spec\"->>'label') IS NOT DISTINCT FROM %s",
+            processed.construct_expression(),
+        )
+        self.assertEqual([None], processed.value)
+
+    def test_unsupported_clause_raises(self):
+        self.assertRaises(
+            ValueError,
+            filters.convert_filters,
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({"tags": dm_filters.In([1, 2])})},
+            session=_PostgreSqlSessionFixture(),
+        )
+
+    def test_key_with_single_quote_is_escaped_not_injected(self):
+        processed = filters.convert_filters(
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({"a'; DROP TABLE t; --": "x"})},
+            session=_PostgreSqlSessionFixture(),
+        )
+        self.assertEqual(
+            "(\"spec\"->>'a''; DROP TABLE t; --') = %s",
+            processed.construct_expression(),
+        )
+        self.assertEqual(["x"], processed.value)
 
 
 class ConvertFiltersTestCase(base.BaseTestCase):
