@@ -96,6 +96,34 @@ class ContainsAny(AbstractClause):
     pass
 
 
+class JSONFields(AbstractClause):
+    """Filter on fields nested inside a JSON/JSONB column.
+
+    ``value`` maps a JSON key to either a plain scalar (shorthand for
+    ``EQ``) or another ``AbstractClause`` (``EQ``, ``NE``, ``GT``, ``GE``,
+    ``LT``, ``LE``, ``Like``, ``NotLike``, ``Is``, ``IsNot``) to apply to
+    that key. Multiple keys are combined with AND.
+
+    Example::
+
+        get_all(filters={"spec": JSONFields({"kind": "foo", "value": GT(10)})})
+
+    See ``storage.sql.filters.PostgreSqlJSONFields`` for how this compiles
+    to SQL and what indexes make it fast.
+    """
+
+    def __init__(self, fields):
+        value = {}
+        for key, val in fields.items():
+            if isinstance(val, AbstractExpression):
+                raise ValueError(
+                    "JSONFields does not support expressions (e.g. %s) for "
+                    "key %r" % (type(val).__name__, key)
+                )
+            value[key] = val if isinstance(val, AbstractClause) else EQ(val)
+        super(JSONFields, self).__init__(value)
+
+
 class AbstractExpression(metaclass=abc.ABCMeta):
     def __init__(self, *clauses):
         super(AbstractExpression, self).__init__()
