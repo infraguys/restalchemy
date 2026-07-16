@@ -532,10 +532,15 @@ class AbstractResource(metaclass=abc.ABCMeta):
             )
         )
 
-    def get_prop_kwargs(self, name):
-        return self.get_model().properties.properties[name].get_kwargs()
+    def get_prop_kwargs(self, name, openapi_version):
+        try:
+            kwargs = self.get_model().properties.properties[name].get_kwargs()
+        except KeyError:
+            kwargs = {}
+        kwargs["openapi"] = openapi_version
+        return kwargs
 
-    def generate_schema_object(self, method):
+    def generate_schema_object(self, method, openapi_version):
         properties = {}
         required = []
 
@@ -544,10 +549,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
         req.api_context.set_active_method(method)
 
         for name, prop in self.get_fields_by_method(method):
-            try:
-                prop_kwargs = self.get_prop_kwargs(name)
-            except KeyError:
-                prop_kwargs = {}
+            prop_kwargs = self.get_prop_kwargs(name, openapi_version)
 
             is_readonly = self._fields_permissions.is_readonly(name, req)
             is_hidden = self._fields_permissions.is_hidden(name, req)

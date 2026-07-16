@@ -28,6 +28,8 @@ import uuid
 import email_validator
 import orjson
 
+from restalchemy.openapi import constants as openapi_constants
+
 INFINITY = float("inf")
 INFINITI = INFINITY  # TODO(d.burmistrov): remove this hack
 UUID_RE_TEMPLATE = (
@@ -58,10 +60,12 @@ HOSTNAME_RE_TEMPLATE = (
     # Last character of the gTLD
     r"[A-Za-z]$"
 )
+OPENAPI_KEYWORD = "openapi"
+EXAMPLE_KEYWORD = "example"
 KWARGS_OPENAPI_MAP = {
     "read_only": "readOnly",
     "default": "default",
-    "example": "example",
+    EXAMPLE_KEYWORD: "example",
 }
 MYSQL_DATETIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
 DEFAULT_UUID = str(uuid.UUID("00000000-0000-0000-0000-000000000000"))
@@ -76,6 +80,7 @@ OPENAPI_DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 def build_prop_kwargs(kwargs, to_simple_type=None):
+    openapi_type = kwargs.pop(OPENAPI_KEYWORD, None)
     result = {}
     for k, v in KWARGS_OPENAPI_MAP.items():
         if k in kwargs.keys():
@@ -95,7 +100,14 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
             elif to_simple_type is not None:
                 value = to_simple_type(value)
 
-            result[v] = value
+            if (
+                k == EXAMPLE_KEYWORD
+                and openapi_type
+                and openapi_type == openapi_constants.OPENAPI_SPECIFICATION_3_1_0
+            ):
+                result["examples"] = [value]
+            else:
+                result[v] = value
     return result
 
 
@@ -635,6 +647,7 @@ class SoftSchemeDict(Dict):
         }
         for k, v in self._scheme.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
 
     @property
@@ -677,6 +690,7 @@ class SchemeDict(Dict):
         }
         for k, v in self._scheme.items():
             spec["properties"][k] = v.to_openapi_spec(prop_kwargs)
+        spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
 
     @property
@@ -1082,8 +1096,17 @@ class AllowNone(BaseType):
     def to_openapi_spec(self, prop_kwargs):
         if "default" in prop_kwargs and prop_kwargs["default"] is None:
             del prop_kwargs["default"]
+        openapi = prop_kwargs.get("openapi")
         spec = self._nested_type.to_openapi_spec(prop_kwargs)
-        spec["nullable"] = True
+        if openapi and openapi >= openapi_constants.OPENAPI_SPECIFICATION_3_1_0:
+            if "type" in spec:
+                if isinstance(spec["type"], list):
+                    if "null" not in spec["type"]:
+                        spec["type"].append("null")
+                elif spec["type"] != "null":
+                    spec["type"] = [spec["type"], "null"]
+        else:
+            spec["nullable"] = True
         return spec
 
     @property

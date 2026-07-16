@@ -210,7 +210,8 @@ class OpenApiPaths(object):
 
 
 class OpenApiComponents(object):
-    def __init__(self):
+    def __init__(self, openapi_version):
+        self.openapi_version = openapi_version
         super(OpenApiComponents, self).__init__()
 
     @staticmethod
@@ -247,7 +248,9 @@ class OpenApiComponents(object):
         self._merge_specs(resources_spec, self._build_responses())
 
         resource = route.get_controller(request).get_resource()
-        schema_generator = oa_utils.ResourceSchemaGenerator(resource, route)
+        schema_generator = oa_utils.ResourceSchemaGenerator(
+            resource, route, self.openapi_version
+        )
         if resource:
             resources_spec = self._merge_specs(
                 in_spec=resources_spec,

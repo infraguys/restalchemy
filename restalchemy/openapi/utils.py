@@ -20,10 +20,11 @@ LOG = logging.getLogger(__name__)
 
 
 class ResourceSchemaGenerator(object):
-    def __init__(self, resource, route):
+    def __init__(self, resource, route, openapi_version):
         super(ResourceSchemaGenerator, self).__init__()
         self._resource = resource
         self._route = route
+        self._openapi_version = openapi_version
 
     @property
     def resource_name(self):
@@ -36,16 +37,18 @@ class ResourceSchemaGenerator(object):
         return self.resource_name + prop_name.capitalize()
 
     def get_prop_kwargs(self, name):
-        return self._resource.get_model().properties.properties[name].get_kwargs()
+        try:
+            kwargs = self._resource.get_model().properties.properties[name].get_kwargs()
+        except KeyError:
+            kwargs = {}
+        kwargs["openapi"] = self._openapi_version
+        return kwargs
 
     def generate_parameter_object(self, request):
         parameters = {}
         has_id_property = False
         for name, prop in self._resource.get_fields_by_request(request):
-            try:
-                prop_kwargs = self.get_prop_kwargs(name)
-            except KeyError:
-                prop_kwargs = {}
+            prop_kwargs = self.get_prop_kwargs(name)
             schema = prop.get_type().to_openapi_spec(prop_kwargs)
             try:
                 is_id = prop.is_id_property()
@@ -70,10 +73,7 @@ class ResourceSchemaGenerator(object):
                 id_prop = list(id_prop_struct.items())[0]
                 name, prop = id_prop
                 prop = prop(value=prop._kwargs.get("default", 0))
-                try:
-                    prop_kwargs = self.get_prop_kwargs(name)
-                except KeyError:
-                    prop_kwargs = {}
+                prop_kwargs = self.get_prop_kwargs(name)
                 schema = prop.get_property_type().to_openapi_spec(prop_kwargs)
                 prop_name = self.resource_prop_name(name)
                 parameters[prop_name] = {
@@ -87,7 +87,7 @@ class ResourceSchemaGenerator(object):
         return parameters
 
     def generate_schema_object(self, method):
-        return self._resource.generate_schema_object(method)
+        return self._resource.generate_schema_object(method, self._openapi_version)
 
 
 class Schema(object):

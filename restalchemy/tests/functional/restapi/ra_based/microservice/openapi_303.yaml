@@ -1398,6 +1398,22 @@ paths:
           $ref: '#/components/responses/Error'
       summary: OpenApi specification
       tags: []
+  /specifications/3.1.0:
+    get:
+      operationId: Get_OpenApi_specification
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties: {}
+                type: object
+          description: OpenApi specification
+        default:
+          $ref: '#/components/responses/Error'
+      summary: OpenApi specification
+      tags: []
   /v1/:
     get:
       operationId: Filter_v1
@@ -1631,6 +1647,29 @@ paths:
         default:
           $ref: '#/components/responses/Error'
       summary: Update VM
+      tags:
+      - VM
+  /v1/vms/{VMUuid}/actions/ip_addresses:
+    get:
+      operationId: Ip_addresses_v1_vms_VMUuid_actions_ip_addresses
+      parameters:
+      - in: path
+        name: VMUuid
+        required: true
+        schema:
+          example: 00000000-0000-0000-0000-000000000000
+          format: uuid
+          readOnly: true
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Get nested urls
+        default:
+          $ref: '#/components/responses/Error'
+      summary: Ip_addresses IpAddress
       tags:
       - VM
   /v1/vms/{VMUuid}/actions/power/invoke:
@@ -2893,7 +2932,7 @@ paths:
       - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:40963
+  url: http://127.0.0.1:35967
   variables:
     version:
       default: v1

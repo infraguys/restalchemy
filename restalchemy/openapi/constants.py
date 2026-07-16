@@ -18,6 +18,7 @@ from restalchemy.api import constants as ra_const
 from restalchemy.common import status
 
 OPENAPI_SPECIFICATION_3_0_3 = "3.0.3"
+OPENAPI_SPECIFICATION_3_1_0 = "3.1.0"
 
 API_VERSION_V1 = "v1"
 
