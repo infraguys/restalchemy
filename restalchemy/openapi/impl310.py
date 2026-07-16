@@ -18,8 +18,8 @@ from restalchemy.openapi import constants
 from restalchemy.openapi import structures
 
 
-class OpenApi303(object):
-    """OpenAPI Specification
+class OpenApi310(object):
+    """OpenAPI Specification 3.1.0
 
     The OpenAPI Specification (OAS) defines a standard, language-agnostic
     interface to RESTful APIs which allows both humans and computers to
@@ -53,8 +53,8 @@ class OpenApi303(object):
         array.
     :param tags: A list of tags used by the specification with additional
         metadata. The order of the tags can be used to reflect on their order
-        by the parsing tools. Not all tags that are used by the Operation
-        Object must be declared. The tags that are not declared MAY be
+        by the parsing tools. Not all tags that are used by the specification
+        MUST be declared. The tags that are not declared MAY be
         organized randomly or based on the tools' logic. Each tag name in the
         list MUST be unique.
     :param external_docs: Additional external documentation.
@@ -70,12 +70,12 @@ class OpenApi303(object):
         tags=None,
         external_docs=None,
     ):
-        super(OpenApi303, self).__init__()
+        super(OpenApi310, self).__init__()
         self._info = info or structures.OpenApiInfo()
         self._paths = paths or structures.OpenApiPaths()
         self._servers = servers or structures.OpenApiServers()
         self._components = components or structures.OpenApiComponents(
-            constants.OPENAPI_SPECIFICATION_3_0_3
+            constants.OPENAPI_SPECIFICATION_3_1_0
         )
         self._security = security
         self._tags = tags or structures.OpenApiTags([])
@@ -83,7 +83,8 @@ class OpenApi303(object):
 
     def build_openapi_specification(self, request):
         specification = {
-            "openapi": constants.OPENAPI_SPECIFICATION_3_0_3,
+            "openapi": constants.OPENAPI_SPECIFICATION_3_1_0,
+            "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
         }
 
         specification.update(self._info.build(request))

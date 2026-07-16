@@ -49,7 +49,8 @@ TEMPL_ROOT_COLLECTION_ENDPOINT = TEMPL_SERVICE_ENDPOINT
 TEMPL_SPEC_SPEC_ENDPOINT = utils.lastslash(
     parse.urljoin(TEMPL_SERVICE_ENDPOINT, "specifications")
 )
-TEMPL_OPENAPI_SPEC_ENDPOINT = parse.urljoin(TEMPL_SPEC_SPEC_ENDPOINT, "3.0.3")
+TEMPL_OPENAPI_SPEC_303_ENDPOINT = parse.urljoin(TEMPL_SPEC_SPEC_ENDPOINT, "3.0.3")
+TEMPL_OPENAPI_SPEC_310_ENDPOINT = parse.urljoin(TEMPL_SPEC_SPEC_ENDPOINT, "3.1.0")
 TEMPL_V1_COLLECTION_ENDPOINT = utils.lastslash(
     parse.urljoin(TEMPL_SERVICE_ENDPOINT, "v1")
 )
@@ -154,8 +155,8 @@ class TestRootResourceTestCase(BaseResourceTestCase):
         self.assertEqual(sorted(response.json()), ["specifications", "v1"])
 
 
-class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
-    def test_generate_openapi_specification(self):
+class TestOpenApiSpecification303TestCase(BaseResourceTestCase):
+    def test_generate_openapi_specification_303(self):
         info = {
             "title": "REST API Microservice",
             "description": "REST API Microservice for tests",
@@ -173,23 +174,69 @@ class TestOpenApiSpecificationTestCase(BaseResourceTestCase):
         }
 
         response = requests.get(
-            self.get_endpoint(TEMPL_OPENAPI_SPEC_ENDPOINT),
+            self.get_endpoint(TEMPL_OPENAPI_SPEC_303_ENDPOINT),
         )
 
         self.assertEqual(200, response.status_code)
 
         res = response.json()
+        self.assertEqual(res["openapi"], "3.0.3")
+        self.assertEqual(res["info"], info)
+        self.assertNotIn("jsonSchemaDialect", res)
         # NOTE(v.burygin): to save openapi.yaml
         # import os
+        #
         # import yaml
+        #
         # with open(
-        #     os.path.dirname(__file__) + "/microservice/openapi.yaml",
+        #     os.path.dirname(__file__) + "/microservice/openapi_303.yaml",
         #     "w",
         # ) as f:
         #     yaml.safe_dump(res, f, encoding="utf-8", allow_unicode=True)
 
-        self.assertEqual(res["openapi"], "3.0.3")
+
+class TestOpenApiSpecification310TestCase(BaseResourceTestCase):
+    def test_generate_openapi_specification_310(self):
+        info = {
+            "title": "REST API Microservice",
+            "description": "REST API Microservice for tests",
+            "termsOfService": "https://functional.tests/terms/",
+            "contact": {
+                "name": "Functional Tests",
+                "url": "https://functional.tests/",
+                "email": "functional@tests.local",
+            },
+            "license": {
+                "name": "Apache 2.0",
+                "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
+            },
+            "version": "1.2.3",
+        }
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_OPENAPI_SPEC_310_ENDPOINT),
+        )
+
+        self.assertEqual(200, response.status_code)
+
+        res = response.json()
+
+        self.assertEqual(res["openapi"], "3.1.0")
         self.assertEqual(res["info"], info)
+        self.assertEqual(
+            res["jsonSchemaDialect"],
+            "https://spec.openapis.org/oas/3.1/dialect/base",
+        )
+        # NOTE(v.burygin): to save openapi.yaml
+        # import os
+        #
+        # import yaml
+        #
+        # with open(
+        #     os.path.dirname(__file__) + "/microservice/openapi_310.yaml",
+        #     "w",
+        # ) as f:
+        #     yaml.safe_dump(res, f, encoding="utf-8", allow_unicode=True)
 
 
 class TestVersionsResourceTestCase(BaseResourceTestCase):

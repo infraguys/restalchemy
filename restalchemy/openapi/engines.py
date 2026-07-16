@@ -16,9 +16,11 @@
 
 from restalchemy.openapi import constants
 from restalchemy.openapi import impl303
+from restalchemy.openapi import impl310
 
 SUPPORTED_OPENAPI_SPECIFICATIONS = {
     constants.OPENAPI_SPECIFICATION_3_0_3: impl303.OpenApi303,
+    constants.OPENAPI_SPECIFICATION_3_1_0: impl310.OpenApi310,
 }
 
 

@@ -75,7 +75,6 @@ def build_wsgi_application(app_root):
             terms_of_service="https://functional.tests/terms/",
         ),
         paths=openapi_structures.OpenApiPaths(),
-        components=openapi_structures.OpenApiComponents(),
         security=[openapi_structures.OpenApiSecurity()],
         tags=openapi_structures.OpenApiTags(
             [
@@ -84,7 +83,7 @@ def build_wsgi_application(app_root):
                     description="Just functional tests",
                     external_docs=openapi_structures.OpenApiExternalDocs(
                         url="https://https://functional.tests/docs/",
-                        description=("Functional tests external documentation"),
+                        description="Functional tests external documentation",
                     ),
                 )
             ]
