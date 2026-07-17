@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import tempfile
 import unittest
 
 import mock
@@ -107,6 +108,49 @@ class TestRawResponses(unittest.TestCase):
             result.headers["Content-Disposition"],
             headers["Content-Disposition"],
         )
+
+
+class TestOpenApiSpecificationCache(unittest.TestCase):
+    def setUp(self):
+        super(TestOpenApiSpecificationCache, self).setUp()
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self._engine = mock.Mock()
+        self._engine.build_openapi_specification.return_value = {
+            "openapi": "3.0.3",
+        }
+        request = mock.Mock()
+        request.application.openapi_engine = self._engine
+        self._controller = controllers.OpenApiSpecificationController(request)
+
+    @mock.patch("restalchemy.api.controllers.tempfile.gettempdir")
+    def test_get_caches_openapi_specification(self, gettempdir):
+        gettempdir.return_value = self._tmpdir.name
+
+        first = self._controller.get("3.0.3")
+        second = self._controller.get("3.0.3")
+
+        self.assertEqual({"openapi": "3.0.3"}, first)
+        self.assertEqual(first, second)
+        self._engine.build_openapi_specification.assert_called_once_with(
+            version="3.0.3",
+            request=self._controller._req,
+        )
+
+    @mock.patch("restalchemy.api.controllers.tempfile.gettempdir")
+    def test_update_recalculates_openapi_specification(self, gettempdir):
+        gettempdir.return_value = self._tmpdir.name
+        self._controller.get("3.0.3")
+        self._engine.build_openapi_specification.return_value = {
+            "openapi": "3.0.3",
+            "info": {"version": "updated"},
+        }
+
+        result = self._controller.update("3.0.3")
+
+        self.assertEqual({"openapi": "3.0.3", "info": {"version": "updated"}}, result)
+        self.assertEqual(result, self._controller.get("3.0.3"))
+        self.assertEqual(2, self._engine.build_openapi_specification.call_count)
 
 
 class FakeResource(object):
