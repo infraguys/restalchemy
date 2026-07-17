@@ -18,6 +18,7 @@
 import collections
 import contextlib
 from functools import partial
+import os
 import socket
 from urllib import parse
 import uuid as pyuuid
@@ -28,11 +29,13 @@ import requests
 from webob import request
 
 from restalchemy.api import constants
+from restalchemy.api import controllers
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import utils
 from restalchemy.dm import filters
 from restalchemy.dm import types
+from restalchemy.openapi import constants as openapi_constants
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.tables import SQLTable
@@ -157,6 +160,12 @@ class TestRootResourceTestCase(BaseResourceTestCase):
 
 class TestOpenApiSpecification303TestCase(BaseResourceTestCase):
     def test_generate_openapi_specification_303(self):
+        cache_path = controllers.OpenApiSpecificationController._get_openapi_cache_path(
+            openapi_constants.OPENAPI_SPECIFICATION_3_0_3
+        )
+        if os.path.exists(cache_path):
+            os.remove(cache_path)
+
         info = {
             "title": "REST API Microservice",
             "description": "REST API Microservice for tests",
@@ -185,14 +194,22 @@ class TestOpenApiSpecification303TestCase(BaseResourceTestCase):
         self.assertNotIn("jsonSchemaDialect", res)
         # NOTE(v.burygin): to save openapi.yaml
         # import os
-        #
         # import yaml
-        #
         # with open(
         #     os.path.dirname(__file__) + "/microservice/openapi_303.yaml",
         #     "w",
         # ) as f:
         #     yaml.safe_dump(res, f, encoding="utf-8", allow_unicode=True)
+
+    def test_recalculate_openapi_specification(self):
+        response = requests.put(
+            self.get_endpoint(TEMPL_OPENAPI_SPEC_303_ENDPOINT), json={}
+        )
+
+        self.assertEqual(200, response.status_code)
+
+        res = response.json()
+        self.assertEqual(res["openapi"], "3.0.3")
 
 
 class TestOpenApiSpecification310TestCase(BaseResourceTestCase):
@@ -229,9 +246,7 @@ class TestOpenApiSpecification310TestCase(BaseResourceTestCase):
         )
         # NOTE(v.burygin): to save openapi.yaml
         # import os
-        #
         # import yaml
-        #
         # with open(
         #     os.path.dirname(__file__) + "/microservice/openapi_310.yaml",
         #     "w",

@@ -668,7 +668,7 @@ def action(action_class, invoke=False):
 
 class OpenApiSpecificationRoute(Route):
     __controller__ = controllers.OpenApiSpecificationController
-    __allow_methods__ = [FILTER, GET]
+    __allow_methods__ = [FILTER, GET, UPDATE]
 
 
 class RootRoute(Route):

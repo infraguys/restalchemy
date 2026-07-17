@@ -15,7 +15,10 @@
 #    under the License.
 
 import itertools
+import json
 import logging
+import os
+import tempfile
 
 import webob
 
@@ -767,6 +770,43 @@ class RootController(RoutesListController):
 
 
 class OpenApiSpecificationController(Controller):
+    @staticmethod
+    def _get_openapi_cache_path(version):
+        safe_version = version.replace(os.sep, "_")
+        return os.path.join(
+            tempfile.gettempdir(), "restalchemy-openapi-%s.json" % safe_version
+        )
+
+    @staticmethod
+    def _write_openapi_cache(path, specification):
+        try:
+            fd, temporary_path = tempfile.mkstemp(
+                prefix=".restalchemy-openapi-",
+                suffix=".json",
+                dir=tempfile.gettempdir(),
+            )
+            try:
+                with os.fdopen(fd, "w") as cache_file:
+                    json.dump(specification, cache_file)
+                os.replace(temporary_path, path)
+            except Exception:
+                os.unlink(temporary_path)
+                raise
+        except Exception as e:
+            LOG.warning("Failed to write OpenAPI cache to %s: %s", path, e)
+
+    def _build_openapi_specification(self, version):
+        openapi_engine = self.request.application.openapi_engine
+        if not openapi_engine:
+            raise exc.NotExtended()
+
+        specification = openapi_engine.build_openapi_specification(
+            version=version,
+            request=self._req,
+        )
+        self._write_openapi_cache(self._get_openapi_cache_path(version), specification)
+        return specification
+
     @oa_utils.extend_schema(
         summary="OpenApi specification",
         responses=oa_c.build_openapi_object_response(
@@ -775,13 +815,29 @@ class OpenApiSpecificationController(Controller):
         operation_id="Get_OpenApi_specification",
     )
     def get(self, uuid):
-        openapi_engine = self.request.application.openapi_engine
-        if openapi_engine:
-            return openapi_engine.build_openapi_specification(
-                version=uuid,
-                request=self._req,
-            )
-        raise exc.NotExtended()
+        """
+        GET /specifications/{version} continues to serve the cached specification when present.
+        """
+        cache_path = self._get_openapi_cache_path(uuid)
+        try:
+            with open(cache_path) as cache_file:
+                return json.load(cache_file)
+        except (OSError, ValueError):
+            return self._build_openapi_specification(uuid)
+
+    @oa_utils.extend_schema(
+        summary="Recalculate OpenApi specification",
+        responses=oa_c.build_openapi_object_response(
+            properties={}, description="OpenApi specification"
+        ),
+        operation_id="Update_OpenApi_specification",
+    )
+    def update(self, uuid):
+        """
+        PUT /specifications/{version} now always regenerates the OpenAPI document and
+        overwrites its /tmp/restalchemy-openapi-{version}.json cache file.
+        """
+        return self._build_openapi_specification(uuid)
 
     def filter(self, filters, order_by=None):
         openapi_engine = self.request.application.openapi_engine
