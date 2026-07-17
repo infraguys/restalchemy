@@ -155,7 +155,7 @@ def register_postgresql_db_opts(
                 "The maximum lifetime of a connection in the pool, in"
                 " seconds. Connections used for longer get closed and"
                 " replaced by a new one. The amount is reduced by a"
-                " random 10% to avoid mass eviction."
+                " random 10%% to avoid mass eviction."
             ),
         ),
         cfg.FloatOpt(
