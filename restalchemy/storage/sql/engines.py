@@ -19,17 +19,28 @@ import contextlib
 import logging
 import urllib.parse as parse
 
-from mysql.connector import pooling
-from psycopg.types.json import Jsonb
-from psycopg.types.json import JsonbDumper
-import psycopg_pool
-
 from restalchemy.common import constants as c
 from restalchemy.common import singletons
 from restalchemy.storage.sql import sessions
 from restalchemy.storage.sql.dialect import adapters
-from restalchemy.storage.sql.dialect import mysql
-from restalchemy.storage.sql.dialect import pgsql
+
+_MYSQL_AVAILABLE = True
+try:
+    from mysql.connector import pooling
+except ImportError:
+    pooling = None
+    _MYSQL_AVAILABLE = False
+
+_PSYCOPG_AVAILABLE = True
+try:
+    from psycopg.types.json import Jsonb
+    from psycopg.types.json import JsonbDumper
+    import psycopg_pool
+except ImportError:
+    Jsonb = None
+    JsonbDumper = None
+    psycopg_pool = None
+    _PSYCOPG_AVAILABLE = False
 
 DEFAULT_NAME = "default"
 DEFAULT_CONNECTION_TIMEOUT = 10
@@ -312,9 +323,20 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         conn.close()
 
 
-class PgDictJsonbDumper(JsonbDumper):
-    def dump(self, obj):
-        return obj if obj is None else super().dump(Jsonb(obj))
+if _PSYCOPG_AVAILABLE:
+
+    class PgDictJsonbDumper(JsonbDumper):
+        def dump(self, obj):
+            return obj if obj is None else super().dump(Jsonb(obj))
+
+else:
+
+    class PgDictJsonbDumper:
+        def dump(self, obj):
+            raise ModuleNotFoundError(
+                "No module named 'psycopg'. "
+                "Install it via: pip install restalchemy[pgsql]"
+            )
 
 
 class PgSQLEngine(AbstractEngine):
@@ -322,20 +344,13 @@ class PgSQLEngine(AbstractEngine):
     DEFAULT_PORT = c.RA_POSTGRESQL_DB_PORT
 
     def __init__(self, db_url, config=None, query_cache=False, readonly=False):
-        """
-        Initializes the PostgreSQL engine.
+        if not _PSYCOPG_AVAILABLE:
+            raise ModuleNotFoundError(
+                "No module named 'psycopg'. "
+                "Install it via: pip install restalchemy[pgsql]"
+            )
 
-        :param db_url: The connection URL for the PostgreSQL database.
-        :param config: A dictionary of configuration options for the engine.
-        :param query_cache: A boolean indicating whether the engine should
-            cache query results.
-        :param readonly: A boolean indicating whether the engine should
-                         operate in readonly mode. Note: Actual DB-level
-                         readonly enforcement requires using a database user
-                         with readonly permissions.
-
-        :return: The initialized engine.
-        """
+        from restalchemy.storage.sql.dialect import pgsql
 
         super(PgSQLEngine, self).__init__(
             db_url=db_url,
@@ -398,7 +413,9 @@ class PgSQLEngine(AbstractEngine):
         :raises psycopg2.Error: If an error occurs while closing the pool.
         """
 
-        self._pool.close()
+        pool = getattr(self, "_pool", None)
+        if pool is not None:
+            pool.close()
 
     def get_session(self):
         """
@@ -446,19 +463,14 @@ class MySQLEngine(AbstractEngine):
     DEFAULT_PORT = c.RA_MYSQL_DB_PORT
 
     def __init__(self, db_url, config=None, query_cache=False, readonly=False):
-        """
-        Initializes the MySQL engine.
+        if not _MYSQL_AVAILABLE:
+            raise ModuleNotFoundError(
+                "No module named 'mysql.connector'. "
+                "Install it via: pip install restalchemy[mysql]"
+            )
 
-        :param db_url: The URL of the database connection.
-        :param config: A dictionary of configuration options for the engine.
-        :param query_cache: A boolean indicating whether the engine should
-            cache query results.
-        :param readonly: A boolean indicating whether the engine should
-                         operate in readonly mode.
+        from restalchemy.storage.sql.dialect import mysql
 
-        :raises ValueError: If the database URL does not match the expected
-            format.
-        """
         super(MySQLEngine, self).__init__(
             db_url=db_url,
             dialect=mysql.MySQLDialect(),

@@ -238,3 +238,13 @@ class NotEqualUuidException(RestAlchemyException):
 class NotExtended(RestAlchemyException):
     message = "Application does not initialized with openapi engine."
     code = 400
+
+
+class MissingOptionalDependency(ImportError):
+    def __init__(self, library, extra):
+        super().__init__(
+            f"{library} is required for this feature. "
+            f"Install it via: pip install restalchemy[{extra}]"
+        )
+        self.library = library
+        self.extra = extra

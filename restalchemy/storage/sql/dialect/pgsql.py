@@ -20,7 +20,10 @@ from __future__ import absolute_import  # noqa
 
 from functools import wraps
 
-from psycopg import errors
+try:
+    from psycopg import errors
+except ImportError:
+    errors = None
 
 from restalchemy.storage.sql.dialect import base
 from restalchemy.storage.sql.dialect import exceptions as exc
@@ -48,6 +51,11 @@ def handle_database_errors(func):
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+        if errors is None:
+            raise ModuleNotFoundError(
+                "No module named 'psycopg'. "
+                "Install it via: pip install restalchemy[pgsql]"
+            )
         try:
             return func(self, *args, **kwargs)
         except errors.DeadlockDetected as e:
