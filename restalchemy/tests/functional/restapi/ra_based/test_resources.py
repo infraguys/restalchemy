@@ -155,7 +155,7 @@ class TestRootResourceTestCase(BaseResourceTestCase):
         response = requests.get(self.get_endpoint(TEMPL_ROOT_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(sorted(response.json()), ["specifications", "v1"])
+        self.assertEqual(sorted(response.json()), ["batch", "specifications", "v1"])
 
 
 class TestOpenApiSpecification303TestCase(BaseResourceTestCase):

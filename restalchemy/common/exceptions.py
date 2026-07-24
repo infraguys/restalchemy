@@ -228,6 +228,14 @@ class ValidationSortNumberError(ValidationErrorException):
     message = "Only one field can be sorted with such request."
 
 
+class BatchSizeLimitExceeded(ValidationErrorException):
+    message = "Batch of %(size)d requests exceeds maximum of %(max_size)d."
+
+
+class NestedBatchNotAllowed(ValidationErrorException):
+    message = "Batch requests may not target the batch endpoint itself."
+
+
 class NotEqualUuidException(RestAlchemyException):
     message = (
         "Uuid (%(uuid)s) in body is not equal to parsed id (%(parsed_id)s) from url."

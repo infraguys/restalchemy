@@ -30,5 +30,6 @@ Hauptmodule:
 - `restalchemy.api.contexts`
 - `restalchemy.api.field_permissions`
 - `restalchemy.api.middlewares.*`
+- `restalchemy.api.batch`
 
 Derzeit wird diese Referenz als einzelne Übersichtsseite bereitgestellt.

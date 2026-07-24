@@ -136,6 +136,16 @@ Module: `restalchemy.api.actions`
 
 Combined with `routes.Action` and `routes.action`, they provide a clean pattern for operations like `/v1/files/<id>/actions/download`.
 
+### 8. Batch requests
+
+Module: `restalchemy.api.batch`
+
+- `BatchController` / `BatchRoute`:
+  - Expose a single `POST /batch/` endpoint that replays a list of `{method, path, body}` items through the existing route tree, unmodified.
+  - Each item is best-effort and dispatched through the full middleware stack (auth, policy, rate limiting, retry all apply per item, same as a direct call).
+
+See [Batch requests](../how-to/api-batch-requests.md) for the full guide.
+
 ---
 
 ## Request/response flow overview

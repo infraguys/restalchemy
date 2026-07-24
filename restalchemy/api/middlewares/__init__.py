@@ -62,6 +62,13 @@ class Middleware(object):
 
     @dec.wsgify
     def __call__(self, req):
+        # First middleware to see a given request "wins" and is recorded as
+        # the outermost app for that request (environ is shared across every
+        # @dec.wsgify-constructed Request in the stack). Used by
+        # restalchemy.api.batch to replay sub-requests through the *whole*
+        # middleware chain (auth, policy, rate limiting, ...), not just the
+        # innermost WSGIApp.
+        req.environ.setdefault("restalchemy.wsgi_app", self)
         response = self.process_request(req)
         if response:
             return response
