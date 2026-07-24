@@ -534,7 +534,9 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
     def get_prop_kwargs(self, name, openapi_version):
         try:
-            kwargs = self.get_model().properties.properties[name].get_kwargs()
+            kwargs = dict(
+                self.get_model().properties.properties[name].get_kwargs()
+            )
         except KeyError:
             kwargs = {}
         kwargs["openapi"] = openapi_version

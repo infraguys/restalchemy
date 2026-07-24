@@ -54,6 +54,22 @@ class FakeEmptyFieldsRoleContext(object):
     roles = ["empty_fields"]
 
 
+class ResourceSchemaGenerationTestCase(unittest.TestCase):
+    def tearDown(self):
+        super(ResourceSchemaGenerationTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+
+    def test_schema_generation_does_not_mutate_model_property_kwargs(self):
+        resource = resources.ResourceByRAModel(FakeModel)
+        property_creator = FakeModel.properties.properties["standard_field1"]
+        original_kwargs = dict(property_creator.get_kwargs())
+
+        resource.generate_schema_object(constants.GET, "3.0.3")
+
+        self.assertEqual(original_kwargs, property_creator.get_kwargs())
+        FakeModel()
+
+
 # NOTE(efrolov): Interface tests
 class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
     def tearDown(self):
