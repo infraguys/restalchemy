@@ -38,7 +38,9 @@ class ResourceSchemaGenerator(object):
 
     def get_prop_kwargs(self, name):
         try:
-            kwargs = self._resource.get_model().properties.properties[name].get_kwargs()
+            kwargs = dict(
+                self._resource.get_model().properties.properties[name].get_kwargs()
+            )
         except KeyError:
             kwargs = {}
         kwargs["openapi"] = self._openapi_version
