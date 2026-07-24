@@ -23,6 +23,7 @@ from restalchemy.api import resources
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.openapi import utils as openapi_utils
 
 
 class FakeModel(models.CustomPropertiesMixin, models.ModelWithUUID):
@@ -65,6 +66,21 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
         original_kwargs = dict(property_creator.get_kwargs())
 
         resource.generate_schema_object(constants.GET, "3.0.3")
+
+        self.assertEqual(original_kwargs, property_creator.get_kwargs())
+        FakeModel()
+
+    def test_route_schema_generation_does_not_mutate_property_kwargs(self):
+        resource = resources.ResourceByRAModel(FakeModel)
+        generator = openapi_utils.ResourceSchemaGenerator(
+            resource,
+            route=None,
+            openapi_version="3.0.3",
+        )
+        property_creator = FakeModel.properties.properties["standard_field1"]
+        original_kwargs = dict(property_creator.get_kwargs())
+
+        generator.get_prop_kwargs("standard_field1")
 
         self.assertEqual(original_kwargs, property_creator.get_kwargs())
         FakeModel()
