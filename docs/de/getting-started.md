@@ -168,6 +168,12 @@ Start:
 python app.py
 ```
 
+Sie sollten Folgendes sehen:
+
+```text
+Serve forever on 127.0.0.1:8000
+```
+
 ---
 
 ## 8. API testen

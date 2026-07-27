@@ -41,6 +41,16 @@ limitations under the License.
 - `get_connection()`: получение соединения (реализуется в подклассах).
 - `get_session()`: получение сессии (реализуется в подклассах).
 - `session_manager(session=None)`: контекстный менеджер для управления транзакцией и жизненным циклом сессии.
+- `get_session_storage()`: возвращает хранилище сессий (`SessionThreadStorage`).
+
+Пример:
+
+```python
+from restalchemy.storage.sql import engines
+
+engine = engines.engine_factory.get_engine()
+print(engine.db_name)
+```
 
 ---
 
