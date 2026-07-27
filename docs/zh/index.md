@@ -101,7 +101,7 @@ OpenAPI 集成可以：
 1. [Installation](installation.md)
 2. [Getting started](getting-started.md) —— 构建一个内存中的小型 REST 服务。
 3. 概念：
-   - [Data model](concepts/data-model.md)
+   - [Data model](reference/dm/index.md)
    - [API layer](concepts/api-layer.md)
    - [Storage layer](concepts/storage-layer.md)
 4. 实战指南（How-to）：

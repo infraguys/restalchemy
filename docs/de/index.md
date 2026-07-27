@@ -101,7 +101,7 @@ Empfohlene Reihenfolge für neue Nutzer:
 1. [Installation](installation.md)
 2. [Getting started](getting-started.md) — kleiner in-memory-REST-Service.
 3. Konzepte:
-   - [Data model](concepts/data-model.md)
+   - [Data model](reference/dm/index.md)
    - [API layer](concepts/api-layer.md)
    - [Storage layer](concepts/storage-layer.md)
 4. How-to-Guides:

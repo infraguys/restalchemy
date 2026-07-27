@@ -1,0 +1,207 @@
+site_name: RESTAlchemy
+site_url: https://infraguys.github.io/restalchemy/
+site_description: REST HTTP Abstraction Library
+repo_name: restalchemy
+repo_url: https://github.com/infraguys/restalchemy
+edit_uri: browse/docs/
+copyright: Copyright &copy; 2025-2026 Genesis Corporation
+
+theme:
+  name: zensical
+  variant: modern
+  language: en
+  features:
+    - search.suggest
+    - search.highlight
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: lucide/sun
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: lucide/moon
+        name: Switch to light mode
+
+plugins:
+  - search
+
+# zensical has no i18n support yet (mkdocs-static-i18n is not one of the plugins
+# it implements), so every language is a folder under docs/ with its own nav
+# section, and the languages are interlinked through extra.alternate below.
+extra:
+  repo_icon: github
+  alternate:
+    - name: English
+      link: en/
+      lang: en
+    - name: Русский
+      link: ru/
+      lang: ru
+    - name: Deutsch
+      link: de/
+      lang: de
+    - name: 中文
+      link: zh/
+      lang: zh
+
+markdown_extensions:
+  - meta
+  - admonition
+  - footnotes
+  - attr_list
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - toc:
+      slugify: !!python/name:pymdownx.slugs.uslugify
+      permalink: '#'
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.keys
+  - pymdownx.emoji:
+      emoji_index: !!python/name:zensical.extensions.emoji.twemoji
+      emoji_generator: !!python/name:zensical.extensions.emoji.to_svg
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      preserve_tabs: true
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - English:
+    - en/index.md
+    - en/installation.md
+    - en/getting-started.md
+    - Concepts:
+      - en/concepts/api-layer.md
+      - en/concepts/storage-layer.md
+      - en/concepts/migrations.md
+    - How-to:
+      - en/how-to/api-basic-crud.md
+      - en/how-to/api-nested-resources-and-actions.md
+      - en/how-to/api-openapi.md
+      - en/how-to/actions-serialization.md
+      - en/how-to/dm-sql-storage.md
+      - en/how-to/migrations-workflow.md
+    - Reference:
+      - en/reference/api/index.md
+      - en/reference/dm/index.md
+      - en/reference/dm/models.md
+      - en/reference/dm/properties.md
+      - en/reference/dm/relationships.md
+      - en/reference/dm/types.md
+      - en/reference/dm/filters.md
+      - en/reference/storage/index.md
+      - en/reference/storage/sql-engines.md
+      - en/reference/storage/sql-orm.md
+      - en/reference/storage/sql-sessions.md
+      - en/reference/migrations/cli.md
+  - Русский:
+    - ru/index.md
+    - ru/installation.md
+    - ru/getting-started.md
+    - Концепции:
+      - ru/concepts/api-layer.md
+      - ru/concepts/storage-layer.md
+      - ru/concepts/migrations.md
+    - Инструкции:
+      - ru/how-to/api-basic-crud.md
+      - ru/how-to/api-nested-resources-and-actions.md
+      - ru/how-to/api-openapi.md
+      - ru/how-to/actions-serialization.md
+      - ru/how-to/dm-sql-storage.md
+      - ru/how-to/migrations-workflow.md
+    - Справочник:
+      - ru/reference/api/index.md
+      - ru/reference/dm/index.md
+      - ru/reference/dm/models.md
+      - ru/reference/dm/properties.md
+      - ru/reference/dm/relationships.md
+      - ru/reference/dm/types.md
+      - ru/reference/dm/filters.md
+      - ru/reference/storage/index.md
+      - ru/reference/storage/sql-engines.md
+      - ru/reference/storage/sql-orm.md
+      - ru/reference/storage/sql-sessions.md
+      - ru/reference/migrations/cli.md
+  - Deutsch:
+    - de/index.md
+    - de/installation.md
+    - de/getting-started.md
+    - Konzepte:
+      - de/concepts/api-layer.md
+      - de/concepts/storage-layer.md
+      - de/concepts/migrations.md
+    - Anleitungen:
+      - de/how-to/api-basic-crud.md
+      - de/how-to/api-nested-resources-and-actions.md
+      - de/how-to/api-openapi.md
+      - de/how-to/actions-serialization.md
+      - de/how-to/dm-sql-storage.md
+      - de/how-to/migrations-workflow.md
+    - Referenz:
+      - de/reference/api/index.md
+      - de/reference/dm/index.md
+      - de/reference/dm/models.md
+      - de/reference/dm/properties.md
+      - de/reference/dm/relationships.md
+      - de/reference/dm/types.md
+      - de/reference/dm/filters.md
+      - de/reference/storage/index.md
+      - de/reference/storage/sql-engines.md
+      - de/reference/storage/sql-orm.md
+      - de/reference/storage/sql-sessions.md
+      - de/reference/migrations/cli.md
+  - 中文:
+    - zh/index.md
+    - zh/installation.md
+    - zh/getting-started.md
+    - 概念:
+      - zh/concepts/api-layer.md
+      - zh/concepts/storage-layer.md
+      - zh/concepts/migrations.md
+    - 操作指南:
+      - zh/how-to/api-basic-crud.md
+      - zh/how-to/api-nested-resources-and-actions.md
+      - zh/how-to/api-openapi.md
+      - zh/how-to/actions-serialization.md
+      - zh/how-to/dm-sql-storage.md
+      - zh/how-to/migrations-workflow.md
+    - 参考:
+      - zh/reference/api/index.md
+      - zh/reference/dm/index.md
+      - zh/reference/dm/models.md
+      - zh/reference/dm/properties.md
+      - zh/reference/dm/relationships.md
+      - zh/reference/dm/types.md
+      - zh/reference/dm/filters.md
+      - zh/reference/storage/index.md
+      - zh/reference/storage/sql-engines.md
+      - zh/reference/storage/sql-orm.md
+      - zh/reference/storage/sql-sessions.md
+      - zh/reference/migrations/cli.md

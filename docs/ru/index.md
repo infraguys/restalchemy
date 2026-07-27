@@ -101,7 +101,7 @@ RESTAlchemy полезен, если:
 1. [Установка](installation.md)
 2. [Быстрый старт](getting-started.md) — построение небольшого REST-сервиса в памяти.
 3. Концепции:
-   - [Модель данных](concepts/data-model.md)
+   - [Модель данных](reference/dm/index.md)
    - [API-слой](concepts/api-layer.md)
    - [Слой хранилища](concepts/storage-layer.md)
 4. How-to:

@@ -32,6 +32,8 @@ Features
 Documentation
 -------------
 
+The rendered documentation is published at https://infraguys.github.io/restalchemy/.
+
 All documentation is available in four languages. The structure of files and sections is identical across languages:
 
 - English: `docs/en/index.md <docs/en/index.md>`_
