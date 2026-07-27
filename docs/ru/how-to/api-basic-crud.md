@@ -46,20 +46,27 @@ class BarModel(models.ModelWithUUID):
     foo = relationships.relationship(FooModel)
 ```
 
+- `FooModel` и `BarModel` — чистые DM-модели (хранения здесь нет, только память).
+- `BarModel.foo` описывает связь с `FooModel`.
+
 ---
 
 ## 2. In-memory-хранилище
+
+Для простоты используем словари Python:
 
 ```python
 foo_storage = {}
 bar_storage = {}
 ```
 
-Для примера храним данные в памяти; в реальном приложении вы можете использовать SQL‑хранилище.
+В реальном приложении вместо этого использовались бы модели с SQL-хранилищем (`SQLStorableMixin`), но API-слой при этом выглядит так же.
 
 ---
 
 ## 3. Контроллеры
+
+Контроллеры связывают HTTP-методы с кодом на Python.
 
 ```python
 from restalchemy.api import controllers, resources
@@ -108,9 +115,17 @@ class BarController2(controllers.Controller):
         del bar_storage[uuid]
 ```
 
+Ключевые идеи:
+
+- `__resource__` указывает контроллеру, с какой DM-моделью/ресурсом он работает.
+- `create/get/filter/delete` — RA-методы, которые маршруты отображают на HTTP.
+- `process_filters=True` у ресурса включает автоматический разбор query-параметров.
+
 ---
 
 ## 4. Маршруты
+
+Маршруты сопоставляют URL и HTTP-методы методам контроллеров.
 
 ```python
 from restalchemy.api import routes
@@ -149,6 +164,11 @@ class UserApiApp(routes.Route):
 setattr(UserApiApp, "v1", routes.route(V1Route))
 ```
 
+- `FooRoute` обслуживает `/v1/foos/` и `/v1/foos/<uuid>`.
+- `BarRoute1` обслуживает `/v1/foos/<uuid>/bars/`.
+- `BarRoute2` обслуживает `/v1/bars/<uuid>`.
+- `V1Route` и `UserApiApp` группируют эти маршруты под `/v1/` и корнем `/`.
+
 ---
 
 ## 5. WSGI-приложение
@@ -186,13 +206,22 @@ if __name__ == "__main__":
     main()
 ```
 
+- `WSGIApp` оборачивает корневой маршрут и строит `ResourceMap`.
+- `middlewares.attach_middlewares` позволяет добавить логирование, обработку ошибок и т. п.
+
 ---
 
 ## 6. Проверка API
 
 Предполагая, что сервер запущен на `http://127.0.0.1:8000`.
 
-Создать Foo:
+### Список маршрутов верхнего уровня
+
+```bash
+curl http://127.0.0.1:8000/
+```
+
+### Создать Foo
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/foos/" \
@@ -200,19 +229,19 @@ curl -X POST "http://127.0.0.1:8000/v1/foos/" \
   -d '{"foo_field1": 10, "foo_field2": "bar"}'
 ```
 
-Список Foo:
+### Получить список всех Foo
 
 ```bash
 curl "http://127.0.0.1:8000/v1/foos/"
 ```
 
-Получить Foo по UUID:
+### Получить Foo по UUID
 
 ```bash
 curl "http://127.0.0.1:8000/v1/foos/<uuid>"
 ```
 
-Создать Bar для Foo:
+### Создать Bar для конкретного Foo
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/foos/<uuid>/bars/" \
@@ -220,14 +249,25 @@ curl -X POST "http://127.0.0.1:8000/v1/foos/<uuid>/bars/" \
   -d '{"bar_field1": "test"}'
 ```
 
-Получить Bar по UUID:
+### Получить Bar по UUID
 
 ```bash
 curl "http://127.0.0.1:8000/v1/bars/<uuid>"
 ```
 
-Удалить Bar:
+### Удалить Bar по UUID
 
 ```bash
 curl -X DELETE "http://127.0.0.1:8000/v1/bars/<uuid>"
 ```
+
+---
+
+## Итоги
+
+- DM-модели описывают ваши данные.
+- Контроллеры инкапсулируют бизнес-логику RA-методов (FILTER/CREATE/GET/UPDATE/DELETE).
+- Маршруты сопоставляют HTTP-пути и методы контроллерам и ресурсам.
+- `WSGIApp` связывает всё это в WSGI-приложение.
+
+Этот подход масштабируется от простых in-memory-примеров до продуктивных конфигураций с SQL-хранилищем и OpenAPI.

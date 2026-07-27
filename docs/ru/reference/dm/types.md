@@ -153,7 +153,11 @@ settings_scheme = {
 }
 
 settings_type = types.SoftSchemeDict(settings_scheme)
+```
 
+Использование в property:
+
+```python
 settings = properties.property(settings_type, default=dict)
 ```
 

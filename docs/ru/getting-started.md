@@ -168,6 +168,12 @@ if __name__ == "__main__":
 python app.py
 ```
 
+Вы должны увидеть:
+
+```text
+Serve forever on 127.0.0.1:8000
+```
+
 ---
 
 ## 8. Проверка API
