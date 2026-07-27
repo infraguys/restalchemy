@@ -101,7 +101,7 @@ Recommended reading order if you are new to RESTAlchemy:
 1. [Installation](installation.md)
 2. [Getting started](getting-started.md) — build a small in-memory REST service.
 3. Concepts:
-   - [Data model](concepts/data-model.md)
+   - [Data model](reference/dm/index.md)
    - [API layer](concepts/api-layer.md)
    - [Storage layer](concepts/storage-layer.md)
 4. How-to guides:

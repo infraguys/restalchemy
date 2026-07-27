@@ -69,6 +69,10 @@ shellcheck = [
 testenv = [
     "setuptools-git>=0.4.0"
 ]
+docs = [
+    # zensical ships cp310-abi3 wheels only, docs are built on modern python
+    "zensical>=0.0.32 ; python_version >= '3.10'",
+]
 
 [tool.ruff]
 exclude = [
