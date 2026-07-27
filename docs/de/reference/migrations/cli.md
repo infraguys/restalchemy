@@ -23,11 +23,15 @@ Dieser Abschnitt beschreibt die CLI-Befehle zur Verwaltung von Migrationen:
 - `ra-rollback-migration`
 - `ra-rename-migrations`
 
+Alle Befehle nutzen intern `oslo_config` und unterstützen sowohl lange als auch kurze Optionen.
+
 ---
 
 ## `ra-new-migration`
 
-Neue Migrationsdatei erzeugen.
+Erzeugt eine neue Migrationsdatei auf Basis eines Templates.
+
+### Verwendung
 
 ```bash
 ra-new-migration \
@@ -38,19 +42,37 @@ ra-new-migration \
   [--dry-run]
 ```
 
-Wichtigste Optionen:
+### Optionen
 
-- `--path` / `-p` — Migrationsverzeichnis.
-- `--message` / `-m` — Beschreibung (Leerzeichen → `-`).
-- `--depend` / `-d` — Abhängigkeiten (mehrfach möglich, inkl. `HEAD`).
-- `--manual` — markiert Migration als manuell.
-- `--dry-run` — nur anzeigen, nichts schreiben.
+- `--path` / `-p` (erforderlich)
+  - Pfad zum Migrationsverzeichnis.
+- `--message` / `-m`
+  - Menschenlesbare Beschreibung; Leerzeichen werden im Dateinamen durch `-` ersetzt.
+- `--depend` / `-d`
+  - Kann mehrfach angegeben werden.
+  - Zulässige Werte sind entweder:
+    - ein Teilstring eines Migrationsdateinamens; oder
+    - der Sonderwert `HEAD`.
+- `--manual`
+  - Markiert die Migration als manuell (`is_manual = True`).
+- `--dry-run`
+  - Zeigt an, was erzeugt würde, ohne Dateien zu schreiben.
+
+Ist die Migration nicht manuell, prüft das Werkzeug, dass automatische Migrationen nicht von manuellen abhängen; andernfalls endet es mit Exit-Code `1`.
+
+Die Datei wird aus `migration_templ.tmpl` erzeugt und gefüllt mit:
+
+- `migration_id` — UUID.
+- `depends` — aufgelöste Dateinamen der Abhängigkeiten.
+- `is_manual` — Boolean.
 
 ---
 
 ## `ra-apply-migration`
 
-Migrationen "nach oben" anwenden.
+Wendet Migrationen bis zu einer Zielmigration an.
+
+### Verwendung
 
 ```bash
 ra-apply-migration \
@@ -60,16 +82,33 @@ ra-apply-migration \
   [--dry-run]
 ```
 
-- `--path` / `-p` — Pfad.
-- `--db-connection` — DB-URL.
-- `--migration` / `-m` — Zielmigration (`HEAD` als Default).
-- `--dry-run` — ohne Änderungen.
+### Optionen
+
+- `--path` / `-p` (erforderlich)
+  - Pfad zu den Migrationen.
+- `--db-connection`
+  - URL der Datenbankverbindung, über `config_opts.register_common_db_opts` als `CONF.db.connection_url` abgelegt.
+- `--migration` / `-m`
+  - Name oder Kurzname der Zielmigration.
+  - Default: `HEAD` (die neueste automatische Migration).
+- `--dry-run`
+  - Trockenlauf, ohne `upgrade()` auszuführen.
+
+### Verhalten
+
+- Konfiguriert die SQL-Engine über `engine_factory.configure_factory(db_url=CONF.db.connection_url)`.
+- Verwendet `MigrationEngine(migrations_path=CONF.path)`, um:
+  - `HEAD` bei Bedarf aufzulösen.
+  - Alle erforderlichen Migrationen anzuwenden (Abhängigkeiten zuerst).
+  - `upgrade()` aufzurufen und Migrationen als angewendet zu markieren.
 
 ---
 
 ## `ra-rollback-migration`
 
-Migrationen zurückrollen.
+Rollt Migrationen bis zu einer Zielmigration zurück.
+
+### Verwendung
 
 ```bash
 ra-rollback-migration \
@@ -79,21 +118,52 @@ ra-rollback-migration \
   [--dry-run]
 ```
 
-- `--path` / `-p` — Pfad.
-- `--db-connection` — DB-URL.
-- `--migration` / `-m` — Zielmigration.
-- `--dry-run` — ohne Änderungen.
+### Optionen
+
+- `--path` / `-p` (erforderlich)
+- `--db-connection` (erforderlich)
+- `--migration` / `-m` (erforderlich)
+  - Name der Zielmigration.
+- `--dry-run`
+  - Trockenlauf, ohne `downgrade()` auszuführen.
+
+### Verhalten
+
+- Konfiguriert die SQL-Engine analog zu `ra-apply-migration`.
+- Verwendet `MigrationEngine.rollback_migration()`, das:
+  - Sicherstellt, dass die Tabelle `ra_migrations` existiert.
+  - Die Migrations-Controller lädt.
+  - Zuerst abhängige Migrationen zurückrollt, danach die Zielmigration.
 
 ---
 
 ## `ra-rename-migrations`
 
-Migrationen auf neues Namensschema umstellen.
+Benennt Migrationsdateien auf das neue Namensschema um und aktualisiert die Abhängigkeiten.
+
+### Verwendung
 
 ```bash
 ra-rename-migrations --path <path-to-migrations>
 ```
 
-- `--path` / `-p` — Pfad.
+### Optionen
 
-Benennt Dateien um und passt Abhängigkeiten im Code an.
+- `--path` / `-p` (erforderlich)
+  - Pfad zu den Migrationen.
+
+### Verhalten
+
+- Erzeugt eine `MigrationEngine` für den angegebenen Pfad.
+- Ruft `engine.get_all_migrations()` auf, um die Metadaten zu erhalten:
+  - `index`, `uuid`, `depends`, `is_manual`.
+- Für jede Datei:
+  - Schlägt einen neuen Dateinamen vor:
+    - Automatisch: `<index>-<oldname>-<uuid_prefix>.py`.
+    - Manuell: `MANUAL-<oldname>-<uuid_prefix>.py`.
+  - Benennt die Datei um.
+  - Hat die Migration Abhängigkeiten:
+    - Öffnet die neue Datei.
+    - Schreibt die Abhängigkeits-Strings von den alten auf die vorgeschlagenen neuen Dateinamen um.
+
+Dies ist ein einmaliger Werkzeugschritt, um bestehende Projekte auf die neue Namenskonvention umzustellen.

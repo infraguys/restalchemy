@@ -100,10 +100,18 @@ Argumente:
 - `property_class`: eigene Property-Klasse (muss von `AbstractProperty` erben).
 - Weitere Keyword-Argumente werden an den Property-Konstruktor weitergegeben.
 
-Hilfsfunktionen:
+### Komfort-Fabriken
 
 - `required_property(property_type, *args, **kwargs)` — setzt `required=True`.
 - `readonly_property(property_type, *args, **kwargs)` — setzt `read_only=True` und `required=True`.
+
+Beispiel:
+
+```python
+class User(models.ModelWithUUID):
+    email = properties.required_property(types.Email())
+    created_at = properties.readonly_property(types.UTCDateTimeZ(), default=datetime.datetime.now)
+```
 
 ---
 
@@ -124,7 +132,13 @@ Laufzeit-Container für Properties auf Instanzebene:
 - `properties`: read-only Mapping Name → Property.
 - `value`: Dict mit "rohen" Werten (lesen/schreiben).
 
-`Model.pour()` verwendet `PropertyManager`, um den Zustand des Modells zu initialisieren.
+`Model.pour()` verwendet `PropertyManager`, um den Instanzzustand aufzubauen:
+
+```python
+self.properties = properties.PropertyManager(self.properties, **kwargs)
+```
+
+Fehlt eine erforderliche Property, wirft `PropertyManager` ein `PropertyRequired` mit dem Feldnamen.
 
 ---
 

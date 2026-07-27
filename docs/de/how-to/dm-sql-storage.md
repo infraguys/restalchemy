@@ -114,7 +114,25 @@ Wichtige Befehle (siehe `README.rst`):
 - `ra-new-migration` — neue Migrationsdateien erzeugen.
 - `ra-apply-migration` — Migrationen anwenden.
 
-In den Beispielen finden Sie kommentierte SQL-DDLs, z.B. in `dm_mysql_storage.py`.
+Die Beispiele enthalten auskommentierte SQL-Schemata, etwa in `dm_mysql_storage.py`:
+
+```sql
+CREATE TABLE `foos` (
+     `uuid` CHAR(36) NOT NULL,
+     `foo_field1` INT NOT NULL,
+     `foo_field2` VARCHAR(255) NOT NULL,
+ PRIMARY KEY (`uuid`)
+) ENGINE = InnoDB;
+
+CREATE TABLE `bars` (
+    `uuid` CHAR(36) NOT NULL,
+    `bar_field1` VARCHAR(10) NOT NULL,
+    `foo` CHAR(36) NOT NULL,
+    CONSTRAINT `_idx_foo` FOREIGN KEY (`foo`) REFERENCES `foos`(`uuid`)
+) ENGINE = InnoDB;
+```
+
+Sie können diese Schemata an Ihre Umgebung anpassen oder Migrationen erzeugen, die vergleichbares DDL produzieren.
 
 ---
 
@@ -213,6 +231,8 @@ Standardmäßig verwendet jede Operation eine eigene Session und Transaktion.
 
 Für zusammenhängende Operationen in einer Transaktion können Sie `engine.session_manager()` verwenden.
 
+### engine.session_manager() verwenden
+
 ```python
 from restalchemy.storage.sql import engines
 
@@ -224,9 +244,12 @@ with engine.session_manager() as session:
 
     bar = BarModel(bar_field1="x", foo=foo)
     bar.save(session=session)
+    # Tritt hier ein Fehler auf, werden beide INSERTs zurückgerollt.
 ```
 
-Alle Operationen im `with`-Block laufen in einer Transaktion.
+Innerhalb des `with`-Blocks teilen sich alle Operationen dieselbe Session und Transaktion.
+
+Sie können ein von der Engine bezogenes Session-Objekt auch an anderer Stelle weiterverwenden, indem Sie `session=` an `.save()`, `.delete()` oder an Collection-Methoden übergeben.
 
 ---
 

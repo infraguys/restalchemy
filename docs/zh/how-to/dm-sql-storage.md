@@ -114,7 +114,25 @@ RESTAlchemy 不会自动创建数据表，而是依赖显式迁移。
 - `ra-new-migration`：创建新的迁移文件。
 - `ra-apply-migration`：应用迁移。
 
-示例文件中包含注释形式的 SQL DDL（例如 `dm_mysql_storage.py`），可按需调整或通过迁移工具生成类似结构。
+示例文件中包含以注释形式给出的 SQL 结构，例如 `dm_mysql_storage.py`：
+
+```sql
+CREATE TABLE `foos` (
+     `uuid` CHAR(36) NOT NULL,
+     `foo_field1` INT NOT NULL,
+     `foo_field2` VARCHAR(255) NOT NULL,
+ PRIMARY KEY (`uuid`)
+) ENGINE = InnoDB;
+
+CREATE TABLE `bars` (
+    `uuid` CHAR(36) NOT NULL,
+    `bar_field1` VARCHAR(10) NOT NULL,
+    `foo` CHAR(36) NOT NULL,
+    CONSTRAINT `_idx_foo` FOREIGN KEY (`foo`) REFERENCES `foos`(`uuid`)
+) ENGINE = InnoDB;
+```
+
+你可以按自己的环境调整这些结构，或生成产生同类 DDL 的迁移。
 
 ---
 
@@ -168,7 +186,9 @@ for foo in FooModel.objects.get_all():
 
 ## 5. 过滤（Filters）
 
-过滤器来自 `restalchemy.dm.filters`，可传递给 `get_all()` 和 `get_one()`：
+过滤器定义在 `restalchemy.dm.filters` 中，可传递给 `get_all()` 与 `get_one()`。
+
+### 简单过滤条件
 
 ```python
 from restalchemy.dm import filters
@@ -188,7 +208,9 @@ not_subset = list(
 )
 ```
 
-更复杂的逻辑可以使用 `AND` / `OR`：
+### 复杂表达式
+
+可以用 `AND` 与 `OR` 表达式构建复杂条件：
 
 ```python
 filter_expr = filters.OR(
@@ -208,7 +230,9 @@ foo = FooModel.objects.get_one(filters=filter_expr)
 
 默认情况下，每次操作使用独立的会话与事务。
 
-若需要将多次操作合并到一个事务中，可以使用 `engine.session_manager()`：
+若需要将多次操作合并到一个事务中，可以使用 `engine.session_manager()`。
+
+### 使用 engine.session_manager()
 
 ```python
 from restalchemy.storage.sql import engines
@@ -221,9 +245,12 @@ with engine.session_manager() as session:
 
     bar = BarModel(bar_field1="x", foo=foo)
     bar.save(session=session)
+    # 如果这里发生异常，两条 INSERT 都会被回滚。
 ```
 
-`with` 代码块中的所有操作都在一个事务中执行，如有异常会统一回滚。
+`with` 代码块中的所有操作共享同一个会话与事务。
+
+你也可以把从引擎获取的会话对象复用到代码的其他位置：把 `session=` 传给 `.save()`、`.delete()` 或集合方法即可。
 
 ---
 

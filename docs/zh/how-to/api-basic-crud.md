@@ -219,13 +219,13 @@ if __name__ == "__main__":
 
 假设服务运行在 `http://127.0.0.1:8000`：
 
-查看顶层路由：
+### 查看顶层路由
 
 ```bash
 curl http://127.0.0.1:8000/
 ```
 
-创建 Foo：
+### 创建 Foo
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/foos/" \
@@ -233,19 +233,19 @@ curl -X POST "http://127.0.0.1:8000/v1/foos/" \
   -d '{"foo_field1": 10, "foo_field2": "bar"}'
 ```
 
-列出所有 Foo：
+### 列出所有 Foo
 
 ```bash
 curl "http://127.0.0.1:8000/v1/foos/"
 ```
 
-按 UUID 获取 Foo：
+### 按 UUID 获取 Foo
 
 ```bash
 curl "http://127.0.0.1:8000/v1/foos/<uuid>"
 ```
 
-为某个 Foo 创建 Bar：
+### 为指定的 Foo 创建 Bar
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/foos/<uuid>/bars/" \
@@ -253,13 +253,13 @@ curl -X POST "http://127.0.0.1:8000/v1/foos/<uuid>/bars/" \
   -d '{"bar_field1": "test"}'
 ```
 
-按 UUID 获取 Bar：
+### 按 UUID 获取 Bar
 
 ```bash
 curl "http://127.0.0.1:8000/v1/bars/<uuid>"
 ```
 
-按 UUID 删除 Bar：
+### 按 UUID 删除 Bar
 
 ```bash
 curl -X DELETE "http://127.0.0.1:8000/v1/bars/<uuid>"

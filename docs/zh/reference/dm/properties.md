@@ -100,10 +100,18 @@ class Foo(models.Model):
 - `property_class`：自定义属性类，必须继承 `AbstractProperty`。
 - 其它关键字参数传递给属性构造函数（`default`、`required`、`read_only`、`mutable`、`example` 等）。
 
-辅助工厂函数：
+### 便捷工厂函数
 
-- `required_property(...)`：自动设置 `required=True`。
-- `readonly_property(...)`：自动设置 `read_only=True` 且 `required=True`。
+- `required_property(property_type, *args, **kwargs)`：自动设置 `required=True`。
+- `readonly_property(property_type, *args, **kwargs)`：自动设置 `read_only=True` 且 `required=True`。
+
+示例：
+
+```python
+class User(models.ModelWithUUID):
+    email = properties.required_property(types.Email())
+    created_at = properties.readonly_property(types.UTCDateTimeZ(), default=datetime.datetime.now)
+```
 
 ---
 
@@ -126,7 +134,13 @@ class Foo(models.Model):
 - `properties`：只读映射 字段名 → 属性实例。
 - `value`：字段名到“原始值”的字典（可读写）。
 
-`Model.pour()` 通过 `PropertyManager` 初始化模型内部状态。
+`Model.pour()` 使用 `PropertyManager` 构建实例状态：
+
+```python
+self.properties = properties.PropertyManager(self.properties, **kwargs)
+```
+
+如果缺少必填属性，`PropertyManager` 会抛出带有字段名的 `PropertyRequired`。
 
 ---
 

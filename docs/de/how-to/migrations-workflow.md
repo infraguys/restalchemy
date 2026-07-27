@@ -30,7 +30,7 @@ Sie lernen:
 
 ## 1. Verzeichnisstruktur
 
-Beispiel:
+Wählen Sie ein Verzeichnis für die Migrationen, zum Beispiel:
 
 ```text
 myservice/
@@ -48,6 +48,8 @@ Alle `ra-*` Befehle nutzen `--path` / `-p` für das Migrationsverzeichnis.
 
 ## 2. Neue Migration erstellen
 
+Verwenden Sie den Befehl `ra-new-migration`:
+
 ```bash
 ra-new-migration \
   --path examples/migrations/ \
@@ -55,13 +57,22 @@ ra-new-migration \
   --depend HEAD
 ```
 
-Wichtige Optionen:
+Optionen:
 
-- `--path` / `-p` — Pfad zum Migrationsverzeichnis.
-- `--message` / `-m` — Beschreibung, Leerzeichen → `-`.
-- `--depend` / `-d` — Abhängigkeiten (Dateinamen oder `HEAD`).
+- `--path` / `-p` — erforderlich. Pfad zum Migrationsverzeichnis.
+- `--message` / `-m` — kurze Beschreibung; Leerzeichen werden zu `-`.
+- `--depend` / `-d` — null oder mehr Abhängigkeiten (Dateinamen oder `HEAD`).
 - `--manual` — markiert die Migration als manuell.
 - `--dry-run` — zeigt an, was passieren würde, ohne Dateien zu schreiben.
+
+Typische Fälle:
+
+- **Automatische Migration, die von HEAD abhängt**:
+  - `--depend HEAD`
+  - Geeignet für lineare Migrationsketten.
+- **Manuelle Migration**:
+  - `--manual`
+  - Sinnvoll, wenn Änderungen umgebungsspezifisch oder nicht automatisch umkehrbar sind.
 
 Nach dem Befehl wird eine neue Datei im Format
 
@@ -69,13 +80,15 @@ Nach dem Befehl wird eine neue Datei im Format
 <migration_number>-<message-with-dashes>-<hash>.py
 ```
 
-angelegt. Sie enthält `MigrationStep` mit leeren `upgrade()` / `downgrade()` Methoden.
+angelegt. Sie enthält eine `MigrationStep`-Klasse mit leeren Methoden `upgrade()` und `downgrade()`. Diese müssen Sie mit den tatsächlichen SQL- (oder DM-/Storage-)Änderungen füllen und dabei das übergebene `session`-Objekt verwenden.
 
 ---
 
 ## 3. upgrade/downgrade implementieren
 
-In der generierten Datei implementieren Sie die Schemaänderungen.
+In der generierten Datei implementieren Sie die Migrationslogik.
+
+Beispiel:
 
 ```python
 from restalchemy.storage.sql import migrations
@@ -110,15 +123,21 @@ class MigrationStep(migrations.AbstractMigrationStep):
 migration_step = MigrationStep()
 ```
 
-Hilfsfunktionen von `AbstractMigrationStep`:
+Hinweise:
 
-- `_delete_table_if_exists(session, table_name)`
-- `_delete_trigger_if_exists(session, trigger_name)`
-- `_delete_view_if_exists(session, view_name)`
+- `session.execute(statement, values)` führt rohes SQL aus.
+- Hilfsmethoden von `AbstractMigrationStep`:
+  - `_delete_table_if_exists(session, table_name)`
+  - `_delete_trigger_if_exists(session, trigger_name)`
+  - `_delete_view_if_exists(session, view_name)`
+
+Sie können rohes SQL bei Bedarf auch mit höherliegender Storage-/DM-Logik kombinieren.
 
 ---
 
 ## 4. Migrationen anwenden
+
+Mit `ra-apply-migration` bringen Sie die Datenbank auf den neuesten Stand:
 
 ```bash
 ra-apply-migration \
@@ -126,16 +145,29 @@ ra-apply-migration \
   --db-connection mysql://user:password@127.0.0.1/test
 ```
 
-- `--path` / `-p` — Pfad zu Migrationen.
-- `--db-connection` — DB-URL.
-- `--migration` / `-m` — Zielmigration (Default: `HEAD`).
-- `--dry-run` — ohne echte Änderungen.
+Optionen:
 
-Ohne `-m` werden alle noch nicht angewendeten automatischen Migrationen bis zur HEAD-Migration ausgeführt.
+- `--path` / `-p` — erforderlich. Pfad zu den Migrationen.
+- `--db-connection` — URL der Datenbankverbindung (registriert als `db.connection_url`).
+- `--migration` / `-m` — Name oder Kurzname der Zielmigration; Default ist `HEAD`.
+- `--dry-run` — Trockenlauf (keine echten Änderungen).
+
+Ohne `-m` wird der Befehl:
+
+- Die automatische Head-Migration (`HEAD`) ermitteln.
+- Alle noch nicht angewendeten automatischen Migrationen bis zu diesem Head anwenden.
+
+Mit `-m X`:
+
+- Werden alle noch nicht angewendeten Migrationen angewendet, die nötig sind, um Migration `X` zu erreichen.
+
+Ist eine Migration bereits angewendet, wird sie mit einer Warnung übersprungen.
 
 ---
 
 ## 5. Migrationen zurückrollen
+
+Mit `ra-rollback-migration` setzen Sie die Datenbank auf eine bestimmte Migration zurück:
 
 ```bash
 ra-rollback-migration \
@@ -144,30 +176,48 @@ ra-rollback-migration \
   --migration 0003-add-index
 ```
 
-- `--path` / `-p` — Pfad.
-- `--db-connection` — DB-URL.
-- `--migration` / `-m` — Zielmigration.
-- `--dry-run` — ohne Änderungen.
+Optionen:
 
-Zuerst werden abhängige Migrationen zurückgerollt, dann die Zielmigration selbst.
+- `--path` / `-p` — erforderlich. Pfad zu den Migrationen.
+- `--db-connection` — URL der Datenbankverbindung.
+- `--migration` / `-m` — erforderlich. Name der Zielmigration.
+- `--dry-run` — Trockenlauf (keine Änderungen).
+
+Der Rollback-Ablauf:
+
+- Jede Migration, die von der Zielmigration abhängt, wird zuerst zurückgerollt (umgekehrte Abhängigkeitsreihenfolge).
+- Danach läuft `downgrade()` für die Zielmigration selbst, und sie wird als nicht angewendet markiert.
+
+Ist eine Migration bereits nicht angewendet, wird sie mit einer Warnung übersprungen.
 
 ---
 
-## 6. Migrationen umbenennen
+## 6. Migrationen auf das neue Namensschema umstellen
+
+Mit `ra-rename-migrations` überführen Sie bestehende Migrationsdateinamen in das neue Schema:
 
 ```bash
 ra-rename-migrations --path examples/migrations/
 ```
 
-- Analysiert alle Migrationen und berechnet einen Index.
-- Schlägt neue Namen vor (`0001-altname-<hash>.py`, `MANUAL-altname-<hash>.py`).
-- Bennent Dateien um und aktualisiert Abhängigkeiten.
+Das Werkzeug wird:
+
+- Alle Migrationsdateien analysieren und für jede Migration einen Index berechnen.
+- Neue Dateinamen vorschlagen, und zwar in der Form:
+
+  - Automatisch: `0001-altname-<hash>.py`
+  - Manuell: `MANUAL-altname-<hash>.py`
+
+- Die Dateien auf der Platte umbenennen.
+- Die Abhängigkeiten in den Migrationsdateien auf die neuen Dateinamen aktualisieren.
+
+Das ist hilfreich beim Umstieg von alten Kurznamen auf das neue Format `<nummer>-<message>-<hash>.py`.
 
 ---
 
-## 7. Best Practices
+## 7. Empfohlene Praxis
 
-- Migrationsverzeichnis unter Versionskontrolle halten.
-- Aussagekräftige `--message` Texte verwenden.
-- Automatische Migrationen für Standardschemaänderungen, manuelle für Spezialfälle.
-- Migrationen zunächst in Test-/CI-Umgebung laufen lassen.
+- Halten Sie die Migrationsdateien unter Versionskontrolle.
+- Verwenden Sie aussagekräftige `--message`-Texte; sie werden Teil der Dateinamen.
+- Bevorzugen Sie automatische Migrationen für typische Schemaänderungen und heben Sie sich manuelle Migrationen für wirklich besondere Fälle auf.
+- Lassen Sie Migrationen immer erst in der CI gegen eine Testdatenbank laufen, bevor Sie sie in der Produktion anwenden.
