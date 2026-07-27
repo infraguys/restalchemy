@@ -210,6 +210,16 @@ result = model.dump_to_simple_view(
 
 `restore_from_simple_view()` baut ein Modell aus einer "Simple View":
 
+```python
+user = User.restore_from_simple_view(
+    skip_unknown_fields=True,
+    name="Alice",
+    created_at="2006-01-02T15:04:05.000576Z",
+)
+```
+
+Verhalten:
+
 - Normalisiert Feldnamen (`-` → `_`).
 - Kann unbekannte Felder ignorieren.
 - Nutzt `from_simple_type()` / `from_unicode()` der Typen.

@@ -219,13 +219,13 @@ if __name__ == "__main__":
 
 Angenommen, der Server läuft auf `http://127.0.0.1:8000`.
 
-Top-Level-Routen anzeigen:
+### Top-Level-Routen anzeigen
 
 ```bash
 curl http://127.0.0.1:8000/
 ```
 
-Foo anlegen:
+### Foo anlegen
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/foos/" \
@@ -233,19 +233,19 @@ curl -X POST "http://127.0.0.1:8000/v1/foos/" \
   -d '{"foo_field1": 10, "foo_field2": "bar"}'
 ```
 
-Alle Foos auflisten:
+### Alle Foos auflisten
 
 ```bash
 curl "http://127.0.0.1:8000/v1/foos/"
 ```
 
-Foo per UUID holen:
+### Foo per UUID holen
 
 ```bash
 curl "http://127.0.0.1:8000/v1/foos/<uuid>"
 ```
 
-Bar für einen Foo anlegen:
+### Bar für einen bestimmten Foo anlegen
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/foos/<uuid>/bars/" \
@@ -253,13 +253,13 @@ curl -X POST "http://127.0.0.1:8000/v1/foos/<uuid>/bars/" \
   -d '{"bar_field1": "test"}'
 ```
 
-Bar per UUID holen:
+### Bar per UUID holen
 
 ```bash
 curl "http://127.0.0.1:8000/v1/bars/<uuid>"
 ```
 
-Bar per UUID löschen:
+### Bar per UUID löschen
 
 ```bash
 curl -X DELETE "http://127.0.0.1:8000/v1/bars/<uuid>"

@@ -27,38 +27,133 @@ limitations under the License.
 `AbstractEngine` 定义了所有 SQL 引擎的通用行为：
 
 - 解析数据库 URL。
-- 暴露 `db_name`、`db_host`、`db_port`、`db_username`、`db_password`。
-- 持有 SQL 方言对象。
+- 暴露数据库名、主机、端口、用户名与密码。
+- 持有 SQL 方言（`mysql.MySQLDialect` 或 `pgsql.PgSQLDialect`）。
 - 提供 `session_manager()` 上下文管理器。
 
+主要属性与方法：
+
+- `URL_SCHEMA`（抽象）：期望的 URL 方案，例如 `"mysql"`、`"postgresql"`。
+- `DEFAULT_PORT`（抽象）：URL 中未指定端口时使用的默认端口。
+- `db_name`、`db_username`、`db_password`、`db_host`、`db_port`。
+- `dialect`：SQL 方言对象。
+- `query_cache`：是否启用会话级查询缓存。
+- `get_connection()`：获取连接（由子类实现）。
+- `get_session()`：获取会话对象（由子类实现）。
+- `session_manager(session=None)`：上下文管理器，负责提交/回滚以及关闭会话。
+- `get_session_storage()`：返回会话存储（`SessionThreadStorage`）。
+
+示例：
+
+```python
+from restalchemy.storage.sql import engines
+
+engine = engines.engine_factory.get_engine()
+print(engine.db_name)
+```
+
 ---
 
-## PgSQLEngine
+## PostgreSQL 引擎
+
+### `PgSQLEngine`
 
 - `URL_SCHEMA = "postgresql"`。
-- 使用 `psycopg_pool.ConnectionPool`。
+- `DEFAULT_PORT` 取自 `restalchemy.common.constants.RA_POSTGRESQL_DB_PORT`。
+- 使用 `psycopg_pool.ConnectionPool` 管理连接。
 - 方言：`pgsql.PgSQLDialect()`。
-- 会话类：`sessions.PgSQLSession`。
+- 会话类型：`sessions.PgSQLSession`。
+
+构造函数：
+
+```python
+PgSQLEngine(db_url, config=None, query_cache=False)
+```
+
+- `db_url`：PostgreSQL 连接 URL。
+- `config`：透传给 `psycopg_pool.ConnectionPool`。
+- `query_cache`：启用查询缓存。
+
+方法：
+
+- `get_session()`：返回 `PgSQLSession(engine=self)`。
+- `get_connection()`：从连接池获取连接。
+- `close_connection(conn)`：把连接归还给连接池。
+
+该引擎由 `EngineFactory` 在内部创建。
 
 ---
 
-## MySQLEngine
+## MySQL 引擎
+
+### `MySQLEngine`
 
 - `URL_SCHEMA = "mysql"`。
+- `DEFAULT_PORT` 取自 `RA_MYSQL_DB_PORT`。
 - 使用 `mysql.connector.pooling.MySQLConnectionPool`。
 - 方言：`mysql.MySQLDialect()`。
-- 会话类：`sessions.MySQLSession`。
+- 会话类型：`sessions.MySQLSession`。
+
+构造函数：
+
+```python
+MySQLEngine(db_url, config=None, query_cache=False)
+```
+
+- `db_url`：MySQL 连接 URL。
+- `config`：连接池配置。
+- `query_cache`：启用查询缓存。
+
+方法：
+
+- `get_connection()`：从连接池返回连接。
+- `get_session()`：返回 `MySQLSession(engine=self)`。
 
 ---
 
-## EngineFactory
+## EngineFactory 与 engine_factory
 
-- `configure_factory(db_url, config=None, query_cache=False, name="default")`：配置引擎。
-- `get_engine(name="default")`：获取引擎实例。
-- `destroy_engine()` / `destroy_all_engines()`：销毁引擎。
+### `EngineFactory`
+
+负责配置并保存引擎实例的单例。
+
+重要方法：
+
+- `configure_factory(db_url, config=None, query_cache=False, name="default")`
+  - 依据 `db_url` 创建引擎实例，并以 `name` 保存。
+  - 从 URL 方案（"mysql"、"postgresql"）推断引擎类。
+- `configure_postgresql_factory(conf, section, name)`
+  - 从配置对象配置 PostgreSQL 的辅助方法。
+- `configure_mysql_factory(conf, section, name)`
+  - 从配置对象配置 MySQL 的辅助方法。
+- `get_engine(name="default")`
+  - 返回已配置的引擎实例。
+- `destroy_engine(name="default")` / `destroy_all_engines()`
+  - 从工厂中移除引擎。
 
 模块级单例：
 
 ```python
 engine_factory = EngineFactory()
 ```
+
+多数应用直接使用该单例：
+
+```python
+from restalchemy.storage.sql import engines
+
+engines.engine_factory.configure_factory(db_url="mysql://...")
+engine = engines.engine_factory.get_engine()
+```
+
+---
+
+## DBConnectionUrl
+
+`DBConnectionUrl` 是一个小型辅助类，用于解析数据库 URL 并提供脱敏的字符串表示。
+
+- 保存解析后的 URL。
+- `url` 属性返回完整的 URL 字符串。
+- `__repr__` 会把密码替换为 `:<censored>@` 以隐藏它。
+
+它主要用于日志记录与调试。

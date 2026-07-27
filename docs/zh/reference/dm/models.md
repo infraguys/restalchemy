@@ -128,6 +128,23 @@ print(foo.get_id())
 - `store(name, data)` — 按名称保存任意数据。
 - `get(name)` — 读取数据，不存在则抛出 `NotFoundOperationalStorageError`。
 
+示例：
+
+```python
+from restalchemy.dm import models
+
+
+class Foo(models.ModelWithUUID):
+    pass
+
+# 保存该模型的一些元数据
+Foo.__operational_storage__.store("table_name", "foos")
+
+assert Foo.__operational_storage__.get("table_name") == "foos"
+```
+
+该存储面向框架内部实现与高级扩展。
+
 ---
 
 ## 常用 Mixin
@@ -139,9 +156,21 @@ print(foo.get_id())
 - 均为必填、只读，类型为 `types.UTCDateTimeZ()`。
 - `update()` 在模型“脏”（或 `force=True`）时自动刷新 `updated_at`。
 
+典型用法：
+
+```python
+class TimestampedFoo(models.ModelWithUUID, models.ModelWithTimestamp):
+    value = properties.property(types.Integer(), required=True)
+```
+
 ### `ModelWithProject`
 
 添加必填、只读的 `project_id` 字段（`types.UUID()`）。
+
+```python
+class ProjectResource(models.ModelWithUUID, models.ModelWithProject):
+    name = properties.property(types.String(max_length=255), required=True)
+```
 
 ### `ModelWithNameDesc` 与 `ModelWithRequiredNameDesc`
 
@@ -152,6 +181,8 @@ print(foo.get_id())
   - `description`：最长 255 字符，默认空字符串。
 - `ModelWithRequiredNameDesc`：
   - `name` 为必填字段。
+
+对于需要统一命名字段的领域对象，这些 Mixin 很实用。
 
 ---
 
@@ -164,18 +195,41 @@ print(foo.get_id())
 - `__custom_properties__`：名称到类型（`types.BaseType`）的映射。
 - `get_custom_properties()` 返回 `(name, type)` 对。
 - `get_custom_property_type(name)` 返回对应类型。
+- `_check_custom_property_value()` 校验取值，并可强制要求静态值。
+
+这是高级特性，通常与 simple view 系列 Mixin 搭配使用。
 
 ### `DumpToSimpleViewMixin`
 
-`dump_to_simple_view()` 将模型转换为简单 Python 类型的结构：
+`dump_to_simple_view()` 将模型转换为由简单 Python 类型构成的结构（便于 JSON、OpenAPI、存储使用）：
 
-- 遍历 `self.properties` 并调用类型的 `to_simple_type()`。
-- 在 `save_uuid=True` 时，UUID 字段以字符串形式保留。
-- 可选地包含自定义属性。
+```python
+result = model.dump_to_simple_view(
+    skip=["internal_field"],
+    save_uuid=True,
+    custom_properties=False,
+)
+```
+
+行为：
+
+- 遍历 `self.properties`，用底层 DM 类型的 `to_simple_type()` 转换每个值。
+- 当 `save_uuid=True` 时，UUID 字段（包括 `AllowNone(UUID)`）序列化为原始 UUID 字符串。
+- 当 `custom_properties=True`（或模型定义了 `__custom_properties__`）时，同时转换自定义属性。
 
 ### `RestoreFromSimpleViewMixin`
 
 `restore_from_simple_view()` 从简单结构重建模型：
+
+```python
+user = User.restore_from_simple_view(
+    skip_unknown_fields=True,
+    name="Alice",
+    created_at="2006-01-02T15:04:05.000576Z",
+)
+```
+
+行为：
 
 - 将字段名中的 `-` 替换为 `_`。
 - 可忽略未知字段。
@@ -188,6 +242,13 @@ print(foo.get_id())
 ```python
 class User(models.ModelWithUUID, models.SimpleViewMixin):
     name = properties.property(types.String(max_length=255), required=True)
+```
+
+之后即可让模型在 simple view 之间往返转换：
+
+```python
+plain = user.dump_to_simple_view()
+user2 = User.restore_from_simple_view(**plain)
 ```
 
 ---
