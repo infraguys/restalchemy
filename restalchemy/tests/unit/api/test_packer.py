@@ -17,6 +17,7 @@
 # TODO(Eugene Frolov): Rewrite tests
 import datetime
 import decimal
+from unittest import mock
 import uuid
 
 import orjson
@@ -42,7 +43,7 @@ class FakeModel(models.ModelWithUUID):
     field4 = properties.property(types.Integer(), required=True)
 
 
-class TestData(object):
+class TestData:
     uuid = None
     field1 = None
     field2 = 2
@@ -52,13 +53,13 @@ class TestData(object):
 
 class BasePackerTestCase(base.BaseTestCase):
     def setUp(self):
-        super(BasePackerTestCase, self).setUp()
+        super().setUp()
         self._test_instance = packers.BaseResourcePacker(
             resources.ResourceByRAModel(FakeModel), api_base.request_mock()
         )
 
     def tearDown(self):
-        super(BasePackerTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._test_instance
 
@@ -75,7 +76,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
         req = api_base.request_mock()
         req.context.roles = ["owner"]
 
-        super(PackerFieldPermissionsHiddenTestCase, self).setUp()
+        super().setUp()
         self._test_resource_packer = packers.BaseResourcePacker(
             resources.ResourceByRAModel(
                 FakeModel,
@@ -89,7 +90,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
         )
 
     def tearDown(self):
-        super(PackerFieldPermissionsHiddenTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._test_resource_packer
 
@@ -158,7 +159,7 @@ class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
         req = api_base.request_mock()
         req.context.roles = ["owner"]
 
-        super(PackerFieldPermissionsRWTestCase, self).setUp()
+        super().setUp()
         self._test_resource_packer = packers.BaseResourcePacker(
             resources.ResourceByRAModel(
                 FakeModel,
@@ -170,7 +171,7 @@ class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
         )
 
     def tearDown(self):
-        super(PackerFieldPermissionsRWTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._test_resource_packer
 
@@ -193,7 +194,7 @@ class JSONPackerIncludeNullTestCase(base.BaseTestCase):
         req = api_base.request_mock()
         req.context.roles = ["owner"]
 
-        super(JSONPackerIncludeNullTestCase, self).setUp()
+        super().setUp()
         self._test_resource_packer = packers.JSONPackerIncludeNullFields(
             resources.ResourceByRAModel(
                 FakeModel,
@@ -205,7 +206,7 @@ class JSONPackerIncludeNullTestCase(base.BaseTestCase):
         )
 
     def tearDown(self):
-        super(JSONPackerIncludeNullTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._test_resource_packer
 

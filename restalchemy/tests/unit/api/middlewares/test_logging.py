@@ -15,8 +15,7 @@
 #    under the License.
 
 import logging
-
-import mock
+from unittest import mock
 
 from restalchemy.api.middlewares.logging import LoggingMiddleware
 from restalchemy.tests.unit import base
@@ -42,12 +41,13 @@ class LoggingMiddlewareTestCase(base.BaseTestCase):
             if "API > " in msg:
                 checks["check_run"] = True
                 for header in args[1]:
-                    if header.startswith("Authorization"):
-                        if "something" not in header:
-                            checks["Authorization"] = True
-                    if header.startswith("fake_header"):
-                        if "fake_header_value" in header:
-                            checks["fake_header"] = True
+                    if header.startswith("Authorization") and "something" not in header:
+                        checks["Authorization"] = True
+                    if (
+                        header.startswith("fake_header")
+                        and "fake_header_value" in header
+                    ):
+                        checks["fake_header"] = True
 
         middlew.logger.debug = mock.Mock(side_effect=_check_sanitized_header)
 
@@ -67,7 +67,7 @@ class LoggingMiddlewareTestCase(base.BaseTestCase):
 
 class LoggingMiddlewareHttpTestCase(base.BaseTestCase):
     def setUp(self):
-        super(LoggingMiddlewareHttpTestCase, self).setUp()
+        super().setUp()
         self.middlew = LoggingMiddleware("application")
         self.middlew.logger.setLevel(logging.INFO)
 
@@ -82,7 +82,7 @@ class LoggingMiddlewareHttpTestCase(base.BaseTestCase):
     def test_truncate_body_large(self):
         body = b"x" * 5000
         result = self.middlew._truncate_body(body)
-        self.assertTrue(result.endswith("... [%d bytes total]" % 5000))
+        self.assertTrue(result.endswith("... [5000 bytes total]"))
 
     def test_truncate_body_bytes_unicode(self):
         body = "test\xc3\xa9\xc3\xa9\xc3\xa9".encode()
@@ -101,7 +101,7 @@ class LoggingMiddlewareHttpTestCase(base.BaseTestCase):
         request_mock.environ = {}
 
         with mock.patch.object(logging.Logger, "info") as log_info:
-            with self.assertRaises(Exception):
+            with self.assertRaises(Exception):  # noqa: B017
                 self.middlew.process_request(request_mock)
             log_info.assert_called()
 

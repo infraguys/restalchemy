@@ -63,7 +63,7 @@ class ReadOnlyDictProxy(collections_abc.Mapping):
         return self._hash
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, self._d)
+        return f"{self.__class__.__name__}({self._d})"
 
 
 class classproperty(property):
@@ -114,9 +114,9 @@ def raise_parse_error_on_fail(func):
         try:
             return func(obj, name, value, *args, **kwargs)
         except (ValueError, TypeError):
-            raise ra_exc.ParseError(value="%s=%s" % (name, value))
+            raise ra_exc.ParseError(value=f"{name}={value}")
         except ra_exc.ParseError as e:
-            raise type(e)(value="%s=%s" % (name, e.value))
+            raise type(e)(value=f"{name}={e.value}")
 
     return wrapper
 

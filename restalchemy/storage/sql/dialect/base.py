@@ -74,7 +74,7 @@ class BaseProcessResult(AbstractProcessResult):
         :param session: The session object used for the execution
             of the SQL statement.
         """
-        super(BaseProcessResult, self).__init__(result, session)
+        super().__init__(result, session)
         self._rows = None
 
     def fetchall(self):
@@ -83,8 +83,7 @@ class BaseProcessResult(AbstractProcessResult):
 
         :return: All rows from the executed SQL statement.
         """
-        for row in self._result:
-            yield row
+        yield from self._result
 
     def get_rows(self):
         """
@@ -114,7 +113,7 @@ class BaseOrmProcessResult(BaseProcessResult):
         :param session: The session object used for the execution
             of the SQL statement
         """
-        super(BaseOrmProcessResult, self).__init__(
+        super().__init__(
             result=result,
             session=session,
         )
@@ -226,7 +225,7 @@ class BaseInsertCommand(AbstractDialectCommand):
         :rtype: tuple
         """
 
-        values = tuple()
+        values = ()
         for column_name in self._table.get_column_names(self._session):
             values += (self._data[column_name],)
         return values
@@ -282,7 +281,7 @@ class BaseUpdateCommand(AbstractDialectCommand):
             table.
         :rtype: tuple
         """
-        values = tuple()
+        values = ()
         column_names = self._table.get_column_names(
             self._session,
             with_pk=False,
@@ -346,7 +345,7 @@ class BaseDeleteCommand(AbstractDialectCommand):
             names of the table.
         :rtype: tuple
         """
-        values = tuple()
+        values = ()
         pk_names = self._table.get_pk_names(session=self._session)
         for column_name in pk_names:
             values += (self._ids[column_name],)
@@ -616,7 +615,7 @@ class BaseSelectCommand(BaseBasicSelectCommand):
             to False.
         :type locked: bool
         """
-        super(BaseSelectCommand, self).__init__(
+        super().__init__(
             table=table,
             session=session,
             limit=limit,
@@ -848,7 +847,7 @@ class BaseOrmDialectCommand(AbstractDialectCommand):
         )
 
 
-class BaseSqlOrm(object):
+class BaseSqlOrm:
     @staticmethod
     def select(model, session):
         """
@@ -885,7 +884,7 @@ class AbstractDialect(metaclass=abc.ABCMeta):
 
         """
 
-        super(AbstractDialect, self).__init__()
+        super().__init__()
         self._orm = BaseSqlOrm()
 
     @property

@@ -97,8 +97,6 @@ class AbstractMigrationStep(metaclass=abc.ABCMeta):
 class AbstarctMigrationStep(AbstractMigrationStep):
     """Legacy class with typo in name, please migrate to valid class"""
 
-    pass
-
 
 class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
     __tablename__ = RA_MIGRATION_TABLE_NAME
@@ -106,7 +104,7 @@ class MigrationModel(models.ModelWithUUID, orm.SQLStorableMixin):
     applied = properties.property(types.Boolean(), required=True, default=False)
 
 
-class MigrationStepController(object):
+class MigrationStepController:
     def __init__(self, migration_step, filename, session):
         self._migration_step = migration_step
         self._filename = filename
@@ -174,7 +172,7 @@ class MigrationStepController(object):
         return os.path.splitext(os.path.basename(self._filename))[0]
 
 
-class MigrationEngine(object):
+class MigrationEngine:
     FILENAME_HASH_LEN = 6
 
     def __init__(self, migrations_path):
@@ -193,10 +191,10 @@ class MigrationEngine(object):
 
         if candidates_count > 1:
             raise ValueError(
-                "Multiple file found for name '%s': %s." % (part_of_name, candidates)
+                f"Multiple file found for name '{part_of_name}': {candidates}."
             )
 
-        raise ValueError("Migration file for dependency %s not found" % part_of_name)
+        raise ValueError(f"Migration file for dependency {part_of_name} not found")
 
     def _calculate_depends(self, depends):
         files = []
@@ -251,7 +249,7 @@ class MigrationEngine(object):
             migration_number = first_part_of_message
             message = message.lstrip(first_part_of_message + "-")
 
-        mfilename = "-".join([migration_number, message, filename_hash]) + ".py"
+        mfilename = f"{migration_number}-{message}-{filename_hash}" + ".py"
 
         mpath = os.path.join(self._migrations_path, mfilename)
 
@@ -403,7 +401,8 @@ class MigrationEngine(object):
 
         filtered_migrations = {}
         for filename, migration in migrations.items():
-            if migration.is_applied() is False:
-                if migration.is_manual() is False or include_manual is True:
-                    filtered_migrations[filename] = migration
+            if migration.is_applied() is False and (
+                migration.is_manual() is False or include_manual is True
+            ):
+                filtered_migrations[filename] = migration
         return filtered_migrations

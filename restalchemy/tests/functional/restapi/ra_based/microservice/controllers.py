@@ -92,7 +92,7 @@ class PortControllerNone(PortController):
         if content_type == constants.CONTENT_TYPE_APPLICATION_JSON:
             rt = resource_type or self.get_resource()
             return packers.JSONPackerIncludeNullFields(rt, request=self._req)
-        return super(PortControllerNone, self).get_packer(content_type, resource_type)
+        return super().get_packer(content_type, resource_type)
 
 
 class VMController(controllers.BaseResourceControllerPaginated):
@@ -115,13 +115,13 @@ class VMController(controllers.BaseResourceControllerPaginated):
         API endpoint to create VM resource.
 
         """
-        return super(VMController, self).create(**kwargs)
+        return super().create(**kwargs)
 
     @utils.extend_schema(
         summary="Power on virtual machine",
         parameters=[oa_c.build_openapi_parameter("VMUuid")],
         responses=oa_c.build_openapi_get_update_response(
-            "{}_{}".format(models.VM.__name__, constants.CREATE.capitalize())
+            f"{models.VM.__name__}_{constants.CREATE.capitalize()}"
         ),
         tags=["VM"],
     )
@@ -135,7 +135,7 @@ class VMController(controllers.BaseResourceControllerPaginated):
         summary="Power off virtual machine",
         parameters=[oa_c.build_openapi_parameter("VMUuid")],
         responses=oa_c.build_openapi_get_update_response(
-            "{}_{}".format(models.VM.__name__, constants.CREATE.capitalize())
+            f"{models.VM.__name__}_{constants.CREATE.capitalize()}"
         ),
         tags=["VM"],
     )
@@ -181,12 +181,12 @@ class VMNoProcessFiltersController(VMController):
 
 class VMNoSortController(VMController):
     __resource__ = resources.ResourceByRAModel(models.VMNoSort, process_filters=True)
-    __sortable_fields__ = []
+    __sortable_fields__ = []  # noqa: RUF012
 
 
 class VMDefSortController(VMController):
     __resource__ = resources.ResourceByRAModel(models.VMDefSort, process_filters=True)
-    __default_sort__ = {"name": "desc"}
+    __default_sort__ = {"name": "desc"}  # noqa: RUF012
 
 
 class V1Controller(controllers.RoutesListController):

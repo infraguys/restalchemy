@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 
-import mock
 import orjson
 
 from restalchemy.common import exceptions as dm_exceptions
@@ -46,7 +46,7 @@ class FakeRestoreModel(models.Model, orm.SQLStorableMixin):
     b = properties.property(types.String())
 
     def __init__(self, args, **kwargs):
-        super(FakeRestoreModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         raise AssertionError("Init method should not be called")
 
 
@@ -79,7 +79,7 @@ class TestRestoreModelTestCase(base.BaseTestCase):
 
 class FakeRestoreWithJSONModel(models.Model, orm.SQLStorableWithJSONFieldsMixin):
     __tablename__ = "fake_table"
-    __jsonfields__ = ["a", "b"]
+    __jsonfields__ = ["a", "b"]  # noqa: RUF012
 
     a = properties.property(types.Dict())
     b = properties.property(types.List())

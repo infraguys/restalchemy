@@ -171,8 +171,8 @@ def _syntax_error(pos, reason):
     return exc.ValidationFilterSyntaxError(pos=pos, reason=reason)
 
 
-class _Token(object):
-    __slots__ = ("kind", "value", "pos", "ws_before")
+class _Token:
+    __slots__ = ("kind", "pos", "value", "ws_before")
 
     def __init__(self, kind, value, pos, ws_before):
         self.kind = kind
@@ -181,7 +181,7 @@ class _Token(object):
         self.ws_before = ws_before
 
     def __repr__(self):
-        return "<%s %r@%d>" % (self.kind, self.value, self.pos)
+        return f"<{self.kind} {self.value!r}@{self.pos}>"
 
 
 def _scan_string(text, start):
@@ -196,7 +196,7 @@ def _scan_string(text, start):
                 raise _syntax_error(i, "escape at end of string")
             escaped = text[i + 1]
             if escaped not in _STRING_ESCAPES:
-                raise _syntax_error(i, "unknown escape '\\%s'" % escaped)
+                raise _syntax_error(i, f"unknown escape '\\{escaped}'")
             chars.append(_STRING_ESCAPES[escaped])
             i += 2
             continue
@@ -267,7 +267,7 @@ def tokenize(text):
                     raise _syntax_error(i, "'!' is only valid as '!='")
                 value, end = _scan_text(text, i)
                 if not value:
-                    raise _syntax_error(i, "unexpected character %r" % char)
+                    raise _syntax_error(i, f"unexpected character {char!r}")
                 tokens.append(_Token(_TEXT, value, i, ws_before))
                 i = end
         ws_before = False
@@ -275,7 +275,7 @@ def tokenize(text):
     return tokens
 
 
-class Node(object):
+class Node:
     """Base of the parsed tree. Carries no resource knowledge."""
 
     _FIELDS = ()
@@ -291,9 +291,9 @@ class Node(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return "<%s %s>" % (
+        return "<{} {}>".format(
             type(self).__name__,
-            " ".join("%s=%r" % (n, getattr(self, n)) for n in self._FIELDS),
+            " ".join(f"{n}={getattr(self, n)!r}" for n in self._FIELDS),
         )
 
 
@@ -350,7 +350,7 @@ class Restriction(Node):
         return ".".join(part.text for part in self.path)
 
 
-class _Parser(object):
+class _Parser:
     def __init__(self, tokens, max_nodes, max_depth):
         self._tokens = tokens
         self._pos = 0
@@ -364,7 +364,7 @@ class _Parser(object):
         node = self._expression(depth=1)
         token = self._peek()
         if token.kind != _EOF:
-            raise _syntax_error(token.pos, "unexpected %r" % token.value)
+            raise _syntax_error(token.pos, f"unexpected {token.value!r}")
         return node
 
     # Token helpers.
@@ -398,14 +398,14 @@ class _Parser(object):
         self._nodes += 1
         if self._nodes > self._max_nodes:
             raise exc.ValidationFilterTooComplexError(
-                reason="more than %d nodes" % self._max_nodes
+                reason=f"more than {self._max_nodes} nodes"
             )
         return node
 
     def _check_depth(self, depth):
         if depth > self._max_depth:
             raise exc.ValidationFilterTooComplexError(
-                reason="nested deeper than %d" % self._max_depth
+                reason=f"nested deeper than {self._max_depth}"
             )
 
     # Grammar.
@@ -476,7 +476,7 @@ class _Parser(object):
         if text.upper() in KEYWORDS and text not in KEYWORDS:
             raise _syntax_error(
                 token.pos,
-                "%r is a field name here; the keyword is %s" % (text, text.upper()),
+                f"{text!r} is a field name here; the keyword is {text.upper()}",
             )
 
     def _member(self):
@@ -494,7 +494,9 @@ class _Parser(object):
         if token.kind not in (_TEXT, _STRING):
             raise _syntax_error(
                 token.pos,
-                "expected %s, got %r" % (expected, token.value or "end of filter"),
+                "expected {}, got {!r}".format(
+                    expected, token.value or "end of filter"
+                ),
             )
         return self._count(Literal(token.value, token.kind == _STRING))
 
@@ -507,12 +509,12 @@ def parse(text, max_nodes=MAX_NODES, max_depth=MAX_DEPTH, max_length=MAX_LENGTH)
     """
     if max_length is not None and len(text) > max_length:
         raise exc.ValidationFilterTooComplexError(
-            reason="longer than %d characters" % max_length
+            reason=f"longer than {max_length} characters"
         )
     return _Parser(tokenize(text), max_nodes, max_depth).parse()
 
 
-class FieldResolver(object):
+class FieldResolver:
     """What binding an AST to one resource needs to know.
 
     Split out from the binder so the language stays testable without a
@@ -556,7 +558,7 @@ class ModelFieldResolver(FieldResolver):
     """Resolves against a DM model, with an optional dialect gate."""
 
     def __init__(self, model, dialect=None):
-        super(ModelFieldResolver, self).__init__()
+        super().__init__()
         self._model = model
         self._supported = supported_clauses(dialect)
 
@@ -571,7 +573,7 @@ class ModelFieldResolver(FieldResolver):
         try:
             return field_type.from_unicode(text)
         except (TypeError, ValueError) as e:
-            raise exc.ValidationFilterSyntaxError(pos=0, reason="%s: %s" % (name, e))
+            raise exc.ValidationFilterSyntaxError(pos=0, reason=f"{name}: {e}")
 
     def supports(self, clause_class):
         return self._supported is None or clause_class in self._supported
@@ -677,7 +679,7 @@ def _bind_restriction(restriction, resolver):
 
     clause_class = _COMPARATOR_CLAUSES[restriction.comparator]
     if not resolver.supports(clause_class):
-        raise _unsupported(restriction, "%s is not supported here" % clause_class)
+        raise _unsupported(restriction, f"{clause_class} is not supported here")
     value = resolver.parse_value(restriction.name, field_type, literal.text)
     return {storage_name: clause_class(value)}
 

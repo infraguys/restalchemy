@@ -29,9 +29,9 @@ from restalchemy.storage.sql.dialect import pgsql
 LOG = logging.getLogger(__name__)
 
 
-class SessionQueryCache(object):
+class SessionQueryCache:
     def __init__(self, session):
-        super(SessionQueryCache, self).__init__()
+        super().__init__()
         self._session = session
         self.__query_cache = {}
 
@@ -120,7 +120,7 @@ class SessionQueryCache(object):
         return self.__query_cache[query_hash]
 
 
-class PgSQLSession(object):
+class PgSQLSession:
     def __init__(self, engine):
         self._engine = engine
         self._conn = self._engine.get_connection()
@@ -135,7 +135,7 @@ class PgSQLSession(object):
     @staticmethod
     def _check_models_same_type(target_model, models):
         model_type = type(target_model)
-        if not min(map(lambda m: isinstance(m, model_type), models)):
+        if not min(isinstance(m, model_type) for m in models):
             raise TypeError("All models in the list must be of the same type")
 
     def batch_insert(self, models):
@@ -192,21 +192,18 @@ class PgSQLSession(object):
             return self.execute(operation.get_statement(), operation.get_values())
 
     def execute(self, statement, values=None):
-        try:
-            self._log.debug(
-                ("Execute statement %s with values %s within %s database"),
-                statement,
-                values,
-                self._engine.db_name,
-            )
-            self._cursor.execute(statement, values)
-            return self._cursor
-        except errors.DatabaseError:
-            raise
+        self._log.debug(
+            "Execute statement %s with values %s within %s database",
+            statement,
+            values,
+            self._engine.db_name,
+        )
+        self._cursor.execute(statement, values)
+        return self._cursor
 
     def execute_many(self, statement, values):
         self._log.debug(
-            ("Execute batch statement %s with values %s within %s database"),
+            "Execute batch statement %s with values %s within %s database",
             statement,
             values,
             self._engine.db_name,
@@ -214,17 +211,17 @@ class PgSQLSession(object):
         self._cursor.executemany(statement, values)
         return self._cursor
 
-    def rollback(self):
-        self._conn.rollback()
-
     def commit(self):
         self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
 
     def close(self):
         self._engine.close_connection(self._conn)
 
 
-class MySQLSession(object):
+class MySQLSession:
     def __init__(self, engine):
         self._engine = engine
         self._conn = self._engine.get_connection()
@@ -239,7 +236,7 @@ class MySQLSession(object):
     @staticmethod
     def _check_models_same_type(target_model, models):
         model_type = type(target_model)
-        if not min(map(lambda m: isinstance(m, model_type), models)):
+        if not min(isinstance(m, model_type) for m in models):
             raise TypeError("All models in the list must be of the same type")
 
     def batch_insert(self, models):
@@ -360,11 +357,11 @@ class SessionNotFound(Exception):
     pass
 
 
-class SessionThreadStorage(object):
+class SessionThreadStorage:
     _storage = threading.local()
 
     def __init__(self):
-        super(SessionThreadStorage, self).__init__()
+        super().__init__()
 
     def get_session(self):
         thread_session = getattr(self._storage, "session", None)

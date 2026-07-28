@@ -18,7 +18,7 @@ from restalchemy.api import constants
 from restalchemy.common import utils
 
 
-class Permissions(object):
+class Permissions:
     __slots__ = ()
     HIDDEN = 1
     RO = 2
@@ -31,7 +31,7 @@ class Permissions(object):
     )
 
 
-class BasePermissions(object):
+class BasePermissions:
     """What a request may do with each of a resource's fields.
 
     `resolve` is the one method a container of your own writes. It is
@@ -99,7 +99,7 @@ class UniversalPermissions(BasePermissions):
         ```
         This code set to all fields READWRITE permissions.
         """
-        super(UniversalPermissions, self).__init__(permission)
+        super().__init__(permission)
 
     def resolve(self, req, field_names):
         # One permission for every field of every request.
@@ -147,13 +147,13 @@ class FieldsPermissions(BasePermissions):
             for method, permission in method_permission.items():
                 if method.upper() not in constants.ALL_RA_METHODS:
                     raise ValueError(
-                        "Unknown RA method %r for field %r" % (method, field)
+                        f"Unknown RA method {method!r} for field {field!r}"
                     )
                 if permission not in Permissions.ALL_PERMISSIONS:
                     raise ValueError(
-                        "Unknown permission %r for field %r" % (permission, field)
+                        f"Unknown permission {permission!r} for field {field!r}"
                     )
-        super(FieldsPermissions, self).__init__(permission=default)
+        super().__init__(permission=default)
         self.fields = fields
 
     def _permission_for(self, model_field_name, method):
@@ -214,12 +214,12 @@ class FieldsPermissionsByRole(BasePermissions):
         for role, permissions in dict(kwargs, default=default).items():
             if not isinstance(permissions, BasePermissions):
                 raise TypeError(
-                    "Permissions for %s must be inherited BasePermissions class" % role
+                    f"Permissions for {role} must be inherited BasePermissions class"
                 )
         self.default = default
         self.role_fields = kwargs
 
-        super(FieldsPermissionsByRole, self).__init__()
+        super().__init__()
 
     @staticmethod
     def _get_roles(req):

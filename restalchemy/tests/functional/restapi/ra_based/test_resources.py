@@ -19,10 +19,10 @@ import collections
 import contextlib
 from functools import partial
 import socket
+from unittest import mock
 from urllib import parse
 import uuid as pyuuid
 
-import mock
 from parameterized import parameterized
 import requests
 from webob import request
@@ -130,7 +130,7 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
             return s.getsockname()[1]
 
     def setUp(self):
-        super(BaseResourceTestCase, self).setUp()
+        super().setUp()
 
         self.service_port = self.find_free_port()
         url = parse.urlparse(self.get_endpoint(TEMPL_SERVICE_ENDPOINT))
@@ -142,7 +142,7 @@ class BaseResourceTestCase(base.BaseWithDbMigrationsTestCase):
         self._service.start()
 
     def tearDown(self):
-        super(BaseResourceTestCase, self).tearDown()
+        super().tearDown()
 
         self._service.stop()
 
@@ -270,7 +270,7 @@ class TestVersionsResourceTestCase(BaseResourceTestCase):
 
 class TestVMResourceTestCase(BaseResourceTestCase):
     def tearDown(self):
-        super(TestVMResourceTestCase, self).tearDown()
+        super().tearDown()
         packers.set_packer(constants.CONTENT_TYPE_APPLICATION_JSON, packers.JSONPacker)
 
     def _insert_vm_to_db(self, uuid, name, state):
@@ -319,7 +319,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         self.assertIn("delete", resp["message"])
 
         action_name = "not_implemented_action"
-        action_path = "actions/%s/invoke" % action_name
+        action_path = f"actions/{action_name}/invoke"
         action_endpoint = parse.urljoin(utils.lastslash(uuid_endpoint), action_path)
         response = requests.post(action_endpoint, json={})
 
@@ -425,9 +425,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         self.assertEqual(response.status_code, 400)
         message = response.json()["message"]
-        expected_message = (
-            "Uuid (%s) in body is not equal to parsed id (%s) from url."
-        ) % (UUID2, RESOURCE_ID)
+        expected_message = f"Uuid ({UUID2}) in body is not equal to parsed id ({RESOURCE_ID}) from url."
         self.assertEqual(message, expected_message)
 
         vm_request_body = {"uuid": str(RESOURCE_ID), "name": "new"}
@@ -569,9 +567,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         ]
 
         response = requests.get(
-            self.get_endpoint(
-                "%s?uuid=%s" % (TEMPL_VMS_COLLECTION_ENDPOINT, str(RESOURCE_ID2))
-            )
+            self.get_endpoint(f"{TEMPL_VMS_COLLECTION_ENDPOINT}?uuid={RESOURCE_ID2!s}")
         )
 
         self.assertEqual(response.status_code, 200)
@@ -590,8 +586,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(
-                "%s?fields=uuid&uuid=%s&fields=state"
-                % (TEMPL_VMS_COLLECTION_ENDPOINT, str(RESOURCE_ID2))
+                f"{TEMPL_VMS_COLLECTION_ENDPOINT}?fields=uuid&uuid={RESOURCE_ID2!s}&fields=state"
             )
         )
 
@@ -632,14 +627,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         ]
 
         response = requests.get(
-            self.get_endpoint(
-                "%s?uuid=%s&uuid=%s"
-                % (
-                    base_url,
-                    str(RESOURCE_ID1),
-                    str(RESOURCE_ID3),
-                )
-            )
+            self.get_endpoint(f"{base_url}?uuid={RESOURCE_ID1!s}&uuid={RESOURCE_ID3!s}")
         )
 
         self.assertEqual(response.status_code, 200)
@@ -681,7 +669,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(
-                "%s?sort_key=name&sort_dir=desc" % (TEMPL_VMS_COLLECTION_ENDPOINT,)
+                f"{TEMPL_VMS_COLLECTION_ENDPOINT}?sort_key=name&sort_dir=desc"
             )
         )
 
@@ -725,8 +713,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(
-                "%s?sort_key=name"
-                % (
+                "{}?sort_key=name".format(
                     utils.lastslash(
                         parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, "vmsnosort")
                     ),
@@ -740,7 +727,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
     def test_get_collection_vms_with_sort_default(self):
         class Model(models.VM):
-            __defaul_sort__ = {"name": "desc"}
+            __defaul_sort__ = {"name": "desc"}  # noqa: RUF012
 
         RESOURCE_ID1 = UUID1
         RESOURCE_ID2 = UUID2
@@ -777,8 +764,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(
-                "%s"
-                % (
+                "{}".format(
                     utils.lastslash(
                         parse.urljoin(TEMPL_V1_COLLECTION_ENDPOINT, "vmsdefsort")
                     ),
@@ -1016,7 +1002,7 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(
-                "%s?state=on" % (TEMPL_VMS_COLLECTION_ENDPOINT,) + "&page_limit=1"
+                f"{TEMPL_VMS_COLLECTION_ENDPOINT}?state=on" + "&page_limit=1"
             ),
         )
 
@@ -1070,13 +1056,13 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
     __LAST_MIGRATION__ = "0002-0-rest-service-data-for-test-nested-resource-c17a60"
 
     def setUp(self):
-        super(TestNestedResourceTestCase, self).setUp()
+        super().setUp()
 
         self.vm1 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID1)})
         self.vm2 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID2)})
 
     def tearDown(self):
-        super(TestNestedResourceTestCase, self).tearDown()
+        super().tearDown()
 
     @mock.patch("uuid.uuid4")
     def test_create_nested_resource_successful(self, uuid4_mock):
@@ -1332,7 +1318,7 @@ class TestNestedResourceTestCase(BaseResourceTestCase):
 
         response = requests.get(
             self.get_endpoint(TEMPL_PORTS_COLLECTION_ENDPOINT, VM_RESOURCE_ID)
-            + "?unique-field=%s&page_limit=1" % str(PORT2_RESOURCE_ID),
+            + f"?unique-field={PORT2_RESOURCE_ID!s}&page_limit=1",
         )
 
         self.assertEqual(response.status_code, 200)
@@ -1347,7 +1333,7 @@ class TestMultipleIdProperties(BaseResourceTestCase):
     __LAST_MIGRATION__ = "0002-0-rest-service-data-for-test-nested-resource-c17a60"
 
     def setUp(self):
-        super(TestMultipleIdProperties, self).setUp()
+        super().setUp()
 
         self.vm1 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID1)})
         self.vm2 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID2)})
@@ -1392,7 +1378,7 @@ class ResourceExceptionsTestCase(BaseResourceTestCase):
 
         message = response.json()["message"]
         self.assertEqual(response.status_code, 400)
-        expected_message = "Can't parse value: %s=%s." % ("uuid", BAD_UUID)
+        expected_message = "Can't parse value: {}={}.".format("uuid", BAD_UUID)
         self.assertEqual(message, expected_message)
 
     def test_filter_parse_error_exception(self):
@@ -1406,7 +1392,7 @@ class ResourceExceptionsTestCase(BaseResourceTestCase):
 
         message = response.json()["message"]
         self.assertEqual(response.status_code, 400)
-        expected_message = "Can't parse value: %s=%s." % ("uuid", BAD_UUID)
+        expected_message = "Can't parse value: {}={}.".format("uuid", BAD_UUID)
         self.assertEqual(message, expected_message)
 
     def test_resource_id_parse_error_exception(self):
@@ -1416,7 +1402,7 @@ class ResourceExceptionsTestCase(BaseResourceTestCase):
 
         message = response.json()["message"]
         self.assertEqual(response.status_code, 400)
-        expected_message = "Can't parse value: %s=%s." % ("uuid", BAD_UUID)
+        expected_message = "Can't parse value: {}={}.".format("uuid", BAD_UUID)
         self.assertEqual(message, expected_message)
 
 
@@ -1424,11 +1410,7 @@ class TestNestedResourceForUnpackerTestCase(BaseResourceTestCase):
     __LAST_MIGRATION__ = "0002-1-rest-service-data-for-test-unpacker-1a9112"
 
     def test_get_resource_by_uri(self):
-        uri = "/v1/vms/%s/ports/%s/ip_addresses/%s" % (
-            UUID1,
-            UUID2,
-            UUID3,
-        )
+        uri = f"/v1/vms/{UUID1}/ports/{UUID2}/ip_addresses/{UUID3}"
         req = request.Request.blank(uri)
 
         result = resources.ResourceMap.get_resource(req, uri)
@@ -1725,7 +1707,7 @@ class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):
     __LAST_MIGRATION__ = "0002-0-rest-service-data-for-test-nested-resource-c17a60"
 
     def setUp(self):
-        super(TestRetryOnErrorMiddlewareNestedResourceTestCase, self).setUp()
+        super().setUp()
 
         self.vm1 = models.VM.objects.get_one(filters={"uuid": filters.EQ(UUID1)})
 

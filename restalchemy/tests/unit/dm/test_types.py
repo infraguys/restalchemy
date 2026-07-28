@@ -18,9 +18,8 @@ import datetime
 import decimal
 import re
 import sys
+from unittest import mock
 import uuid
-
-import mock
 
 from restalchemy.dm import types
 from restalchemy.openapi import constants as oa_c
@@ -38,7 +37,7 @@ INCORECT_INT_AS_STR = "123abc"
 class BaseRegExpTypeTestCase(base.BaseTestCase):
     def _prepare_mock(self, re_mock, return_value):
         self.re_match_mock = mock.MagicMock(
-            **{"match": mock.MagicMock(return_value=return_value)}
+            match=mock.MagicMock(return_value=return_value)
         )
         re_mock.return_value = self.re_match_mock
 
@@ -93,9 +92,9 @@ class BaseCompiledRegExpTypeTestCase(base.BaseTestCase):
 
 class BaseTestCase(base.BaseTestCase):
     def __init__(self, *args, **kwargs):
-        super(BaseTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.test_instance = mock.MagicMock()
-        self.test_instance.validate.configure_mock(**{"return_value": False})
+        self.test_instance.validate.configure_mock(return_value=False)
 
     def test_correct_none_value(self):
         self.assertFalse(self.test_instance.validate(None))
@@ -103,7 +102,7 @@ class BaseTestCase(base.BaseTestCase):
 
 class UUIDTestCase(base.BaseTestCase):
     def setUp(self):
-        super(UUIDTestCase, self).setUp()
+        super().setUp()
         self.test_instance = types.UUID()
 
     def test_uuid_correct_value(self):
@@ -132,7 +131,7 @@ class UUIDTestCase(base.BaseTestCase):
 
 class EmailTestCase(base.BaseTestCase):
     def setUp(self):
-        super(EmailTestCase, self).setUp()
+        super().setUp()
         self.test_instance1 = types.Email()
         self.test_instance2 = types.Email(5, 10)
         self.test_instance3 = types.Email(5, 100, check_deliverability=True)
@@ -178,7 +177,7 @@ class StringTestCase(base.BaseTestCase):
     FAKE_STRING2 = "fake!!!"
 
     def setUp(self):
-        super(StringTestCase, self).setUp()
+        super().setUp()
         self.test_instance1 = types.String(min_length=5, max_length=8)
         self.test_instance2 = types.String()
 
@@ -221,7 +220,7 @@ class StringTestCase(base.BaseTestCase):
 
 class IntegerTestCase(base.BaseTestCase):
     def setUp(self):
-        super(IntegerTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.Integer(0, 55)
 
@@ -256,7 +255,7 @@ class IntegerTestCase(base.BaseTestCase):
 
 class FloatTestCase(base.BaseTestCase):
     def setUp(self):
-        super(FloatTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.Float(0.0, 55.0)
 
@@ -303,22 +302,22 @@ class DecimalTestCase(base.BaseTestCase):
         ) == decimal.Decimal("0.3")
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate(decimal.Decimal(30.0)))
+        self.assertTrue(self.test_instance.validate(decimal.Decimal("30.0")))
 
     def test_validate_correct_max_value(self):
-        self.assertTrue(self.test_instance.validate(decimal.Decimal(55.0)))
+        self.assertTrue(self.test_instance.validate(decimal.Decimal("55.0")))
 
     def test_validate_correct_min_value(self):
-        self.assertTrue(self.test_instance.validate(decimal.Decimal(0.0)))
+        self.assertTrue(self.test_instance.validate(decimal.Decimal("0.0")))
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate("TEST_STR_VALUE"))
 
     def test_validate_incorrect_max_value(self):
-        self.assertFalse(self.test_instance.validate(decimal.Decimal(56.0)))
+        self.assertFalse(self.test_instance.validate(decimal.Decimal("56.0")))
 
     def test_validate_incorrect_min_value(self):
-        self.assertFalse(self.test_instance.validate(decimal.Decimal(-1.0)))
+        self.assertFalse(self.test_instance.validate(decimal.Decimal("-1.0")))
 
     def test_validate_sys_max_value(self):
         test_instance = types.Decimal()
@@ -343,7 +342,7 @@ class DecimalTestCase(base.BaseTestCase):
 
 class UriTestCase(BaseTestCase):
     def setUp(self):
-        super(UriTestCase, self).setUp()
+        super().setUp()
         self.test_instance = types.Uri()
 
     def test_correct_value(self):
@@ -361,7 +360,7 @@ class UriTestCase(BaseTestCase):
 
 class MacTestCase(BaseTestCase):
     def setUp(self):
-        super(MacTestCase, self).setUp()
+        super().setUp()
         self.test_instance = types.Mac()
 
     def get_values(self, value):
@@ -382,7 +381,7 @@ class MacTestCase(BaseTestCase):
 
 class BasePythonTypeTestCase(base.BaseTestCase):
     def setUp(self):
-        super(BasePythonTypeTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.BasePythonType(int)
 
@@ -395,12 +394,12 @@ class BasePythonTypeTestCase(base.BaseTestCase):
 
 class ListTestCase(base.BaseTestCase):
     def setUp(self):
-        super(ListTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.List()
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate(list()))
+        self.assertTrue(self.test_instance.validate([]))
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
@@ -408,7 +407,7 @@ class ListTestCase(base.BaseTestCase):
 
 class TypedListTestCase(base.BaseTestCase):
     def setUp(self):
-        super(TypedListTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance_int = types.TypedList(nested_type=types.Integer())
         self.test_instance_str = types.TypedList(nested_type=types.String())
@@ -443,12 +442,12 @@ class TypedListTestCase(base.BaseTestCase):
 
 class DictTestCase(base.BaseTestCase):
     def setUp(self):
-        super(DictTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.Dict()
 
     def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate(dict()))
+        self.assertTrue(self.test_instance.validate({}))
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
@@ -456,7 +455,7 @@ class DictTestCase(base.BaseTestCase):
 
 class TypedDictTestCase(base.BaseTestCase):
     def setUp(self):
-        super(TypedDictTestCase, self).setUp()
+        super().setUp()
 
         self.scheme_simple_types = {
             "int": types.Integer(),
@@ -645,7 +644,7 @@ class TypedDictTestCase(base.BaseTestCase):
 
 class UTCDateTimeZTestCase(base.BaseTestCase):
     def setUp(self):
-        super(UTCDateTimeZTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.UTCDateTimeZ()
 
@@ -655,10 +654,10 @@ class UTCDateTimeZTestCase(base.BaseTestCase):
         )
 
     def test_validate_incorrect_value_wo_tz(self):
-        self.assertFalse(self.test_instance.validate(datetime.datetime.now()))
+        self.assertFalse(self.test_instance.validate(datetime.datetime.now()))  # noqa: DTZ005
 
     def test_validate_from_simple_type_wo_tz(self):
-        dt = datetime.datetime(2020, 3, 13, 11, 3, 25)
+        dt = datetime.datetime(2020, 3, 13, 11, 3, 25)  # noqa: DTZ001
 
         result = types.UTCDateTimeZ().from_simple_type(dt)
 
@@ -777,7 +776,7 @@ class UTCDateTimeZTestCase(base.BaseTestCase):
 
 class EnumTestCase(base.BaseTestCase):
     def setUp(self):
-        super(EnumTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.Enum([1, 2, 3])
 
@@ -807,7 +806,7 @@ class EnumTestCase(base.BaseTestCase):
 
 class AllowNoneTestCase(base.BaseTestCase):
     def setUp(self):
-        super(AllowNoneTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.AllowNone(types.String())
 
@@ -873,7 +872,7 @@ class AnySimpleTypeTestCase(base.BaseTestCase):
         payload = (
             None,
             object(),
-            datetime.datetime.utcnow(),
+            datetime.datetime.utcnow(),  # noqa: DTZ003  # noqa: DTZ003
         )
 
         for value in payload:
@@ -919,7 +918,7 @@ class AnySimpleTypeTestCase(base.BaseTestCase):
 
 class HostnameTestCase(base.BaseTestCase):
     def setUp(self):
-        super(HostnameTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.Hostname()
 
@@ -943,7 +942,7 @@ class HostnameTestCase(base.BaseTestCase):
 
 class UrlTestCase(base.BaseTestCase):
     def setUp(self):
-        super(UrlTestCase, self).setUp()
+        super().setUp()
 
         self.test_instance = types.Url()
 
@@ -959,7 +958,7 @@ class UrlTestCase(base.BaseTestCase):
 
 class SoftSchemeDictTestCase(base.BaseTestCase):
     def setUp(self):
-        super(SoftSchemeDictTestCase, self).setUp()
+        super().setUp()
 
         self.scheme = {
             "sub_str": types.String(),

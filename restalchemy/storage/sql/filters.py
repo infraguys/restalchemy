@@ -18,6 +18,7 @@ import abc
 from collections import abc as collections_abc
 import decimal
 import logging
+import typing
 
 from restalchemy.dm import filters
 from restalchemy.dm import types
@@ -28,7 +29,7 @@ LOG = logging.getLogger(__name__)
 
 class AbstractClause(metaclass=abc.ABCMeta):
     def __init__(self, column, value_type, value, session):
-        super(AbstractClause, self).__init__()
+        super().__init__()
         self._value = self._convert_value(value_type, value)
         self._column = column
         self._session = session
@@ -134,12 +135,12 @@ class PostgreSqlIsNot(IsNot):
 
 class Like(AbstractClause):
     def construct_expression(self):
-        return ("%s LIKE " % self.column) + "%s"
+        return (f"{self.column} LIKE ") + "%s"
 
 
 class NotLike(AbstractClause):
     def construct_expression(self):
-        return ("%s NOT LIKE " % self.column) + "%s"
+        return (f"{self.column} NOT LIKE ") + "%s"
 
 
 class PostgreSqlContainsAll(AbstractClause):
@@ -158,7 +159,7 @@ class PostgreSqlContainsAny(AbstractClause):
 
 class AbstractExpression(metaclass=abc.ABCMeta):
     def __init__(self, *clauses):
-        super(AbstractExpression, self).__init__()
+        super().__init__()
         self._clauses = clauses
 
     def extend_clauses(self, clauses):
@@ -236,7 +237,7 @@ class NOT(ClauseList):
         ]
         if not expressions:
             return ""
-        return "NOT (%s)" % (" %s " % self.operator).join(expressions)
+        return "NOT ({})".format((f" {self.operator} ").join(expressions))
 
 
 # Casts applied when comparing a value pulled out of jsonb via ->> (which
@@ -282,7 +283,7 @@ class _JSONFieldClause(AbstractExpression):
     #: Characters a key cannot carry -- see the class docstring.
     _REFUSED_IN_KEY = ("\\", "%")
 
-    _OPERATORS = {
+    _OPERATORS: typing.ClassVar[dict] = {
         filters.EQ: "=",
         filters.NE: "<>",
         filters.GT: ">",
@@ -298,13 +299,13 @@ class _JSONFieldClause(AbstractExpression):
     def __init__(self, column_sql, key, clause_type, raw_value, cast):
         if clause_type not in self._OPERATORS:
             raise ValueError(
-                "JSONFields does not support clause %s for key %r" % (clause_type, key)
+                f"JSONFields does not support clause {clause_type} for key {key!r}"
             )
         for char in self._REFUSED_IN_KEY:
             if char in key:
                 raise ValueError(
-                    "JSONFields key %r may not contain %r: the key is "
-                    "inlined into the SQL text" % (key, char)
+                    f"JSONFields key {key!r} may not contain {char!r}: the key is "
+                    "inlined into the SQL text"
                 )
         self._column_sql = column_sql
         self._key = key
@@ -546,8 +547,8 @@ def iterate_filters(model, filter_list, session):
             except KeyError:
                 raise ValueError(
                     "Can't convert API filter to SQL storage "
-                    "filter. Unknown filter %s" % filt
+                    f"filter. Unknown filter {filt}"
                 )
         return clauses
 
-    raise ValueError("Unknown type of filters: %s" % filter_list)
+    raise ValueError(f"Unknown type of filters: {filter_list}")

@@ -24,9 +24,9 @@ import requests
 
 url = "http://127.0.0.1:8000/"
 headers = {"cache-control": "no-cache"}
-print("Make GET request to %s" % url)
+print(f"Make GET request to {url}")
 response = requests.request("GET", url, headers=headers)
-print("Response is %s. Headers is %s" % (response.text, response.headers))
+print(f"Response is {response.text}. Headers is {response.headers}")
 
 
 # -----------------------------------------------------------------------------
@@ -36,9 +36,9 @@ print("Response is %s. Headers is %s" % (response.text, response.headers))
 url = "http://127.0.0.1:8000/foos/"
 payload = {"foo-field1": 999, "foo-field2": "foo obj"}
 headers = {"content-type": "application/json", "cache-control": "no-cache"}
-print("Make POST request to %s with payload %s" % (url, payload))
+print(f"Make POST request to {url} with payload {payload}")
 response = requests.request("POST", url, json=payload, headers=headers)
-print("Response is %s. Headers is %s" % (response.text, response.headers))
+print(f"Response is {response.text}. Headers is {response.headers}")
 
 foo_uuid = response.json()["uuid"]
 
@@ -49,37 +49,37 @@ foo_uuid = response.json()["uuid"]
 
 url = "http://127.0.0.1:8000/foos/"
 headers = {"cache-control": "no-cache"}
-print("Make GET (list on collection) request to %s" % url)
+print(f"Make GET (list on collection) request to {url}")
 response = requests.request("GET", url, headers=headers)
-print("Response is %s. Headers is %s" % (response.text, response.headers))
+print(f"Response is {response.text}. Headers is {response.headers}")
 
 
 # -----------------------------------------------------------------------------
 # Get Foo resource by uuid
 # -----------------------------------------------------------------------------
 
-url = "http://127.0.0.1:8000/foos/%s" % foo_uuid
+url = f"http://127.0.0.1:8000/foos/{foo_uuid}"
 headers = {"cache-control": "no-cache"}
-print("Make GET request to foo resource %s" % url)
+print(f"Make GET request to foo resource {url}")
 response = requests.request("GET", url, headers=headers)
 
-print("Response is %s. Headers is %s" % (response.text, response.headers))
+print(f"Response is {response.text}. Headers is {response.headers}")
 
 
 # -----------------------------------------------------------------------------
 # Create Bar resource
 # -----------------------------------------------------------------------------
 
-url = "http://127.0.0.1:8000/foos/%s/bars/" % foo_uuid
+url = f"http://127.0.0.1:8000/foos/{foo_uuid}/bars/"
 
 payload = {"bar-field1": "test bar"}
 headers = {
     "content-type": "application/json",
     "cache-control": "no-cache",
 }
-print("Make POST request to %s with payload %s" % (url, payload))
+print(f"Make POST request to {url} with payload {payload}")
 response = requests.request("POST", url, json=payload, headers=headers)
-print("Response is %s. Headers is %s" % (response.text, response.headers))
+print(f"Response is {response.text}. Headers is {response.headers}")
 
 
 bar_uuid = response.json()["uuid"]
@@ -89,8 +89,8 @@ bar_uuid = response.json()["uuid"]
 # Delete Bar resource
 # -----------------------------------------------------------------------------
 
-url = "http://127.0.0.1:8000/bars/%s" % bar_uuid
+url = f"http://127.0.0.1:8000/bars/{bar_uuid}"
 headers = {"cache-control": "no-cache"}
-print("Make DELETE request to %s" % url)
+print(f"Make DELETE request to {url}")
 response = requests.request("DELETE", url, headers=headers)
 print("Done!")

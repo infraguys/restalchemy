@@ -31,7 +31,7 @@ class AbstractClause(metaclass=abc.ABCMeta):
 
 class BaseAlias(AbstractClause):
     def __init__(self, clause, name, session):
-        super(BaseAlias, self).__init__(session)
+        super().__init__(session)
         self._clause = clause
         self._name = name
 
@@ -48,10 +48,7 @@ class BaseAlias(AbstractClause):
         return self._clause
 
     def compile(self):
-        return "%s AS %s" % (
-            self._clause.compile(),
-            self._session.engine.escape(self.name),
-        )
+        return f"{self._clause.compile()} AS {self._session.engine.escape(self.name)}"
 
 
 class ColumnAlias(BaseAlias):
@@ -64,7 +61,7 @@ class TableAlias(BaseAlias):
     def _wrap(self, column):
         return ColumnAlias(
             column,
-            "%s_%s" % (self.name, column.name),
+            f"{self.name}_{column.name}",
             self._session,
         )
 
@@ -93,7 +90,7 @@ class Column(AbstractClause):
     def __init__(self, name, prop, session):
         self._name = name
         self._prop = prop
-        super(Column, self).__init__(session=session)
+        super().__init__(session=session)
 
     @property
     def name(self):
@@ -108,12 +105,12 @@ class Column(AbstractClause):
         return self.name
 
     def compile(self):
-        return "%s" % (self._session.engine.escape(self._name))
+        return f"{self._session.engine.escape(self._name)}"
 
 
 class ColumnFullPath(AbstractClause):
     def __init__(self, table, column, session):
-        super(ColumnFullPath, self).__init__(session)
+        super().__init__(session)
         self._table = table
         self._column = column
 
@@ -130,7 +127,6 @@ class ColumnFullPath(AbstractClause):
         return self.name
 
     def compile(self):
-        return "%s.%s" % (
-            self._session.engine.escape(self._table.name),
-            self._column.compile(),
+        return (
+            f"{self._session.engine.escape(self._table.name)}.{self._column.compile()}"
         )
