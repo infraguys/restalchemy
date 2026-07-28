@@ -19,7 +19,7 @@ import abc
 
 class AbstractClause(metaclass=abc.ABCMeta):
     def __init__(self, value):
-        super(AbstractClause, self).__init__()
+        super().__init__()
         self._value = value
 
     @property
@@ -30,7 +30,7 @@ class AbstractClause(metaclass=abc.ABCMeta):
         return isinstance(other, type(self)) and self.value == other.value
 
     def __repr__(self):
-        return "<%s (%r)>" % (type(self).__name__, self.value)
+        return f"<{type(self).__name__} ({self.value!r})>"
 
     def __str__(self):
         return str(self._value)
@@ -87,13 +87,9 @@ class NotLike(AbstractClause):
 class ContainsAll(AbstractClause):
     """Array @> operator: column contains all specified elements."""
 
-    pass
-
 
 class ContainsAny(AbstractClause):
     """Array && operator: column contains at least one of the specified elements."""
-
-    pass
 
 
 class JSONFields(AbstractClause):
@@ -116,17 +112,17 @@ class JSONFields(AbstractClause):
         value = {}
         for key, val in fields.items():
             if isinstance(val, AbstractExpression):
-                raise ValueError(
-                    "JSONFields does not support expressions (e.g. %s) for "
-                    "key %r" % (type(val).__name__, key)
+                raise ValueError(  # noqa: TRY004
+                    f"JSONFields does not support expressions (e.g. {type(val).__name__}) for "
+                    f"key {key!r}"
                 )
             value[key] = val if isinstance(val, AbstractClause) else EQ(val)
-        super(JSONFields, self).__init__(value)
+        super().__init__(value)
 
 
 class AbstractExpression(metaclass=abc.ABCMeta):
     def __init__(self, *clauses):
-        super(AbstractExpression, self).__init__()
+        super().__init__()
         self._clauses = clauses
 
     @property
@@ -137,7 +133,7 @@ class AbstractExpression(metaclass=abc.ABCMeta):
         return isinstance(other, type(self)) and self.clauses == other.clauses
 
     def __repr__(self):
-        return "<%s (%r)>" % (type(self).__name__, self.clauses)
+        return f"<{type(self).__name__} ({self.clauses!r})>"
 
 
 class ClauseList(AbstractExpression):
@@ -164,5 +160,3 @@ class NOT(ClauseList):
     means the SQL says what was asked for, and leaves the tree free of a
     rewrite that has to be right about every clause type it meets.
     """
-
-    pass

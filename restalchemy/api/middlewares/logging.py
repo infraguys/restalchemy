@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
 
 import logging
 import time
@@ -44,11 +43,11 @@ class LoggingMiddleware(middlewares.Middleware):
         if isinstance(body, bytes):
             body = body[:max_size].decode("utf-8", "replace")
         if total_size > max_size:
-            return body + "... [%d bytes total]" % total_size
+            return body + f"... [{total_size} bytes total]"
         return body
 
     def __init__(self, application, logger_name=__name__):
-        super(LoggingMiddleware, self).__init__(application)
+        super().__init__(application)
         self.logger = logging.getLogger(logger_name)
 
     def process_request(self, req):
@@ -61,7 +60,7 @@ class LoggingMiddleware(middlewares.Middleware):
         return req.get_response(self.application)
 
     def _process_debug(self, req, start_s):
-        req_chunk = "%s %s" % (req.method, req.url)
+        req_chunk = f"{req.method} {req.url}"
 
         self.logger.debug(
             "API > %s headers=%s body=%r",
@@ -150,6 +149,6 @@ class LoggingMiddleware(middlewares.Middleware):
 
     def _sanitize_headers(self, headers):
         return [
-            "%s: %s" % (h, "***" if h.upper() in self.SENSITIVE_HEADERS else v)
+            "{}: {}".format(h, "***" if h.upper() in self.SENSITIVE_HEADERS else v)
             for h, v in headers.items()
         ]

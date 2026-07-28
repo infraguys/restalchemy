@@ -21,7 +21,7 @@ from restalchemy.storage.sql import engines
 from restalchemy.tests.functional import consts
 
 
-class DBEngineMixin(object):
+class DBEngineMixin:
     __ENGINE__ = None
 
     @utils.classproperty

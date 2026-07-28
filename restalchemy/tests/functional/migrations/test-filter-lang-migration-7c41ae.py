@@ -37,17 +37,16 @@ class MigrationStep(migrations.AbstractMigrationStep):
         postgresql = session.engine.dialect.name == "postgresql"
         uuid_type = "UUID" if postgresql else "CHAR(36)"
         session.execute(
-            """
+            f"""
             CREATE TABLE test_filter_lang (
-                uuid %(uuid)s NOT NULL,
-                project_id %(uuid)s NOT NULL,
+                uuid {uuid_type} NOT NULL,
+                project_id {uuid_type} NOT NULL,
                 name VARCHAR(255) NOT NULL DEFAULT '',
                 state VARCHAR(255) NOT NULL DEFAULT '',
                 size INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (uuid)
             )
         """
-            % {"uuid": uuid_type}
         )
         session.execute(
             "CREATE INDEX idx_test_filter_lang_project ON test_filter_lang (project_id)"

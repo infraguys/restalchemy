@@ -16,8 +16,7 @@
 
 import logging
 import os
-
-import mock
+from unittest import mock
 
 from restalchemy.dm import filters
 from restalchemy.storage.sql import migrations as sql_migrations
@@ -72,14 +71,14 @@ def test_get_filename_hash():
 
 class BaseMigrationTestCase(base.BaseDBEngineTestCase):
     def setUp(self):
-        super(BaseMigrationTestCase, self).setUp()
+        super().setUp()
 
         self.migration_engine = self.get_migration_engine()
 
         self._drop_ra_migrations_table()
 
     def tearDown(self):
-        super(BaseMigrationTestCase, self).tearDown()
+        super().tearDown()
 
         self._drop_ra_migrations_table()
 
@@ -140,7 +139,7 @@ class MigrationsModelTestCase(BaseMigrationTestCase):
         self.migration_engine.apply_migration(migration_name=FIRST_MIGRATION)
 
         db_migrations = sql_migrations.MigrationModel.objects.get_all()
-        self.assertTrue(all([m.applied for m in db_migrations]))
+        self.assertTrue(all(m.applied for m in db_migrations))
         self.assertEqual(len(db_migrations), 2)
 
         self.migration_engine.rollback_migration(migration_name=FIRST_MIGRATION)
@@ -331,7 +330,7 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
     def test_get_file_name(self):
         file_name = self.migration_engine.get_file_name(FIRST_MIGRATION)
 
-        self.assertEqual("%s.py" % FIRST_MIGRATION, file_name)
+        self.assertEqual(f"{FIRST_MIGRATION}.py", file_name)
 
     def test_get_file_name_ambiguous_name(self):
         ambiguous_name = "0"
@@ -391,12 +390,10 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         self.assertEqual(migrations_before.keys(), migrations_after.keys())
 
         self.assertTrue(
-            all([m.is_applied() is False for m in migrations_before.values()])
+            all(m.is_applied() is False for m in migrations_before.values())
         )
 
-        self.assertTrue(
-            all([m.is_applied() is True for m in migrations_after.values()])
-        )
+        self.assertTrue(all(m.is_applied() is True for m in migrations_after.values()))
 
     def test_apply_migration_dry_run(self):
         with self.engine.session_manager() as session:
@@ -413,12 +410,10 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         self.assertEqual(migrations_before.keys(), migrations_after.keys())
 
         self.assertTrue(
-            all([m.is_applied() is False for m in migrations_before.values()])
+            all(m.is_applied() is False for m in migrations_before.values())
         )
 
-        self.assertTrue(
-            all([m.is_applied() is False for m in migrations_after.values()])
-        )
+        self.assertTrue(all(m.is_applied() is False for m in migrations_after.values()))
 
     def test_rollback_migration(self):
         self.migration_engine.apply_migration(HEAD_MIGRATION, dry_run=False)
@@ -433,13 +428,9 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         # total number of migrations before and after rollback should be same
         self.assertEqual(migrations_before.keys(), migrations_after.keys())
 
-        self.assertTrue(
-            all([m.is_applied() is True for m in migrations_before.values()])
-        )
+        self.assertTrue(all(m.is_applied() is True for m in migrations_before.values()))
 
-        self.assertTrue(
-            all([m.is_applied() is False for m in migrations_after.values()])
-        )
+        self.assertTrue(all(m.is_applied() is False for m in migrations_after.values()))
 
     def test_rollback_migration_dry_run(self):
         self.migration_engine.apply_migration(HEAD_MIGRATION, dry_run=False)
@@ -454,13 +445,9 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
         # total number of migrations before and after rollback should be same
         self.assertEqual(migrations_before.keys(), migrations_after.keys())
 
-        self.assertTrue(
-            all([m.is_applied() is True for m in migrations_before.values()])
-        )
+        self.assertTrue(all(m.is_applied() is True for m in migrations_before.values()))
 
-        self.assertTrue(
-            all([m.is_applied() is True for m in migrations_after.values()])
-        )
+        self.assertTrue(all(m.is_applied() is True for m in migrations_after.values()))
 
     @mock.patch("builtins.open", new_callable=mock.mock_open())
     def test_create_new_migration(self, file_mock):
@@ -487,12 +474,7 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
 
         self.assertTrue(
             migration_write_args[0].endswith(
-                "%s-%s-%s.py"
-                % (
-                    NEW_MIGRATION_NUMBER,
-                    NEW_MIGRATION_MESSAGE,
-                    get_filename_hash(migration_write_args[0]),
-                )
+                f"{NEW_MIGRATION_NUMBER}-{NEW_MIGRATION_MESSAGE}-{get_filename_hash(migration_write_args[0])}.py"
             )
         )
 
@@ -524,12 +506,7 @@ class MigrationEngineTestCase(BaseMigrationTestCase):
 
         self.assertTrue(
             migration_write_args[0].endswith(
-                "%s-%s-%s.py"
-                % (
-                    sql_migrations.MANUAL_MIGRATION,
-                    NEW_MIGRATION_MESSAGE,
-                    get_filename_hash(migration_write_args[0]),
-                )
+                f"{sql_migrations.MANUAL_MIGRATION}-{NEW_MIGRATION_MESSAGE}-{get_filename_hash(migration_write_args[0])}.py"
             )
         )
 

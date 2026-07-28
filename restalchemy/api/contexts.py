@@ -23,7 +23,7 @@ class CanNotGetActiveMethod(exceptions.RestAlchemyException):
     message = "Can not get active RA method from API context"
 
 
-class RequestContext(object):
+class RequestContext:
     _special_params = frozenset(
         ("fields", "page_limit", "page_marker", "sort_key", "sort_dir")
     )
@@ -35,7 +35,7 @@ class RequestContext(object):
         utils.refuse_removed_overrides(cls, RequestContext._REMOVED)
 
     def __init__(self, request):
-        super(RequestContext, self).__init__()
+        super().__init__()
         self._req = request
         self._fields_to_show = request.params.getall("fields")
         self._method = None

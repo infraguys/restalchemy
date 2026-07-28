@@ -21,7 +21,7 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import controlle
 
 class TagRoute(routes.Route):
     __controller__ = controllers.TagController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.FILTER,
         routes.GET,
@@ -32,31 +32,31 @@ class TagRoute(routes.Route):
 
 class IpAddress(routes.Route):
     __controller__ = controllers.IpAddressController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.FILTER,
         routes.GET,
         routes.DELETE,
     ]
-    __tags__ = ["IpAddress_tag"]
+    __tags__ = ["IpAddress_tag"]  # noqa: RUF012
 
 
 class PortRoute(routes.Route):
     __controller__ = controllers.PortController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.FILTER,
         routes.GET,
         routes.UPDATE,
         routes.DELETE,
     ]
-    __tags__ = [structures.OpenApiTag(name="PortTestTag", description="port_descr")]
+    __tags__ = [structures.OpenApiTag(name="PortTestTag", description="port_descr")]  # noqa: RUF012
     ip_addresses = routes.route(IpAddress, resource_route=True)
 
 
 class PortRouteNone(routes.Route):
     __controller__ = controllers.PortControllerNone
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.FILTER,
         routes.GET,
@@ -73,7 +73,7 @@ class NotImplementedAction(routes.Action):
 
 class NotImplementedMethodsRoute(routes.Route):
     __controller__ = controllers.NotImplementedMethodsController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.FILTER,
         routes.GET,
@@ -105,7 +105,7 @@ class VMIPAddressesAction(routes.Action):
 
 class VMRoute(routes.Route):
     __controller__ = controllers.VMController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.GET,
         routes.DELETE,
@@ -125,7 +125,7 @@ class VMRoute(routes.Route):
 
 class VMNoProcessFiltersRoute(routes.Route):
     __controller__ = controllers.VMNoProcessFiltersController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.GET,
         routes.FILTER,
     ]
@@ -133,7 +133,7 @@ class VMNoProcessFiltersRoute(routes.Route):
 
 class VMNoSortRoute(routes.Route):
     __controller__ = controllers.VMNoSortController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.GET,
         routes.DELETE,
@@ -144,7 +144,7 @@ class VMNoSortRoute(routes.Route):
 
 class VMDefSortRoute(routes.Route):
     __controller__ = controllers.VMDefSortController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.GET,
         routes.DELETE,
@@ -155,7 +155,7 @@ class VMDefSortRoute(routes.Route):
 
 class V1Route(routes.Route):
     __controller__ = controllers.V1Controller
-    __allow_methods__ = [routes.FILTER]
+    __allow_methods__ = [routes.FILTER]  # noqa: RUF012
 
     vms = routes.route(VMRoute)
     vmsnoproccessfilters = routes.route(VMNoProcessFiltersRoute)

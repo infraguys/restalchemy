@@ -25,6 +25,7 @@ is a case asserting that MySQL says so rather than failing deeper down.
 
 import contextlib
 import socket
+import typing
 import unittest
 import uuid
 
@@ -94,17 +95,17 @@ class TaggedController(controllers.BaseResourceController):
 
 class FilterLangRoute(routes.Route):
     __controller__ = FilterLangController
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET]
+    __allow_methods__: typing.ClassVar = [routes.CREATE, routes.FILTER, routes.GET]
 
 
 class PaginatedFilterLangRoute(routes.Route):
     __controller__ = PaginatedFilterLangController
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET]
+    __allow_methods__: typing.ClassVar = [routes.CREATE, routes.FILTER, routes.GET]
 
 
 class TaggedRoute(routes.Route):
     __controller__ = TaggedController
-    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET]
+    __allow_methods__: typing.ClassVar = [routes.CREATE, routes.FILTER, routes.GET]
 
 
 class Root(routes.RootRoute):
@@ -121,7 +122,7 @@ class BaseFilterLangTestCase(base.BaseWithDbMigrationsTestCase):
     COLLECTION = "things"
 
     def setUp(self):
-        super(BaseFilterLangTestCase, self).setUp()
+        super().setUp()
         self.populate()
         self._port = self._find_free_port()
         self._service = service.RESTService(
@@ -144,8 +145,7 @@ class BaseFilterLangTestCase(base.BaseWithDbMigrationsTestCase):
 
     def _get(self, query="", collection=None):
         return requests.get(
-            "http://127.0.0.1:%s/%s/%s"
-            % (self._port, collection or self.COLLECTION, query),
+            f"http://127.0.0.1:{self._port}/{collection or self.COLLECTION}/{query}",
         )
 
     def _uuids(self, response):
@@ -235,7 +235,7 @@ class FilterLangTestCase(BaseFilterLangTestCase):
     def test_a_field_parameter_and_an_expression_are_anded(self):
         self.assertEqual(
             {UUID1},
-            self._uuids(self._get('?name=web-1&q=project_id = "%s"' % PROJECT1)),
+            self._uuids(self._get(f'?name=web-1&q=project_id = "{PROJECT1}"')),
         )
 
     def test_presence_of_a_field(self):
@@ -247,7 +247,7 @@ class FilterLangTestCase(BaseFilterLangTestCase):
 
     def test_a_uuid_value_goes_through_the_field_type(self):
         self.assertEqual(
-            {UUID4}, self._uuids(self._get('?q=project_id = "%s"' % PROJECT2))
+            {UUID4}, self._uuids(self._get(f'?q=project_id = "{PROJECT2}"'))
         )
 
     def test_an_empty_expression_filters_nothing(self):
@@ -302,7 +302,7 @@ class FilterLangPaginationTestCase(BaseFilterLangTestCase):
 
     def _page(self, query, marker=None):
         if marker is not None:
-            query = "%s&page_marker=%s" % (query, marker)
+            query = f"{query}&page_marker={marker}"
         response = self._get(query)
         self.assertEqual(200, response.status_code, response.text)
         return response
@@ -410,7 +410,9 @@ class FilterLangArrayTestCase(BaseFilterLangTestCase):
         # the key is inlined into the statement, so it never gets there.
         for key in (r"a\') IS NOT NULL OR 1=1 --", "%s", "a'b"):
             with self.subTest(key=key):
-                response = self._get('?q=spec."%s" = 1' % key.replace("\\", "\\\\"))
+                response = self._get(
+                    '?q=spec."{}" = 1'.format(key.replace("\\", "\\\\"))
+                )
 
                 self.assertEqual(400, response.status_code, response.text)
 

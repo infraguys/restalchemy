@@ -45,7 +45,7 @@ class ConflictRecords(exceptions.RestAlchemyException):
     message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
 
     def __init__(self, **kwargs):
-        super(ConflictRecords, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._original_msg = kwargs.get("msg") or ""
 
     def _re_parser(self, re_template):
@@ -97,7 +97,7 @@ class UnknownStorageException(exceptions.RestAlchemyException):
 
     def __init__(self, caused, **kwargs):
         self._caused = caused
-        super(UnknownStorageException, self).__init__(caused=caused, **kwargs)
+        super().__init__(caused=caused, **kwargs)
 
     @property
     def caused(self):

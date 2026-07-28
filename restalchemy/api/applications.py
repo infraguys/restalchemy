@@ -25,9 +25,9 @@ from restalchemy.api import routes
 from restalchemy.openapi import cache as openapi_cache
 
 
-class WSGIApp(object):
+class WSGIApp:
     def __init__(self, route_class):
-        super(WSGIApp, self).__init__()
+        super().__init__()
         self._main_route = routes.route(route_class)
         resources.ResourceMap.set_resource_map(
             routes.Route.build_resource_map(route_class),
@@ -49,7 +49,7 @@ class WSGIApp(object):
 
 class OpenApiApplication(WSGIApp):
     def __init__(self, route_class, openapi_engine, warm_up_openapi=True):
-        super(OpenApiApplication, self).__init__(route_class)
+        super().__init__(route_class)
         self._openapi_engine = openapi_engine
         if warm_up_openapi:
             openapi_cache.warm_up(self, self._build_warm_up_request())

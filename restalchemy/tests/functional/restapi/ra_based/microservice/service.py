@@ -31,7 +31,7 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 
 class RESTService(threading.Thread):
     def __init__(self, bind_host, bind_port, app_root):
-        super(RESTService, self).__init__(name="REST Service")
+        super().__init__(name="REST Service")
 
         self._service_port = bind_port
         self._service_host = bind_host

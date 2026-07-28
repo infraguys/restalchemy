@@ -19,7 +19,7 @@ from restalchemy.api import constants
 from restalchemy.common import exceptions as exc
 
 
-class ActionHandler(object):
+class ActionHandler:
     def __init__(self, get=None, post=None, put=None):
         self._get = get
         self._post = post
@@ -63,7 +63,7 @@ class ActionHandler(object):
         if fn:
             api_context = controller.request.api_context
             api_context.set_active_method(self._method_actions_map[fn])
-            result = fn(self=controller, *args, **kwargs)
+            result = fn(controller, *args, **kwargs)
             return controller.process_result(result=result)
         else:
             raise exc.NotImplementedError()

@@ -45,7 +45,7 @@ class VM(models.ModelWithUUID):
 
 
 class Port(models.CustomPropertiesMixin, models.ModelWithUUID):
-    __custom_properties__ = {
+    __custom_properties__ = {  # noqa: RUF012
         "never_call": types.String(),
         "_hidden_field": types.String(),
         "some_field1": types.String(),

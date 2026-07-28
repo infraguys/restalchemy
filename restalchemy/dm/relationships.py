@@ -28,7 +28,7 @@ def relationship(property_type, *args, **kwargs):
         "property_class",
         PrefetchRelationship if prefetch else Relationship,
     )
-    return properties.property(property_type=property_type, *args, **kwargs)
+    return properties.property(property_type, *args, **kwargs)
 
 
 def required_relationship(property_type, *args, **kwargs):
@@ -55,7 +55,7 @@ class Relationship(BaseRelationship):
         value=None,
     ):
         if value and not isinstance(value, property_type):
-            raise TypeError("Expected '%s' type; value: %r" % (property_type, value))
+            raise TypeError(f"Expected '{property_type}' type; value: {value!r}")
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
@@ -72,7 +72,7 @@ class Relationship(BaseRelationship):
         self.__first_value = self.value
 
     def is_dirty(self):
-        return not self.__first_value == self.value
+        return self.__first_value != self.value
 
     def _safe_value(self, value):
         if value is None or isinstance(value, self._type):
