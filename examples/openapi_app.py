@@ -65,7 +65,7 @@ class FilesController(controllers.Controller):
         summary="Upload file",
         parameters=(),
         responses=oa_c.build_openapi_create_response(
-            "%s_Create" % __resource__.get_model().__name__
+            f"{__resource__.get_model().__name__}_Create"
         ),
         request_body=oa_c.build_openapi_req_body_multipart(
             description="Upload file to docs set",
@@ -86,7 +86,7 @@ class FilesController(controllers.Controller):
         data = resource.download_file()
         headers = {
             "Content-Type": constants.CONTENT_TYPE_OCTET_STREAM,
-            "Content-Disposition": 'attachment; filename="%s"' % resource.name,
+            "Content-Disposition": f'attachment; filename="{resource.name}"',
         }
 
         return data, 200, headers
@@ -108,7 +108,7 @@ class FilesRoute(routes.Route):
     """Handler for /v1/files/<id> endpoint"""
 
     __controller__ = FilesController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.CREATE,
         routes.DELETE,
         routes.FILTER,
@@ -135,7 +135,7 @@ class ApiEndpointRoute(routes.Route):
     """Handler for /v1/ endpoint"""
 
     __controller__ = ApiEndpointController
-    __allow_methods__ = [
+    __allow_methods__ = [  # noqa: RUF012
         routes.FILTER,
         routes.GET,
     ]
@@ -146,15 +146,11 @@ class ApiEndpointRoute(routes.Route):
 
 class UserApiApp(routes.RootRoute):
     __controller__ = controllers.RootController
-    __allow_methods__ = [routes.FILTER]
+    __allow_methods__ = [routes.FILTER]  # noqa: RUF012
 
 
 # Route to /v1/ endpoint.
-setattr(
-    UserApiApp,
-    "v1",
-    routes.route(ApiEndpointRoute),
-)
+UserApiApp.v1 = routes.route(ApiEndpointRoute)
 
 
 def get_openapi_engine():
@@ -189,7 +185,7 @@ def main():
     server = make_server(HOST, PORT, build_wsgi_application())
 
     try:
-        print("Serve forever on %s:%s" % (HOST, PORT))
+        print(f"Serve forever on {HOST}:{PORT}")
         server.serve_forever()
     except KeyboardInterrupt:
         print("Bye")

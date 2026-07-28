@@ -90,9 +90,9 @@ def filter_lang_parameter(name, field_names=()):
     return parameter
 
 
-class ResourceSchemaGenerator(object):
+class ResourceSchemaGenerator:
     def __init__(self, resource, route, openapi_version):
-        super(ResourceSchemaGenerator, self).__init__()
+        super().__init__()
         self._resource = resource
         self._route = route
         self._openapi_version = openapi_version
@@ -102,7 +102,7 @@ class ResourceSchemaGenerator(object):
         return self._resource.get_model().__name__
 
     def resource_method_name(self, method):
-        return "{}_{}".format(self.resource_name, method.capitalize())
+        return f"{self.resource_name}_{method.capitalize()}"
 
     def resource_prop_name(self, prop_name):
         return resource_parameter_name(self.resource_name, prop_name)
@@ -155,7 +155,7 @@ class ResourceSchemaGenerator(object):
             try:
                 model = self._resource.get_model()
                 id_prop_struct = model.get_id_property()
-                id_prop = list(id_prop_struct.items())[0]
+                id_prop = next(iter(id_prop_struct.items()))
                 name, prop = id_prop
                 prop = prop(value=prop._kwargs.get("default", 0))
                 prop_kwargs = self.get_prop_kwargs(name)
@@ -175,7 +175,7 @@ class ResourceSchemaGenerator(object):
         return self._resource.generate_schema_object(method, self._openapi_version)
 
 
-class Schema(object):
+class Schema:
     def __init__(
         self,
         summary=None,

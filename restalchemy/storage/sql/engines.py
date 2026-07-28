@@ -14,11 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import abc
 import contextlib
 import logging
 import typing as tp
-import urllib.parse as parse
+from urllib import parse
 
 from mysql.connector import pooling
 from psycopg.types.json import Jsonb
@@ -37,7 +39,7 @@ DEFAULT_CONNECTION_TIMEOUT = 10
 LOG = logging.getLogger(__name__)
 
 
-def _postgresql_connection_kwargs(conf: tp.Any, section: str) -> tp.Dict[str, tp.Any]:
+def _postgresql_connection_kwargs(conf: tp.Any, section: str) -> dict[str, tp.Any]:
     """Build psycopg connection parameters from PostgreSQL config options."""
     section_conf = conf[section]
     kwargs = {}
@@ -124,7 +126,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         :raises ValueError: If the database URL does not match the expected
             format.
         """
-        super(AbstractEngine, self).__init__()
+        super().__init__()
         self._db_url = parse.urlparse(db_url)
 
         if self._db_url.scheme != self.URL_SCHEMA:
@@ -173,7 +175,7 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         :return: The escaped value.
         :rtype: str
         """
-        return "`%s`" % value
+        return f"`{value}`"
 
     @property
     def db_name(self):
@@ -378,7 +380,7 @@ class PgSQLEngine(AbstractEngine):
         :return: The initialized engine.
         """
 
-        super(PgSQLEngine, self).__init__(
+        super().__init__(
             db_url=db_url,
             dialect=pgsql.PgSQLDialect(),
             session_storage=sessions.SessionThreadStorage(),
@@ -500,7 +502,7 @@ class MySQLEngine(AbstractEngine):
         :raises ValueError: If the database URL does not match the expected
             format.
         """
-        super(MySQLEngine, self).__init__(
+        super().__init__(
             db_url=db_url,
             dialect=mysql.MySQLDialect(),
             session_storage=sessions.SessionThreadStorage(),
@@ -585,7 +587,7 @@ class EngineFactory(singletons.InheritSingleton):
 
         :returns: None
         """
-        super(EngineFactory, self).__init__()
+        super().__init__()
         self._engines = {}
         self._engines_map = {
             MySQLEngine.URL_SCHEMA: MySQLEngine,
@@ -704,7 +706,7 @@ class EngineFactory(singletons.InheritSingleton):
                 db_url=db_url, config=config, query_cache=query_cache, readonly=readonly
             )
         except KeyError:
-            raise ValueError("Can not find driver for schema %s" % schema)
+            raise ValueError(f"Can not find driver for schema {schema}")
 
     def get_engine(self, name=DEFAULT_NAME):
         """
@@ -721,7 +723,7 @@ class EngineFactory(singletons.InheritSingleton):
         if engine:
             return engine
         raise ValueError(
-            ("Can not return %s engine. Please configure EngineFactory") % name,
+            (f"Can not return {name} engine. Please configure EngineFactory"),
         )
 
     def destroy_engine(self, name=DEFAULT_NAME):
@@ -754,7 +756,7 @@ class EngineFactory(singletons.InheritSingleton):
         self._engines = {}
 
 
-class DBConnectionUrl(object):
+class DBConnectionUrl:
     _CENSORED = ":<censored>@"
 
     def __init__(self, db_url):
@@ -765,7 +767,7 @@ class DBConnectionUrl(object):
                        parsed and stored.
         """
 
-        super(DBConnectionUrl, self).__init__()
+        super().__init__()
         self._db_url = parse.urlparse(db_url)
 
     def __repr__(self):
@@ -781,7 +783,7 @@ class DBConnectionUrl(object):
         if self._db_url.password is None:
             orig_substr = "@"
         else:
-            orig_substr = ":%s@" % self._db_url.password
+            orig_substr = f":{self._db_url.password}@"
         return self.url.replace(orig_substr, self._CENSORED)
 
     @property

@@ -26,7 +26,7 @@ SUPPORTED_OPENAPI_SPECIFICATIONS = {
 }
 
 
-class OpenApiEngine(object):
+class OpenApiEngine:
     """OpenAPI Specification Context
 
     Using this object, one can get a description of the API service in open
@@ -59,10 +59,10 @@ class OpenApiEngine(object):
     """
 
     def __init__(self, **kwargs):
-        super(OpenApiEngine, self).__init__()
+        super().__init__()
         self._openapi_specification_kwargs = kwargs
 
-    def list_supported_openapi_versions(self):  # noqa
+    def list_supported_openapi_versions(self):
         """List of supported versions.
 
         :return: The list of versions strings

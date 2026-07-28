@@ -15,7 +15,7 @@
 #    under the License.
 
 
-class AsIsType(object):
+class AsIsType:
     def validate(self, value):
         return True
 

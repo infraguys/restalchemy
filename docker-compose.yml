@@ -10,3 +10,13 @@ services:
       MYSQL_PASSWORD: "test_password"
     tmpfs:
       - /var/lib/mysql:exec,size=1G
+  postgresql:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "test_password"
+      POSTGRES_DB: "ra_database"
+    tmpfs:
+      - /var/lib/postgresql/data:exec,size=1G

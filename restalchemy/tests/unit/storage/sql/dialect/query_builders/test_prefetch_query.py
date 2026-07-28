@@ -64,7 +64,7 @@ for model in [SimpleModel, ModelWithL1Relationships, ModelWithL2Relationships]:
 
 class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
     def setUp(self):
-        super(MySQLPrefetchQueryBuilderTestCase, self).setUp()
+        super().setUp()
         self.Q = q.Q
         model1 = SimpleModel(uuid=FAKE_UUID1)
         model2 = SimpleModel(uuid=FAKE_UUID2)
@@ -75,7 +75,7 @@ class MySQLPrefetchQueryBuilderTestCase(unittest.TestCase):
         )
 
     def tearDown(self):
-        super(MySQLPrefetchQueryBuilderTestCase, self).tearDown()
+        super().tearDown()
         del self.Q
 
     def test_l1_select(self):

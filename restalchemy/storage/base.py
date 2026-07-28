@@ -25,7 +25,7 @@ from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 
 class AbstractObjectCollection(metaclass=abc.ABCMeta):
     def __init__(self, model_cls):
-        super(AbstractObjectCollection, self).__init__()
+        super().__init__()
         self.model_cls = model_cls
 
     @abc.abstractmethod
@@ -90,7 +90,7 @@ def error_catcher(func):
             return func(*args, **kwargs)
         except common_exc.RestAlchemyException:
             raise
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise exceptions.UnknownStorageException(caused=e)
 
     return wrapper

@@ -50,11 +50,11 @@ SPECIAL_SYMBOLS = re.compile(r"[/{}!@#$%^&*())\[\]:,./<>?\|`\~\-\=\_\+]+")
 
 class BaseRoute(metaclass=abc.ABCMeta):
     __controller__ = None
-    __allow_methods__ = []
+    __allow_methods__ = []  # noqa: RUF012
     __tags__ = None  # list of strings or dicts with name and description
 
     def __init__(self, req):
-        super(BaseRoute, self).__init__()
+        super().__init__()
         self._req = req
 
     @classmethod
@@ -116,7 +116,7 @@ class BaseRoute(metaclass=abc.ABCMeta):
 
 class Route(BaseRoute):
     __controller__ = None
-    __allow_methods__ = [GET, CREATE, UPDATE, DELETE, FILTER]
+    __allow_methods__ = [GET, CREATE, UPDATE, DELETE, FILTER]  # noqa: RUF012
 
     def _get_openapi_action_controller_and_handler(self, action_name):
         action_route_cls = self.get_action(action_name)
@@ -217,7 +217,7 @@ class Route(BaseRoute):
 
     @staticmethod
     def _build_operation_id(method, current_path):
-        operation_id = "{}_{}".format(method.capitalize(), current_path)
+        operation_id = f"{method.capitalize()}_{current_path}"
         operation_id = re.sub(SPECIAL_SYMBOLS, "_", operation_id)
         operation_id = operation_id.replace("__", "_")
         operation_id = operation_id.rstrip("_")
@@ -249,13 +249,13 @@ class Route(BaseRoute):
         summary_name = (
             model_name
             if res
-            else "{} {}".format(self.__class__.__name__, controller.__class__.__name__)
+            else f"{self.__class__.__name__} {controller.__class__.__name__}"
         )
         if method_name == constants.FILTER:
             summary_name += "s"
         if not summary:
             summary = parsed_doc["short_description"]
-            summary = summary or "%s %s" % (
+            summary = summary or "{} {}".format(
                 (
                     method_name.capitalize()
                     if method_name != constants.FILTER
@@ -267,7 +267,7 @@ class Route(BaseRoute):
         # Fill responses
         if not responses:
             responses = parsed_doc["returns"]
-        method_model_name = "{}_{}".format(model_name, method_name.capitalize())
+        method_model_name = f"{model_name}_{method_name.capitalize()}"
         if not responses:
             if method_name in [constants.UPDATE, constants.GET]:
                 if res:
@@ -419,13 +419,10 @@ class Route(BaseRoute):
             model = resource.get_model()
             try:
                 id_prop_struct = model.get_id_property()
-                id_name = list(id_prop_struct)[0]
+                id_name = next(iter(id_prop_struct))
             except TypeError:
                 id_name = ""
-            id_parameter_name = "{%s%s}" % (
-                model.__name__,
-                id_name.capitalize(),
-            )
+            id_parameter_name = f"{{{model.__name__}{id_name.capitalize()}}}"
             resource_path = posixpath.join(current_path, id_parameter_name)
             for http_method, ra_method in openapi_resource_methods.items():
                 if self.check_allow_methods(ra_method):
@@ -510,7 +507,7 @@ class Route(BaseRoute):
 
             return result
 
-        class ResourceLocator(object):
+        class ResourceLocator:
             def __init__(self, path_stack, controller):
                 self.path_stack = path_stack
                 self._controller = controller
@@ -538,9 +535,9 @@ class Route(BaseRoute):
                 if len(models) == 1:
                     return models[0]
                 raise ValueError(
-                    "Can't find resource %s. Please "
+                    f"Can't find resource {parent_type}. Please "
                     "implement get_parent_model in your model "
-                    "(%s)" % (parent_type, type(model))
+                    f"({type(model)})"
                 )
 
             def get_uri(self, model):
@@ -574,7 +571,7 @@ class Route(BaseRoute):
         return resource_map
 
     def do(self, parent_resource=None, **kwargs):
-        super(Route, self).do(**kwargs)
+        super().do(**kwargs)
 
         # TODO(Eugene Frolov): Check the possibility to pass to the method
         #                      specified in a route.
@@ -650,14 +647,14 @@ def route(route_class, resource_route=False):
 
 class Action(BaseRoute):
     __controller__ = None
-    __allow_methods__ = [GET]
+    __allow_methods__ = [GET]  # noqa: RUF012
 
     @classmethod
     def is_invoke(cls):
         return False
 
     def do(self, resource, **kwargs):
-        super(Action, self).do(**kwargs)
+        super().do(**kwargs)
 
         method = self._req.method
         action_name = self._req.path_info_pop().replace("-", "_")
@@ -684,7 +681,7 @@ class Action(BaseRoute):
         if (method in [GET, POST, PUT] and self.is_invoke() and invoke) or (
             method == GET and not self.is_invoke() and not invoke
         ):
-            action_method = getattr(action, "do_%s" % method.lower())
+            action_method = getattr(action, f"do_{method.lower()}")
             self.restore_path_info(self._req)
             return action_method(controller=controller, resource=resource, **kwargs)
         else:
@@ -702,11 +699,11 @@ def action(action_class, invoke=False):
 
 class OpenApiSpecificationRoute(Route):
     __controller__ = controllers.OpenApiSpecificationController
-    __allow_methods__ = [FILTER, GET, UPDATE]
+    __allow_methods__ = [FILTER, GET, UPDATE]  # noqa: RUF012
 
 
 class RootRoute(Route):
     __controller__ = controllers.RootController
-    __allow_methods__ = [FILTER, GET]
+    __allow_methods__ = [FILTER, GET]  # noqa: RUF012
 
     specifications = route(OpenApiSpecificationRoute)

@@ -29,9 +29,8 @@ class TestPostgresqlConfigOpts(unittest.TestCase):
         config_opts.register_postgresql_db_opts(conf)
         stdout = io.StringIO()
 
-        with contextlib.redirect_stdout(stdout):
-            with self.assertRaises(SystemExit) as exc:
-                conf(["--help"])
+        with contextlib.redirect_stdout(stdout), self.assertRaises(SystemExit) as exc:
+            conf(["--help"])
 
         self.assertEqual(0, exc.exception.code)
         self.assertIn("random 10% to avoid mass eviction", stdout.getvalue())

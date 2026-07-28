@@ -14,9 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 import uuid
-
-import mock
 
 from restalchemy.common import exceptions
 from restalchemy.dm import models
@@ -38,7 +37,7 @@ FAKE_VALUE1 = "Fake value 1"
 class MetaModelTestCase(base.BaseTestCase):
     with mock.patch("restalchemy.dm.properties.PropertyCreator", FakeProperty):
 
-        class Model(object, metaclass=models.MetaModel):
+        class Model(metaclass=models.MetaModel):
             fake_prop1 = FAKE_PROPERTY1
             fake_prop2 = FAKE_PROPERTY2
 
@@ -60,7 +59,7 @@ class ModelTestCase(base.BaseTestCase):
         "restalchemy.dm.properties.PropertyManager.poured", return_value=PM_MOCK
     )
     def setUp(self, pm_mock):
-        super(ModelTestCase, self).setUp()
+        super().setUp()
         self.PM_MOCK.__getitem__.side_effect = None
         self.PM_MOCK.reset_mock()
         self.PM_MOCK._properties.__getitem__.side_effect = None
@@ -170,7 +169,7 @@ class InheritModelTestCase(base.BaseTestCase):
 
 class DirtyModelTestCase(base.BaseTestCase):
     def setUp(self):
-        super(DirtyModelTestCase, self).setUp()
+        super().setUp()
         self._model = FakeModel(
             property1="fake_string",
             property2=2,

@@ -15,10 +15,10 @@
 #    under the License.
 
 import json
+import typing
 import unittest
+from unittest import mock
 import uuid
-
-import mock
 
 import webob
 
@@ -41,7 +41,7 @@ FAKE_LOCATION_PATH = "fake location path"
 
 class TestLocationHeaderLogic(unittest.TestCase):
     def setUp(self):
-        super(TestLocationHeaderLogic, self).setUp()
+        super().setUp()
         self._controller = controllers.Controller(None)
 
     def test_location_for_result(self):
@@ -133,7 +133,7 @@ class SecondAppRoute(object):
 
 class TestOpenApiSpecificationCache(unittest.TestCase):
     def setUp(self):
-        super(TestOpenApiSpecificationCache, self).setUp()
+        super().setUp()
         openapi_cache.clear()
         self.addCleanup(openapi_cache.clear)
         self._engine = self._build_engine({"openapi": "3.0.3"})
@@ -288,7 +288,7 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         self.assertIsNone(openapi_cache.load(application, "3.0.3"))
 
 
-class FakeResource(object):
+class FakeResource:
     def __init__(self, model):
         self._model = model
 
@@ -296,7 +296,7 @@ class FakeResource(object):
         return self._model
 
 
-class FakeModel(object):
+class FakeModel:
     objects = mock.Mock()
 
     def __init__(self, **kwargs):
@@ -308,7 +308,7 @@ class FakeModel(object):
         return "uuid"
 
 
-class FakeItem(object):
+class FakeItem:
     uuid = "resource-id"
 
 
@@ -350,7 +350,7 @@ class AutoPaginatedController(
 
 class TestAutoFiltersAndValues(unittest.TestCase):
     def setUp(self):
-        super(TestAutoFiltersAndValues, self).setUp()
+        super().setUp()
         FakeModel.objects = mock.Mock()
 
     def test_empty_autofilters_do_not_copy_filters(self):
@@ -616,7 +616,7 @@ class CustomPropertyModel(
     orm.SQLStorableMixin,
 ):
     __tablename__ = "custom"
-    __custom_properties__ = {"computed": types.String()}
+    __custom_properties__: typing.ClassVar = {"computed": types.String()}
 
     name = properties.property(types.String(), default="")
 
@@ -643,7 +643,7 @@ def _clauses_of(filters):
 
 
 def _request(query):
-    request = webob.Request.blank("/?%s" % query)
+    request = webob.Request.blank(f"/?{query}")
     request.api_context = api_contexts.RequestContext(request)
     # do_collection sets this before parsing filters; FieldsPermissions
     # resolves its per-method rules against it.
@@ -655,7 +655,7 @@ class FilterLangControllerTestCase(unittest.TestCase):
     """`?q=<expression>` reaching the storage call."""
 
     def setUp(self):
-        super(FilterLangControllerTestCase, self).setUp()
+        super().setUp()
         self._controller = StorableTaggedController(_request(""))
 
     def _parse(self, query):
@@ -879,7 +879,7 @@ class FilterLangFieldVisibilityTestCase(unittest.TestCase):
                 ra_exc.ValidationFilterIncompatibleError,
                 self._parse,
                 HiddenFieldController,
-                "q=%s" % expression,
+                f"q={expression}",
             )
 
     def test_a_hidden_field_cannot_hide_inside_an_expression(self):
@@ -918,7 +918,7 @@ class FilterLangFieldVisibilityTestCase(unittest.TestCase):
                 self._parse(HiddenFieldController, query)
             except ra_exc.ValidationFilterIncompatibleError as e:
                 return str(e)
-            raise AssertionError("expected a refusal for %s" % query)
+            raise AssertionError(f"expected a refusal for {query}")
 
         self.assertEqual(
             error('q=no_such_field = "x"').replace("no_such_field", "F"),
@@ -1061,7 +1061,7 @@ class SortKeyVisibilityTestCase(unittest.TestCase):
                 self._sorts(HiddenFieldController, query)
             except ra_exc.ValidationSortInvalidKeyError as e:
                 return str(e)
-            raise AssertionError("expected a refusal for %s" % query)
+            raise AssertionError(f"expected a refusal for {query}")
 
         self.assertEqual(
             error("sort_key=no_such_field").replace("no_such_field", "F"),
@@ -1120,7 +1120,7 @@ class FilterLangPaginationTestCase(unittest.TestCase):
         marker = str(uuid.uuid4())
 
         filters = self._get_all_kwargs(
-            "q=name = vm1&page_limit=5&page_marker=%s" % marker
+            f"q=name = vm1&page_limit=5&page_marker={marker}"
         )["filters"]
 
         # AND(AND(cursor, {}), expression): the cursor is built against
@@ -1140,7 +1140,7 @@ class FilterLangPaginationTestCase(unittest.TestCase):
         # a column other than the id is what takes that lookup.
         marker = str(uuid.uuid4())
         controller = PaginatedTaggedController(
-            _request("q=tags:x&sort_key=name&page_limit=5&page_marker=%s" % marker)
+            _request(f"q=tags:x&sort_key=name&page_limit=5&page_marker={marker}")
         )
         with mock.patch.object(controller.model, "objects") as objects:
             objects.get_all.return_value = []
@@ -1174,7 +1174,7 @@ class FilterLangOpenApiTestCase(unittest.TestCase):
     def _parameters(self, controller_class):
         class _Route(routes.Route):
             __controller__ = controller_class
-            __allow_methods__ = [routes.FILTER]
+            __allow_methods__: typing.ClassVar = [routes.FILTER]
 
         request = _request("")
         specification = _Route(request)._build_openapi_method_specification(

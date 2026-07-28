@@ -15,9 +15,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 import uuid
-
-import mock
 
 from restalchemy.common import contexts
 from restalchemy.dm import models
@@ -93,19 +92,19 @@ ROW = {
 
 
 COLUMNS_NAME = sorted(ROW.keys())
-VALUES = tuple()
+VALUES = ()
 for key in sorted(ROW.keys()):
     VALUES += (ROW[key],)
 
 
 def escape(list_of_fields):
-    return ["`%s`" % field for field in list_of_fields]
+    return [f"`{field}`" for field in list_of_fields]
 
 
 class InsertCaseTestCase(base.BaseFunctionalTestCase):
     @mock.patch("mysql.connector.pooling.MySQLConnectionPool")
     def setUp(self, mysql_pool_mock):
-        super(InsertCaseTestCase, self).setUp()
+        super().setUp()
 
         # configure engine factory
         engines.engine_factory.configure_factory(db_url=URL_TO_DB)
@@ -115,7 +114,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         )
 
     def tearDown(self):
-        super(InsertCaseTestCase, self).tearDown()
+        super().tearDown()
 
         del self.target_model
         # Note(efrolov): Must be deleted otherwise we will start collect
@@ -132,8 +131,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         self.target_model.insert()
 
         session_mock().execute.assert_called_once_with(
-            "INSERT INTO `%s` (%s) VALUES (%s)"
-            % (
+            "INSERT INTO `{}` ({}) VALUES ({})".format(
                 FAKE_TABLE_NAME1,
                 ", ".join(escape(COLUMNS_NAME)),
                 ", ".join(["%s"] * len(VALUES)),
@@ -167,8 +165,7 @@ class InsertCaseTestCase(base.BaseFunctionalTestCase):
         self.target_model.insert(session=session_mock)
 
         session_mock.execute.assert_called_once_with(
-            "INSERT INTO `%s` (%s) VALUES (%s)"
-            % (
+            "INSERT INTO `{}` ({}) VALUES ({})".format(
                 FAKE_TABLE_NAME1,
                 ", ".join(escape(COLUMNS_NAME)),
                 ", ".join(["%s"] * len(VALUES)),
@@ -217,7 +214,7 @@ class FakeUpdateModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 class UpdateTestCase(base.BaseFunctionalTestCase):
     def setUp(self):
-        super(UpdateTestCase, self).setUp()
+        super().setUp()
 
         engines.engine_factory.configure_factory(consts.get_database_uri())
         engine = engines.engine_factory.get_engine()
@@ -232,7 +229,7 @@ class UpdateTestCase(base.BaseFunctionalTestCase):
             """)
 
     def tearDown(self):
-        super(UpdateTestCase, self).tearDown()
+        super().tearDown()
 
         with self.engine.session_manager() as session:
             session.execute("DROP TABLE IF EXISTS test_update;", None)
@@ -316,9 +313,8 @@ class SavepointTestCase(base.BaseFunctionalTestCase):
                 test_model.save()
                 raise ValueError("Error")
 
-            with self.assertRaises(ValueError):
-                with utils.savepoint():
-                    save_and_raise()
+            with self.assertRaises(ValueError), utils.savepoint():
+                save_and_raise()
 
         with contexts.Context().session_manager():
             objects = SavepointModel.objects.get_all()
@@ -340,9 +336,8 @@ class SavepointTestCase(base.BaseFunctionalTestCase):
                 test_model.save()
                 raise ValueError("Error")
 
-            with self.assertRaises(ValueError):
-                with utils.savepoint():
-                    save_and_raise()
+            with self.assertRaises(ValueError), utils.savepoint():
+                save_and_raise()
 
             test_model.field2 = "foo-value"
             test_model.save()

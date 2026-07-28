@@ -44,7 +44,7 @@ class _ResourceFieldResolver(filter_lang.FieldResolver):
     """
 
     def __init__(self, controller, dialect=None):
-        super(_ResourceFieldResolver, self).__init__()
+        super().__init__()
         self._controller = controller
         self._supported = filter_lang.supported_clauses(dialect)
         model = controller.model
@@ -77,7 +77,7 @@ class _ResourceFieldResolver(filter_lang.FieldResolver):
         return self._supported is None or clause_class in self._supported
 
 
-class Controller(object):
+class Controller:
     __resource__ = None  # type: resources.ResourceByRAModel
 
     # Not for common cases (Example: for JSONPackerIncludeNullFields)
@@ -88,7 +88,7 @@ class Controller(object):
     # just expand the list with the following constants:
     #  * constants.GET
     #  * constants.UPDATE
-    __generate_location_for__ = {
+    __generate_location_for__: typing.ClassVar[set] = {
         constants.CREATE,
     }
 
@@ -96,7 +96,7 @@ class Controller(object):
     __sortable_fields__ = "__all__"
 
     # Default sorting, leave empty for no default sorting.
-    __default_sort__ = {}
+    __default_sort__: typing.ClassVar[dict] = {}
 
     # Query parameter carrying a filter expression (see `api.filter_lang`),
     # for what the field parameters cannot say: OR, grouping, negation,
@@ -111,7 +111,7 @@ class Controller(object):
     __filter_max_length__ = filter_lang.MAX_LENGTH
 
     def __init__(self, request):
-        super(Controller, self).__init__()
+        super().__init__()
         self._req = request
         # Resolved filter fields, for the life of the controller -- which
         # is one request.
@@ -550,27 +550,19 @@ class Controller(object):
         return self.get_resource().get_model()
 
     def create(self, **kwargs):
-        raise exc.NotImplementedError(
-            msg="method create in %s" % self.__class__.__name__
-        )
+        raise exc.NotImplementedError(msg=f"method create in {self.__class__.__name__}")
 
     def get(self, uuid):
-        raise exc.NotImplementedError(msg="method get in %s" % self.__class__.__name__)
+        raise exc.NotImplementedError(msg=f"method get in {self.__class__.__name__}")
 
     def filter(self, filters, order_by=None):
-        raise exc.NotImplementedError(
-            msg="method filter in %s" % self.__class__.__name__
-        )
+        raise exc.NotImplementedError(msg=f"method filter in {self.__class__.__name__}")
 
     def delete(self, uuid):
-        raise exc.NotImplementedError(
-            msg="method delete in %s" % self.__class__.__name__
-        )
+        raise exc.NotImplementedError(msg=f"method delete in {self.__class__.__name__}")
 
     def update(self, uuid, **kwargs):
-        raise exc.NotImplementedError(
-            msg="method update in %s" % self.__class__.__name__
-        )
+        raise exc.NotImplementedError(msg=f"method update in {self.__class__.__name__}")
 
     def get_context(self):
         try:
@@ -693,21 +685,15 @@ class BaseNestedResourceController(BaseResourceController):
         return kw_params
 
     def create(self, **kwargs):
-        return super(BaseNestedResourceController, self).create(
-            **self._prepare_kwargs(**kwargs)
-        )
+        return super().create(**self._prepare_kwargs(**kwargs))
 
     def get(self, **kwargs):
-        return super(BaseNestedResourceController, self).get(
-            **self._prepare_kwargs(**kwargs)
-        )
+        return super().get(**self._prepare_kwargs(**kwargs))
 
     def filter(self, parent_resource, filters, order_by=None):
         filters = filters.copy()
         filters[self.__pr_name__] = dm_filters.EQ(parent_resource)
-        return super(BaseNestedResourceController, self).filter(
-            filters=filters, order_by=order_by
-        )
+        return super().filter(filters=filters, order_by=order_by)
 
     def delete(self, parent_resource, uuid):
         dm = self.get(parent_resource=parent_resource, uuid=uuid)
@@ -807,7 +793,7 @@ class PaginationFilterBuilder:
         )
 
 
-class BasePaginationMixin(object):
+class BasePaginationMixin:
     """Pagination mixin, marker based, not offset based!
 
     Contract:
@@ -853,7 +839,7 @@ class BasePaginationMixin(object):
                     getattr(body[-1], self.model.get_id_property_name())
                 )
 
-        return super(BasePaginationMixin, self)._create_response(body, status, headers)
+        return super()._create_response(body, status, headers)
 
     def _prepare_pagination_meta(self):
         try:
@@ -863,7 +849,7 @@ class BasePaginationMixin(object):
             if self._pagination_limit < 0:
                 raise ValueError()
         except ValueError:
-            raise exc.ParseError(value="%s" % (self._pagination_limit,))
+            raise exc.ParseError(value=f"{self._pagination_limit}")
         # TODO(g.melikov): do we need to validate if marker ID record exists?
         self._pagination_marker = self._req.api_context.params.get(
             self._param_page_marker
@@ -882,9 +868,7 @@ class BasePaginationMixin(object):
     def do_collection(self, parent_resource=None):
         self._prepare_pagination_meta()
 
-        return super(BasePaginationMixin, self).do_collection(
-            parent_resource=parent_resource
-        )
+        return super().do_collection(parent_resource=parent_resource)
 
     def _process_storage_filters(self, filters, order_by=None):
         self._validate_params(filters, order_by)

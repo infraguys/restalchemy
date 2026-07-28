@@ -15,8 +15,8 @@
 #    under the License.
 
 import collections
+from unittest import mock
 
-import mock
 from mysql.connector import errors
 
 from restalchemy.dm import filters as dm_filters
@@ -63,7 +63,7 @@ EXTENDED_FAKE_VALUES = [True, 111, "field2", "tenant_id", "uuid"]
 EXTENDED_FAKE_PK_VALUES = ["uuid", "tenant_id"]
 
 
-class AbstractDialectCommandTestMixin(object):
+class AbstractDialectCommandTestMixin:
     @mock.patch(
         "restalchemy.storage.sql.dialect.base.AbstractDialectCommand.execute",
         side_effect=errors.DatabaseError("deadlock", errno=1213, sqlstate=1213),

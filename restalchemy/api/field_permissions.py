@@ -26,7 +26,7 @@ def active_method(req):
         return None
 
 
-class Permissions(object):
+class Permissions:
     __slots__ = ()
     HIDDEN = 1
     RO = READONLY = 2
@@ -39,7 +39,7 @@ class Permissions(object):
     )
 
 
-class BasePermissions(object):
+class BasePermissions:
     def __init__(self, permission=Permissions.RW):
         self._permission = permission
 
@@ -92,7 +92,7 @@ class UniversalPermissions(BasePermissions):
         ```
         This code set to all fields READWRITE permissions.
         """
-        super(UniversalPermissions, self).__init__(permission)
+        super().__init__(permission)
 
     def meets_field_permission(self, model_field_name, req, current_permission):
         return self._permission <= current_permission
@@ -144,7 +144,7 @@ class FieldsPermissions(BasePermissions):
                     method.upper() in constants.ALL_RA_METHODS
                     and permission in Permissions.ALL_PERMISSIONS
                 )
-        super(FieldsPermissions, self).__init__(permission=default)
+        super().__init__(permission=default)
         self.fields = fields
 
     def meets_field_permission(self, model_field_name, req, current_permission):
@@ -207,12 +207,12 @@ class FieldsPermissionsByRole(BasePermissions):
         for role, permissions in kwargs.items():
             if not isinstance(permissions, BasePermissions):
                 raise NotImplementedError(
-                    "Permissions for %s must be inherited BasePermissions class" % role
+                    f"Permissions for {role} must be inherited BasePermissions class"
                 )
         self.default = default
         self.role_fields = kwargs
 
-        super(FieldsPermissionsByRole, self).__init__()
+        super().__init__()
 
     @staticmethod
     def _get_roles(req):

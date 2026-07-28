@@ -24,7 +24,7 @@ def parse(args):
     cfg.CONF(
         args=args,
         project="restalchemy",
-        version="RESTAlchemy %s" % version.version_info,
+        version=f"RESTAlchemy {version.version_info}",
     )
     return cfg.CONF.config_file
 
@@ -33,7 +33,9 @@ class ConfigFileIsntDefined(Exception):
     pass
 
 
-def parse_or_die(args=[]):
+def parse_or_die(args=None):
+    if args is None:
+        args = []
     if not parse(args):
         raise ConfigFileIsntDefined()
 

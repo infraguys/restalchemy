@@ -42,7 +42,7 @@ SimpleModel.properties.sort_properties()
 
 class MySQLQueryBuilderTestCase(unittest.TestCase):
     def setUp(self):
-        super(MySQLQueryBuilderTestCase, self).setUp()
+        super().setUp()
         self.Q = q.Q
         self.flt = filters.AND(
             {"field_bool": filters.EQ(True)},
@@ -51,7 +51,7 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         )
 
     def tearDown(self):
-        super(MySQLQueryBuilderTestCase, self).tearDown()
+        super().tearDown()
         del self.Q
 
     def test_simple_select(self):

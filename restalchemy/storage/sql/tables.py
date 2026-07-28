@@ -19,7 +19,7 @@ import weakref
 OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = "table"
 
 
-class SQLTable(object):
+class SQLTable:
     """The columns of a model, as a statement names them.
 
     Which columns there are, in which order, and how the engine escapes
@@ -31,7 +31,7 @@ class SQLTable(object):
     """
 
     def __init__(self, engine, table_name, model):
-        super(SQLTable, self).__init__()
+        super().__init__()
         self._table_name = table_name
         self._model = model
         self._column_names = {}

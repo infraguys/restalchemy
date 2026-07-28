@@ -25,21 +25,19 @@ INIT_MIGRATION = "9e335f-test-batch-migration"
 class BaseFunctionalTestCase(unittest.TestCase):
     """All other functional tests should inherit from it."""
 
-    pass
-
 
 class BaseDBEngineTestCase(db_utils.DBEngineMixin, BaseFunctionalTestCase):
     """Base recommended class to inherit from for all db-related tests"""
 
     @classmethod
     def setUpClass(cls):
-        super(BaseDBEngineTestCase, cls).setUpClass()
+        super().setUpClass()
 
         cls.init_engine()
 
     @classmethod
     def tearDownClass(cls):
-        super(BaseDBEngineTestCase, cls).tearDownClass()
+        super().tearDownClass()
 
         cls.drop_all_tables()
         cls.destroy_engine()
@@ -50,7 +48,7 @@ class BaseWithDbMigrationsTestCase(BaseDBEngineTestCase):
     __FIRST_MIGRATION__ = None
 
     def setUp(self):
-        super(BaseWithDbMigrationsTestCase, self).setUp()
+        super().setUp()
 
         # configure database structure, apply migrations
         self._migrations = self.get_migration_engine()
@@ -58,7 +56,7 @@ class BaseWithDbMigrationsTestCase(BaseDBEngineTestCase):
         self._migrations.apply_migration(self.__LAST_MIGRATION__)
 
     def tearDown(self):
-        super(BaseWithDbMigrationsTestCase, self).tearDown()
+        super().tearDown()
 
         # destroy database structure, rollback migrations
         self._migrations = self.get_migration_engine()

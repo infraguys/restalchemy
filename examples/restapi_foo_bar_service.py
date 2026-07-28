@@ -116,17 +116,17 @@ class BarController2(controllers.Controller):
 
 class BarRoute1(routes.Route):
     __controller__ = BarController1
-    __allow_methods__ = [routes.CREATE]
+    __allow_methods__ = [routes.CREATE]  # noqa: RUF012
 
 
 class BarRoute2(routes.Route):
     __controller__ = BarController2
-    __allow_methods__ = [routes.GET, routes.DELETE]
+    __allow_methods__ = [routes.GET, routes.DELETE]  # noqa: RUF012
 
 
 class FooRoute(routes.Route):
     __controller__ = FooController
-    __allow_methods__ = [routes.FILTER, routes.CREATE, routes.GET]
+    __allow_methods__ = [routes.FILTER, routes.CREATE, routes.GET]  # noqa: RUF012
 
     bars = routes.route(BarRoute1, resource_route=True)
 
@@ -135,7 +135,7 @@ class V1Route(routes.Route):
     """Router for / path."""
 
     __controller__ = V1Controller
-    __allow_methods__ = [routes.FILTER]
+    __allow_methods__ = [routes.FILTER]  # noqa: RUF012
 
     # V1Route include two nested routes
     # The first route for /foo/ path
@@ -145,15 +145,11 @@ class V1Route(routes.Route):
 
 class UserApiApp(routes.Route):
     __controller__ = controllers.RootController
-    __allow_methods__ = [routes.FILTER]
+    __allow_methods__ = [routes.FILTER]  # noqa: RUF012
 
 
 # Route to /v1/ endpoint.
-setattr(
-    UserApiApp,
-    "v1",
-    routes.route(V1Route),
-)
+UserApiApp.v1 = routes.route(V1Route)
 
 
 def get_user_api_application():
@@ -172,7 +168,7 @@ def main():
     server = make_server(HOST, PORT, build_wsgi_application())
 
     try:
-        print("Serve forever on %s:%s" % (HOST, PORT))
+        print(f"Serve forever on {HOST}:{PORT}")
         server.serve_forever()
     except KeyboardInterrupt:
         print("Bye")

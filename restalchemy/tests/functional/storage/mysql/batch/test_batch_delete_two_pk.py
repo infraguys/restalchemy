@@ -27,7 +27,7 @@ class BatchDeleteModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
     @property
     def super_id(self):
-        return "%s-%s" % (self.uuid, self.foo_field1)
+        return f"{self.uuid}-{self.foo_field1}"
 
     @classmethod
     def get_id_property(cls):

@@ -33,11 +33,11 @@ class MetaSingleton(type):
         if cls._instance is None:
             with cls._lock:
                 if not cls._instance:
-                    cls._instance = super(MetaSingleton, cls).__call__(*args, **kwargs)
+                    cls._instance = super().__call__(*args, **kwargs)
         return cls._instance
 
 
-class InheritSingleton(object, metaclass=MetaSingleton):
+class InheritSingleton(metaclass=MetaSingleton):
     """Inherit Singleton
 
     For example:
@@ -45,5 +45,3 @@ class InheritSingleton(object, metaclass=MetaSingleton):
     >>> class ConcreteSingleton(InheritSingleton):
     ...     pass
     """
-
-    pass

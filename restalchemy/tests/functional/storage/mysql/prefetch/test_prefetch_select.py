@@ -22,7 +22,7 @@ class PrefetchTestCase(base.BaseWithDbMigrationsTestCase):
     __FIRST_MIGRATION__ = "prefetch-relationship-tests-f3841e"
 
     def setUp(self):
-        super(PrefetchTestCase, self).setUp()
+        super().setUp()
 
         models.OBJECT_COLLECTION_MOCK.reset_mock()
 

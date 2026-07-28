@@ -14,7 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
+
 from oslo_config import cfg
 
 from restalchemy.common import config_opts
@@ -25,11 +26,11 @@ from restalchemy.tests.unit import base
 class TestEngineTestCase(base.BaseTestCase):
     @mock.patch("mysql.connector.pooling.MySQLConnectionPool")
     def setUp(self, *args):
-        super(TestEngineTestCase, self).setUp()
+        super().setUp()
         self._engine = engines.MySQLEngine(db_url="mysql://test:test@test/test")
 
     def tearDown(self):
-        super(TestEngineTestCase, self).tearDown()
+        super().tearDown()
         del self._engine
 
     def test_session_manager_session_as_argument(self):
@@ -43,16 +44,16 @@ class TestEngineTestCase(base.BaseTestCase):
 
         with mock.patch.object(
             self._engine, "_get_session_from_storage", return_value=session
-        ):
-            with self._engine.session_manager() as s:
-                self.assertEqual(s, session)
+        ), self._engine.session_manager() as s:
+            self.assertEqual(s, session)
 
     def test_session_manager_get_new_session(self):
         session = mock.Mock()
 
-        with mock.patch.object(self._engine, "get_session", return_value=session):
-            with self._engine.session_manager() as s:
-                self.assertEqual(s, session)
+        with mock.patch.object(
+            self._engine, "get_session", return_value=session
+        ), self._engine.session_manager() as s:
+            self.assertEqual(s, session)
 
 
 class DBConnectionUrlTestCase(base.BaseTestCase):
@@ -91,7 +92,7 @@ class DBConnectionUrlTestCase(base.BaseTestCase):
 
 class PostgreSQLFactoryConfigTestCase(base.BaseTestCase):
     def setUp(self):
-        super(PostgreSQLFactoryConfigTestCase, self).setUp()
+        super().setUp()
         self.conf = cfg.ConfigOpts()
         config_opts.register_postgresql_db_opts(self.conf)
         self.conf([])

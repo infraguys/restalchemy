@@ -421,7 +421,7 @@ def configure_postgresql_with_readonly(
     try:
         loc = conf.get_location("connection_url", group=readonly_section)
         has_readonly = loc.location != Locations.opt_default
-    except Exception:
+    except Exception:  # noqa: S110, BLE001
         pass
     target_section = readonly_section if has_readonly else primary_section
     engines.engine_factory.configure_postgresql_factory(
@@ -468,7 +468,7 @@ def configure_mysql_with_readonly(
     try:
         loc = conf.get_location("connection_url", group=readonly_section)
         has_readonly = loc.location != Locations.opt_default
-    except Exception:
+    except Exception:  # noqa: S110, BLE001
         pass
     target_section = readonly_section if has_readonly else primary_section
     engines.engine_factory.configure_mysql_factory(

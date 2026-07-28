@@ -28,9 +28,9 @@ from restalchemy.dm import relationships as ra_relationsips
 from restalchemy.dm import types as ra_types
 
 
-class ResourceMap(object):
-    resource_map = {}
-    model_type_to_resource = {}
+class ResourceMap:
+    resource_map = {}  # noqa: RUF012
+    model_type_to_resource = {}  # noqa: RUF012
 
     @classmethod
     def get_location(cls, model):
@@ -41,7 +41,7 @@ class ResourceMap(object):
 
     @classmethod
     def get_locator(cls, uri):
-        for resource, locator in cls.resource_map.items():
+        for locator in cls.resource_map.values():
             if locator.is_your_uri(uri):
                 return locator
         raise exc.LocatorNotFound(uri=uri)
@@ -86,15 +86,13 @@ class ResourceMap(object):
 
     @classmethod
     def add_model_to_resource_mapping(cls, model_class, resource):
-        if model_class in cls.model_type_to_resource:
-            if (
-                cls.model_type_to_resource[model_class].get_model()
-                is not resource.get_model()
-            ):
-                raise ValueError(
-                    "model (%s) is already mapped to a different resource (%s)."
-                    % (model_class, cls.model_type_to_resource[model_class])
-                )
+        if model_class in cls.model_type_to_resource and (
+            cls.model_type_to_resource[model_class].get_model()
+            is not resource.get_model()
+        ):
+            raise ValueError(
+                f"model ({model_class}) is already mapped to a different resource ({cls.model_type_to_resource[model_class]})."
+            )
         cls.model_type_to_resource[model_class] = resource
 
     @classmethod
@@ -108,7 +106,7 @@ class ResourceMap(object):
 
 class AbstractResourceProperty(metaclass=abc.ABCMeta):
     def __init__(self, resource, model_property_name, public=True):
-        super(AbstractResourceProperty, self).__init__()
+        super().__init__()
         self._resource = resource
         self._model_property_name = model_property_name
         self._hidden = False
@@ -176,7 +174,7 @@ _IDENTITY_TO_SIMPLE_TYPES = frozenset(
 
 class ResourceRAProperty(ResourceProperty):
     def __init__(self, resource, prop_type, model_property_name, public=True):
-        super(ResourceRAProperty, self).__init__(
+        super().__init__(
             resource=resource,
             model_property_name=model_property_name,
             public=public,
@@ -221,9 +219,9 @@ class ResourceRelationship(AbstractResourceProperty):
         return False
 
 
-class BaseHiddenFieldsMap(object):
+class BaseHiddenFieldsMap:
     def __init__(self, hidden_fields=None):
-        super(BaseHiddenFieldsMap, self).__init__()
+        super().__init__()
         self._hidden_fields = set(hidden_fields or [])
 
     @property
@@ -290,8 +288,8 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
             params[method] = value_arg
             all_values += value_arg
         if kwargs:
-            raise TypeError("Got an unexpected keyword arguments %r" % kwargs)
-        super(HiddenFieldMap, self).__init__(hidden_fields=all_values)
+            raise TypeError(f"Got an unexpected keyword arguments {kwargs!r}")
+        super().__init__(hidden_fields=all_values)
         self._method_map = {m: set(v) for m, v in params.items()}
 
     def is_hidden_field(self, model_field_name, req):
@@ -305,13 +303,13 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
             method = req.api_context.get_active_method()
             return model_field_name in self._method_map[method]
         except KeyError:
-            raise NotImplementedError("Unsupported RA method `%s`" % req)
+            raise NotImplementedError(f"Unsupported RA method `{req}`")
 
     def is_hidden_field_by_method(self, model_field_name, method):
         try:
             return model_field_name in self._method_map[method]
         except KeyError:
-            raise NotImplementedError("Unsupported RA method `%s`" % method)
+            raise NotImplementedError(f"Unsupported RA method `{method}`")
 
     def visibility_key(self, req):
         method = field_permissions.active_method(req)
@@ -352,7 +350,7 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
         """
         self._default_hidden_fields = default
         self._hidden_fields_by_role = kwargs
-        super(RoleBasedHiddenFieldContainer, self).__init__(
+        super().__init__(
             hidden_fields=default.hidden_fields,
         )
 
@@ -479,7 +477,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
                                  it would be the object of UniversalPermissions
                                  with READWRITE permissions to all fields
         """
-        super(AbstractResource, self).__init__()
+        super().__init__()
         # Resource fields already built, by (model field name, public).
         self._field_cache = {}
         # API names already worked out, by model field name.
@@ -512,9 +510,9 @@ class AbstractResource(metaclass=abc.ABCMeta):
         )
 
         if not isinstance(self._fields_permissions, field_permissions.BasePermissions):
-            raise ValueError(
-                "Fields_permissions should inherit"
-                "from BasePermissions, not {%s}" % (type(fields_permissions))
+            raise ValueError(  # noqa: TRY004
+                f"Fields_permissions should inherit"
+                f"from BasePermissions, not {{{type(fields_permissions)}}}"
             )
 
     def is_process_filters(self):
@@ -676,16 +674,8 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
     def __repr__(self):
         return (
-            "<%s[model=%r], name_map=%r, convert_underscore=%s, "
-            "process_filters=%s, fields=%r>"
-            % (
-                self.__class__.__name__,
-                self._model_class,
-                self._name_map,
-                self._convert_underscore,
-                self._process_filters,
-                self._model_class.properties.properties.keys(),
-            )
+            f"<{self.__class__.__name__}[model={self._model_class!r}], name_map={self._name_map!r}, convert_underscore={self._convert_underscore}, "
+            f"process_filters={self._process_filters}, fields={self._model_class.properties.properties.keys()!r}>"
         )
 
     def get_prop_kwargs(self, name, openapi_version):
@@ -760,14 +750,14 @@ class ResourceByRAModel(AbstractResource):
                 public=public,
             )
         else:
-            raise TypeError("Unknown property type %s" % type(prop))
+            raise TypeError(f"Unknown property type {type(prop)}")
 
         self._field_cache[(name, public)] = field
         return field
 
     def get_field(self, name, override_is_public_field_func=None):
         if not (prop := self._model_class.properties.get(name)):
-            raise ValueError("Model doesn't have field %s" % name)
+            raise ValueError(f"Model doesn't have field {name}")
         return self._prep_field(
             name,
             prop,
@@ -790,18 +780,17 @@ class ResourceByRAModel(AbstractResource):
         else:
             # TODO(efrolov): Add autosearch resource id by model
             raise ValueError(
-                "Can't find resource ID for %s. Please implement "
-                "get_id method in your model (%s)" % (model, self._model_class)
+                f"Can't find resource ID for {model}. Please implement "
+                f"get_id method in your model ({self._model_class})"
             )
 
     def get_id_type(self):
         id_property = self._model_class.get_id_property()
         if len(id_property) != 1:
             raise TypeError(
-                "Model %s returns %s properties which marked as "
+                "Model {} returns {} properties which marked as "
                 "id_property. Please implement get_id_type "
-                "method on your resource %r."
-                % (
+                "method on your resource {!r}.".format(
                     self._model_class,
                     "many" if id_property else "no",
                     type(self),
@@ -813,7 +802,7 @@ class ResourceByRAModel(AbstractResource):
 class ResourceByModelWithCustomProps(ResourceByRAModel):
     def get_field(self, name, override_is_public_field_func=None):
         try:
-            return super(ResourceByModelWithCustomProps, self).get_field(
+            return super().get_field(
                 name=name,
                 override_is_public_field_func=override_is_public_field_func,
             )
@@ -823,7 +812,7 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
         try:
             prop_type = self._model_class.get_custom_property_type(name)
         except KeyError:
-            raise ValueError("Model doesn't have field %s" % name)
+            raise ValueError(f"Model doesn't have field {name}")
         is_public_field = override_is_public_field_func or self.is_public_field
         return self._prep_custom_field(name, prop_type, is_public_field(name))
 
@@ -834,7 +823,7 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
         """
         is_public_field = override_is_public_field_func or self.is_public_field
 
-        fields = super(ResourceByModelWithCustomProps, self).get_fields(
+        fields = super().get_fields(
             override_is_public_field_func=override_is_public_field_func,
         )
 
@@ -859,10 +848,7 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
 
     def get_property_type(self, property_name):
         try:
-            property_type = super(
-                ResourceByModelWithCustomProps,
-                self,
-            ).get_property_type(property_name=property_name)
+            property_type = super().get_property_type(property_name=property_name)
         except KeyError:
             model = self.get_model()
             property_type = model.get_custom_property_type(

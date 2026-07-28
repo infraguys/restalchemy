@@ -31,12 +31,12 @@ def attach_middlewares(app, middlewares_list):
 def configure_middleware(middleware_class, *args, **kwargs):
 
     def build_middleware(application):
-        return middleware_class(application=application, *args, **kwargs)
+        return middleware_class(application, *args, **kwargs)
 
     return build_middleware
 
 
-class Middleware(object):
+class Middleware:
     """Base WSGI middleware wrapper.
 
     These classes require an application to be initialized that will be called
@@ -54,7 +54,7 @@ class Middleware(object):
         executed. If it returns a response then that response will be returned
         and execution will stop here.
         """
-        return None
+        return
 
     def process_response(self, response):
         """Do whatever you'd like to the response."""
