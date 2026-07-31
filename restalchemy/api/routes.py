@@ -284,7 +284,10 @@ class Route(BaseRoute):
                 else:
                     responses = oa_c.OPENAPI_FILTER_RESPONSE
             elif method_name == constants.CREATE:
-                responses = oa_c.build_openapi_create_response(method_model_name)
+                if res:
+                    responses = oa_c.build_openapi_create_response(method_model_name)
+                else:
+                    responses = oa_c.OPENAPI_CREATE_ANY_RESPONSE
             elif method_name == constants.DELETE:
                 responses = oa_c.build_openapi_delete_response(method_model_name)
             else:
@@ -349,7 +352,17 @@ class Route(BaseRoute):
         if r_body:
             result["requestBody"] = r_body
         elif method_name in [constants.CREATE, constants.UPDATE]:
-            result["requestBody"] = oa_c.build_openapi_json_req_body(method_model_name)
+            if res:
+                result["requestBody"] = oa_c.build_openapi_json_req_body(
+                    method_model_name
+                )
+            else:
+                # No model behind this controller, so there is no schema to
+                # point at. Describe a free-form body instead of referencing
+                # a component that is never emitted.
+                result["requestBody"] = oa_c.build_openapi_any_json_req_body(
+                    summary_name
+                )
 
         return result
 
@@ -363,11 +376,16 @@ class Route(BaseRoute):
             versions = ctr.filter({})
             for version in versions:
                 resource_path = posixpath.join(current_path, version)
-                paths_result[resource_path][GET.lower()] = (
-                    self._build_openapi_method_specification(
-                        GET, parameters, current_path
-                    )
+                spec = self._build_openapi_method_specification(
+                    GET, parameters, current_path
                 )
+                # One operation per supported version, all of them sharing the
+                # operationId declared on the controller. Make them unique.
+                spec["operationId"] = "{}_{}".format(
+                    spec["operationId"],
+                    re.sub(SPECIAL_SYMBOLS, "_", version),
+                )
+                paths_result[resource_path][GET.lower()] = spec
 
         openapi_collection_methods = {GET: FILTER, POST: CREATE}
         openapi_resource_methods = {GET: GET, PUT: UPDATE, DELETE: DELETE}
