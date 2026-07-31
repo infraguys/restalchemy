@@ -16,6 +16,7 @@
 
 import itertools
 import logging
+import typing
 
 import webob
 
@@ -80,7 +81,8 @@ class Controller(object):
     __resource__ = None  # type: resources.ResourceByRAModel
 
     # Not for common cases (Example: for JSONPackerIncludeNullFields)
-    __packer__ = None  # type: packers.BaseResourcePacker
+    # Holds the packer class, not an instance: get_packer() instantiates it.
+    __packer__: typing.Optional[typing.Type[packers.BaseResourcePacker]] = None
 
     # You can also generate location header for GET and UPDATE methods,
     # just expand the list with the following constants:
@@ -977,6 +979,9 @@ class RootController(RoutesListController):
 
 
 class OpenApiSpecificationController(Controller):
+    # Lets get() answer with the document it has already serialized.
+    __packer__ = packers.JSONPackerPreEncoded
+
     def _build_openapi_specification(self, version):
         openapi_engine = self.request.application.openapi_engine
         if not openapi_engine:
@@ -1017,10 +1022,22 @@ class OpenApiSpecificationController(Controller):
         process, generating it on the first call if the application did not
         manage to warm it up at startup.
         """
-        specification = openapi_cache.load(self.request.application, uuid)
+        application = self.request.application
+        host = self._req.host_url
+        encoded = openapi_cache.load_encoded(application, uuid, host)
+        if encoded is not None:
+            return encoded
+
+        specification = openapi_cache.load(application, uuid)
         if specification is None:
-            return self._build_openapi_specification(uuid)
-        return self._with_request_servers(uuid, specification)
+            specification = self._build_openapi_specification(uuid)
+        else:
+            specification = self._with_request_servers(uuid, specification)
+        encoded = self.get_packer(constants.CONTENT_TYPE_APPLICATION_JSON).pack(
+            specification
+        )
+        openapi_cache.store_encoded(application, uuid, host, encoded)
+        return encoded
 
     @oa_utils.extend_schema(
         summary="Recalculate OpenApi specification",

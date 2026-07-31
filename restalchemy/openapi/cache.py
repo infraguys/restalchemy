@@ -36,6 +36,11 @@ LOG = logging.getLogger(__name__)
 
 _SPECIFICATIONS: typing.Dict[typing.Tuple[str, str], typing.Any] = {}
 
+# The same documents, already serialized, keyed additionally by the host they
+# were rendered for: that is the one thing in them that varies per caller.
+# Serving these avoids encoding a few hundred kilobytes on every request.
+_ENCODED: typing.Dict[typing.Tuple[str, str, str], bytes] = {}
+
 
 def _application_key(application: typing.Any) -> str:
     """Name the application, so unrelated services never share an entry."""
@@ -48,11 +53,30 @@ def load(application: typing.Any, version: str) -> typing.Any:
 
 
 def store(application: typing.Any, version: str, specification: typing.Any) -> None:
-    _SPECIFICATIONS[(_application_key(application), version)] = specification
+    key = _application_key(application)
+    _SPECIFICATIONS[(key, version)] = specification
+    # Whatever was encoded describes the previous document.
+    for encoded_key in [
+        encoded_key
+        for encoded_key in _ENCODED
+        if encoded_key[0] == key and encoded_key[1] == version
+    ]:
+        del _ENCODED[encoded_key]
+
+
+def load_encoded(application: typing.Any, version: str, host: str) -> typing.Any:
+    return _ENCODED.get((_application_key(application), version, host))
+
+
+def store_encoded(
+    application: typing.Any, version: str, host: str, body: bytes
+) -> None:
+    _ENCODED[(_application_key(application), version, host)] = body
 
 
 def clear() -> None:
     _SPECIFICATIONS.clear()
+    _ENCODED.clear()
 
 
 def warm_up(application: typing.Any, request: typing.Any) -> None:
