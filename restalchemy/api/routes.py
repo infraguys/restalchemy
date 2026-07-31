@@ -294,18 +294,14 @@ class Route(BaseRoute):
         if not params:
             params = parsed_doc["params"]
         if not params and parameters:
+            # Every parameter below already lives in components/parameters, so
+            # reference it instead of inlining a second copy per operation.
+            known_params = parameters.get("components", {}).get("parameters", {})
             path_params = re.findall(r"\{(.*?)\}", current_path)
             for path_param in path_params:
-                param = (
-                    parameters.get("components", {})
-                    .get("parameters", {})
-                    .get(path_param, {})
-                )
-                if param:
-                    param["name"] = path_param
-                    params.append(param)
+                if path_param in known_params:
+                    params.append({"$ref": oa_c.build_parameter_ref(path_param)})
             if res and self.is_collection_route() and (method_name == constants.FILTER):
-                all_params = parameters.get("components", {}).get("parameters", {})
                 filter_param = getattr(controller, "__filter_param__", None)
                 if not res.is_process_filters():
                     filter_param = None
@@ -322,7 +318,7 @@ class Route(BaseRoute):
                         # The expression took the name; a parameter for the
                         # field behind it would collide.
                         continue
-                    param = all_params.get(prop.api_name, {})
+                    param = known_params.get(prop.api_name, {})
                     # array or object not supported in query
                     if param.get("schema", {}).get("type", "") in [
                         "array",
@@ -337,7 +333,7 @@ class Route(BaseRoute):
                     # if param.get("schema", {}).get("oneOf"):
                     #     continue
                     if param:
-                        params.append(param)
+                        params.append({"$ref": oa_c.build_parameter_ref(prop.api_name)})
 
         if not operation_id:
             operation_id = self._build_operation_id(method_name, current_path)
