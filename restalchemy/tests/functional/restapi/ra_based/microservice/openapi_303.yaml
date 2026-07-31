@@ -248,7 +248,7 @@ components:
             code:
               description: The HTTP status code
               example: 503
-              exclusiveMaximum: true
+              maximum: 599
               minimum: 400
               type: integer
             message:
@@ -267,7 +267,7 @@ components:
         status:
           description: The HTTP status code
           example: 503
-          exclusiveMaximum: true
+          maximum: 599
           minimum: 400
           type: integer
       required:
@@ -744,7 +744,7 @@ paths:
       tags: []
   /specifications/3.0.3:
     get:
-      operationId: Get_OpenApi_specification
+      operationId: Get_OpenApi_specification_3_0_3
       parameters: []
       responses:
         '200':
@@ -760,7 +760,7 @@ paths:
       tags: []
   /specifications/3.1.0:
     get:
-      operationId: Get_OpenApi_specification
+      operationId: Get_OpenApi_specification_3_1_0
       parameters: []
       responses:
         '200':
@@ -833,16 +833,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Unknown_Create'
-        description: Unknown_Create
+              type: object
+        description: NotImplementedMethodsRoute NotImplementedMethodsController
         required: true
       responses:
         '201':
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Unknown_Create'
-          description: Unknown_Create
+              schema: {}
+          description: Created entity
         default:
           $ref: '#/components/responses/Error'
       summary: Create NotImplementedMethodsRoute NotImplementedMethodsController

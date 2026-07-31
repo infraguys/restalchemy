@@ -35,7 +35,7 @@ ERROR_SCHEMA = {
             "type": "integer",
             "description": "The HTTP status code",
             "minimum": 400,
-            "exclusiveMaximum": True,
+            "maximum": 599,
             "example": 503,
         },
         "json": {
@@ -51,7 +51,7 @@ ERROR_SCHEMA = {
                     "type": "integer",
                     "description": "The HTTP status code",
                     "minimum": 400,
-                    "exclusiveMaximum": True,
+                    "maximum": 599,
                     "example": 503,
                 },
                 "type": {
@@ -103,6 +103,14 @@ OPENAPI_FILTER_RESPONSE = {
                 "schema": {"type": "array", "items": {"type": "string"}}
             }
         },
+    },
+    "default": DEFAULT_RESPONSE,
+}
+
+OPENAPI_CREATE_ANY_RESPONSE = {
+    status.HTTP_201_CREATED: {
+        "description": "Created entity",
+        "content": {ra_const.CONTENT_TYPE_APPLICATION_JSON: {"schema": {}}},
     },
     "default": DEFAULT_RESPONSE,
 }
@@ -277,6 +285,15 @@ def build_openapi_json_req_body(model_name):
         model_name,
         ra_const.CONTENT_TYPE_APPLICATION_JSON,
         {"$ref": f"#/components/schemas/{model_name}"},
+    )
+
+
+def build_openapi_any_json_req_body(description: str) -> dict:
+    """Free-form JSON body, for controllers that have no model behind them."""
+    return build_openapi_req_body(
+        description,
+        ra_const.CONTENT_TYPE_APPLICATION_JSON,
+        {"type": "object"},
     )
 
 
