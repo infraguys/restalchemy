@@ -5,8 +5,6 @@ components:
       name: -hidden-field
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     IpAddressUuid:
       in: path
@@ -32,8 +30,6 @@ components:
       required: true
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     TagUuid:
       in: path
@@ -96,16 +92,12 @@ components:
       schema:
         default: 192.168.0.1
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     just-none:
       in: query
       name: just-none
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         nullable: true
         type: string
     mac:
@@ -122,15 +114,12 @@ components:
       schema:
         example: testname
         maxLength: 255
-        minLength: 0
         type: string
     name-after:
       in: query
       name: name-after
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     name-any:
       in: query
@@ -148,16 +137,12 @@ components:
       name: never-call
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     permission-field:
       in: query
       name: permission-field
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     port:
       in: query
@@ -169,40 +154,30 @@ components:
       name: some-field1
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     some-field2:
       in: query
       name: some-field2
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     some-field3:
       in: query
       name: some-field3
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     some-field4:
       in: query
       name: some-field4
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     some-field5:
       in: query
       name: some-field5
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         nullable: true
         type: string
     state:
@@ -212,7 +187,6 @@ components:
         default: 'off'
         example: any_string
         maxLength: 10
-        minLength: 0
         type: string
     status:
       in: query
@@ -229,8 +203,6 @@ components:
       name: unique-field
       schema:
         example: any_string
-        maxLength: 9223372036854775807
-        minLength: 0
         type: string
     updated:
       in: query
@@ -312,8 +284,6 @@ components:
         ip:
           default: 192.168.0.1
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         port:
           type: string
@@ -334,8 +304,6 @@ components:
           type: string
         name-after:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         name-any:
           example: string
@@ -347,29 +315,19 @@ components:
           - type: object
         permission-field:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           readOnly: true
           type: string
         some-field2:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field3:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field4:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field5:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         uuid:
@@ -391,8 +349,6 @@ components:
           type: string
         name-after:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         name-any:
           example: string
@@ -404,35 +360,23 @@ components:
           - type: object
         permission-field:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           readOnly: true
           type: string
         some-field1:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field3:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field4:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field5:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         unique-field:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         uuid:
           example: 00000000-0000-0000-0000-000000000000
@@ -453,8 +397,6 @@ components:
           type: string
         name-after:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         name-any:
           example: string
@@ -466,29 +408,19 @@ components:
           - type: object
         permission-field:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           readOnly: true
           type: string
         some-field1:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field2:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field4:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field5:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         uuid:
@@ -510,8 +442,6 @@ components:
           type: string
         name-after:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         name-any:
           example: string
@@ -523,29 +453,19 @@ components:
           - type: object
         permission-field:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           readOnly: true
           type: string
         some-field1:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field2:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field3:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         some-field5:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         uuid:
@@ -566,8 +486,6 @@ components:
       properties:
         name:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           type: string
         uuid:
           example: 00000000-0000-0000-0000-000000000000
@@ -601,20 +519,16 @@ components:
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         name:
           example: testname
           maxLength: 255
-          minLength: 0
           type: string
         state:
           default: 'off'
           example: any_string
           maxLength: 10
-          minLength: 0
           type: string
         status:
           default: active
@@ -652,20 +566,16 @@ components:
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         name:
           example: testname
           maxLength: 255
-          minLength: 0
           type: string
         state:
           default: 'off'
           example: any_string
           maxLength: 10
-          minLength: 0
           type: string
         status:
           default: active
@@ -703,20 +613,16 @@ components:
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         name:
           example: testname
           maxLength: 255
-          minLength: 0
           type: string
         state:
           default: 'off'
           example: any_string
           maxLength: 10
-          minLength: 0
           type: string
         status:
           default: active
@@ -756,20 +662,16 @@ components:
           x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
         just-none:
           example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
           nullable: true
           type: string
         name:
           example: testname
           maxLength: 255
-          minLength: 0
           type: string
         state:
           default: 'off'
           example: any_string
           maxLength: 10
-          minLength: 0
           type: string
         status:
           default: active

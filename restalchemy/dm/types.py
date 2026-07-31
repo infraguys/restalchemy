@@ -215,10 +215,14 @@ class String(BasePythonType):
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
-            "minLength": self.min_length,
-            "maxLength": self.max_length,
             "example": self.example,
         }
+        # minLength 0 is the JSON Schema default and maxLength sys.maxsize is
+        # this type's "unbounded" marker: emitting either only adds noise.
+        if self.min_length:
+            spec["minLength"] = self.min_length
+        if self.max_length != sys.maxsize:
+            spec["maxLength"] = self.max_length
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
 
@@ -311,10 +315,13 @@ class Integer(BasePythonType):
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
-            "minimum": self.min_openapi_value,
-            "maximum": self.max_openapi_value,
             "example": self.example,
         }
+        # An unbounded end is better left unsaid than reported as sys.maxsize.
+        if self.min_value != -INFINITI:
+            spec["minimum"] = self.min_openapi_value
+        if self.max_value != INFINITI:
+            spec["maximum"] = self.max_openapi_value
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
 
@@ -366,10 +373,13 @@ class Float(BasePythonType):
         spec = {
             "type": self.openapi_type,
             "format": self.openapi_format,
-            "minimum": self.min_openapi_value,
-            "maximum": self.max_openapi_value,
             "example": self.example,
         }
+        # See Integer.to_openapi_spec: sys.float_info.max is not a real bound.
+        if self.min_value != -INFINITI:
+            spec["minimum"] = self.min_openapi_value
+        if self.max_value != INFINITI:
+            spec["maximum"] = self.max_openapi_value
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
         return spec
 
