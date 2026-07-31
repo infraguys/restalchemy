@@ -15,11 +15,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import webob
 from webob import dec
 
+from restalchemy.api import constants
 from restalchemy.api import contexts
 from restalchemy.api import resources
 from restalchemy.api import routes
+from restalchemy.openapi import cache as openapi_cache
 
 
 class WSGIApp(object):
@@ -45,9 +48,24 @@ class WSGIApp(object):
 
 
 class OpenApiApplication(WSGIApp):
-    def __init__(self, route_class, openapi_engine):
+    def __init__(self, route_class, openapi_engine, warm_up_openapi=True):
         super(OpenApiApplication, self).__init__(route_class)
         self._openapi_engine = openapi_engine
+        if warm_up_openapi:
+            openapi_cache.warm_up(self, self._build_warm_up_request())
+
+    def _build_warm_up_request(self) -> webob.Request:
+        """Stand in for the GET that would otherwise build the document.
+
+        Field visibility is decided per request, so this has to look like the
+        request it replaces: a plain read, which is what asking for the
+        specification is.
+        """
+        request = webob.Request.blank("/")
+        request.application = self
+        request.api_context = contexts.RequestContext(request)
+        request.api_context.set_active_method(constants.GET)
+        return request
 
     @property
     def openapi_engine(self):

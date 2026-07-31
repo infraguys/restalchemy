@@ -26,7 +26,7 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (  # noqa
 
 def build_spec(version):
     app = test_service.build_wsgi_application(app_root=test_routes.Root)
-    # PUT regenerates unconditionally; GET would serve the /tmp spec cache.
+    # PUT regenerates unconditionally, whatever this process has cached.
     req = webob.Request.blank("/specifications/%s" % version)
     req.method = "PUT"
     req.content_type = "application/json"

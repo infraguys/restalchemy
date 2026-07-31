@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from restalchemy.openapi import constants
 from restalchemy.openapi import structures
 
@@ -80,6 +82,10 @@ class OpenApi310(object):
         self._security = security
         self._tags = tags or structures.OpenApiTags([])
         self._external_docs = external_docs
+
+    def build_servers(self, request: typing.Any) -> dict:
+        """Build only the part of the document that depends on the request."""
+        return self._servers.build(request)
 
     def build_openapi_specification(self, request):
         specification = {
