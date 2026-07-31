@@ -321,7 +321,14 @@ class Route(BaseRoute):
                         # The expression took the name; a parameter for the
                         # field behind it would collide.
                         continue
-                    param = known_params.get(prop.api_name, {})
+                    component_name = oa_utils.resource_parameter_name(
+                        model_name, prop.api_name
+                    )
+                    param = known_params.get(component_name, {})
+                    # The id property is registered as a path parameter; it
+                    # belongs to the resource route, not to this filter.
+                    if param.get("in") != "query":
+                        continue
                     # array or object not supported in query
                     if param.get("schema", {}).get("type", "") in [
                         "array",
@@ -336,7 +343,9 @@ class Route(BaseRoute):
                     # if param.get("schema", {}).get("oneOf"):
                     #     continue
                     if param:
-                        params.append({"$ref": oa_c.build_parameter_ref(prop.api_name)})
+                        params.append(
+                            {"$ref": oa_c.build_parameter_ref(component_name)}
+                        )
 
         if not operation_id:
             operation_id = self._build_operation_id(method_name, current_path)
