@@ -172,6 +172,26 @@ class ProjectResource(models.ModelWithUUID, models.ModelWithProject):
     name = properties.property(types.String(max_length=255), required=True)
 ```
 
+### `ModelWithTags`
+
+添加 `tags` 字段——一个默认为空的字符串列表——用于给行打上可供查询检索的标记：
+
+```python
+class TaggedResource(models.ModelWithUUID, models.ModelWithTags):
+    name = properties.property(types.String(max_length=255), required=True)
+```
+
+该列是 PostgreSQL 数组，检索它需要 GIN 索引；创建表的迁移会同时声明两者：
+
+```sql
+tags TEXT[] NOT NULL DEFAULT '{}';
+CREATE INDEX idx_tagged_tags ON tagged USING GIN (tags);
+```
+
+在 Python 中用 [`ContainsAll` / `ContainsAny`](filters.md)
+检索，或通过 HTTP 使用对应的查询参数，参见
+[通过 HTTP 过滤集合](../../how-to/api-filtering.md)。
+
 ### `ModelWithNameDesc` 与 `ModelWithRequiredNameDesc`
 
 提供通用的名称与描述字段：

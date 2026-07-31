@@ -169,6 +169,28 @@ class ProjectResource(models.ModelWithUUID, models.ModelWithProject):
     name = properties.property(types.String(max_length=255), required=True)
 ```
 
+### `ModelWithTags`
+
+Добавляет поле `tags` — список строк, по умолчанию пустой — чтобы помечать
+строки значениями, по которым потом можно искать:
+
+```python
+class TaggedResource(models.ModelWithUUID, models.ModelWithTags):
+    name = properties.property(types.String(max_length=255), required=True)
+```
+
+Колонка — массив PostgreSQL, и для поиска по ней нужен GIN-индекс; миграция,
+создающая таблицу, объявляет и то и другое:
+
+```sql
+tags TEXT[] NOT NULL DEFAULT '{}';
+CREATE INDEX idx_tagged_tags ON tagged USING GIN (tags);
+```
+
+Искать можно из Python — [`ContainsAll` / `ContainsAny`](filters.md) —
+или их параметрами по HTTP, см.
+[Фильтрация коллекций по HTTP](../../how-to/api-filtering.md).
+
 ### `ModelWithNameDesc` и `ModelWithRequiredNameDesc`
 
 Общие поля `name` и `description`:

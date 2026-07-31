@@ -131,6 +131,7 @@ nav:
       - ru/concepts/migrations.md
     - Инструкции:
       - ru/how-to/api-basic-crud.md
+      - ru/how-to/api-filtering.md
       - ru/how-to/api-nested-resources-and-actions.md
       - ru/how-to/api-openapi.md
       - ru/how-to/actions-serialization.md
@@ -159,6 +160,7 @@ nav:
       - de/concepts/migrations.md
     - Anleitungen:
       - de/how-to/api-basic-crud.md
+      - de/how-to/api-filtering.md
       - de/how-to/api-nested-resources-and-actions.md
       - de/how-to/api-openapi.md
       - de/how-to/actions-serialization.md
@@ -187,6 +189,7 @@ nav:
       - zh/concepts/migrations.md
     - 操作指南:
       - zh/how-to/api-basic-crud.md
+      - zh/how-to/api-filtering.md
       - zh/how-to/api-nested-resources-and-actions.md
       - zh/how-to/api-openapi.md
       - zh/how-to/actions-serialization.md

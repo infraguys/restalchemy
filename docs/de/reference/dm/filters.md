@@ -43,8 +43,8 @@ Einfache Vergleichs- und Membership-Klauseln:
 - `NotIn(value)` — nicht in einer Menge.
 - `Like(value)` — Pattern-Matching.
 - `NotLike(value)` — negiertes Pattern-Matching.
-- `ContainsAll(value)` (PostgreSQL-Array-Spalten) — Array-Operator `@>`, enthält alle angegebenen Elemente.
-- `ContainsAny(value)` (PostgreSQL-Array-Spalten) — Array-Operator `&&`, überschneidet sich mit den angegebenen Elementen.
+- `ContainsAll(value)` (PostgreSQL-Array-Spalten) — Array-Operator `@>`, enthält alle angegebenen Elemente. Über HTTP: `?field__contains_all=...`, siehe [Sammlungen über HTTP filtern](../../how-to/api-filtering.md).
+- `ContainsAny(value)` (PostgreSQL-Array-Spalten) — Array-Operator `&&`, überschneidet sich mit den angegebenen Elementen. Über HTTP: `?field__contains_any=...`.
 - `JSONFields(value)` (PostgreSQL-jsonb-Spalten) — filtert auf Keys innerhalb einer jsonb-Spalte; siehe [Filter auf JSON-Felder](#json-field-filters) weiter unten.
 
 Beispiel:

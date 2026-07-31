@@ -43,8 +43,8 @@ limitations under the License.
 - `NotIn(value)` — не принадлежит множеству.
 - `Like(value)` — шаблонное сравнение.
 - `NotLike(value)` — отрицание `Like`.
-- `ContainsAll(value)` (массивы PostgreSQL) — оператор `@>`, содержит все перечисленные элементы.
-- `ContainsAny(value)` (массивы PostgreSQL) — оператор `&&`, пересекается с перечисленными элементами.
+- `ContainsAll(value)` (массивы PostgreSQL) — оператор `@>`, содержит все перечисленные элементы. По HTTP: `?field__contains_all=...`, см. [Фильтрация коллекций по HTTP](../../how-to/api-filtering.md).
+- `ContainsAny(value)` (массивы PostgreSQL) — оператор `&&`, пересекается с перечисленными элементами. По HTTP: `?field__contains_any=...`.
 - `JSONFields(value)` (jsonb-колонки PostgreSQL) — фильтрация по ключам внутри jsonb-колонки; см. раздел [Фильтры по JSON-полям](#json-field-filters) ниже.
 
 Пример:
