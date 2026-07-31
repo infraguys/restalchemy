@@ -35,6 +35,14 @@ class FakeModel(models.CustomPropertiesMixin, models.ModelWithUUID):
     standard_field5 = properties.property(types.Integer())
 
 
+class FakeNarrowNameModel(models.ModelWithUUID):
+    name = properties.property(types.String(max_length=10))
+
+
+class FakeWideNameModel(models.ModelWithUUID):
+    name = properties.property(types.String(max_length=200))
+
+
 class FakeMemberContext(object):
     roles = ["member", "some-role"]
 
@@ -84,6 +92,31 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
 
         self.assertEqual(original_kwargs, property_creator.get_kwargs())
         FakeModel()
+
+    def test_parameter_keys_do_not_collide_between_resources(self):
+        # components/parameters is one flat namespace for the whole document,
+        # so two models with a same-named property must not claim one key.
+        request = webob.Request.blank("/")
+        request.context = FakeAdminContext()
+        request.api_context = contexts.RequestContext(request)
+        request.api_context.set_active_method(constants.FILTER)
+
+        parameters = {}
+        for model in (FakeNarrowNameModel, FakeWideNameModel):
+            generator = openapi_utils.ResourceSchemaGenerator(
+                resources.ResourceByRAModel(model),
+                route=None,
+                openapi_version="3.0.3",
+            )
+            parameters.update(generator.generate_parameter_object(request))
+
+        narrow = parameters["FakeNarrowNameModelName"]
+        wide = parameters["FakeWideNameModelName"]
+        self.assertEqual("name", narrow["name"])
+        self.assertEqual("name", wide["name"])
+        self.assertNotEqual(narrow["schema"], wide["schema"])
+        self.assertEqual(10, narrow["schema"]["maxLength"])
+        self.assertEqual(200, wide["schema"]["maxLength"])
 
 
 # NOTE(efrolov): Interface tests

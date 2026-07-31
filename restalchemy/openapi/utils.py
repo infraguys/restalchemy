@@ -34,6 +34,11 @@ def sorted_schema_methods(methods: typing.Iterable[str]) -> typing.List[str]:
     return known + [m for m in known_methods if m not in SCHEMA_METHOD_ORDER]
 
 
+def resource_parameter_name(resource_name: str, prop_name: str) -> str:
+    """Key under which a resource's parameter lives in components/parameters."""
+    return resource_name + prop_name.capitalize()
+
+
 def schema_body_key(body: typing.Any) -> str:
     """Stable comparison key for a schema body."""
     return json.dumps(body, sort_keys=True, default=str)
@@ -88,7 +93,7 @@ class ResourceSchemaGenerator(object):
         return "{}_{}".format(self.resource_name, method.capitalize())
 
     def resource_prop_name(self, prop_name):
-        return self.resource_name + prop_name.capitalize()
+        return resource_parameter_name(self.resource_name, prop_name)
 
     def get_prop_kwargs(self, name):
         try:
@@ -112,16 +117,22 @@ class ResourceSchemaGenerator(object):
                 is_id = False
             if is_id:
                 has_id_property = True
-                prop_name = self.resource_prop_name(name)
+                # Must match the {ModelId} placeholder the route builds.
+                component_name = self.resource_prop_name(name)
+                parameter_name = component_name
             else:
-                prop_name = prop.api_name
-            parameters[prop_name] = {
-                "name": prop_name,
+                # components/parameters is one flat namespace for the whole
+                # document, so the key has to name the resource too: plain
+                # "name" or "status" means something different on every model.
+                component_name = self.resource_prop_name(prop.api_name)
+                parameter_name = prop.api_name
+            parameters[component_name] = {
+                "name": parameter_name,
                 "in": "path" if is_id else "query",
                 "schema": schema,
             }
             if is_id:
-                parameters[prop_name]["required"] = True
+                parameters[component_name]["required"] = True
         if not has_id_property:
             try:
                 model = self._resource.get_model()
