@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import unittest
 import uuid
 
@@ -148,27 +149,44 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         engine.list_supported_openapi_versions.return_value = ["3.0.3"]
         return engine
 
-    def _build_controller(self, main_route, engine=None):
+    def _build_controller(self, main_route, engine=None, host="http://one"):
         request = mock.Mock()
         request.application.openapi_engine = engine or self._engine
         request.application.main_route = main_route
+        request.host_url = host
         return controllers.OpenApiSpecificationController(request)
 
+    @staticmethod
+    def _served(controller, version):
+        body = controller.get(version)
+        # The controller answers with the encoded document, not with a
+        # structure to be encoded again per request.
+        assert isinstance(body, bytes), body
+        return json.loads(body)
+
     def test_get_builds_the_specification_once(self):
-        first = self._controller.get("3.0.3")
-        second = self._controller.get("3.0.3")
+        first = self._served(self._controller, "3.0.3")
+        second = self._served(self._controller, "3.0.3")
 
         self.assertEqual({"openapi": "3.0.3"}, first)
-        self.assertEqual(
-            {"openapi": "3.0.3", "servers": [{"url": "http://example"}]}, second
-        )
+        self.assertEqual(first, second)
         self._engine.build_openapi_specification.assert_called_once_with(
             version="3.0.3",
             request=self._controller._req,
         )
 
+    def test_get_encodes_the_specification_once_per_host(self):
+        packer = controllers.packers.JSONPackerPreEncoded
+        with mock.patch.object(packer, "pack", autospec=True) as pack:
+            pack.side_effect = lambda self, obj: b"{}"
+            self._controller.get("3.0.3")
+            self._controller.get("3.0.3")
+            self._controller.get("3.0.3")
+
+        self.assertEqual(1, pack.call_count)
+
     def test_update_recalculates_the_specification(self):
-        self._controller.get("3.0.3")
+        self._served(self._controller, "3.0.3")
         self._engine.build_openapi_specification.return_value = {
             "openapi": "3.0.3",
             "info": {"version": "updated"},
@@ -177,7 +195,8 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         result = self._controller.update("3.0.3")
 
         self.assertEqual({"openapi": "3.0.3", "info": {"version": "updated"}}, result)
-        self.assertEqual("updated", self._controller.get("3.0.3")["info"]["version"])
+        served = self._served(self._controller, "3.0.3")
+        self.assertEqual("updated", served["info"]["version"])
         self.assertEqual(2, self._engine.build_openapi_specification.call_count)
 
     def test_applications_do_not_share_an_entry(self):
@@ -187,21 +206,22 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         )
         other = self._build_controller(SecondAppRoute, engine=other_engine)
 
-        self.assertEqual({"openapi": "3.0.3"}, self._controller.get("3.0.3"))
+        self.assertEqual({"openapi": "3.0.3"}, self._served(self._controller, "3.0.3"))
         self.assertEqual(
             {"openapi": "3.0.3", "info": {"title": "the other service"}},
-            other.get("3.0.3"),
+            self._served(other, "3.0.3"),
         )
 
-    def test_cached_specification_carries_the_current_request_servers(self):
+    def test_each_host_is_served_its_own_servers_block(self):
         # The servers url defaults to the host being addressed, so it is the
         # one part that must not be reused between callers.
-        self._controller.get("3.0.3")
+        self._served(self._controller, "3.0.3")
         self._engine.build_openapi_servers.return_value = {
             "servers": [{"url": "http://another-host"}]
         }
+        elsewhere = self._build_controller(FirstAppRoute, host="http://another-host")
 
-        served = self._controller.get("3.0.3")
+        served = self._served(elsewhere, "3.0.3")
 
         self.assertEqual([{"url": "http://another-host"}], served["servers"])
         self._engine.build_openapi_specification.assert_called_once()

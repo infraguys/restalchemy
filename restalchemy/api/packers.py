@@ -19,6 +19,7 @@ import collections
 import copy
 import logging
 import types
+import typing
 
 import orjson
 
@@ -150,6 +151,21 @@ class JSONPacker(BaseResourcePacker):
 
 class JSONPackerIncludeNullFields(JSONPacker):
     _skip_none = False
+
+
+class JSONPackerPreEncoded(JSONPacker):
+    """Lets a controller hand over a body it has already serialized.
+
+    For a document that is the same for every caller there is no reason to
+    encode it again per request; a controller that keeps the encoded form can
+    return it as bytes and have it written out untouched. Anything else is
+    packed as usual.
+    """
+
+    def pack(self, obj: typing.Any) -> bytes:
+        if isinstance(obj, bytes):
+            return obj
+        return super(JSONPackerPreEncoded, self).pack(obj)
 
 
 class MultipartPacker(JSONPacker):
