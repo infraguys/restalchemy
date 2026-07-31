@@ -167,6 +167,30 @@ class ProjectResource(models.ModelWithUUID, models.ModelWithProject):
     name = properties.property(types.String(max_length=255), required=True)
 ```
 
+### `ModelWithTags`
+
+Fügt ein Feld `tags` hinzu — eine standardmäßig leere Liste von
+Zeichenketten —, um Zeilen mit Werten zu versehen, nach denen eine Abfrage
+suchen kann:
+
+```python
+class TaggedResource(models.ModelWithUUID, models.ModelWithTags):
+    name = properties.property(types.String(max_length=255), required=True)
+```
+
+Die Spalte ist ein PostgreSQL-Array, und die Suche darin braucht einen
+GIN-Index; die Migration, die die Tabelle anlegt, deklariert beides:
+
+```sql
+tags TEXT[] NOT NULL DEFAULT '{}';
+CREATE INDEX idx_tagged_tags ON tagged USING GIN (tags);
+```
+
+Gesucht wird aus Python mit
+[`ContainsAll` / `ContainsAny`](filters.md) oder über HTTP
+mit den zugehörigen Parametern — siehe
+[Sammlungen über HTTP filtern](../../how-to/api-filtering.md).
+
 ### `ModelWithNameDesc` und `ModelWithRequiredNameDesc`
 
 Gemeinsame Felder `name` und `description`:
