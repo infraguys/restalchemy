@@ -217,13 +217,24 @@ class OpenApiComponents(object):
     @staticmethod
     def _build_schemas_by_resources(route, schema_generator):
         schemas = {"schemas": {"Error": oa_c.ERROR_SCHEMA}}
-        for method in route.get_allow_methods():
+        # Most resources expose the very same object shape for every method, so
+        # emit each distinct body once and let the other method names point at
+        # it. Keeps every <Model>_<Method> name a client may already depend on.
+        canonical_by_body = {}
+        for method in oa_utils.sorted_schema_methods(route.get_allow_methods()):
             if method == c.DELETE:
                 continue
             schema_name = schema_generator.resource_method_name(method)
-            schemas["schemas"][schema_name] = schema_generator.generate_schema_object(
-                method
-            )
+            body = schema_generator.generate_schema_object(method)
+            body_key = oa_utils.schema_body_key(body)
+            canonical = canonical_by_body.get(body_key)
+            if canonical is None:
+                canonical_by_body[body_key] = schema_name
+                schemas["schemas"][schema_name] = body
+            else:
+                schemas["schemas"][schema_name] = {
+                    "$ref": oa_c.build_schema_ref(canonical),
+                }
         return schemas
 
     @staticmethod

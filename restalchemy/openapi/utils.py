@@ -14,9 +14,29 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import logging
+import typing
+
+from restalchemy.api import constants as c
 
 LOG = logging.getLogger(__name__)
+
+# Order in which <Model>_<Method> schemas are considered when several methods
+# turn out to produce the same body: the first one present becomes the schema
+# that actually carries the body, the rest become $ref aliases to it.
+SCHEMA_METHOD_ORDER = (c.GET, c.CREATE, c.UPDATE, c.FILTER)
+
+
+def sorted_schema_methods(methods: typing.Iterable[str]) -> typing.List[str]:
+    known_methods = list(methods)
+    known = [m for m in SCHEMA_METHOD_ORDER if m in known_methods]
+    return known + [m for m in known_methods if m not in SCHEMA_METHOD_ORDER]
+
+
+def schema_body_key(body: typing.Any) -> str:
+    """Stable comparison key for a schema body."""
+    return json.dumps(body, sort_keys=True, default=str)
 
 
 # The filter language collapses to one string parameter, which is the cost

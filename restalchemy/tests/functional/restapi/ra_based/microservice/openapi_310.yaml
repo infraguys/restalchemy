@@ -308,41 +308,9 @@ components:
       title: error
       type: object
     IpAddress_Create:
-      properties:
-        ip:
-          default: 192.168.0.1
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
-        port:
-          type: string
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - port
-      type: object
+      $ref: '#/components/schemas/IpAddress_Get'
     IpAddress_Filter:
-      properties:
-        ip:
-          default: 192.168.0.1
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
-        port:
-          type: string
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - port
-      type: object
+      $ref: '#/components/schemas/IpAddress_Get'
     IpAddress_Get:
       properties:
         ip:
@@ -599,49 +567,9 @@ components:
       - vm
       type: object
     Tag_Create:
-      properties:
-        name:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-        visible:
-          default: true
-          example: true
-          type: boolean
-        vm:
-          type: string
-      required:
-      - name
-      - vm
-      type: object
+      $ref: '#/components/schemas/Tag_Get'
     Tag_Filter:
-      properties:
-        name:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-        visible:
-          default: true
-          example: true
-          type: boolean
-        vm:
-          type: string
-      required:
-      - name
-      - vm
-      type: object
+      $ref: '#/components/schemas/Tag_Get'
     Tag_Get:
       properties:
         name:
@@ -665,127 +593,11 @@ components:
       - vm
       type: object
     Tag_Update:
-      properties:
-        name:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-        visible:
-          default: true
-          example: true
-          type: boolean
-        vm:
-          type: string
-      required:
-      - name
-      - vm
-      type: object
+      $ref: '#/components/schemas/Tag_Get'
     VMDefSort_Create:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VMDefSort_Get'
     VMDefSort_Filter:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VMDefSort_Get'
     VMDefSort_Get:
       properties:
         created:
@@ -837,105 +649,9 @@ components:
       - name
       type: object
     VMDefSort_Update:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VMDefSort_Get'
     VMNoProcessFilters_Filter:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VMNoProcessFilters_Get'
     VMNoProcessFilters_Get:
       properties:
         created:
@@ -987,105 +703,9 @@ components:
       - name
       type: object
     VMNoSort_Create:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VMNoSort_Get'
     VMNoSort_Filter:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VMNoSort_Get'
     VMNoSort_Get:
       properties:
         created:
@@ -1137,155 +757,11 @@ components:
       - name
       type: object
     VMNoSort_Update:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VMNoSort_Get'
     VM_Create:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VM_Get'
     VM_Filter:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VM_Get'
     VM_Get:
       properties:
         created:
@@ -1337,55 +813,7 @@ components:
       - name
       type: object
     VM_Update:
-      properties:
-        created:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        just-none:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          example: any_string
-          examples:
-          - testname
-          maxLength: 255
-          minLength: 0
-          type: string
-        state:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-        status:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-        updated:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-        uuid:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      required:
-      - name
-      type: object
+      $ref: '#/components/schemas/VM_Get'
 info:
   contact:
     email: functional@tests.local
