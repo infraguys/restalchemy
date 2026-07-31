@@ -116,6 +116,18 @@ OPENAPI_DEFAULT_RESPONSE = {
 }
 
 
+SCHEMA_REF_TEMPLATE = "#/components/schemas/{}"
+PARAMETER_REF_TEMPLATE = "#/components/parameters/{}"
+
+
+def build_schema_ref(name: str) -> str:
+    return SCHEMA_REF_TEMPLATE.format(name)
+
+
+def build_parameter_ref(name: str) -> str:
+    return PARAMETER_REF_TEMPLATE.format(name)
+
+
 def build_openapi_create_response(ref_name):
     return {
         status.HTTP_201_CREATED: {

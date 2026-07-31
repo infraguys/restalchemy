@@ -1491,55 +1491,34 @@ paths:
     get:
       operationId: Filter_v1_vms
       parameters:
-      - in: query
-        name: state
+      - description: "Filter expression (a subset of AIP-160). Combines with the field\n\
+          parameters, which stay the typed way to ask for equality.\n\n    name =\
+          \ \"vm1\" AND size > 10\n    tags:\"env:prod\" OR tags:\"env:staging\"\n\
+          \    NOT (state = error) AND created_at >= \"2026-07-01T00:00:00Z\"\n\n\
+          Operators: `=` `!=` `<` `<=` `>` `>=`, `:` (an array holds the element,\n\
+          or with `*` that the field is set), `AND` `OR` `NOT`, parentheses.\nThe\
+          \ keywords are uppercase, and `OR` binds tighter than `AND`. Values\ncarrying\
+          \ `:`, `.` or spaces must be quoted."
+        example: name = "vm1"
+        in: query
+        name: q
+        required: false
         schema:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
           type: string
-      - in: query
-        name: name
-        schema:
-          example: testname
-          maxLength: 255
-          minLength: 0
-          type: string
-      - in: query
-        name: just-none
-        schema:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          nullable: true
-          type: string
-      - in: query
-        name: status
-        schema:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-      - in: query
-        name: created
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-      - in: query
-        name: updated
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        x-ra-filter-fields:
+        - created
+        - just-none
+        - name
+        - state
+        - status
+        - updated
+        - uuid
+      - $ref: '#/components/parameters/state'
+      - $ref: '#/components/parameters/name'
+      - $ref: '#/components/parameters/just-none'
+      - $ref: '#/components/parameters/status'
+      - $ref: '#/components/parameters/created'
+      - $ref: '#/components/parameters/updated'
       responses:
         '200':
           content:
@@ -1580,14 +1559,7 @@ paths:
     delete:
       operationId: Delete_v1_vms_VMUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '204':
           description: VM_Delete
@@ -1599,14 +1571,7 @@ paths:
     get:
       operationId: Get_v1_vms_VMUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '200':
           content:
@@ -1622,14 +1587,7 @@ paths:
     put:
       operationId: Update_v1_vms_VMUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       requestBody:
         content:
           application/json:
@@ -1653,14 +1611,7 @@ paths:
     get:
       operationId: Ip_addresses_v1_vms_VMUuid_actions_ip_addresses
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '200':
           content:
@@ -1676,14 +1627,7 @@ paths:
     post:
       operationId: Power_v1_vms_VMUuid_actions_power_invoke
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '200':
           content:
@@ -1699,14 +1643,7 @@ paths:
     get:
       operationId: Power_state_v1_vms_VMUuid_actions_power_state
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '200':
           content:
@@ -1766,14 +1703,7 @@ paths:
     get:
       operationId: Filter_v1_vms_VMUuid_none_ports
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '200':
           content:
@@ -1791,14 +1721,7 @@ paths:
     post:
       operationId: Create_v1_vms_VMUuid_none_ports
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       requestBody:
         content:
           application/json:
@@ -1822,22 +1745,8 @@ paths:
     delete:
       operationId: Delete_v1_vms_VMUuid_none_ports_PortUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       responses:
         '204':
           description: Port_Delete
@@ -1849,22 +1758,8 @@ paths:
     get:
       operationId: Get_v1_vms_VMUuid_none_ports_PortUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       responses:
         '200':
           content:
@@ -1880,22 +1775,8 @@ paths:
     put:
       operationId: Update_v1_vms_VMUuid_none_ports_PortUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       requestBody:
         content:
           application/json:
@@ -1919,22 +1800,8 @@ paths:
     get:
       operationId: Filter_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       responses:
         '200':
           content:
@@ -1952,22 +1819,8 @@ paths:
     post:
       operationId: Create_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       requestBody:
         content:
           application/json:
@@ -1991,30 +1844,9 @@ paths:
     delete:
       operationId: Delete_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses_IpAddressUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: IpAddressUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
+      - $ref: '#/components/parameters/IpAddressUuid'
       responses:
         '204':
           description: IpAddress_Delete
@@ -2026,30 +1858,9 @@ paths:
     get:
       operationId: Get_v1_vms_VMUuid_none_ports_PortUuid_ip_addresses_IpAddressUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: IpAddressUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
+      - $ref: '#/components/parameters/IpAddressUuid'
       responses:
         '200':
           content:
@@ -2066,14 +1877,7 @@ paths:
     get:
       operationId: Filter_v1_vms_VMUuid_ports
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '200':
           content:
@@ -2091,14 +1895,7 @@ paths:
     post:
       operationId: Create_v1_vms_VMUuid_ports
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       requestBody:
         content:
           application/json:
@@ -2122,22 +1919,8 @@ paths:
     delete:
       operationId: Delete_v1_vms_VMUuid_ports_PortUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       responses:
         '204':
           description: Port_Delete
@@ -2149,22 +1932,8 @@ paths:
     get:
       operationId: Get_v1_vms_VMUuid_ports_PortUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       responses:
         '200':
           content:
@@ -2180,22 +1949,8 @@ paths:
     put:
       operationId: Update_v1_vms_VMUuid_ports_PortUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       requestBody:
         content:
           application/json:
@@ -2219,22 +1974,8 @@ paths:
     get:
       operationId: Filter_v1_vms_VMUuid_ports_PortUuid_ip_addresses
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       responses:
         '200':
           content:
@@ -2252,22 +1993,8 @@ paths:
     post:
       operationId: Create_v1_vms_VMUuid_ports_PortUuid_ip_addresses
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
       requestBody:
         content:
           application/json:
@@ -2291,30 +2018,9 @@ paths:
     delete:
       operationId: Delete_v1_vms_VMUuid_ports_PortUuid_ip_addresses_IpAddressUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: IpAddressUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
+      - $ref: '#/components/parameters/IpAddressUuid'
       responses:
         '204':
           description: IpAddress_Delete
@@ -2326,30 +2032,9 @@ paths:
     get:
       operationId: Get_v1_vms_VMUuid_ports_PortUuid_ip_addresses_IpAddressUuid
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: PortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: IpAddressUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/PortUuid'
+      - $ref: '#/components/parameters/IpAddressUuid'
       responses:
         '200':
           content:
@@ -2366,14 +2051,7 @@ paths:
     get:
       operationId: Filter_v1_vms_VMUuid_tags
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       responses:
         '200':
           content:
@@ -2391,14 +2069,7 @@ paths:
     post:
       operationId: Create_v1_vms_VMUuid_tags
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
       requestBody:
         content:
           application/json:
@@ -2422,22 +2093,8 @@ paths:
     delete:
       operationId: Delete_v1_vms_VMUuid_tags_TagName
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: TagName
-        required: true
-        schema:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/TagName'
       responses:
         '204':
           description: Tag_Delete
@@ -2449,22 +2106,8 @@ paths:
     get:
       operationId: Get_v1_vms_VMUuid_tags_TagName
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: TagName
-        required: true
-        schema:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/TagName'
       responses:
         '200':
           content:
@@ -2480,22 +2123,8 @@ paths:
     put:
       operationId: Update_v1_vms_VMUuid_tags_TagName
       parameters:
-      - in: path
-        name: VMUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
-      - in: path
-        name: TagName
-        required: true
-        schema:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          type: string
+      - $ref: '#/components/parameters/VMUuid'
+      - $ref: '#/components/parameters/TagName'
       requestBody:
         content:
           application/json:
@@ -2519,55 +2148,34 @@ paths:
     get:
       operationId: Filter_v1_vmsdefsort
       parameters:
-      - in: query
-        name: state
+      - description: "Filter expression (a subset of AIP-160). Combines with the field\n\
+          parameters, which stay the typed way to ask for equality.\n\n    name =\
+          \ \"vm1\" AND size > 10\n    tags:\"env:prod\" OR tags:\"env:staging\"\n\
+          \    NOT (state = error) AND created_at >= \"2026-07-01T00:00:00Z\"\n\n\
+          Operators: `=` `!=` `<` `<=` `>` `>=`, `:` (an array holds the element,\n\
+          or with `*` that the field is set), `AND` `OR` `NOT`, parentheses.\nThe\
+          \ keywords are uppercase, and `OR` binds tighter than `AND`. Values\ncarrying\
+          \ `:`, `.` or spaces must be quoted."
+        example: name = "vm1"
+        in: query
+        name: q
+        required: false
         schema:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
           type: string
-      - in: query
-        name: name
-        schema:
-          example: testname
-          maxLength: 255
-          minLength: 0
-          type: string
-      - in: query
-        name: just-none
-        schema:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          nullable: true
-          type: string
-      - in: query
-        name: status
-        schema:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-      - in: query
-        name: created
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-      - in: query
-        name: updated
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        x-ra-filter-fields:
+        - created
+        - just-none
+        - name
+        - state
+        - status
+        - updated
+        - uuid
+      - $ref: '#/components/parameters/state'
+      - $ref: '#/components/parameters/name'
+      - $ref: '#/components/parameters/just-none'
+      - $ref: '#/components/parameters/status'
+      - $ref: '#/components/parameters/created'
+      - $ref: '#/components/parameters/updated'
       responses:
         '200':
           content:
@@ -2608,14 +2216,7 @@ paths:
     delete:
       operationId: Delete_v1_vmsdefsort_VMDefSortUuid
       parameters:
-      - in: path
-        name: VMDefSortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMDefSortUuid'
       responses:
         '204':
           description: VMDefSort_Delete
@@ -2627,14 +2228,7 @@ paths:
     get:
       operationId: Get_v1_vmsdefsort_VMDefSortUuid
       parameters:
-      - in: path
-        name: VMDefSortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMDefSortUuid'
       responses:
         '200':
           content:
@@ -2650,14 +2244,7 @@ paths:
     put:
       operationId: Update_v1_vmsdefsort_VMDefSortUuid
       parameters:
-      - in: path
-        name: VMDefSortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMDefSortUuid'
       requestBody:
         content:
           application/json:
@@ -2681,55 +2268,12 @@ paths:
     get:
       operationId: Filter_v1_vmsnoproccessfilters
       parameters:
-      - in: query
-        name: state
-        schema:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
-          type: string
-      - in: query
-        name: name
-        schema:
-          example: testname
-          maxLength: 255
-          minLength: 0
-          type: string
-      - in: query
-        name: just-none
-        schema:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          nullable: true
-          type: string
-      - in: query
-        name: status
-        schema:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-      - in: query
-        name: created
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-      - in: query
-        name: updated
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+      - $ref: '#/components/parameters/state'
+      - $ref: '#/components/parameters/name'
+      - $ref: '#/components/parameters/just-none'
+      - $ref: '#/components/parameters/status'
+      - $ref: '#/components/parameters/created'
+      - $ref: '#/components/parameters/updated'
       responses:
         '200':
           content:
@@ -2748,14 +2292,7 @@ paths:
     get:
       operationId: Get_v1_vmsnoproccessfilters_VMNoProcessFiltersUuid
       parameters:
-      - in: path
-        name: VMNoProcessFiltersUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMNoProcessFiltersUuid'
       responses:
         '200':
           content:
@@ -2772,55 +2309,34 @@ paths:
     get:
       operationId: Filter_v1_vmsnosort
       parameters:
-      - in: query
-        name: state
+      - description: "Filter expression (a subset of AIP-160). Combines with the field\n\
+          parameters, which stay the typed way to ask for equality.\n\n    name =\
+          \ \"vm1\" AND size > 10\n    tags:\"env:prod\" OR tags:\"env:staging\"\n\
+          \    NOT (state = error) AND created_at >= \"2026-07-01T00:00:00Z\"\n\n\
+          Operators: `=` `!=` `<` `<=` `>` `>=`, `:` (an array holds the element,\n\
+          or with `*` that the field is set), `AND` `OR` `NOT`, parentheses.\nThe\
+          \ keywords are uppercase, and `OR` binds tighter than `AND`. Values\ncarrying\
+          \ `:`, `.` or spaces must be quoted."
+        example: name = "vm1"
+        in: query
+        name: q
+        required: false
         schema:
-          default: 'off'
-          example: any_string
-          maxLength: 10
-          minLength: 0
           type: string
-      - in: query
-        name: name
-        schema:
-          example: testname
-          maxLength: 255
-          minLength: 0
-          type: string
-      - in: query
-        name: just-none
-        schema:
-          example: any_string
-          maxLength: 9223372036854775807
-          minLength: 0
-          nullable: true
-          type: string
-      - in: query
-        name: status
-        schema:
-          default: active
-          enum:
-          - active
-          - disabled
-          example: active
-          type: string
-      - in: query
-        name: created
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          readOnly: true
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-      - in: query
-        name: updated
-        schema:
-          default: '2006-01-02T15:04:05.000576Z'
-          example: '2006-01-02T15:04:05.000576Z'
-          format: date-time
-          type: string
-          x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+        x-ra-filter-fields:
+        - created
+        - just-none
+        - name
+        - state
+        - status
+        - updated
+        - uuid
+      - $ref: '#/components/parameters/state'
+      - $ref: '#/components/parameters/name'
+      - $ref: '#/components/parameters/just-none'
+      - $ref: '#/components/parameters/status'
+      - $ref: '#/components/parameters/created'
+      - $ref: '#/components/parameters/updated'
       responses:
         '200':
           content:
@@ -2861,14 +2377,7 @@ paths:
     delete:
       operationId: Delete_v1_vmsnosort_VMNoSortUuid
       parameters:
-      - in: path
-        name: VMNoSortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMNoSortUuid'
       responses:
         '204':
           description: VMNoSort_Delete
@@ -2880,14 +2389,7 @@ paths:
     get:
       operationId: Get_v1_vmsnosort_VMNoSortUuid
       parameters:
-      - in: path
-        name: VMNoSortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMNoSortUuid'
       responses:
         '200':
           content:
@@ -2903,14 +2405,7 @@ paths:
     put:
       operationId: Update_v1_vmsnosort_VMNoSortUuid
       parameters:
-      - in: path
-        name: VMNoSortUuid
-        required: true
-        schema:
-          example: 00000000-0000-0000-0000-000000000000
-          format: uuid
-          readOnly: true
-          type: string
+      - $ref: '#/components/parameters/VMNoSortUuid'
       requestBody:
         content:
           application/json:
@@ -2932,7 +2427,7 @@ paths:
       - VMNoSort
 servers:
 - description: ''
-  url: http://127.0.0.1:35967
+  url: http://localhost
   variables:
     version:
       default: v1
