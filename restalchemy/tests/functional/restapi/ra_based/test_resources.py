@@ -18,7 +18,6 @@
 import collections
 import contextlib
 from functools import partial
-import os
 import socket
 from urllib import parse
 import uuid as pyuuid
@@ -29,13 +28,12 @@ import requests
 from webob import request
 
 from restalchemy.api import constants
-from restalchemy.api import controllers
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import utils
 from restalchemy.dm import filters
 from restalchemy.dm import types
-from restalchemy.openapi import constants as openapi_constants
+from restalchemy.openapi import cache as openapi_cache
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.tables import SQLTable
@@ -160,11 +158,9 @@ class TestRootResourceTestCase(BaseResourceTestCase):
 
 class TestOpenApiSpecification303TestCase(BaseResourceTestCase):
     def test_generate_openapi_specification_303(self):
-        cache_path = controllers.OpenApiSpecificationController._get_openapi_cache_path(
-            openapi_constants.OPENAPI_SPECIFICATION_3_0_3
-        )
-        if os.path.exists(cache_path):
-            os.remove(cache_path)
+        # The service under test runs in this interpreter, so its cache is
+        # ours to drop.
+        openapi_cache.clear()
 
         info = {
             "title": "REST API Microservice",

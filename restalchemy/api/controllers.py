@@ -15,10 +15,7 @@
 #    under the License.
 
 import itertools
-import json
 import logging
-import os
-import tempfile
 
 import webob
 
@@ -29,6 +26,7 @@ from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
 from restalchemy.dm import filters as dm_filters
+from restalchemy.openapi import cache as openapi_cache
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import utils as oa_utils
 from restalchemy.storage.sql import constants as sql_c
@@ -1031,31 +1029,6 @@ class RootController(RoutesListController):
 
 
 class OpenApiSpecificationController(Controller):
-    @staticmethod
-    def _get_openapi_cache_path(version):
-        safe_version = version.replace(os.sep, "_")
-        return os.path.join(
-            tempfile.gettempdir(), "restalchemy-openapi-%s.json" % safe_version
-        )
-
-    @staticmethod
-    def _write_openapi_cache(path, specification):
-        try:
-            fd, temporary_path = tempfile.mkstemp(
-                prefix=".restalchemy-openapi-",
-                suffix=".json",
-                dir=tempfile.gettempdir(),
-            )
-            try:
-                with os.fdopen(fd, "w") as cache_file:
-                    json.dump(specification, cache_file)
-                os.replace(temporary_path, path)
-            except Exception:
-                os.unlink(temporary_path)
-                raise
-        except Exception as e:
-            LOG.warning("Failed to write OpenAPI cache to %s: %s", path, e)
-
     def _build_openapi_specification(self, version):
         openapi_engine = self.request.application.openapi_engine
         if not openapi_engine:
@@ -1065,7 +1038,22 @@ class OpenApiSpecificationController(Controller):
             version=version,
             request=self._req,
         )
-        self._write_openapi_cache(self._get_openapi_cache_path(version), specification)
+        openapi_cache.store(self.request.application, version, specification)
+        return specification
+
+    def _with_request_servers(self, version, specification):
+        """Put this request's servers block on a document built elsewhere.
+
+        Everything else in the document describes the API and is the same for
+        every caller, but the servers url defaults to the host being addressed.
+        Rebuilding just that keeps one cached document correct for every host
+        the service answers on.
+        """
+        openapi_engine = self.request.application.openapi_engine
+        specification = dict(specification)
+        specification.update(
+            openapi_engine.build_openapi_servers(version=version, request=self._req)
+        )
         return specification
 
     @oa_utils.extend_schema(
@@ -1077,14 +1065,14 @@ class OpenApiSpecificationController(Controller):
     )
     def get(self, uuid):
         """
-        GET /specifications/{version} continues to serve the cached specification when present.
+        GET /specifications/{version} serves the specification built for this
+        process, generating it on the first call if the application did not
+        manage to warm it up at startup.
         """
-        cache_path = self._get_openapi_cache_path(uuid)
-        try:
-            with open(cache_path) as cache_file:
-                return json.load(cache_file)
-        except (OSError, ValueError):
+        specification = openapi_cache.load(self.request.application, uuid)
+        if specification is None:
             return self._build_openapi_specification(uuid)
+        return self._with_request_servers(uuid, specification)
 
     @oa_utils.extend_schema(
         summary="Recalculate OpenApi specification",
@@ -1095,8 +1083,8 @@ class OpenApiSpecificationController(Controller):
     )
     def update(self, uuid):
         """
-        PUT /specifications/{version} now always regenerates the OpenAPI document and
-        overwrites its /tmp/restalchemy-openapi-{version}.json cache file.
+        PUT /specifications/{version} always regenerates the OpenAPI document
+        and replaces the one this process has cached.
         """
         return self._build_openapi_specification(uuid)
 

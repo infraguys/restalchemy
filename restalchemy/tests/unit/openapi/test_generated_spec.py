@@ -32,7 +32,7 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import service
 
 def build_spec(version):
     app = service.build_wsgi_application(app_root=routes.Root)
-    # PUT regenerates; GET would answer from the on-disk spec cache.
+    # PUT regenerates unconditionally, whatever this process has cached.
     request = webob.Request.blank("/specifications/%s" % version)
     request.method = "PUT"
     request.content_type = "application/json"

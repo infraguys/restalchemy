@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import tempfile
 import unittest
 import uuid
 
@@ -33,6 +32,7 @@ from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models as dm_models
 from restalchemy.dm import properties
 from restalchemy.dm import types
+from restalchemy.openapi import cache as openapi_cache
 from restalchemy.storage.sql import orm
 
 FAKE_LOCATION_PATH = "fake location path"
@@ -122,36 +122,52 @@ class TestRawResponses(unittest.TestCase):
         )
 
 
+class FirstAppRoute(object):
+    pass
+
+
+class SecondAppRoute(object):
+    pass
+
+
 class TestOpenApiSpecificationCache(unittest.TestCase):
     def setUp(self):
         super(TestOpenApiSpecificationCache, self).setUp()
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self.addCleanup(self._tmpdir.cleanup)
-        self._engine = mock.Mock()
-        self._engine.build_openapi_specification.return_value = {
-            "openapi": "3.0.3",
+        openapi_cache.clear()
+        self.addCleanup(openapi_cache.clear)
+        self._engine = self._build_engine({"openapi": "3.0.3"})
+        self._controller = self._build_controller(FirstAppRoute)
+
+    @staticmethod
+    def _build_engine(specification):
+        engine = mock.Mock()
+        engine.build_openapi_specification.return_value = specification
+        engine.build_openapi_servers.return_value = {
+            "servers": [{"url": "http://example"}]
         }
+        engine.list_supported_openapi_versions.return_value = ["3.0.3"]
+        return engine
+
+    def _build_controller(self, main_route, engine=None):
         request = mock.Mock()
-        request.application.openapi_engine = self._engine
-        self._controller = controllers.OpenApiSpecificationController(request)
+        request.application.openapi_engine = engine or self._engine
+        request.application.main_route = main_route
+        return controllers.OpenApiSpecificationController(request)
 
-    @mock.patch("restalchemy.api.controllers.tempfile.gettempdir")
-    def test_get_caches_openapi_specification(self, gettempdir):
-        gettempdir.return_value = self._tmpdir.name
-
+    def test_get_builds_the_specification_once(self):
         first = self._controller.get("3.0.3")
         second = self._controller.get("3.0.3")
 
         self.assertEqual({"openapi": "3.0.3"}, first)
-        self.assertEqual(first, second)
+        self.assertEqual(
+            {"openapi": "3.0.3", "servers": [{"url": "http://example"}]}, second
+        )
         self._engine.build_openapi_specification.assert_called_once_with(
             version="3.0.3",
             request=self._controller._req,
         )
 
-    @mock.patch("restalchemy.api.controllers.tempfile.gettempdir")
-    def test_update_recalculates_openapi_specification(self, gettempdir):
-        gettempdir.return_value = self._tmpdir.name
+    def test_update_recalculates_the_specification(self):
         self._controller.get("3.0.3")
         self._engine.build_openapi_specification.return_value = {
             "openapi": "3.0.3",
@@ -161,8 +177,57 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         result = self._controller.update("3.0.3")
 
         self.assertEqual({"openapi": "3.0.3", "info": {"version": "updated"}}, result)
-        self.assertEqual(result, self._controller.get("3.0.3"))
+        self.assertEqual("updated", self._controller.get("3.0.3")["info"]["version"])
         self.assertEqual(2, self._engine.build_openapi_specification.call_count)
+
+    def test_applications_do_not_share_an_entry(self):
+        # Several RestAlchemy services may run in one interpreter.
+        other_engine = self._build_engine(
+            {"openapi": "3.0.3", "info": {"title": "the other service"}}
+        )
+        other = self._build_controller(SecondAppRoute, engine=other_engine)
+
+        self.assertEqual({"openapi": "3.0.3"}, self._controller.get("3.0.3"))
+        self.assertEqual(
+            {"openapi": "3.0.3", "info": {"title": "the other service"}},
+            other.get("3.0.3"),
+        )
+
+    def test_cached_specification_carries_the_current_request_servers(self):
+        # The servers url defaults to the host being addressed, so it is the
+        # one part that must not be reused between callers.
+        self._controller.get("3.0.3")
+        self._engine.build_openapi_servers.return_value = {
+            "servers": [{"url": "http://another-host"}]
+        }
+
+        served = self._controller.get("3.0.3")
+
+        self.assertEqual([{"url": "http://another-host"}], served["servers"])
+        self._engine.build_openapi_specification.assert_called_once()
+
+    def test_warm_up_serves_every_worker_of_a_forking_service(self):
+        # A service builds one application per worker before forking, so the
+        # first one to warm up must spare the rest the work.
+        application = mock.Mock()
+        application.main_route = FirstAppRoute
+        application.openapi_engine = self._engine
+
+        openapi_cache.warm_up(application, mock.Mock())
+        openapi_cache.warm_up(application, mock.Mock())
+
+        self.assertEqual(1, self._engine.build_openapi_specification.call_count)
+        self.assertEqual({"openapi": "3.0.3"}, openapi_cache.load(application, "3.0.3"))
+
+    def test_warm_up_failure_is_not_fatal(self):
+        application = mock.Mock()
+        application.main_route = FirstAppRoute
+        application.openapi_engine = self._engine
+        self._engine.build_openapi_specification.side_effect = RuntimeError("boom")
+
+        openapi_cache.warm_up(application, mock.Mock())
+
+        self.assertIsNone(openapi_cache.load(application, "3.0.3"))
 
 
 class FakeResource(object):

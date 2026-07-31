@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from restalchemy.openapi import constants
 from restalchemy.openapi import impl303
 from restalchemy.openapi import impl310
@@ -73,3 +75,17 @@ class OpenApiEngine(object):
         )
 
         return spec.build_openapi_specification(request)
+
+    def build_openapi_servers(self, version: str, request: typing.Any) -> dict:
+        """Build the servers block alone.
+
+        Unless the application names its servers explicitly, their url comes
+        from the request being served, so this is the one part of the document
+        that cannot be reused between callers and has to be rebuilt per
+        request. It costs nothing: no route is walked.
+        """
+        spec = SUPPORTED_OPENAPI_SPECIFICATIONS[version](
+            **self._openapi_specification_kwargs
+        )
+
+        return spec.build_servers(request)
