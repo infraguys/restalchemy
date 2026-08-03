@@ -275,6 +275,34 @@ class Controller(object):
         self._filter_fields[param_name] = field
         return field
 
+    def _reject_hidden_filter_field(self, param_name):
+        """Refuse a parameter naming a field this request may not see.
+
+        `_resolve_filter_field` settles this for a resource that processes
+        filters. One that does not never reached it: the parameter was
+        handed to `filter()` exactly as it arrived, so a hidden field could
+        be filtered by as readily as a visible one. `?password_hash=x`
+        narrowing the collection reports on the field one guess at a time,
+        which is what hiding it was meant to prevent -- and hiding is not a
+        statement about how the resource parses values.
+
+        Unlike the resolving path, a name that is not a field of this
+        resource passes silently. That is the point of not processing
+        filters: a controller may take query parameters of its own and read
+        them in its own `filter()`, and those are not the resource's to
+        judge.
+        """
+        if self.__resource__ is None or self.model is None:
+            return
+        try:
+            field = self.__resource__.get_field(
+                self.__resource__.get_model_field_name(param_name)
+            )
+        except ValueError:
+            return
+        if not self._is_queryable_field(field.name):
+            raise exc.ValidationFilterIncompatibleError(val=param_name)
+
     def _prepare_filter(self, param_name, value):
         resource_field = self._resolve_filter_field(param_name)
 
@@ -393,9 +421,11 @@ class Controller(object):
         result = {}
         process = self.__resource__ and self.__resource__.is_process_filters()
         for param, value in params.items():
-            filter_name, filter_value = (
-                self._prepare_filter(param, value) if process else (param, value)
-            )
+            if process:
+                filter_name, filter_value = self._prepare_filter(param, value)
+            else:
+                self._reject_hidden_filter_field(param)
+                filter_name, filter_value = param, value
             current = result.get(filter_name)
             if current is None:
                 result[filter_name] = dm_filters.EQ(filter_value)
