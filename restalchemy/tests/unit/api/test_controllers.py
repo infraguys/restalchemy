@@ -226,6 +226,44 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         self.assertEqual([{"url": "http://another-host"}], served["servers"])
         self._engine.build_openapi_specification.assert_called_once()
 
+    def test_encoded_documents_are_bounded_by_host_count(self):
+        # The host an encoded document is keyed by is the Host header of the
+        # request, so a caller varying it must not be able to make the process
+        # hold one copy of the document per value it sends.
+        application = self._controller.request.application
+        hosts = [
+            "http://host-%d" % number
+            for number in range(openapi_cache.ENCODED_MAX_ENTRIES * 4)
+        ]
+
+        for host in hosts:
+            self._served(self._build_controller(FirstAppRoute, host=host), "3.0.3")
+
+        retained = [
+            host
+            for host in hosts
+            if openapi_cache.load_encoded(application, "3.0.3", host) is not None
+        ]
+        self.assertEqual(openapi_cache.ENCODED_MAX_ENTRIES, len(retained))
+
+    def test_the_least_recently_served_host_loses_its_copy_first(self):
+        # Which is what keeps the hosts a service actually answers on in the
+        # cache while something else cycles through names.
+        application = self._controller.request.application
+        hosts = [
+            "http://host-%d" % number
+            for number in range(openapi_cache.ENCODED_MAX_ENTRIES)
+        ]
+        for host in hosts:
+            self._served(self._build_controller(FirstAppRoute, host=host), "3.0.3")
+
+        # Serving the oldest again leaves the second oldest least recent.
+        self._served(self._build_controller(FirstAppRoute, host=hosts[0]), "3.0.3")
+        self._served(self._build_controller(FirstAppRoute, host="http://new"), "3.0.3")
+
+        self.assertIsNotNone(openapi_cache.load_encoded(application, "3.0.3", hosts[0]))
+        self.assertIsNone(openapi_cache.load_encoded(application, "3.0.3", hosts[1]))
+
     def test_warm_up_serves_every_worker_of_a_forking_service(self):
         # A service builds one application per worker before forking, so the
         # first one to warm up must spare the rest the work.
