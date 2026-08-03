@@ -23,6 +23,7 @@ import tempfile
 import webob
 
 from restalchemy.api import constants
+from restalchemy.api import filter_lang
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
@@ -33,6 +34,48 @@ from restalchemy.openapi import utils as oa_utils
 from restalchemy.storage.sql import constants as sql_c
 
 LOG = logging.getLogger(__name__)
+
+
+class _ResourceFieldResolver(filter_lang.FieldResolver):
+    """Binds the filter language to one controller's resource.
+
+    Field names and values go through the same resolution a field
+    parameter gets -- `?name=vm1` and `q=name="vm1"` name the same field
+    and parse the value the same way, or they would drift apart.
+    """
+
+    def __init__(self, controller, dialect=None):
+        super(_ResourceFieldResolver, self).__init__()
+        self._controller = controller
+        self._supported = filter_lang.supported_clauses(dialect)
+        model = controller.model
+        self._custom_properties = (
+            dict(model.get_custom_properties())
+            if hasattr(model, "get_custom_properties")
+            else {}
+        )
+
+    def resolve(self, name):
+        field = self._controller._resolve_filter_field(name)
+        if field.name in self._custom_properties:
+            # Custom properties are filtered in Python, after the query,
+            # over the rows it returned (see `_process_custom_filters`).
+            # An expression cannot be split into a storage half and a
+            # Python half -- there is no way to evaluate `stored = 1 OR
+            # custom = 2` in two places -- so the language does not reach
+            # them at all. `?custom=2` still does.
+            raise exc.ValidationFilterIncompatibleError(val=name)
+        # Field visibility is enforced by `_resolve_filter_field` itself,
+        # so the expression and the field parameters cannot disagree about
+        # which fields exist.
+        return field.name, field.get_type()
+
+    def parse_value(self, name, field_type, text):
+        field = self._controller._resolve_filter_field(name)
+        return self._controller._parse_field_value(name, text, field)
+
+    def supports(self, clause_class):
+        return self._supported is None or clause_class in self._supported
 
 
 class Controller(object):
@@ -55,9 +98,27 @@ class Controller(object):
     # Default sorting, leave empty for no default sorting.
     __default_sort__ = {}
 
+    # Query parameter carrying a filter expression (see `api.filter_lang`),
+    # for what the field parameters cannot say: OR, grouping, negation,
+    # ranges. Set to None to turn the language off, or rename it on a
+    # resource that has a field of the same name -- the parameter is taken
+    # out of the field namespace wherever it is enabled.
+    __filter_param__ = "q"
+
+    # Caps on the parsed expression, per request. See `filter_lang`.
+    __filter_max_nodes__ = filter_lang.MAX_NODES
+    __filter_max_depth__ = filter_lang.MAX_DEPTH
+    __filter_max_length__ = filter_lang.MAX_LENGTH
+
     def __init__(self, request):
         super(Controller, self).__init__()
         self._req = request
+        # Resolved filter fields, for the life of the controller -- which
+        # is one request.
+        self._filter_fields = {}
+        # The parsed `__filter_param__`, and whether anything used it.
+        self._query_filter = None
+        self._query_filter_applied = False
 
     def __repr__(self):
         return self.__class__.__name__
@@ -164,19 +225,150 @@ class Controller(object):
     def _parse_field_value(self, name, value, resource_field):
         return resource_field.parse_value_from_unicode(self._req, value)
 
-    def _prepare_filter(self, param_name, value):
+    def _is_queryable_field(self, model_field_name):
+        """Whether this request may name the field in a query at all.
+
+        A resource hides a field from responses two ways -- `hidden_fields`
+        and `Permissions.HIDDEN` for the FILTER method -- and neither was
+        consulted when a query named one. Filtering and sorting both report
+        on a field's value: `?secret=x` confirms a guess, `?q=secret > "m"`
+        compares against a value the caller picks, and `?sort_key=secret`
+        orders the collection by it. All three hand back, a piece at a
+        time, what hiding the field was meant to withhold.
+
+        A resource that lists a hidden field in `__sortable_fields__` does
+        not get an exception: hiding is the narrower statement of the two,
+        and the safer one to let win.
+        """
+        if not self.__resource__.is_public_field_by_request(
+            req=self._req,
+            model_field_name=model_field_name,
+        ):
+            return False
+        return not self.__resource__.fields_permissions.is_hidden(
+            model_field_name=model_field_name,
+            req=self._req,
+        )
+
+    def _resolve_filter_field(self, param_name):
+        """The resource field a filter parameter names.
+
+        Memoized: a resolve builds a resource property object, and a
+        request names the same field once per value it filters by.
+        """
+        if param_name in self._filter_fields:
+            return self._filter_fields[param_name]
         if self.model is None:
             raise exc.ValidationFilterIncompatibleError(val=param_name)
         try:
-            resource_field = self.__resource__.get_field(
+            field = self.__resource__.get_field(
                 self.__resource__.get_model_field_name(param_name)
             )
         except ValueError:
             raise exc.ValidationFilterIncompatibleError(val=param_name)
+        if not self._is_queryable_field(field.name):
+            # Deliberately the error an unknown field gets, word for word:
+            # a distinct one would answer "this field exists but you may
+            # not see it", which is the first half of what hiding it was
+            # meant to prevent.
+            raise exc.ValidationFilterIncompatibleError(val=param_name)
+        self._filter_fields[param_name] = field
+        return field
+
+    def _prepare_filter(self, param_name, value):
+        resource_field = self._resolve_filter_field(param_name)
 
         value = self._parse_field_value(param_name, value, resource_field)
 
         return resource_field.name, value
+
+    def _uses_filter_lang(self):
+        """Whether `__filter_param__` is read as a filter expression here.
+
+        It takes filter processing: the language is field resolution and
+        value parsing, and a resource that does neither has nothing to
+        resolve against. Where it is off the parameter keeps whatever
+        meaning it had before, which is an ordinary raw filter.
+        """
+        return bool(
+            self.__filter_param__
+            and self.__resource__
+            and self.__resource__.is_process_filters()
+        )
+
+    def _storage_dialect(self):
+        """The dialect filters will compile to, or None if unknown."""
+        # Imported here to keep the API layer's import of storage down to
+        # constants, as it was.
+        from restalchemy.storage.sql import engines
+
+        try:
+            return engines.engine_factory.get_engine().dialect.name
+        except ValueError:
+            # No engine configured: nothing to gate against, and the
+            # request will fail later on its own terms.
+            return None
+
+    def _prepare_query_filter(self, params):
+        if not self._uses_filter_lang():
+            return None
+        values = params.getall(self.__filter_param__)
+        if not values:
+            return None
+        if len(values) > 1:
+            # Two expressions would have to be ANDed or ORed, and the
+            # request does not say which.
+            raise exc.ValidationFilterIncompatibleError(val=self.__filter_param__)
+        if not values[0].strip():
+            # None, not an empty expression: `do_collection` checks that
+            # an expression reached storage, and would fire on that one.
+            return None
+        return filter_lang.compile_filter(
+            values[0],
+            _ResourceFieldResolver(self, dialect=self._storage_dialect()),
+            self.__filter_max_nodes__,
+            self.__filter_max_depth__,
+            self.__filter_max_length__,
+        )
+
+    def _apply_query_filter(self, filters):
+        """AND the parsed expression onto the field-parameter filters.
+
+        Called as late as possible, once the callers that need `filters`
+        to be a plain mapping -- autofilters, the parent resource of a
+        nested collection, the pagination cursor -- have had it.
+        """
+        if self._query_filter is None:
+            return filters
+        self._query_filter_applied = True
+        if not filters:
+            return self._query_filter
+        return dm_filters.AND(filters, self._query_filter)
+
+    def _resolve_sort_key(self, key):
+        """The column a `sort_key` names, or a 400.
+
+        Sorting used to pass the parameter through untouched: an unknown
+        column reached the database and came back a 500, and a hidden one
+        ordered the collection by a value the response never shows -- with
+        `page_marker`, the cursor then compares against that value
+        directly. Resolving through the resource settles both, and hands
+        back the model's own name, so an API name that differs from it
+        (`convert_underscore`) sorts as well as it filters.
+        """
+        if self.__resource__ is None:
+            return key
+        try:
+            field = self.__resource__.get_field(
+                self.__resource__.get_model_field_name(key)
+            )
+        except ValueError:
+            raise exc.ValidationSortInvalidKeyError(key=key)
+        if not self._is_queryable_field(field.name):
+            # Same error an unknown key gets, for the same reason the
+            # filter path gives one error for both.
+            raise exc.ValidationSortInvalidKeyError(key=key)
+        return field.name
 
     def _prepare_sorts(self, params):
         keys = params.getall("sort_key")
@@ -184,6 +376,7 @@ class Controller(object):
             return self.__default_sort__
         if keys and self.__sortable_fields__ != "__all__":
             keys = [key for key in keys if key in self.__sortable_fields__]
+        keys = [self._resolve_sort_key(key) for key in keys]
 
         dirs = params.getall("sort_dir")
         for dir in dirs:
@@ -203,16 +396,13 @@ class Controller(object):
             filter_name, filter_value = (
                 self._prepare_filter(param, value) if process else (param, value)
             )
-            if filter_name not in result:
+            current = result.get(filter_name)
+            if current is None:
                 result[filter_name] = dm_filters.EQ(filter_value)
+            elif isinstance(current, dm_filters.In):
+                current.value.append(filter_value)
             else:
-                values = (
-                    [result[filter_name].value]
-                    if not isinstance(result[filter_name], dm_filters.In)
-                    else result[filter_name].value
-                )
-                values.append(filter_value)
-                result[filter_name] = dm_filters.In(values)
+                result[filter_name] = dm_filters.In([current.value, filter_value])
 
         return result
 
@@ -225,11 +415,23 @@ class Controller(object):
             order_by = self._prepare_sorts(
                 params=self._req.api_context.params,
             )
+            exclude = (self.__filter_param__,) if self._uses_filter_lang() else ()
             filters = self._prepare_filters(
-                params=self._req.api_context.params_filters,
+                params=self._req.api_context.get_params_filters(exclude=exclude),
+            )
+            self._query_filter = self._prepare_query_filter(
+                params=self._req.api_context.params,
             )
             kwargs = self._make_kwargs(parent_resource, filters=filters)
-            return self.process_result(result=self.filter(**kwargs, order_by=order_by))
+            result = self.filter(**kwargs, order_by=order_by)
+            if self._query_filter is not None and not self._query_filter_applied:
+                # A controller with its own filter() never reached
+                # _apply_query_filter, so the expression was parsed,
+                # validated and then dropped. Answering with unfiltered
+                # rows would be the one failure the caller cannot see.
+                # Before process_result: that work is thrown away here.
+                raise exc.ValidationFilterIncompatibleError(val=self.__filter_param__)
+            return self.process_result(result=result)
         elif method == "POST":
             api_context.set_active_method(constants.CREATE)
             content_type = packers.get_content_type(self._req.headers)
@@ -398,7 +600,10 @@ class BaseResourceController(Controller):
         return result
 
     def _process_storage_filters(self, filters, order_by=None):
-        return self.model.objects.get_all(filters=filters, order_by=order_by)
+        return self.model.objects.get_all(
+            filters=self._apply_query_filter(filters),
+            order_by=order_by,
+        )
 
     @staticmethod
     def _convert_raw_filters_to_dm_filters(filters):
@@ -631,9 +836,13 @@ class BasePaginationMixin(object):
 
     def _process_storage_filters(self, filters, order_by=None):
         self._validate_params(filters, order_by)
+        # The cursor is built against the field filters alone: it looks the
+        # marker row up by them, and that lookup wants a plain mapping.
+        # The expression joins the conjunction straight after, so both
+        # narrow the page the same way.
         filters, order_by = self._build_pagination_with_cursor(filters, order_by)
         return self.model.objects.get_all(
-            filters=filters,
+            filters=self._apply_query_filter(filters),
             limit=self._pagination_limit,
             order_by=order_by,
         )

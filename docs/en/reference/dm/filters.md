@@ -43,8 +43,8 @@ Simple comparison and membership clauses:
 - `NotIn(value)` — not in a collection.
 - `Like(value)` — pattern matching.
 - `NotLike(value)` — negated pattern matching.
-- `ContainsAll(value)` (PostgreSQL array columns) — array `@>`, contains all given elements.
-- `ContainsAny(value)` (PostgreSQL array columns) — array `&&`, overlaps with given elements.
+- `ContainsAll(value)` (PostgreSQL array columns) — array `@>`, contains all given elements. Over HTTP: `?q=field:"a" AND field:"b"`, see [Filtering collections over HTTP](../../how-to/api-filtering.md).
+- `ContainsAny(value)` (PostgreSQL array columns) — array `&&`, overlaps with given elements. Over HTTP: `?q=field:"a" OR field:"b"`.
 - `JSONFields(value)` (PostgreSQL jsonb columns) — filter on keys nested inside a jsonb column; see [JSON field filters](#json-field-filters) below.
 
 Example:
@@ -66,6 +66,9 @@ Expressions group clauses logically.
 - `ClauseList` — container for multiple clauses.
 - `AND(*clauses)` — logical AND over clauses or expressions.
 - `OR(*clauses)` — logical OR over clauses or expressions.
+- `NOT(*clauses)` — negates the conjunction of its clauses, `NOT (a AND b)`.
+  A node of its own rather than negation pushed into the clauses: `NOT (col = 1)`
+  and `col <> 1` are not the same filter once NULL is involved.
 
 These classes are not evaluated directly in Python; instead, storage and API code interpret them and translate them into SQL or other query languages.
 

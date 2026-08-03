@@ -172,6 +172,28 @@ class ProjectResource(models.ModelWithUUID, models.ModelWithProject):
     name = properties.property(types.String(max_length=255), required=True)
 ```
 
+### `ModelWithTags`
+
+Adds a `tags` field — a list of strings, empty by default — for labelling rows
+with values a query can search by:
+
+```python
+class TaggedResource(models.ModelWithUUID, models.ModelWithTags):
+    name = properties.property(types.String(max_length=255), required=True)
+```
+
+The column is a PostgreSQL array, and searching it needs a GIN index; the
+migration that creates the table declares both:
+
+```sql
+tags TEXT[] NOT NULL DEFAULT '{}';
+CREATE INDEX idx_tagged_tags ON tagged USING GIN (tags);
+```
+
+Search with [`ContainsAll` / `ContainsAny`](filters.md) from Python, or with
+a filter expression over HTTP (`?q=tags:"env:prod"`) — see
+[Filtering collections over HTTP](../../how-to/api-filtering.md).
+
 ### `ModelWithNameDesc` and `ModelWithRequiredNameDesc`
 
 Provide common `name` and `description` fields:

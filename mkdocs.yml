@@ -103,6 +103,7 @@ nav:
       - en/concepts/migrations.md
     - How-to:
       - en/how-to/api-basic-crud.md
+      - en/how-to/api-filtering.md
       - en/how-to/api-nested-resources-and-actions.md
       - en/how-to/api-openapi.md
       - en/how-to/actions-serialization.md

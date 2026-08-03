@@ -43,8 +43,8 @@ limitations under the License.
 - `NotIn(value)`：不在集合中。
 - `Like(value)`：模糊匹配。
 - `NotLike(value)`：模糊匹配取反。
-- `ContainsAll(value)`（PostgreSQL 数组列）：数组 `@>`，包含给定的全部元素。HTTP 写法：`?field__contains_all=...`，参见[通过 HTTP 过滤集合](../../how-to/api-filtering.md)。
-- `ContainsAny(value)`（PostgreSQL 数组列）：数组 `&&`，与给定元素有交集。HTTP 写法：`?field__contains_any=...`。
+- `ContainsAll(value)`（PostgreSQL 数组列）：数组 `@>`，包含给定的全部元素。HTTP 写法：`?q=field:"a" AND field:"b"`，参见[通过 HTTP 过滤集合](../../how-to/api-filtering.md)。
+- `ContainsAny(value)`（PostgreSQL 数组列）：数组 `&&`，与给定元素有交集。HTTP 写法：`?q=field:"a" OR field:"b"`。
 - `JSONFields(value)`（PostgreSQL jsonb 列）：对 jsonb 列内部的键进行过滤，参见下文的 [JSON 字段过滤](#json-field-filters)。
 
 示例：
@@ -66,6 +66,9 @@ assert str(f1) == "10"
 - `ClauseList`：子句列表。
 - `AND(*clauses)`：逻辑与。
 - `OR(*clauses)`：逻辑或。
+- `NOT(*clauses)`：对其各子句的合取取反，即 `NOT (a AND b)`。它是独立的节点，
+  而不是把取反下推到子句里：一旦涉及 NULL，`NOT (col = 1)` 与 `col <> 1` 就不是
+  同一个过滤条件。
 
 这些表达式并不会在 Python 中直接求值，而是由后端（Storage）进行解释并转换为相应查询语句。
 

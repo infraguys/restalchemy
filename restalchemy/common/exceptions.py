@@ -216,6 +216,18 @@ class ValidationFilterIncompatibleError(ValidationErrorException):
     message = "Filter %(val)s is not supported"
 
 
+class ValidationFilterSyntaxError(ValidationErrorException):
+    message = "Filter syntax error at position %(pos)s: %(reason)s"
+
+
+class ValidationFilterTooComplexError(ValidationErrorException):
+    message = "Filter is too complex: %(reason)s"
+
+
+class ValidationSortInvalidKeyError(ValidationErrorException):
+    message = "Sort key %(key)s is not supported"
+
+
 class ValidationSortInvalidDirValueError(ValidationErrorException):
     message = "Direction %(dir)s is not valid for sorting."
 

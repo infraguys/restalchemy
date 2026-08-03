@@ -43,8 +43,8 @@ limitations under the License.
 - `NotIn(value)` — не принадлежит множеству.
 - `Like(value)` — шаблонное сравнение.
 - `NotLike(value)` — отрицание `Like`.
-- `ContainsAll(value)` (массивы PostgreSQL) — оператор `@>`, содержит все перечисленные элементы. По HTTP: `?field__contains_all=...`, см. [Фильтрация коллекций по HTTP](../../how-to/api-filtering.md).
-- `ContainsAny(value)` (массивы PostgreSQL) — оператор `&&`, пересекается с перечисленными элементами. По HTTP: `?field__contains_any=...`.
+- `ContainsAll(value)` (массивы PostgreSQL) — оператор `@>`, содержит все перечисленные элементы. По HTTP: `?q=field:"a" AND field:"b"`, см. [Фильтрация коллекций по HTTP](../../how-to/api-filtering.md).
+- `ContainsAny(value)` (массивы PostgreSQL) — оператор `&&`, пересекается с перечисленными элементами. По HTTP: `?q=field:"a" OR field:"b"`.
 - `JSONFields(value)` (jsonb-колонки PostgreSQL) — фильтрация по ключам внутри jsonb-колонки; см. раздел [Фильтры по JSON-полям](#json-field-filters) ниже.
 
 Пример:
@@ -66,6 +66,9 @@ assert str(f1) == "10"
 - `ClauseList` — контейнер для нескольких условий.
 - `AND(*clauses)` — логическое И над условиями/выражениями.
 - `OR(*clauses)` — логическое ИЛИ.
+- `NOT(*clauses)` — отрицание конъюнкции своих условий, `NOT (a AND b)`.
+  Отдельный узел, а не отрицание, протолкнутое внутрь условий: `NOT (col = 1)`
+  и `col <> 1` — разные фильтры, как только в игру вступает NULL.
 
 Эти классы не вычисляются напрямую в Python; они интерпретируются слоем хранения или API и транслируются, например, в SQL.
 

@@ -189,7 +189,7 @@ CREATE INDEX idx_tagged_tags ON tagged USING GIN (tags);
 ```
 
 在 Python 中用 [`ContainsAll` / `ContainsAny`](filters.md)
-检索，或通过 HTTP 使用对应的查询参数，参见
+检索，或通过 HTTP 使用过滤表达式（`?q=tags:"env:prod"`），参见
 [通过 HTTP 过滤集合](../../how-to/api-filtering.md)。
 
 ### `ModelWithNameDesc` 与 `ModelWithRequiredNameDesc`
