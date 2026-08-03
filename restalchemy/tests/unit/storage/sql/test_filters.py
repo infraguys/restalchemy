@@ -657,6 +657,27 @@ class JSONFieldsConvertFiltersTestCase(base.BaseTestCase):
         )
         self.assertEqual(["x"], processed.value)
 
+    def test_key_with_a_backslash_is_refused_not_escaped(self):
+        # Under `standard_conforming_strings = off` this one would close
+        # the literal and carry on.
+        self.assertRaises(
+            ValueError,
+            filters.convert_filters,
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({r"a\') OR 1=1 --": "x"})},
+            session=_PostgreSqlSessionFixture(),
+        )
+
+    def test_key_with_a_percent_is_refused(self):
+        # It would add a placeholder nobody passed a value for.
+        self.assertRaises(
+            ValueError,
+            filters.convert_filters,
+            JSONFieldModel,
+            {"spec": dm_filters.JSONFields({"a%sb": "x"})},
+            session=_PostgreSqlSessionFixture(),
+        )
+
 
 class ConvertFiltersTestCase(base.BaseTestCase):
     def test_convert_filters_new(self):

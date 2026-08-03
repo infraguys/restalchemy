@@ -215,6 +215,30 @@ class OR(ClauseList):
     operator = "OR"
 
 
+class NOT(ClauseList):
+    """`NOT (...)` around the conjunction of its clauses.
+
+    The parentheses are added here rather than borrowed from
+    ``ClauseList``, which drops them for a single clause: `NOT a AND b`
+    and `NOT (a AND b)` are different filters, and only the second one is
+    what this node means.
+    """
+
+    operator = "AND"
+
+    def construct_expression(self):
+        expressions = [
+            expression
+            for expression in (
+                clause.construct_expression() for clause in self._clauses
+            )
+            if expression
+        ]
+        if not expressions:
+            return ""
+        return "NOT (%s)" % (" %s " % self.operator).join(expressions)
+
+
 # Casts applied when comparing a value pulled out of jsonb via ->> (which
 # always yields text or SQL NULL). Keys not listed here (str, None) are
 # compared as-is against the extracted text. This mapping is part of the
@@ -240,7 +264,23 @@ class _JSONFieldClause(AbstractExpression):
     executions) it no longer has a concrete parameter value to compare --
     a bound `%s` for the key would silently stop using the index from
     then on. Only the comparison value is a bound parameter.
+
+    Inlining puts the key beyond what the driver can protect, so two
+    characters are refused rather than escaped -- the caller keeps them
+    out of its keys:
+
+    * a backslash: doubling the quotes is the whole escape only while
+      `standard_conforming_strings` is on. With it off `\\'` is a quote
+      too, and `a\\') OR 1=1 --` closes the literal and carries on;
+    * a percent: the driver scans the finished SQL for its own
+      placeholders, so `%s` adds one nothing passes a value for.
+
+    `api.filter_lang` narrows a key from a request further still; this is
+    the floor under every caller.
     """
+
+    #: Characters a key cannot carry -- see the class docstring.
+    _REFUSED_IN_KEY = ("\\", "%")
 
     _OPERATORS = {
         filters.EQ: "=",
@@ -260,6 +300,12 @@ class _JSONFieldClause(AbstractExpression):
             raise ValueError(
                 "JSONFields does not support clause %s for key %r" % (clause_type, key)
             )
+        for char in self._REFUSED_IN_KEY:
+            if char in key:
+                raise ValueError(
+                    "JSONFields key %r may not contain %r: the key is "
+                    "inlined into the SQL text" % (key, char)
+                )
         self._column_sql = column_sql
         self._key = key
         self._clause_type = clause_type
@@ -416,6 +462,7 @@ FILTER_MAPPING = {
 FILTER_EXPR_MAPPING = {
     filters.AND: AND,
     filters.OR: OR,
+    filters.NOT: NOT,
 }
 
 

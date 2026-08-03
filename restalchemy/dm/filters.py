@@ -150,3 +150,19 @@ class AND(ClauseList):
 
 class OR(ClauseList):
     pass
+
+
+class NOT(ClauseList):
+    """Negates the conjunction of its clauses: ``NOT (a AND b)``.
+
+    A dedicated node rather than negation pushed down into the clauses
+    themselves (``EQ`` -> ``NE`` and so on), because negating a clause at
+    a time is not negating the expression: De Morgan flips the connective
+    as well, so ``NOT (a = 1 AND b = 2)`` is ``a <> 1 OR b <> 2``, and a
+    push-down that left the ``AND`` alone would answer a strictly
+    narrower question. Keeping the negation where the caller wrote it
+    means the SQL says what was asked for, and leaves the tree free of a
+    rewrite that has to be right about every clause type it meets.
+    """
+
+    pass

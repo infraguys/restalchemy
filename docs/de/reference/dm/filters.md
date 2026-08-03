@@ -43,8 +43,8 @@ Einfache Vergleichs- und Membership-Klauseln:
 - `NotIn(value)` — nicht in einer Menge.
 - `Like(value)` — Pattern-Matching.
 - `NotLike(value)` — negiertes Pattern-Matching.
-- `ContainsAll(value)` (PostgreSQL-Array-Spalten) — Array-Operator `@>`, enthält alle angegebenen Elemente. Über HTTP: `?field__contains_all=...`, siehe [Sammlungen über HTTP filtern](../../how-to/api-filtering.md).
-- `ContainsAny(value)` (PostgreSQL-Array-Spalten) — Array-Operator `&&`, überschneidet sich mit den angegebenen Elementen. Über HTTP: `?field__contains_any=...`.
+- `ContainsAll(value)` (PostgreSQL-Array-Spalten) — Array-Operator `@>`, enthält alle angegebenen Elemente. Über HTTP: `?q=field:"a" AND field:"b"`, siehe [Sammlungen über HTTP filtern](../../how-to/api-filtering.md).
+- `ContainsAny(value)` (PostgreSQL-Array-Spalten) — Array-Operator `&&`, überschneidet sich mit den angegebenen Elementen. Über HTTP: `?q=field:"a" OR field:"b"`.
 - `JSONFields(value)` (PostgreSQL-jsonb-Spalten) — filtert auf Keys innerhalb einer jsonb-Spalte; siehe [Filter auf JSON-Felder](#json-field-filters) weiter unten.
 
 Beispiel:
@@ -64,6 +64,10 @@ assert str(f1) == "10"
 - `ClauseList` — Liste von Klauseln.
 - `AND(*clauses)` — logisches UND.
 - `OR(*clauses)` — logisches ODER.
+- `NOT(*clauses)` — negiert die Konjunktion seiner Klauseln, `NOT (a AND b)`.
+  Ein eigener Knoten statt einer in die Klauseln geschobenen Negation:
+  `NOT (col = 1)` und `col <> 1` sind nicht derselbe Filter, sobald NULL im
+  Spiel ist.
 
 Die Ausdrücke werden nicht direkt ausgewertet, sondern z.B. in SQL übersetzt.
 

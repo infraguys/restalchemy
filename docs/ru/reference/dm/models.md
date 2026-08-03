@@ -188,7 +188,7 @@ CREATE INDEX idx_tagged_tags ON tagged USING GIN (tags);
 ```
 
 Искать можно из Python — [`ContainsAll` / `ContainsAny`](filters.md) —
-или их параметрами по HTTP, см.
+или выражением-фильтром по HTTP (`?q=tags:"env:prod"`), см.
 [Фильтрация коллекций по HTTP](../../how-to/api-filtering.md).
 
 ### `ModelWithNameDesc` и `ModelWithRequiredNameDesc`

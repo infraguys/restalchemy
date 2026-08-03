@@ -28,6 +28,7 @@ from restalchemy.common import exceptions as exc
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import parse
 from restalchemy.openapi import structures
+from restalchemy.openapi import utils as oa_utils
 
 # RA HTTP methods
 GET = constants.GET
@@ -304,17 +305,31 @@ class Route(BaseRoute):
                     param["name"] = path_param
                     params.append(param)
             if res and self.is_collection_route() and (method_name == constants.FILTER):
-                for name, prop in res.get_fields_by_request(self._req):
-                    param = (
-                        parameters.get("components", {})
-                        .get("parameters", {})
-                        .get(prop.api_name, {})
+                all_params = parameters.get("components", {}).get("parameters", {})
+                filter_param = getattr(controller, "__filter_param__", None)
+                if not res.is_process_filters():
+                    filter_param = None
+                fields = list(res.get_fields_by_request(self._req))
+                if filter_param:
+                    params.append(
+                        oa_utils.filter_lang_parameter(
+                            filter_param,
+                            [prop.api_name for _, prop in fields],
+                        )
                     )
+                for name, prop in fields:
+                    if prop.api_name == filter_param:
+                        # The expression took the name; a parameter for the
+                        # field behind it would collide.
+                        continue
+                    param = all_params.get(prop.api_name, {})
                     # array or object not supported in query
                     if param.get("schema", {}).get("type", "") in [
                         "array",
                         "object",
                     ]:
+                        # An array or object field has no query parameter of
+                        # its own; the filter expression reaches it instead.
                         continue
                     # sum type parameter not implemented in Go client
                     # NOTE(v.burygin): maybe in openapi spec somewhere

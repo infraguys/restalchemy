@@ -45,14 +45,24 @@ class RequestContext(object):
     def params(self):
         return multidict.MultiDict(self._req.params.items())
 
-    @property
-    def params_filters(self):
+    def get_params_filters(self, exclude=()):
+        """Query parameters that name a field, minus the reserved ones.
+
+        `exclude` adds to the reserved set for one call -- the controller
+        passes the name it reads the filter language from, which is a
+        controller setting and so cannot be listed here.
+        """
+        special = self._special_params.union(exclude)
         result_multi_dict_items = [
             (name, value)
             for name, value in self._req.params.items()
-            if name not in self._special_params
+            if name not in special
         ]
         return multidict.MultiDict(result_multi_dict_items)
+
+    @property
+    def params_filters(self):
+        return self.get_params_filters()
 
     def can_be_shown_field(self, resource_field_name):
         if self._fields_to_show:

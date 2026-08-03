@@ -489,6 +489,10 @@ class AbstractResource(metaclass=abc.ABCMeta):
             or model_field_name in self._hidden_model_fields
         )
 
+    @property
+    def fields_permissions(self):
+        return self._fields_permissions
+
     def is_public_field_by_request(self, req, model_field_name):
         return not (
             model_field_name.startswith("_")
@@ -534,9 +538,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
     def get_prop_kwargs(self, name, openapi_version):
         try:
-            kwargs = dict(
-                self.get_model().properties.properties[name].get_kwargs()
-            )
+            kwargs = dict(self.get_model().properties.properties[name].get_kwargs())
         except KeyError:
             kwargs = {}
         kwargs["openapi"] = openapi_version

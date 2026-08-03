@@ -19,6 +19,40 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
+# The filter language collapses to one string parameter, which is the cost
+# of having it: a generated client gets `q *string` and can neither type
+# nor check what goes in. The grammar rides in the description, and the
+# fields it may name are listed in an extension so a generator that wants
+# to do better has something to read.
+FILTER_LANG_DESCRIPTION = """\
+Filter expression (a subset of AIP-160). Combines with the field
+parameters, which stay the typed way to ask for equality.
+
+    name = "vm1" AND size > 10
+    tags:"env:prod" OR tags:"env:staging"
+    NOT (state = error) AND created_at >= "2026-07-01T00:00:00Z"
+
+Operators: `=` `!=` `<` `<=` `>` `>=`, `:` (an array holds the element,
+or with `*` that the field is set), `AND` `OR` `NOT`, parentheses.
+The keywords are uppercase, and `OR` binds tighter than `AND`. Values
+carrying `:`, `.` or spaces must be quoted."""
+
+
+def filter_lang_parameter(name, field_names=()):
+    """The query parameter that carries a filter expression."""
+    parameter = {
+        "name": name,
+        "in": "query",
+        "required": False,
+        "description": FILTER_LANG_DESCRIPTION,
+        "schema": {"type": "string"},
+        "example": 'name = "vm1"',
+    }
+    if field_names:
+        parameter["x-ra-filter-fields"] = sorted(field_names)
+    return parameter
+
+
 class ResourceSchemaGenerator(object):
     def __init__(self, resource, route, openapi_version):
         super(ResourceSchemaGenerator, self).__init__()
