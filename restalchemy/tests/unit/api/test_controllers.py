@@ -455,6 +455,30 @@ class UnfilterableFieldController(controllers.BaseResourceController):
     )
 
 
+class RawHiddenFieldController(controllers.BaseResourceController):
+    """Hides a field on a resource that does not process filters."""
+
+    __resource__ = resources.ResourceByRAModel(
+        SecretModel,
+        hidden_fields=["password_hash"],
+    )
+
+
+class RawUnfilterableFieldController(controllers.BaseResourceController):
+    """Hides a field for FILTER only, again without processing filters."""
+
+    __resource__ = resources.ResourceByRAModel(
+        SecretModel,
+        fields_permissions=field_permissions.FieldsPermissions(
+            fields={
+                "token": {
+                    controllers.constants.FILTER: field_permissions.Permissions.HIDDEN
+                }
+            },
+        ),
+    )
+
+
 class UnderscoreController(controllers.BaseResourceController):
     __resource__ = resources.ResourceByRAModel(
         SecretModel,
@@ -810,6 +834,64 @@ class HiddenFieldParameterTestCase(unittest.TestCase):
         self.assertEqual(
             {"name": dm_filters.EQ("victim")},
             self._filters(HiddenFieldController, "name=victim"),
+        )
+
+
+class HiddenFieldParameterWithoutProcessingTestCase(unittest.TestCase):
+    """The same question on a resource that does not process filters.
+
+    `process_filters` turns on parsing a value into the field's type.
+    Whether the field may be named at all is a different question, and the
+    answer to it used to depend on the flag: without it the parameter went
+    to `filter()` exactly as it arrived, hidden field or not.
+    """
+
+    def _filters(self, controller_class, query):
+        controller = controller_class(_request(query))
+        return controller._prepare_filters(
+            controller._req.api_context.get_params_filters(),
+        )
+
+    def test_a_hidden_field_parameter_is_refused(self):
+        self.assertRaises(
+            ra_exc.ValidationFilterIncompatibleError,
+            self._filters,
+            RawHiddenFieldController,
+            "password_hash=x",
+        )
+
+    def test_a_field_hidden_for_filtering_only_is_refused(self):
+        self.assertRaises(
+            ra_exc.ValidationFilterIncompatibleError,
+            self._filters,
+            RawUnfilterableFieldController,
+            "token=x",
+        )
+
+    def test_a_hidden_field_is_refused_under_its_api_name(self):
+        # The resource converts underscores, so this is the name the field
+        # is addressed by from outside.
+        self.assertRaises(
+            ra_exc.ValidationFilterIncompatibleError,
+            self._filters,
+            RawHiddenFieldController,
+            "password-hash=x",
+        )
+
+    def test_a_visible_field_parameter_arrives_unparsed(self):
+        # Which is what not processing filters means, and is unchanged.
+        self.assertEqual(
+            {"name": dm_filters.EQ("victim")},
+            self._filters(RawHiddenFieldController, "name=victim"),
+        )
+
+    def test_a_parameter_naming_no_field_is_left_alone(self):
+        # A controller that does not process filters may take query
+        # parameters of its own and read them in its own filter(); those
+        # are not the resource's to judge.
+        self.assertEqual(
+            {"since": dm_filters.EQ("yesterday")},
+            self._filters(RawHiddenFieldController, "since=yesterday"),
         )
 
 
