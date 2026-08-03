@@ -29,17 +29,45 @@ the first one to build fills it for all of them, and the children inherit it
 through the fork.
 """
 
+import collections
 import logging
+import threading
 import typing
 
 LOG = logging.getLogger(__name__)
+
+# How many serialized documents to keep. The version half of a specification
+# key is checked against the supported ones before anything is stored, so
+# _SPECIFICATIONS cannot grow past what the service implements; the host half
+# of an encoded key is not checked against anything, because there is nothing
+# to check it against -- it is the Host header of the request being answered.
+#
+# So this has to be a bound rather than a check: without one, a caller varying
+# the header holds a copy of the whole document per value it sends, in a
+# process-wide dict that nothing ever trims. At the few hundred kilobytes a
+# real service's document takes, a few thousand values are enough to exhaust
+# the process.
+#
+# A service answers on a handful of names -- an internal one, an external one,
+# maybe an address -- so a small bound costs the cache nothing in practice.
+# When it is exceeded the least recently served host loses its copy and its
+# next request encodes the document again, which is what every request did
+# before this cache existed.
+ENCODED_MAX_ENTRIES = 8
 
 _SPECIFICATIONS: typing.Dict[typing.Tuple[str, str], typing.Any] = {}
 
 # The same documents, already serialized, keyed additionally by the host they
 # were rendered for: that is the one thing in them that varies per caller.
 # Serving these avoids encoding a few hundred kilobytes on every request.
-_ENCODED: typing.Dict[typing.Tuple[str, str, str], bytes] = {}
+# Ordered so the least recently served entry is the one at the front.
+_ENCODED: "typing.OrderedDict[typing.Tuple[str, str, str], bytes]" = (
+    collections.OrderedDict()
+)
+
+# Guards _ENCODED. Reordering it and trimming it are several operations each,
+# and workers serve requests in threads.
+_ENCODED_LOCK = threading.Lock()
 
 
 def _application_key(application: typing.Any) -> str:
@@ -56,27 +84,39 @@ def store(application: typing.Any, version: str, specification: typing.Any) -> N
     key = _application_key(application)
     _SPECIFICATIONS[(key, version)] = specification
     # Whatever was encoded describes the previous document.
-    for encoded_key in [
-        encoded_key
-        for encoded_key in _ENCODED
-        if encoded_key[0] == key and encoded_key[1] == version
-    ]:
-        del _ENCODED[encoded_key]
+    with _ENCODED_LOCK:
+        for encoded_key in [
+            encoded_key
+            for encoded_key in _ENCODED
+            if encoded_key[0] == key and encoded_key[1] == version
+        ]:
+            del _ENCODED[encoded_key]
 
 
 def load_encoded(application: typing.Any, version: str, host: str) -> typing.Any:
-    return _ENCODED.get((_application_key(application), version, host))
+    encoded_key = (_application_key(application), version, host)
+    with _ENCODED_LOCK:
+        body = _ENCODED.get(encoded_key)
+        if body is not None:
+            _ENCODED.move_to_end(encoded_key)
+        return body
 
 
 def store_encoded(
     application: typing.Any, version: str, host: str, body: bytes
 ) -> None:
-    _ENCODED[(_application_key(application), version, host)] = body
+    encoded_key = (_application_key(application), version, host)
+    with _ENCODED_LOCK:
+        _ENCODED[encoded_key] = body
+        _ENCODED.move_to_end(encoded_key)
+        while len(_ENCODED) > ENCODED_MAX_ENTRIES:
+            _ENCODED.popitem(last=False)
 
 
 def clear() -> None:
     _SPECIFICATIONS.clear()
-    _ENCODED.clear()
+    with _ENCODED_LOCK:
+        _ENCODED.clear()
 
 
 def warm_up(application: typing.Any, request: typing.Any) -> None:
