@@ -1021,3 +1021,97 @@ class FilterLangOpenApiTestCase(unittest.TestCase):
         parameters = self._parameters(NameFilterController)
 
         self.assertIn("x-ra-filter-fields", parameters["name"])
+
+
+class CustomFilterProcessingTestCase(unittest.TestCase):
+    """The filters storage cannot run, applied over the rows it returned."""
+
+    def setUp(self):
+        self._controller = CustomPropertyController(_request(""))
+
+    def _rows(self, count):
+        return [CustomPropertyModel(name="vm%d" % i) for i in range(count)]
+
+    def test_no_filters_passes_the_rows_through(self):
+        rows = self._rows(3)
+
+        self.assertEqual(rows, self._controller._process_custom_filters(rows, {}))
+
+    def test_a_matching_equality_keeps_every_row(self):
+        rows = self._rows(3)
+
+        self.assertEqual(
+            rows,
+            self._controller._process_custom_filters(
+                rows, {"computed": dm_filters.EQ("computed")}
+            ),
+        )
+
+    def test_a_missing_equality_drops_every_row(self):
+        self.assertEqual(
+            [],
+            self._controller._process_custom_filters(
+                self._rows(3), {"computed": dm_filters.EQ("other")}
+            ),
+        )
+
+    def test_membership_is_honoured(self):
+        rows = self._rows(2)
+
+        self.assertEqual(
+            rows,
+            self._controller._process_custom_filters(
+                rows, {"computed": dm_filters.In(["computed", "other"])}
+            ),
+        )
+        self.assertEqual(
+            [],
+            self._controller._process_custom_filters(
+                rows, {"computed": dm_filters.In(["other"])}
+            ),
+        )
+
+    def test_filters_are_conjoined(self):
+        # A row must satisfy all of them, not the last one to look at it.
+        rows = self._rows(2)
+
+        self.assertEqual(
+            [],
+            self._controller._process_custom_filters(
+                rows,
+                {
+                    "computed": dm_filters.EQ("computed"),
+                    "name": dm_filters.EQ("nothing"),
+                },
+            ),
+        )
+
+    def test_the_list_passed_in_is_narrowed_in_place(self):
+        # The old implementation removed from it, and a caller may be
+        # reading that list rather than the returned one.
+        rows = self._rows(3)
+
+        returned = self._controller._process_custom_filters(
+            rows, {"computed": dm_filters.EQ("other")}
+        )
+
+        self.assertEqual([], rows)
+        self.assertIs(rows, returned)
+
+    def test_an_unsupported_clause_is_refused(self):
+        self.assertRaises(
+            ra_exc.ValidationFilterIncompatibleError,
+            self._controller._process_custom_filters,
+            self._rows(2),
+            {"computed": dm_filters.NE("computed")},
+        )
+
+    def test_an_unsupported_clause_is_refused_on_an_empty_result(self):
+        # Refused on sight: whether the clause is supported cannot depend
+        # on how many rows happened to come back.
+        self.assertRaises(
+            ra_exc.ValidationFilterIncompatibleError,
+            self._controller._process_custom_filters,
+            [],
+            {"computed": dm_filters.NE("computed")},
+        )
