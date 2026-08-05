@@ -608,25 +608,47 @@ class BaseResourceController(Controller):
 
         return {}, filters
 
+    # The clauses a custom property can be filtered by, and how each one
+    # decides a single row. Storage never sees these filters, so the
+    # comparison is the one Python makes.
+    _CUSTOM_FILTER_MATCHERS = (
+        (dm_filters.In, lambda value, expected: value in expected),
+        (dm_filters.EQ, lambda value, expected: value == expected),
+    )
+
     def _process_custom_filters(self, result, filters):
+        """Apply the filters storage could not, over the rows it returned.
+
+        Selects into a new list rather than removing from the one passed
+        in: a removal is a linear scan comparing models by id, so a filter
+        that kept its rows -- the ordinary case -- cost O(n^2) in the size
+        of the result.
+        """
         if not filters:
             return result
-        for item in result[:]:
-            for field_name, filter_value in filters.items():
-                if not result:
+
+        matchers = []
+        for field_name, filter_value in filters.items():
+            for filter_class, match in self._CUSTOM_FILTER_MATCHERS:
+                if isinstance(filter_value, filter_class):
+                    matchers.append((field_name, filter_value.value, match))
                     break
-                elif item not in result:
-                    continue
-                elif isinstance(filter_value, dm_filters.In):
-                    if getattr(item, field_name) not in filter_value.value:
-                        result.remove(item)
-                        continue
-                elif isinstance(filter_value, dm_filters.EQ):
-                    if getattr(item, field_name) != filter_value.value:
-                        result.remove(item)
-                        continue
-                else:
-                    raise exc.ValidationFilterIncompatibleError(val=field_name)
+            else:
+                # Unsupported clause: refused on sight, not once a row
+                # reaches it, so an empty result cannot let it through.
+                raise exc.ValidationFilterIncompatibleError(val=field_name)
+
+        # Narrowed in place, as before: a caller that read the list it
+        # passed in rather than the one returned still sees the rows that
+        # survived, and not the ones that did not.
+        result[:] = [
+            item
+            for item in result
+            if all(
+                match(getattr(item, field_name), expected)
+                for field_name, expected, match in matchers
+            )
+        ]
         return result
 
     def _process_storage_filters(self, filters, order_by=None):
