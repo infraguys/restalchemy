@@ -272,3 +272,56 @@ class MultipartPackerTestCase(base.BaseTestCase):
             next(iter(result[packers.MultipartPacker._parts_key]["data"].file))
             == b"test_body\n"
         )
+
+
+class OtherModel(models.ModelWithUUID):
+    other_field = properties.property(types.Integer(), required=False)
+
+
+class PackerResourceSwapTestCase(base.BaseTestCase):
+    """A packer's resource is not as fixed as its request.
+
+    `routes.Action.do` builds a packer and then clears `_rt` on it, so
+    fields resolved for one resource must not answer for another.
+    """
+
+    def setUp(self):
+        super(PackerResourceSwapTestCase, self).setUp()
+        req = mock.Mock()
+        req.context.roles = ["owner"]
+        self._req = req
+        self._packer = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(FakeModel),
+            req,
+        )
+
+    def tearDown(self):
+        super(PackerResourceSwapTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        del self._packer
+
+    def test_fields_follow_the_resource(self):
+        first = sorted(name for name, _ in self._packer._get_fields())
+
+        self._packer._rt = resources.ResourceByRAModel(OtherModel)
+        second = sorted(name for name, _ in self._packer._get_fields())
+
+        self.assertIn("field1", first)
+        self.assertNotIn("field1", second)
+        self.assertIn("other_field", second)
+
+    def test_the_packed_fields_follow_the_resource_too(self):
+        model = OtherModel(other_field=7)
+
+        self._packer._rt = resources.ResourceByRAModel(OtherModel)
+
+        self.assertEqual(
+            {"other-field": 7, "uuid": str(model.uuid)},
+            self._packer.pack_resource(model),
+        )
+
+    def test_clearing_the_resource_is_what_unpack_checks(self):
+        # Action.do sets _rt to None so any field reaches the action.
+        self._packer._rt = None
+
+        self.assertEqual({"anything": 1}, self._packer.unpack({"anything": 1}))

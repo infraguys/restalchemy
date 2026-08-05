@@ -44,6 +44,39 @@ class BaseResourcePacker(object):
     def __init__(self, resource_type, request):
         self._rt = resource_type
         self._req = request
+        self._fields = None
+        self._visible_fields = None
+        self._fields_resource = None
+
+    def _get_fields(self):
+        """The resource fields, resolved once per packer.
+
+        `get_fields_by_request` rebuilds a property object per field on
+        every call, and the answer depends only on the request, which a
+        packer is built for and does not outlive. Packing a collection
+        called it once per object.
+
+        The resource is not as fixed as the request: `routes.Action.do`
+        swaps `_rt` out after building the packer, so a cache is only
+        good for the resource it was built from.
+        """
+        if self._fields is None or self._fields_resource is not self._rt:
+            self._fields_resource = self._rt
+            self._fields = list(self._rt.get_fields_by_request(self._req))
+            self._visible_fields = None
+        return self._fields
+
+    def _get_visible_fields(self):
+        """The fields packing writes out, with their API names."""
+        fields = self._get_fields()
+        if self._visible_fields is None:
+            self._visible_fields = [
+                (name, prop.api_name, prop)
+                for name, prop in fields
+                if prop.is_public()
+                and not self._rt._fields_permissions.is_hidden(name, self._req)
+            ]
+        return self._visible_fields
 
     def pack_resource(self, obj):
         if isinstance(
@@ -53,17 +86,13 @@ class BaseResourcePacker(object):
             return obj
         else:
             result = {}
-            for name, prop in self._rt.get_fields_by_request(self._req):
-                api_name = prop.api_name
-                if prop.is_public() and not self._rt._fields_permissions.is_hidden(
-                    name, self._req
-                ):
-                    value = getattr(obj, name)
-                    if value is None:
-                        if not self._skip_none:
-                            result[api_name] = value
-                    else:
-                        result[api_name] = prop.dump_value(value)
+            for name, api_name, prop in self._get_visible_fields():
+                value = getattr(obj, name)
+                if value is None:
+                    if not self._skip_none:
+                        result[api_name] = value
+                else:
+                    result[api_name] = prop.dump_value(value)
 
             return result
 
@@ -82,7 +111,7 @@ class BaseResourcePacker(object):
             return value
         value = copy.deepcopy(value)
         result = {}
-        for name, prop in self._rt.get_fields_by_request(self._req):
+        for name, prop in self._get_fields():
             api_name = prop.api_name
             prop_value = value.pop(api_name, DEFAULT_VALUE)
             if prop_value is not DEFAULT_VALUE:
