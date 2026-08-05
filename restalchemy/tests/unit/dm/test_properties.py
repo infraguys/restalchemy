@@ -334,6 +334,8 @@ class PropertyManagerTestCase(base.BaseTestCase):
                     ("fake2", "fake2"),
                 ],
                 "instantiate_property.return_value": FAKE_VALUE,
+                # Neither name holds a nested collection.
+                "nested_names": frozenset(),
             }
         )
 

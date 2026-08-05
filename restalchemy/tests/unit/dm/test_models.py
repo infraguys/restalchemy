@@ -61,6 +61,9 @@ class ModelTestCase(base.BaseTestCase):
         super(ModelTestCase, self).setUp()
         self.PM_MOCK.__getitem__.side_effect = None
         self.PM_MOCK.reset_mock()
+        # The one name the double stands in for a property of. Everything
+        # else a model sets on itself is a plain attribute.
+        self.PM_MOCK.__contains__.side_effect = lambda name: name == "fake_prop1"
         self.pm_mock = pm_mock
         self.kwargs = {"kwarg1": 1, "kwarg2": 2}
         self.test_instance = models.Model(**self.kwargs)

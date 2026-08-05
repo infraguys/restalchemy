@@ -102,10 +102,12 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
             )
 
     def __setattr__(self, name, value):
-        try:
-            self.properties[name].value = value
-        except KeyError:
+        props = self.properties
+        if name not in props:
             super(Model, self).__setattr__(name, value)
+            return
+        try:
+            props[name].value = value
         except exc.TypeError as e:
             raise exc.ModelTypeError(
                 property_name=name,
@@ -123,10 +125,11 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         except exc.PropertyRequired as e:
             raise exc.PropertyRequired(name=e.name, model=self.__class__)
 
-        self.id_properties = {}
-        for name, prop in self.properties.items():
-            if prop.is_id_property():
-                self.id_properties[name] = prop
+        # Which names are id properties is decided by the declaration, and
+        # `MetaModel` already worked it out for the class; asking every
+        # property again per model built was the same answer each time.
+        props = self.properties
+        self.id_properties = {name: props[name] for name in type(self).id_properties}
 
     @classmethod
     def restore(cls, **kwargs):
