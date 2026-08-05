@@ -41,6 +41,18 @@ class ReadOnlyDictProxy(collections_abc.Mapping):
     def __getitem__(self, key):
         return self._d[key]
 
+    # The Mapping versions of these build a view that walks the keys and
+    # looks each one up again. A proxy adds nothing to that walk, so hand
+    # out the underlying dict's views instead.
+    def keys(self):
+        return self._d.keys()
+
+    def values(self):
+        return self._d.values()
+
+    def items(self):
+        return self._d.items()
+
     def __hash__(self):
         if self._hash is None:
             self._hash = 0

@@ -204,11 +204,10 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
     @classmethod
     def restore_from_storage(cls, **kwargs):
         model_format = {}
+        model_properties = cls.properties.properties
         for name, value in kwargs.items():
             model_format[name] = (
-                cls.properties.properties[name]
-                .get_property_type()
-                .from_simple_type(value)
+                model_properties[name].get_property_type().from_simple_type(value)
             )
         obj = cls.restore(**model_format)
         obj._saved = True

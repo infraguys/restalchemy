@@ -49,6 +49,23 @@ class BaseProperty(AbstractProperty):
     pass
 
 
+# `isinstance` against an abstract base walks the subclass machinery, and a
+# property type is checked once per property per model built. The answer
+# depends only on the type's class, so the classes that passed are
+# remembered. Only passes are: a class can be registered with the base
+# later, but never unregistered.
+_verified_property_types = set()
+
+
+def _check_property_type(property_type):
+    property_type_class = type(property_type)
+    if property_type_class in _verified_property_types:
+        return
+    if not isinstance(property_type, types.BaseType):
+        raise TypeError("Property type must be instance of %s" % types.BaseType)
+    _verified_property_types.add(property_type_class)
+
+
 class Property(BaseProperty):
     def __init__(
         self,
@@ -60,8 +77,7 @@ class Property(BaseProperty):
         mutable=False,
         example=None,
     ):
-        if not isinstance(property_type, types.BaseType):
-            raise TypeError("Property type must be instance of %s" % types.BaseType)
+        _check_property_type(property_type)
         self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
@@ -157,25 +173,65 @@ class PropertyCreator(object):
 
 
 class PropertyMapping(collections_abc.Mapping, metaclass=abc.ABCMeta):
+    """A mapping over `self._properties`, exposed read-only.
+
+    A subclass sets `_properties` before this class is of any use; there
+    is deliberately no default, so forgetting it fails loudly rather than
+    behaving as an empty mapping.
+
+    The `properties` proxy is built once per instance and handed out on
+    every request: it is a view over `_properties`, so a fresh one says
+    nothing new, and building one per lookup put an allocation on the path
+    of every model attribute read. Subclasses that replace `_properties`
+    wholesale must call `_reset_properties_proxy`.
+    """
+
     @property
-    @abc.abstractmethod
     def properties(self):
-        pass
+        try:
+            return self.__proxy
+        except AttributeError:
+            self.__proxy = utils.ReadOnlyDictProxy(self._properties)
+            return self.__proxy
+
+    def _reset_properties_proxy(self):
+        self.__proxy = utils.ReadOnlyDictProxy(self._properties)
 
     def __getitem__(self, name):
-        return self.properties[name]
+        return self._properties[name]
+
+    def __contains__(self, name):
+        # The Mapping version asks `__getitem__` and catches the KeyError,
+        # which puts a raised exception on the path of every attribute a
+        # model sets that is not a property.
+        return name in self._properties
 
     def __iter__(self):
-        return iter(self.properties)
+        return iter(self._properties)
 
     def __len__(self):
-        return len(self.properties)
+        return len(self._properties)
 
 
 class PropertyCollection(PropertyMapping):
     def __init__(self, **kwargs):
         self._properties = kwargs
+        self._nested_names = frozenset(
+            name
+            for name, item in kwargs.items()
+            if isinstance(item, PropertyCollection)
+        )
         super(PropertyCollection, self).__init__()
+
+    @builtins.property
+    def nested_names(self):
+        """The names holding a nested collection rather than a property.
+
+        A declaration decides this, so it is answered once here instead of
+        per model built from the collection: the check is an abstract-base
+        `isinstance`, which is not cheap and ran per property per model.
+        """
+        return self._nested_names
 
     def sort_properties(self):
         """Switch the model to sorted properties
@@ -199,13 +255,10 @@ class PropertyCollection(PropertyMapping):
         for key in sorted(self._properties):
             result[key] = self._properties[key]
         self._properties = result
+        self._reset_properties_proxy()
 
     def __getitem__(self, name):
-        return self.properties[name].get_property_class()
-
-    @builtins.property
-    def properties(self):
-        return utils.ReadOnlyDictProxy(self._properties)
+        return self._properties[name].get_property_class()
 
     def __add__(self, other):
         if isinstance(other, PropertyCollection):
@@ -227,8 +280,9 @@ class PropertyCollection(PropertyMapping):
 class PropertyManager(PropertyMapping):
     def __init__(self, property_collection, **kwargs):
         self._properties = {}
+        nested_names = property_collection.nested_names
         for name, item in property_collection.properties.items():
-            if isinstance(item, PropertyCollection):
+            if name in nested_names:
                 prop = PropertyManager(item, **kwargs.pop(name, {}))
             else:
                 try:
@@ -245,13 +299,9 @@ class PropertyManager(PropertyMapping):
         super(PropertyManager, self).__init__()
 
     @builtins.property
-    def properties(self):
-        return utils.ReadOnlyDictProxy(self._properties)
-
-    @builtins.property
     def value(self):
         result = {}
-        for k, v in self.properties.items():
+        for k, v in self._properties.items():
             result[k] = v.value
         return result
 
