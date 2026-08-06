@@ -85,9 +85,11 @@ class Network(types.BaseType):
         return self.from_simple_type(value)
 
     def to_openapi_spec(self, prop_kwargs):
+        # No `format` here: `ipv4` and `ipv6` are the formats of a bare
+        # address, and a validating client rejects the prefix this type is
+        # made of. JSON Schema has no format for a CIDR block.
         spec = {
             "type": self.openapi_type,
-            "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
             "example": self.example,
         }
         spec.update(
@@ -97,6 +99,7 @@ class Network(types.BaseType):
         )
         return spec
 
+    @property
     def example(self):
         return "10.0.0.0/24"
 
@@ -118,9 +121,10 @@ class IpWithMask(types.BaseType):
         return self.from_simple_type(value)
 
     def to_openapi_spec(self, prop_kwargs):
+        # See Network: the value carries a mask, so it is not an `ipv4` or
+        # an `ipv6` and must not claim to be one.
         spec = {
             "type": self.openapi_type,
-            "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}],
             "example": self.example,
         }
         spec.update(

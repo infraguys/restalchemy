@@ -304,3 +304,29 @@ class IPRangeTest(unittest.TestCase):
     def test_from_unicode(self):
         foo_range = netaddr.IPRange("10.0.0.0", "10.0.1.0")
         self.assertEqual(self.ip_range.from_unicode("10.0.0.0-10.0.1.0"), foo_range)
+
+
+class MaskedAddressOpenApiTestCase(unittest.TestCase):
+    """A value carrying a mask is not an `ipv4`, and must not say it is."""
+
+    def test_a_network_declares_no_address_format(self):
+        spec = types_network.Network().to_openapi_spec({})
+
+        self.assertEqual("string", spec["type"])
+        self.assertNotIn("anyOf", spec)
+        self.assertEqual("10.0.0.0/24", spec["example"])
+
+    def test_an_ip_with_mask_declares_no_address_format(self):
+        spec = types_network.IpWithMask().to_openapi_spec({})
+
+        self.assertEqual("string", spec["type"])
+        self.assertNotIn("anyOf", spec)
+        self.assertEqual("10.0.0.1/32", spec["example"])
+
+    def test_a_bare_address_keeps_its_format(self):
+        spec = types_network.IPAddress().to_openapi_spec({})
+
+        self.assertEqual(
+            [{"format": "ipv4"}, {"format": "ipv6"}],
+            spec["anyOf"],
+        )

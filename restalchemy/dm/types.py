@@ -85,6 +85,14 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
     for k, v in KWARGS_OPENAPI_MAP.items():
         if k in kwargs.keys():
             value = kwargs[k]() if callable(kwargs[k]) else kwargs[k]
+            if value is None:
+                # `default=None` on a type that does not accept None means
+                # the property starts out unset, not that null is a value of
+                # it. Saying `default: null` next to a non-nullable type is
+                # a contradiction, and a validator reads it as one. A type
+                # that does accept None drops the default earlier, in
+                # AllowNone, so nothing nullable loses anything here.
+                continue
             if isinstance(value, (UUID, uuid.UUID)):
                 # No default value for uuid
                 continue
@@ -913,9 +921,32 @@ class DateTime(BasePythonType):
         return DEFAULT_DATE_Z
 
 
+def enum_openapi_type(enum_values):
+    """The OpenAPI type of an enum is the type of what is in it.
+
+    An enum of numbers described as a `string` is a document contradicting
+    itself, and both the values and the default are then rejected. Only a
+    uniform enum can be typed; a mixed one keeps the historical `string`,
+    which is no less wrong than it ever was but no more either.
+    """
+    value_types = {type(value) for value in enum_values}
+    if len(value_types) != 1:
+        return "string"
+    value_type = value_types.pop()
+    for python_type, openapi_type in (
+        (bool, "boolean"),  # bool before int: it is a subclass of it
+        (int, "integer"),
+        (float, "number"),
+        (str, "string"),
+    ):
+        if value_type is python_type:
+            return openapi_type
+    return "string"
+
+
 class Enum(BaseType):
     def __init__(self, enum_values):
-        super(Enum, self).__init__(openapi_type="string")
+        super(Enum, self).__init__(openapi_type=enum_openapi_type(enum_values))
         self._enums_values = copy.deepcopy(enum_values)
 
     @property
