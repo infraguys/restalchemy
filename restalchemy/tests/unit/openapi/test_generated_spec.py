@@ -21,6 +21,7 @@ microservice is driven in-process through WSGI.
 """
 
 import collections
+import re
 import unittest
 
 import webob
@@ -97,6 +98,30 @@ class GeneratedSpecTestCase(unittest.TestCase):
             duplicates = sorted(name for name, n in seen.items() if n > 1)
             self.assertEqual(
                 [], duplicates, "duplicate operationIds in %s spec" % version
+            )
+
+    def test_every_path_placeholder_is_declared(self):
+        # A {placeholder} of the path template with no path parameter behind
+        # it is what a same-named model overwriting another's id parameter
+        # looks like in the document.
+        for version in self.VERSIONS:
+            spec = build_spec(version)
+            undeclared = []
+            for path, item in spec["paths"].items():
+                placeholders = set(re.findall(r"\{(.*?)\}", path))
+                for method, operation in item.items():
+                    if not isinstance(operation, dict):
+                        continue
+                    declared = set()
+                    for parameter in operation.get("parameters", []):
+                        if "$ref" in parameter:
+                            parameter = resolve(spec, parameter["$ref"]) or {}
+                        if parameter.get("in") == "path":
+                            declared.add(parameter.get("name"))
+                    for missing in sorted(placeholders - declared):
+                        undeclared.append("%s %s {%s}" % (method, path, missing))
+            self.assertEqual(
+                [], undeclared, "undeclared path parameters in %s spec" % version
             )
 
     def test_numeric_bounds_are_well_formed(self):

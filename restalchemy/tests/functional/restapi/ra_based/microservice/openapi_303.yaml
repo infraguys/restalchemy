@@ -1,17 +1,5 @@
 components:
   parameters:
-    IpAddressIp:
-      in: query
-      name: ip
-      schema:
-        default: 192.168.0.1
-        example: any_string
-        type: string
-    IpAddressPort:
-      in: query
-      name: port
-      schema:
-        type: string
     IpAddressUuid:
       in: path
       name: IpAddressUuid
@@ -21,85 +9,25 @@ components:
         format: uuid
         readOnly: true
         type: string
-    Port-hidden-field:
+    IpAddress_ip:
       in: query
-      name: -hidden-field
+      name: ip
       schema:
+        default: 192.168.0.1
         example: any_string
         type: string
-    PortMac:
+    IpAddress_port:
       in: query
-      name: mac
+      name: port
       schema:
-        default: 00:00:00:00:00:00
-        example: 00:00:00:00:00:00
-        pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
         type: string
-    PortName-after:
+    IpAddress_uuid:
       in: query
-      name: name-after
+      name: uuid
       schema:
-        example: any_string
-        type: string
-    PortName-any:
-      in: query
-      name: name-any
-      schema:
-        example: string
-        oneOf:
-        - type: string
-        - type: integer
-        - type: array
-        - type: boolean
-        - type: object
-    PortNever-call:
-      in: query
-      name: never-call
-      schema:
-        example: any_string
-        type: string
-    PortPermission-field:
-      in: query
-      name: permission-field
-      schema:
-        example: any_string
-        type: string
-    PortSome-field1:
-      in: query
-      name: some-field1
-      schema:
-        example: any_string
-        type: string
-    PortSome-field2:
-      in: query
-      name: some-field2
-      schema:
-        example: any_string
-        type: string
-    PortSome-field3:
-      in: query
-      name: some-field3
-      schema:
-        example: any_string
-        type: string
-    PortSome-field4:
-      in: query
-      name: some-field4
-      schema:
-        example: any_string
-        type: string
-    PortSome-field5:
-      in: query
-      name: some-field5
-      schema:
-        example: any_string
-        nullable: true
-        type: string
-    PortUnique-field:
-      in: query
-      name: unique-field
-      schema:
-        example: any_string
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
         type: string
     PortUuid:
       in: path
@@ -110,7 +38,95 @@ components:
         format: uuid
         readOnly: true
         type: string
-    PortVm:
+    Port_-hidden-field:
+      in: query
+      name: -hidden-field
+      schema:
+        example: any_string
+        type: string
+    Port_mac:
+      in: query
+      name: mac
+      schema:
+        default: 00:00:00:00:00:00
+        example: 00:00:00:00:00:00
+        pattern: ^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$
+        type: string
+    Port_name-after:
+      in: query
+      name: name-after
+      schema:
+        example: any_string
+        type: string
+    Port_name-any:
+      in: query
+      name: name-any
+      schema:
+        example: string
+        oneOf:
+        - type: string
+        - type: integer
+        - type: array
+        - type: boolean
+        - type: object
+    Port_never-call:
+      in: query
+      name: never-call
+      schema:
+        example: any_string
+        type: string
+    Port_permission-field:
+      in: query
+      name: permission-field
+      schema:
+        example: any_string
+        type: string
+    Port_some-field1:
+      in: query
+      name: some-field1
+      schema:
+        example: any_string
+        type: string
+    Port_some-field2:
+      in: query
+      name: some-field2
+      schema:
+        example: any_string
+        type: string
+    Port_some-field3:
+      in: query
+      name: some-field3
+      schema:
+        example: any_string
+        type: string
+    Port_some-field4:
+      in: query
+      name: some-field4
+      schema:
+        example: any_string
+        type: string
+    Port_some-field5:
+      in: query
+      name: some-field5
+      schema:
+        example: any_string
+        nullable: true
+        type: string
+    Port_unique-field:
+      in: query
+      name: unique-field
+      schema:
+        example: any_string
+        type: string
+    Port_uuid:
+      in: query
+      name: uuid
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
+    Port_vm:
       in: query
       name: vm
       schema:
@@ -131,79 +147,32 @@ components:
         format: uuid
         readOnly: true
         type: string
-    TagVisible:
+    Tag_name:
+      in: query
+      name: name
+      schema:
+        example: any_string
+        type: string
+    Tag_uuid:
+      in: query
+      name: uuid
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
+    Tag_visible:
       in: query
       name: visible
       schema:
         default: true
         example: true
         type: boolean
-    TagVm:
+    Tag_vm:
       in: query
       name: vm
       schema:
         type: string
-    VMCreated:
-      in: query
-      name: created
-      schema:
-        default: '2006-01-02T15:04:05.000576Z'
-        example: '2006-01-02T15:04:05.000576Z'
-        format: date-time
-        readOnly: true
-        type: string
-        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-    VMDefSortCreated:
-      in: query
-      name: created
-      schema:
-        default: '2006-01-02T15:04:05.000576Z'
-        example: '2006-01-02T15:04:05.000576Z'
-        format: date-time
-        readOnly: true
-        type: string
-        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-    VMDefSortJust-none:
-      in: query
-      name: just-none
-      schema:
-        example: any_string
-        nullable: true
-        type: string
-    VMDefSortName:
-      in: query
-      name: name
-      schema:
-        example: testname
-        maxLength: 255
-        type: string
-    VMDefSortState:
-      in: query
-      name: state
-      schema:
-        default: 'off'
-        example: any_string
-        maxLength: 10
-        type: string
-    VMDefSortStatus:
-      in: query
-      name: status
-      schema:
-        default: active
-        enum:
-        - active
-        - disabled
-        example: active
-        type: string
-    VMDefSortUpdated:
-      in: query
-      name: updated
-      schema:
-        default: '2006-01-02T15:04:05.000576Z'
-        example: '2006-01-02T15:04:05.000576Z'
-        format: date-time
-        type: string
-        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
     VMDefSortUuid:
       in: path
       name: VMDefSortUuid
@@ -213,21 +182,7 @@ components:
         format: uuid
         readOnly: true
         type: string
-    VMJust-none:
-      in: query
-      name: just-none
-      schema:
-        example: any_string
-        nullable: true
-        type: string
-    VMName:
-      in: query
-      name: name
-      schema:
-        example: testname
-        maxLength: 255
-        type: string
-    VMNoProcessFiltersCreated:
+    VMDefSort_created:
       in: query
       name: created
       schema:
@@ -237,21 +192,21 @@ components:
         readOnly: true
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-    VMNoProcessFiltersJust-none:
+    VMDefSort_just-none:
       in: query
       name: just-none
       schema:
         example: any_string
         nullable: true
         type: string
-    VMNoProcessFiltersName:
+    VMDefSort_name:
       in: query
       name: name
       schema:
         example: testname
         maxLength: 255
         type: string
-    VMNoProcessFiltersState:
+    VMDefSort_state:
       in: query
       name: state
       schema:
@@ -259,7 +214,7 @@ components:
         example: any_string
         maxLength: 10
         type: string
-    VMNoProcessFiltersStatus:
+    VMDefSort_status:
       in: query
       name: status
       schema:
@@ -269,7 +224,7 @@ components:
         - disabled
         example: active
         type: string
-    VMNoProcessFiltersUpdated:
+    VMDefSort_updated:
       in: query
       name: updated
       schema:
@@ -278,6 +233,14 @@ components:
         format: date-time
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    VMDefSort_uuid:
+      in: query
+      name: uuid
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
     VMNoProcessFiltersUuid:
       in: path
       name: VMNoProcessFiltersUuid
@@ -287,7 +250,7 @@ components:
         format: uuid
         readOnly: true
         type: string
-    VMNoSortCreated:
+    VMNoProcessFilters_created:
       in: query
       name: created
       schema:
@@ -297,21 +260,21 @@ components:
         readOnly: true
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
-    VMNoSortJust-none:
+    VMNoProcessFilters_just-none:
       in: query
       name: just-none
       schema:
         example: any_string
         nullable: true
         type: string
-    VMNoSortName:
+    VMNoProcessFilters_name:
       in: query
       name: name
       schema:
         example: testname
         maxLength: 255
         type: string
-    VMNoSortState:
+    VMNoProcessFilters_state:
       in: query
       name: state
       schema:
@@ -319,7 +282,7 @@ components:
         example: any_string
         maxLength: 10
         type: string
-    VMNoSortStatus:
+    VMNoProcessFilters_status:
       in: query
       name: status
       schema:
@@ -329,7 +292,7 @@ components:
         - disabled
         example: active
         type: string
-    VMNoSortUpdated:
+    VMNoProcessFilters_updated:
       in: query
       name: updated
       schema:
@@ -338,6 +301,14 @@ components:
         format: date-time
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    VMNoProcessFilters_uuid:
+      in: query
+      name: uuid
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
     VMNoSortUuid:
       in: path
       name: VMNoSortUuid
@@ -347,7 +318,31 @@ components:
         format: uuid
         readOnly: true
         type: string
-    VMState:
+    VMNoSort_created:
+      in: query
+      name: created
+      schema:
+        default: '2006-01-02T15:04:05.000576Z'
+        example: '2006-01-02T15:04:05.000576Z'
+        format: date-time
+        readOnly: true
+        type: string
+        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    VMNoSort_just-none:
+      in: query
+      name: just-none
+      schema:
+        example: any_string
+        nullable: true
+        type: string
+    VMNoSort_name:
+      in: query
+      name: name
+      schema:
+        example: testname
+        maxLength: 255
+        type: string
+    VMNoSort_state:
       in: query
       name: state
       schema:
@@ -355,7 +350,7 @@ components:
         example: any_string
         maxLength: 10
         type: string
-    VMStatus:
+    VMNoSort_status:
       in: query
       name: status
       schema:
@@ -365,7 +360,7 @@ components:
         - disabled
         example: active
         type: string
-    VMUpdated:
+    VMNoSort_updated:
       in: query
       name: updated
       schema:
@@ -374,10 +369,77 @@ components:
         format: date-time
         type: string
         x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    VMNoSort_uuid:
+      in: query
+      name: uuid
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
     VMUuid:
       in: path
       name: VMUuid
       required: true
+      schema:
+        example: 00000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
+    VM_created:
+      in: query
+      name: created
+      schema:
+        default: '2006-01-02T15:04:05.000576Z'
+        example: '2006-01-02T15:04:05.000576Z'
+        format: date-time
+        readOnly: true
+        type: string
+        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    VM_just-none:
+      in: query
+      name: just-none
+      schema:
+        example: any_string
+        nullable: true
+        type: string
+    VM_name:
+      in: query
+      name: name
+      schema:
+        example: testname
+        maxLength: 255
+        type: string
+    VM_state:
+      in: query
+      name: state
+      schema:
+        default: 'off'
+        example: any_string
+        maxLength: 10
+        type: string
+    VM_status:
+      in: query
+      name: status
+      schema:
+        default: active
+        enum:
+        - active
+        - disabled
+        example: active
+        type: string
+    VM_updated:
+      in: query
+      name: updated
+      schema:
+        default: '2006-01-02T15:04:05.000576Z'
+        example: '2006-01-02T15:04:05.000576Z'
+        format: date-time
+        type: string
+        x-ogen-time-format: '2006-01-02T15:04:05.000576Z'
+    VM_uuid:
+      in: query
+      name: uuid
       schema:
         example: 00000000-0000-0000-0000-000000000000
         format: uuid
@@ -1030,12 +1092,13 @@ paths:
         - status
         - updated
         - uuid
-      - $ref: '#/components/parameters/VMState'
-      - $ref: '#/components/parameters/VMName'
-      - $ref: '#/components/parameters/VMJust-none'
-      - $ref: '#/components/parameters/VMStatus'
-      - $ref: '#/components/parameters/VMCreated'
-      - $ref: '#/components/parameters/VMUpdated'
+      - $ref: '#/components/parameters/VM_uuid'
+      - $ref: '#/components/parameters/VM_state'
+      - $ref: '#/components/parameters/VM_name'
+      - $ref: '#/components/parameters/VM_just-none'
+      - $ref: '#/components/parameters/VM_status'
+      - $ref: '#/components/parameters/VM_created'
+      - $ref: '#/components/parameters/VM_updated'
       responses:
         '200':
           content:
@@ -1687,12 +1750,13 @@ paths:
         - status
         - updated
         - uuid
-      - $ref: '#/components/parameters/VMDefSortState'
-      - $ref: '#/components/parameters/VMDefSortName'
-      - $ref: '#/components/parameters/VMDefSortJust-none'
-      - $ref: '#/components/parameters/VMDefSortStatus'
-      - $ref: '#/components/parameters/VMDefSortCreated'
-      - $ref: '#/components/parameters/VMDefSortUpdated'
+      - $ref: '#/components/parameters/VMDefSort_uuid'
+      - $ref: '#/components/parameters/VMDefSort_state'
+      - $ref: '#/components/parameters/VMDefSort_name'
+      - $ref: '#/components/parameters/VMDefSort_just-none'
+      - $ref: '#/components/parameters/VMDefSort_status'
+      - $ref: '#/components/parameters/VMDefSort_created'
+      - $ref: '#/components/parameters/VMDefSort_updated'
       responses:
         '200':
           content:
@@ -1785,12 +1849,13 @@ paths:
     get:
       operationId: Filter_v1_vmsnoproccessfilters
       parameters:
-      - $ref: '#/components/parameters/VMNoProcessFiltersState'
-      - $ref: '#/components/parameters/VMNoProcessFiltersName'
-      - $ref: '#/components/parameters/VMNoProcessFiltersJust-none'
-      - $ref: '#/components/parameters/VMNoProcessFiltersStatus'
-      - $ref: '#/components/parameters/VMNoProcessFiltersCreated'
-      - $ref: '#/components/parameters/VMNoProcessFiltersUpdated'
+      - $ref: '#/components/parameters/VMNoProcessFilters_uuid'
+      - $ref: '#/components/parameters/VMNoProcessFilters_state'
+      - $ref: '#/components/parameters/VMNoProcessFilters_name'
+      - $ref: '#/components/parameters/VMNoProcessFilters_just-none'
+      - $ref: '#/components/parameters/VMNoProcessFilters_status'
+      - $ref: '#/components/parameters/VMNoProcessFilters_created'
+      - $ref: '#/components/parameters/VMNoProcessFilters_updated'
       responses:
         '200':
           content:
@@ -1848,12 +1913,13 @@ paths:
         - status
         - updated
         - uuid
-      - $ref: '#/components/parameters/VMNoSortState'
-      - $ref: '#/components/parameters/VMNoSortName'
-      - $ref: '#/components/parameters/VMNoSortJust-none'
-      - $ref: '#/components/parameters/VMNoSortStatus'
-      - $ref: '#/components/parameters/VMNoSortCreated'
-      - $ref: '#/components/parameters/VMNoSortUpdated'
+      - $ref: '#/components/parameters/VMNoSort_uuid'
+      - $ref: '#/components/parameters/VMNoSort_state'
+      - $ref: '#/components/parameters/VMNoSort_name'
+      - $ref: '#/components/parameters/VMNoSort_just-none'
+      - $ref: '#/components/parameters/VMNoSort_status'
+      - $ref: '#/components/parameters/VMNoSort_created'
+      - $ref: '#/components/parameters/VMNoSort_updated'
       responses:
         '200':
           content:

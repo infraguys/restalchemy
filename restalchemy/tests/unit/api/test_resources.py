@@ -14,6 +14,7 @@
 #    under the License.
 
 import unittest
+import uuid
 
 import webob
 
@@ -41,6 +42,28 @@ class FakeNarrowNameModel(models.ModelWithUUID):
 
 class FakeWideNameModel(models.ModelWithUUID):
     name = properties.property(types.String(max_length=200))
+
+
+class FakeCollided(models.ModelWithUUID):
+    """A model whose id property is `uuid`."""
+
+
+FakeCollidedIdModel = FakeCollided
+
+
+class FakeCollided(models.ModelWithID):  # noqa: F811 -- the name is the point
+    """Another model of the very same name, holding `uuid` as a plain field."""
+
+    res_uuid = properties.property(
+        types.UUID(),
+        read_only=True,
+        id_property=True,
+        default=lambda: uuid.uuid4(),
+    )
+    uuid = properties.property(types.UUID(), default=lambda: uuid.uuid4())
+
+
+FakeCollidedFieldModel = FakeCollided
 
 
 class FakeMemberContext(object):
@@ -110,13 +133,36 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
             )
             parameters.update(generator.generate_parameter_object(request))
 
-        narrow = parameters["FakeNarrowNameModelName"]
-        wide = parameters["FakeWideNameModelName"]
+        narrow = parameters["FakeNarrowNameModel_name"]
+        wide = parameters["FakeWideNameModel_name"]
         self.assertEqual("name", narrow["name"])
         self.assertEqual("name", wide["name"])
         self.assertNotEqual(narrow["schema"], wide["schema"])
         self.assertEqual(10, narrow["schema"]["maxLength"])
         self.assertEqual(200, wide["schema"]["maxLength"])
+
+    def test_a_field_does_not_overwrite_a_same_named_models_id(self):
+        # Two models can carry one class name, and what is the id property of
+        # the one can be a plain field of the other. The path parameter must
+        # survive that, or the {ModelId} of the path is left undeclared.
+        request = webob.Request.blank("/")
+        request.context = FakeAdminContext()
+        request.api_context = contexts.RequestContext(request)
+        request.api_context.set_active_method(constants.FILTER)
+
+        parameters = {}
+        for model in (FakeCollidedIdModel, FakeCollidedFieldModel):
+            generator = openapi_utils.ResourceSchemaGenerator(
+                resources.ResourceByRAModel(model),
+                route=None,
+                openapi_version="3.0.3",
+            )
+            parameters.update(generator.generate_parameter_object(request))
+
+        self.assertEqual("path", parameters["FakeCollidedUuid"]["in"])
+        self.assertTrue(parameters["FakeCollidedUuid"]["required"])
+        self.assertEqual("query", parameters["FakeCollided_uuid"]["in"])
+        self.assertEqual("uuid", parameters["FakeCollided_uuid"]["name"])
 
 
 # NOTE(efrolov): Interface tests

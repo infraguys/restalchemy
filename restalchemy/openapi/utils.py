@@ -35,8 +35,20 @@ def sorted_schema_methods(methods: typing.Iterable[str]) -> typing.List[str]:
 
 
 def resource_parameter_name(resource_name: str, prop_name: str) -> str:
-    """Key under which a resource's parameter lives in components/parameters."""
+    """Key under which a resource's id parameter lives in components/parameters."""
     return resource_name + prop_name.capitalize()
+
+
+def resource_field_parameter_name(resource_name: str, prop_name: str) -> str:
+    """Key under which a resource's field parameter lives.
+
+    Deliberately not the id parameter's key: two models can share a class
+    name (`Resource` is both an element resource and an agent one), and one
+    of them holding as a plain field what the other holds as its id would
+    otherwise overwrite the id parameter -- leaving the `{ResourceUuid}` of
+    the path with nothing declaring it.
+    """
+    return "{}_{}".format(resource_name, prop_name)
 
 
 def schema_body_key(body: typing.Any) -> str:
@@ -95,6 +107,9 @@ class ResourceSchemaGenerator(object):
     def resource_prop_name(self, prop_name):
         return resource_parameter_name(self.resource_name, prop_name)
 
+    def resource_field_prop_name(self, prop_name):
+        return resource_field_parameter_name(self.resource_name, prop_name)
+
     def get_prop_kwargs(self, name):
         try:
             kwargs = dict(
@@ -115,24 +130,27 @@ class ResourceSchemaGenerator(object):
                 is_id = prop.is_id_property()
             except KeyError:
                 is_id = False
-            if is_id:
-                has_id_property = True
-                # Must match the {ModelId} placeholder the route builds.
-                component_name = self.resource_prop_name(name)
-                parameter_name = component_name
-            else:
-                # components/parameters is one flat namespace for the whole
-                # document, so the key has to name the resource too: plain
-                # "name" or "status" means something different on every model.
-                component_name = self.resource_prop_name(prop.api_name)
-                parameter_name = prop.api_name
-            parameters[component_name] = {
-                "name": parameter_name,
-                "in": "path" if is_id else "query",
+            # components/parameters is one flat namespace for the whole
+            # document, so the key has to name the resource too: plain
+            # "name" or "status" means something different on every model.
+            parameters[self.resource_field_prop_name(prop.api_name)] = {
+                "name": prop.api_name,
+                "in": "query",
                 "schema": schema,
             }
             if is_id:
-                parameters[component_name]["required"] = True
+                has_id_property = True
+                # A collection can be filtered by the id as well as by any
+                # other field, so the field parameter above stands; this is
+                # the path one, and its key must match the {ModelId}
+                # placeholder the route builds.
+                component_name = self.resource_prop_name(name)
+                parameters[component_name] = {
+                    "name": component_name,
+                    "in": "path",
+                    "schema": schema,
+                    "required": True,
+                }
         if not has_id_property:
             try:
                 model = self._resource.get_model()
