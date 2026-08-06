@@ -23,6 +23,7 @@ import uuid
 import mock
 
 from restalchemy.dm import types
+from restalchemy.openapi import constants as oa_c
 from restalchemy.tests.unit import base
 
 TEST_STR_VALUE = "test_value :)"
@@ -756,6 +757,33 @@ class AllowNoneTestCase(base.BaseTestCase):
 
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(4))
+
+    def test_openapi_303_marks_the_type_nullable(self):
+        spec = self.test_instance.to_openapi_spec(
+            {types.OPENAPI_KEYWORD: oa_c.OPENAPI_SPECIFICATION_3_0_3}
+        )
+
+        self.assertTrue(spec["nullable"])
+
+    def test_openapi_310_puts_null_in_the_type(self):
+        spec = self.test_instance.to_openapi_spec(
+            {types.OPENAPI_KEYWORD: oa_c.OPENAPI_SPECIFICATION_3_1_0}
+        )
+
+        self.assertEqual(["string", "null"], spec["type"])
+        self.assertNotIn("nullable", spec)
+
+    def test_openapi_310_puts_null_among_the_alternatives_of_a_sum_type(self):
+        # A sum type carries no type of its own, and dropping the null there
+        # is how a nullable field quietly became a required one.
+        instance = types.AllowNone(types.AnySimpleType())
+
+        spec = instance.to_openapi_spec(
+            {types.OPENAPI_KEYWORD: oa_c.OPENAPI_SPECIFICATION_3_1_0}
+        )
+
+        self.assertIn({"type": "null"}, spec["oneOf"])
+        self.assertNotIn("nullable", spec)
 
 
 class AnySimpleTypeTestCase(base.BaseTestCase):

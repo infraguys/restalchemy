@@ -1115,6 +1115,13 @@ class AllowNone(BaseType):
                         spec["type"].append("null")
                 elif spec["type"] != "null":
                     spec["type"] = [spec["type"], "null"]
+            elif "oneOf" in spec:
+                # A sum type names no type of its own, so the null has to
+                # join the alternatives -- exactly one of which matches it.
+                if not any(
+                    alternative.get("type") == "null" for alternative in spec["oneOf"]
+                ):
+                    spec["oneOf"].append({"type": "null"})
         else:
             spec["nullable"] = True
         return spec
