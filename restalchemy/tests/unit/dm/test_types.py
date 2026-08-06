@@ -739,6 +739,23 @@ class EnumTestCase(base.BaseTestCase):
     def test_validate_incorrect_value(self):
         self.assertFalse(self.test_instance.validate(4))
 
+    def test_an_enum_of_numbers_is_typed_as_a_number(self):
+        spec = self.test_instance.to_openapi_spec({})
+
+        self.assertEqual("integer", spec["type"])
+        self.assertEqual([1, 2, 3], spec["enum"])
+
+    def test_an_enum_of_strings_is_typed_as_a_string(self):
+        spec = types.Enum(["ACTIVE", "ERROR"]).to_openapi_spec({})
+
+        self.assertEqual("string", spec["type"])
+
+    def test_a_mixed_enum_keeps_the_historical_string(self):
+        self.assertEqual("string", types.enum_openapi_type([1, "two"]))
+
+    def test_an_enum_of_booleans_is_not_an_integer(self):
+        self.assertEqual("boolean", types.enum_openapi_type([True, False]))
+
 
 class AllowNoneTestCase(base.BaseTestCase):
     def setUp(self):
