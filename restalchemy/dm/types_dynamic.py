@@ -205,10 +205,16 @@ class KindModelType(types.BasePythonType):
             `build_prop_kwargs`.
         :return: an OpenAPI specification for this type.
         """
-        props = {
-            name: prop.get_property_type().to_openapi_spec(prop.get_kwargs())
-            for name, prop in self._python_type.properties.properties.items()
-        }
+        # The dialect has to reach the properties of the kind as well: it is
+        # what decides between `nullable` and a `null` in the type, and a
+        # 3.1.0 document carrying `nullable` says nothing at all.
+        openapi = prop_kwargs.get(types.OPENAPI_KEYWORD)
+        props = {}
+        for name, prop in self._python_type.properties.properties.items():
+            nested_kwargs = dict(prop.get_kwargs())
+            if openapi is not None:
+                nested_kwargs[types.OPENAPI_KEYWORD] = openapi
+            props[name] = prop.get_property_type().to_openapi_spec(nested_kwargs)
         props["kind"] = {"type": "string", "enum": [self.kind]}
         spec = {"type": self.openapi_type, "properties": props, "example": self.example}
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
@@ -325,10 +331,13 @@ class KindModelSelectorType(types.BaseType):
         :return: A dictionary representing the OpenAPI specification.
         """
 
+        openapi = prop_kwargs.get(types.OPENAPI_KEYWORD)
+        subtype_kwargs = {} if openapi is None else {types.OPENAPI_KEYWORD: openapi}
         spec = {
             "type": self.openapi_type,
             "oneOf": [
-                subtype.to_openapi_spec({}) for subtype in self._kind_type_map.values()
+                subtype.to_openapi_spec(dict(subtype_kwargs))
+                for subtype in self._kind_type_map.values()
             ],
             "example": self.example,
         }
