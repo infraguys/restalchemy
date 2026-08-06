@@ -321,14 +321,10 @@ class Route(BaseRoute):
                         # The expression took the name; a parameter for the
                         # field behind it would collide.
                         continue
-                    component_name = oa_utils.resource_parameter_name(
+                    component_name = oa_utils.resource_field_parameter_name(
                         model_name, prop.api_name
                     )
                     param = known_params.get(component_name, {})
-                    # The id property is registered as a path parameter; it
-                    # belongs to the resource route, not to this filter.
-                    if param.get("in") != "query":
-                        continue
                     # array or object not supported in query
                     if param.get("schema", {}).get("type", "") in [
                         "array",
