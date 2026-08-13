@@ -301,3 +301,79 @@ class SimpleViewMixinTestCase(base.BaseTestCase):
         self.assertEqual(simple_view_model.str_property, "bar")
         self.assertIs(simple_view_model.none_property, None)
         self.assertIs(simple_view_model.uuid.__class__, uuid.UUID)
+
+
+class ModelBuiltWithoutInitTestCase(base.BaseTestCase):
+    """A model built with `__new__` writes into the class, not into itself.
+
+    Until `pour` runs, `self.properties` is the class's `PropertyCollection` —
+    the declaration every instance shares. Setting a property through it used
+    to succeed quietly and change that property for every live instance in the
+    process, which is a failure at a distance: the object that misbehaves is
+    not the one that was built wrong.
+    """
+
+    class Poured(models.Model):
+        first = properties.property(types.String(), default="")
+        second = properties.property(types.String(), default="")
+
+    def test_setting_a_property_before_pour_is_refused(self):
+        model = self.Poured.__new__(self.Poured)
+
+        self.assertRaises(
+            exceptions.PropertyClassAssignment, setattr, model, "first", "value"
+        )
+
+    def test_unrelated_models_are_left_alone(self):
+        """The write lands on the property *class*, which every model shares:
+        without the guard an assignment on one model changes what a different
+        model reads, including instances built afterwards."""
+
+        class Other(models.Model):
+            only = properties.property(types.String(), default="")
+
+        other = Other(only="other")
+
+        try:
+            setattr(self.Poured.__new__(self.Poured), "first", "poison")
+        except exceptions.PropertyClassAssignment:
+            pass
+
+        self.assertEqual(other.only, "other")
+        self.assertEqual(Other(only="later").only, "later")
+
+    def test_other_instances_are_left_alone(self):
+        one = self.Poured(first="one", second="1")
+        two = self.Poured(first="two", second="2")
+
+        try:
+            setattr(self.Poured.__new__(self.Poured), "first", "poison")
+        except exceptions.PropertyClassAssignment:
+            pass
+
+        self.assertEqual(one.first, "one")
+        self.assertEqual(two.first, "two")
+
+    def test_restore_still_builds_with_new_and_pours(self):
+        """`restore()` is the legitimate user of `__new__` and must keep
+        working: `pour` assigns `properties`, which is not a declared property
+        and so never reaches the guard."""
+        model = self.Poured.restore(first="restored", second="yes")
+
+        self.assertEqual(model.first, "restored")
+        self.assertEqual(model.second, "yes")
+
+    def test_a_poured_model_sets_properties_as_before(self):
+        model = self.Poured(first="a", second="b")
+
+        model.first = "changed"
+
+        self.assertEqual(model.first, "changed")
+        self.assertEqual(model.second, "b")
+
+    def test_a_plain_attribute_is_not_this_guard_s_business(self):
+        model = self.Poured.__new__(self.Poured)
+
+        model.not_a_property = 42
+
+        self.assertEqual(model.not_a_property, 42)
