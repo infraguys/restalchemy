@@ -26,7 +26,29 @@ from restalchemy.common import utils
 from restalchemy.dm import types
 
 
-class AbstractProperty(metaclass=abc.ABCMeta):
+class PropertyMeta(abc.ABCMeta):
+    """Refuses `value` written onto a property *class*.
+
+    A model built without its constructor has no properties of its own, so
+    `self.properties` is still the class's collection — and what that yields
+    for a name is the property *class*, not an instance of it. The write in
+    `Model.__setattr__` then lands on the class, where it shadows the `value`
+    descriptor for every property of every model in the process, including
+    objects created afterwards. Nothing raised, and the damage showed up
+    wherever somebody next read a model.
+
+    Checked here rather than in `Model.__setattr__` because here it is free:
+    this fires only on an assignment to a class object, which no working path
+    does, while a property write on an instance never reaches it.
+    """
+
+    def __setattr__(cls, name, value):
+        if name == "value":
+            raise exc.PropertyClassAssignment()
+        super().__setattr__(name, value)
+
+
+class AbstractProperty(metaclass=PropertyMeta):
     @property
     @abc.abstractmethod
     def value(self):

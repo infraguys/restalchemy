@@ -125,6 +125,18 @@ class ReadOnlyProperty(PropertyException):
     message = "Property '%(name)s' of model %(model)s is read only."
 
 
+class PropertyClassAssignment(RestAlchemyException):
+    code = 500
+    message = (
+        "Refusing to write `value` onto a property class. This happens when a "
+        "model is built without its constructor — `Model.__new__(Model)` — so "
+        "it has no properties of its own and the assignment lands on the "
+        "shared declaration, changing that value for every property of every "
+        "model in the process. Build the model normally, or call `pour()` "
+        "first as `restore()` does."
+    )
+
+
 class TypeError(RestAlchemyException, TypeError):
     message = "Invalid type value '%(value)s' for '%(property_type)s'."
     code = 400
