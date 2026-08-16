@@ -156,17 +156,19 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
     def pour(self, **kwargs):
         self.pour_values(kwargs)
 
-    def pour_values(self, values, convert=None):
+    def pour_values(self, values, plan=None, convert=None):
         """Fill the model in from a mapping, without spelling it out.
 
         `pour(**kwargs)` rebuilds the mapping it was handed, and reading
         a row rebuilt it three times over on the way here. What every one
         of them wanted was this. `convert` turns a stored value into a
-        model one, by name, so that a row is walked once.
+        model one, by name, so that a row is walked once; `plan` is
+        the same conversion folded into what the declaration answered
+        about filling a model in.
         """
         try:
             manager = properties.PropertyManager.poured(
-                self.properties, values, convert
+                self.properties, values, plan, convert
             )
         except exc.PropertyRequired as e:
             raise exc.PropertyRequired(name=e.name, model=self.__class__)
@@ -191,12 +193,12 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         return cls.restore_values(kwargs)
 
     @classmethod
-    def restore_values(cls, values, convert=None):
+    def restore_values(cls, values, plan=None, convert=None):
         obj = cls.__new__(cls)
 
         # NOTE(aostapenko): We can't invoke 'pour' from __new__ because of
         #                   copy.copy of object becomes imposible
-        obj.pour_values(values, convert)
+        obj.pour_values(values, plan, convert)
         return obj
 
     def validate(self):

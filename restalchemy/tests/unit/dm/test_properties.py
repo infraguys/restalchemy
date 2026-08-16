@@ -625,6 +625,18 @@ class ValuesStandingAloneTestCase(base.BaseTestCase):
     def _collection(self, **declarations):
         return properties.PropertyCollection(**declarations)
 
+    def test_a_value_given_as_none_is_a_value_nobody_gave(self):
+        # What a stored NULL arrives as, and what the property
+        # constructor has always done with it.
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+
+        manager = properties.PropertyManager(collection, name=None, count=None)
+
+        self.assertEqual({"name": "d", "count": 1}, manager._values)
+
     def test_a_plain_declaration_keeps_its_values(self):
         collection = self._collection(
             name=properties.property(types.String(), default="d"),
