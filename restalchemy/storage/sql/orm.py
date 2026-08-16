@@ -282,7 +282,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
         rows = list(rows)
         if len(rows) > 1:
             cls._preload_relationships(rows, session)
-        return [cls.restore_from_storage(**row) for row in rows]
+        return [cls.restore_row(row) for row in rows]
 
     @classmethod
     def _preload_relationships(cls, rows, session):
@@ -331,10 +331,20 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
 
     @classmethod
     def restore_from_storage(cls, **kwargs):
-        loaders = cls._get_storage_loaders()
-        model_format = {name: loaders[name](value) for name, value in kwargs.items()}
-        obj = cls.restore(**model_format)
-        obj._saved = True
+        return cls.restore_row(kwargs)
+
+    @classmethod
+    def restore_row(cls, row):
+        """The model a stored row stands for.
+
+        Takes the row as it is rather than spelled out as keywords: a
+        page of rows is a page of mappings, and every `**` between here
+        and the model builds another one.
+        """
+        obj = cls.restore_values(row, cls._get_storage_loaders())
+        # Past `__setattr__`, which is there to tell a property name from
+        # a plain attribute, and this one is known not to be one.
+        object.__setattr__(obj, "_saved", True)
         return obj
 
     @base.error_catcher

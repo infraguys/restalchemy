@@ -202,11 +202,19 @@ class BaseResourcePacker(object):
                     result[api_name] = dump(value)
             return result
 
-        values = obj_properties._properties
+        values = obj_properties._values
+        properties = obj_properties._properties
         result = {}
         for name, api_name, dump, own in self._get_fields_for_model(type(obj)):
-            prop = values.get(name) if own else None
-            value = prop.value if prop is not None else getattr(obj, name)
+            if not own:
+                value = getattr(obj, name)
+            elif name in values:
+                # The model kept the value itself; asking it for a
+                # property object would build one to read it back.
+                value = values[name]
+            else:
+                prop = properties.get(name)
+                value = prop.value if prop is not None else getattr(obj, name)
             if value is None:
                 if not self._skip_none:
                     result[api_name] = value

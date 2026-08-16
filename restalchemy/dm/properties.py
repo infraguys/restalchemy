@@ -215,6 +215,44 @@ class PropertyCreator(object):
             self._mutable = bool(kwargs.get("mutable", False))
             self._example = kwargs.get("example")
 
+    def build_value(self, value):
+        """The value a property built from this would hold.
+
+        The declaration decides everything about it except the value
+        itself, so a model that is only going to be read can keep the
+        value and leave the property unbuilt. What is checked is what
+        the constructor checks: a default where nothing was given, a
+        type that accepts it, a required property that got something.
+        """
+        if value is None:
+            value = self._default() if self._default_is_callable else self._default
+        if value is None:
+            if self._required:
+                raise exc.PropertyRequired()
+        elif not self._property_type.validate(value):
+            raise exc.TypeError(value=value, property_type=self._property_type)
+        return value
+
+    def build_first_value(self, value):
+        """What `is_dirty` will compare against later."""
+        return copy.deepcopy(value) if self._mutable else value
+
+    def adopt(self, value, first_value):
+        """A property carrying a value this creator already checked."""
+        prop = self._property.__new__(self._property)
+        prop._type = self._property_type
+        prop._required = self._required
+        prop._read_only = self._read_only
+        prop._value = value
+        prop._first_value = first_value
+        prop._example = self._example
+        return prop
+
+    @builtins.property
+    def is_plain(self):
+        """Whether a value of this can stand on its own, unwrapped."""
+        return self._fast
+
     def __call__(self, value):
         if not self._fast:
             return self._property(
@@ -298,6 +336,10 @@ class PropertyMapping(collections_abc.Mapping, metaclass=abc.ABCMeta):
 
 
 class PropertyCollection(PropertyMapping):
+    # A declaration keeps no values, so a model reaching here before it
+    # has any finds none -- the same shape a manager has.
+    _values = {}
+
     def __init__(self, **kwargs):
         self._properties = kwargs
         self._nested_names = frozenset(
@@ -305,7 +347,22 @@ class PropertyCollection(PropertyMapping):
             for name, item in kwargs.items()
             if isinstance(item, PropertyCollection)
         )
+        self._plain = None
         super(PropertyCollection, self).__init__()
+
+    @builtins.property
+    def values_can_stand_alone(self):
+        """Whether a model of this can keep values instead of properties.
+
+        Every property has to be one this package builds -- a subclass
+        may mean anything by a value -- and none of them a nested
+        collection, which is a manager of its own.
+        """
+        if self._plain is None:
+            self._plain = not self._nested_names and all(
+                getattr(item, "is_plain", False) for item in self._properties.values()
+            )
+        return self._plain
 
     @builtins.property
     def nested_names(self):
@@ -341,6 +398,7 @@ class PropertyCollection(PropertyMapping):
         for key in sorted(self._properties):
             result[key] = self._properties[key]
         self._properties = result
+        self._plain = None
         self._reset_properties_proxy()
 
         declaration_version += 1
@@ -366,8 +424,103 @@ class PropertyCollection(PropertyMapping):
 
 
 class PropertyManager(PropertyMapping):
+    """A model's properties -- as objects, or as the values behind them.
+
+    A property object answers questions about itself: what type it is,
+    whether it may be written, what it held to begin with. Reading a
+    model asks none of them, and building one object per column per row
+    is most of what reading a row costs.
+
+    So a model whose properties are all ones this package builds keeps
+    the values, and builds the property the moment something asks for
+    one -- by name, or by walking the mapping. Each name lives in
+    exactly one of the two places, never both.
+    """
+
+    #: what a name absent from the values given is, before defaults
+    MISSING = object()
+
     def __init__(self, property_collection, **kwargs):
+        self._collection = property_collection
         self._properties = {}
+        self._values = {}
+        self._first_values = {}
+
+        if property_collection.values_can_stand_alone:
+            self._pour_values(property_collection, kwargs, None)
+        else:
+            self._build_properties(property_collection, kwargs)
+
+        # commented because kwargs can contain 'context' etc. Figure out
+        #        if len(kwargs) > 0:
+        #            raise TypeError("Unknown parameters: %s" % str(kwargs))
+        super(PropertyManager, self).__init__()
+
+    @classmethod
+    def poured(cls, property_collection, values, convert=None):
+        """A manager over `values`, without spelling them out as keywords.
+
+        `convert` is what turns a stored value into a model one, by name:
+        given it, a row is walked once here instead of being converted
+        into a mapping of its own and walked again.
+        """
+        manager = cls.__new__(cls)
+        manager._collection = property_collection
+        manager._properties = {}
+        manager._values = {}
+        manager._first_values = {}
+        if property_collection.values_can_stand_alone:
+            manager._pour_values(property_collection, values, convert)
+        else:
+            # Properties are built from model values, so a stored row is
+            # turned into one first -- the walk this saves is the flat
+            # path's, and there is none to save here.
+            manager._build_properties(
+                property_collection,
+                (
+                    {name: convert[name](value) for name, value in values.items()}
+                    if convert is not None
+                    else dict(values)
+                ),
+            )
+        return manager
+
+    def _pour_values(self, property_collection, values, convert):
+        """What `build_value` says, said inline.
+
+        This is the loop a page of rows runs per column, so it reads the
+        answers off the declaration rather than calling for each of
+        them. `build_value` and `build_first_value` are the same rules
+        written once, and a test holds the two together.
+        """
+        given = values
+        missing = self.MISSING
+        values = self._values
+        first_values = self._first_values
+        for name, creator in property_collection.properties.items():
+            value = given.get(name, missing)
+            if value is missing:
+                value = None
+            elif convert is not None:
+                value = convert[name](value)
+            if value is None:
+                value = (
+                    creator._default()
+                    if creator._default_is_callable
+                    else creator._default
+                )
+            if value is None:
+                if creator._required:
+                    raise exc.PropertyRequired(name=name)
+            elif not creator._property_type.validate(value):
+                raise exc.TypeError(value=value, property_type=creator._property_type)
+            values[name] = value
+            if creator._mutable:
+                # The one value that can change without passing through
+                # the model: a list appended to, a dict written into.
+                first_values[name] = copy.deepcopy(value)
+
+    def _build_properties(self, property_collection, kwargs):
         nested_names = property_collection.nested_names
         # What a collection instantiates a property with is the creator
         # this loop is already holding; going back through the collection
@@ -394,22 +547,97 @@ class PropertyManager(PropertyMapping):
                     raise exc.PropertyRequired(name=name)
             self._properties[name] = prop
 
-        # commented because kwargs can contain 'context' etc. Figure out
-        #        if len(kwargs) > 0:
-        #            raise TypeError("Unknown parameters: %s" % str(kwargs))
-        super(PropertyManager, self).__init__()
+    def materialise(self, name):
+        """The property object for `name`, built if it was not yet.
+
+        Nothing has written to it -- a write goes through the model,
+        which asks for the property first -- so unless the value is one
+        that can be changed in place, what it holds now is what it was
+        built with.
+        """
+        value = self._values.pop(name)
+        prop = self._collection.properties[name].adopt(
+            value, self._first_values.get(name, value)
+        )
+        self._properties[name] = prop
+        return prop
+
+    def materialise_all(self):
+        """Every property as an object -- for whoever walks them all."""
+        for name in list(self._values):
+            self.materialise(name)
+        return self._properties
+
+    @builtins.property
+    def properties(self):
+        # Whoever asks for the mapping itself gets objects: the view is
+        # over property objects, and a value standing on its own is not
+        # one yet.
+        self.materialise_all()
+        return PropertyMapping.properties.fget(self)
+
+    def is_dirty(self):
+        """Whether anything here is not what it was built with.
+
+        A value the model still keeps was never written to -- a write
+        goes through the property -- so the only one that can have
+        changed is one that can be changed in place.
+        """
+        first_values = self._first_values
+        if first_values:
+            values = self._values
+            for name, first in first_values.items():
+                if name in values and not first == values[name]:
+                    return True
+        for prop in self._properties.values():
+            if prop.is_dirty():
+                return True
+        return False
+
+    def get_value(self, name):
+        values = self._values
+        if name in values:
+            return values[name]
+        return self._properties[name].value
+
+    def __getitem__(self, name):
+        if name in self._values:
+            return self.materialise(name)
+        return self._properties[name]
+
+    def __contains__(self, name):
+        return name in self._values or name in self._properties
+
+    def __iter__(self):
+        return (
+            iter(self._collection.properties)
+            if self._values
+            else iter(self._properties)
+        )
+
+    def __len__(self):
+        return len(self._values) + len(self._properties)
+
+    def keys(self):
+        return list(self._values) + list(self._properties)
+
+    def values(self):
+        return self.materialise_all().values()
+
+    def items(self):
+        return self.materialise_all().items()
 
     @builtins.property
     def value(self):
-        result = {}
-        for k, v in self._properties.items():
-            result[k] = v.value
+        result = dict(self._values)
+        for name, prop in self._properties.items():
+            result[name] = prop.value
         return result
 
     @value.setter
     def value(self, values):
-        for k, v in values.items():
-            self._properties[k].value = v
+        for name, value in values.items():
+            self[name].value = value
 
 
 def property(property_type, *args, **kwargs):

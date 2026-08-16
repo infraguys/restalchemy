@@ -56,7 +56,9 @@ class MetaModelTestCase(base.BaseTestCase):
 class ModelTestCase(base.BaseTestCase):
     PM_MOCK = mock.MagicMock(name="PropertyManager object")
 
-    @mock.patch("restalchemy.dm.properties.PropertyManager", return_value=PM_MOCK)
+    @mock.patch(
+        "restalchemy.dm.properties.PropertyManager.poured", return_value=PM_MOCK
+    )
     def setUp(self, pm_mock):
         super(ModelTestCase, self).setUp()
         self.PM_MOCK.__getitem__.side_effect = None
@@ -64,9 +66,9 @@ class ModelTestCase(base.BaseTestCase):
         self.PM_MOCK._properties.__getitem__.side_effect = None
         # The one name the double stands in for a property of. Everything
         # else a model sets on itself is a plain attribute.
-        self.PM_MOCK._properties.__contains__.side_effect = lambda name: (
-            name == "fake_prop1"
-        )
+        self.PM_MOCK.__contains__.side_effect = lambda name: name == "fake_prop1"
+        # The double keeps no bare values, so reads go to its properties.
+        self.PM_MOCK._values = {}
         self.pm_mock = pm_mock
         self.kwargs = {"kwarg1": 1, "kwarg2": 2}
         self.test_instance = models.Model(**self.kwargs)
@@ -79,7 +81,7 @@ class ModelTestCase(base.BaseTestCase):
 
     def test_obj(self):
         self.assertEqual(self.test_instance.properties, self.PM_MOCK)
-        self.pm_mock.assert_called_once_with(models.Model.properties, **self.kwargs)
+        self.pm_mock.assert_called_once_with(models.Model.properties, self.kwargs, None)
 
     def test_obj_getattr(self):
         self.assertEqual(
