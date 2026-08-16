@@ -61,9 +61,12 @@ class ModelTestCase(base.BaseTestCase):
         super(ModelTestCase, self).setUp()
         self.PM_MOCK.__getitem__.side_effect = None
         self.PM_MOCK.reset_mock()
+        self.PM_MOCK._properties.__getitem__.side_effect = None
         # The one name the double stands in for a property of. Everything
         # else a model sets on itself is a plain attribute.
-        self.PM_MOCK.__contains__.side_effect = lambda name: name == "fake_prop1"
+        self.PM_MOCK._properties.__contains__.side_effect = lambda name: (
+            name == "fake_prop1"
+        )
         self.pm_mock = pm_mock
         self.kwargs = {"kwarg1": 1, "kwarg2": 2}
         self.test_instance = models.Model(**self.kwargs)
@@ -80,11 +83,12 @@ class ModelTestCase(base.BaseTestCase):
 
     def test_obj_getattr(self):
         self.assertEqual(
-            self.test_instance.fake_prop1, self.PM_MOCK["fake_prop1"].value
+            self.test_instance.fake_prop1,
+            self.PM_MOCK._properties["fake_prop1"].value,
         )
 
     def test_obj_getattr_raise_attribute_error(self):
-        self.PM_MOCK.__getitem__.side_effect = KeyError
+        self.PM_MOCK._properties.__getitem__.side_effect = KeyError
 
         self.assertRaises(AttributeError, lambda: self.test_instance.fake_prop1)
 

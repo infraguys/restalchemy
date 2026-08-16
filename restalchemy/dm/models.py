@@ -95,7 +95,10 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
 
     def __getattr__(self, name):
         try:
-            return self.properties[name].value
+            # Straight at the mapping's dict: this runs for every model
+            # attribute read there is, and the read-only view in front of
+            # it adds a call per read without adding an answer.
+            return self.properties._properties[name].value
         except KeyError:
             raise AttributeError(
                 "%s object has no attribute %s" % (type(self).__name__, name)
@@ -103,7 +106,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
 
     def __setattr__(self, name, value):
         props = self.properties
-        if name not in props:
+        if name not in props._properties:
             super(Model, self).__setattr__(name, value)
             return
         try:
