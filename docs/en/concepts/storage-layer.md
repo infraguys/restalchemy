@@ -125,6 +125,23 @@ Dialect modules (`restalchemy.storage.sql.dialect.*`) and `tables.SQLTable` are 
 
 As a user, you rarely need to touch them directly — they are driven by models and collections.
 
+### 5. What reading a row does
+
+- A model whose relationships are not prefetched is read from one table,
+  and its columns are selected under their own names. A prefetch joins the
+  related table, and then every column is selected under an alias so that
+  two tables can both select one of the same name.
+- A stored `NULL` is a value nobody gave: the property's default applies,
+  exactly as it does when the value is left out of a constructor.
+- A value the type itself builds out of the stored form — a `UUID`, a
+  `Boolean`, the UTC timestamp `UTCDateTimeZ` settles the timezone of — is
+  not checked against that type again. Every other type is checked as
+  before, including the deprecated naive `UTCDateTime`.
+- Every read arrives at `restore_row` — one model and a whole page
+  alike — so whatever a model wants done on every read belongs there.
+  `restore_from_storage` is a way in and not a way to change what
+  reading does: overriding it leaves a page of rows unaffected.
+
 ---
 
 ## Lifecycle of a SQL-backed model
