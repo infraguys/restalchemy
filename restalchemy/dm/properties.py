@@ -348,7 +348,42 @@ class PropertyCollection(PropertyMapping):
             if isinstance(item, PropertyCollection)
         )
         self._plain = None
+        self._pour_plan = None
+        self._plan_version = -1
         super(PropertyCollection, self).__init__()
+
+    @builtins.property
+    def pour_plan(self):
+        """What filling a model in needs to know, per property, once.
+
+        The loop that fills a model runs per column per row, and each of
+        these was an attribute read off the declaration every time round.
+        The declaration answers them once instead.
+
+        An entry is (name, load, validate, default, default is callable,
+        required, mutable). `load` is what turns a stored value into a
+        model one, which only whoever knows about storage can fill in.
+        """
+        if not self.values_can_stand_alone:
+            # Only a declaration this package builds every property of
+            # answers these; anything else is built the long way and has
+            # no use for a plan.
+            return None
+        if self._pour_plan is None or self._plan_version != declaration_version:
+            self._pour_plan = tuple(
+                (
+                    name,
+                    None,
+                    creator.get_property_type().validate,
+                    creator._default,
+                    creator._default_is_callable,
+                    creator._required,
+                    creator._mutable,
+                )
+                for name, creator in self._properties.items()
+            )
+            self._plan_version = declaration_version
+        return self._pour_plan
 
     @builtins.property
     def values_can_stand_alone(self):
@@ -399,6 +434,7 @@ class PropertyCollection(PropertyMapping):
             result[key] = self._properties[key]
         self._properties = result
         self._plain = None
+        self._pour_plan = None
         self._reset_properties_proxy()
 
         declaration_version += 1
@@ -457,20 +493,24 @@ class PropertyManager(PropertyMapping):
         super(PropertyManager, self).__init__()
 
     @classmethod
-    def poured(cls, property_collection, values, convert=None):
+    def poured(cls, property_collection, values, plan=None, convert=None):
         """A manager over `values`, without spelling them out as keywords.
 
-        `convert` is what turns a stored value into a model one, by name:
-        given it, a row is walked once here instead of being converted
-        into a mapping of its own and walked again.
+        `plan` is what the declaration answered once about filling a
+        model in, with the conversion from stored values folded into it:
+        given one, a row is walked once here instead of being turned
+        into a mapping of its own and walked again. `convert` is the
+        same thing for a declaration that cannot stand alone.
         """
         manager = cls.__new__(cls)
         manager._collection = property_collection
         manager._properties = {}
         manager._values = {}
         manager._first_values = {}
-        if property_collection.values_can_stand_alone:
-            manager._pour_values(property_collection, values, convert)
+        # A plan is only ever answered by a declaration that stands on
+        # its values, so having one is the answer to that question.
+        if plan is not None or property_collection.values_can_stand_alone:
+            manager._pour_values(property_collection, values, plan)
         else:
             # Properties are built from model values, so a stored row is
             # turned into one first -- the walk this saves is the flat
@@ -485,37 +525,40 @@ class PropertyManager(PropertyMapping):
             )
         return manager
 
-    def _pour_values(self, property_collection, values, convert):
-        """What `build_value` says, said inline.
+    def _pour_values(self, property_collection, values, plan):
+        """Fill in from a plan the declaration answered once.
 
-        This is the loop a page of rows runs per column, so it reads the
-        answers off the declaration rather than calling for each of
-        them. `build_value` and `build_first_value` are the same rules
-        written once, and a test holds the two together.
+        This is the loop a page of rows runs per column, so everything
+        it needs about a property arrives already worked out. The rules
+        are `build_value` and `build_first_value`, written here where
+        they are run; a test holds all of them together.
+
         """
+        plan = plan or property_collection.pour_plan
         given = values
         missing = self.MISSING
-        values = self._values
+        kept = self._values
         first_values = self._first_values
-        for name, creator in property_collection.properties.items():
+        for name, load, validate, default, callable_default, required, mutable in plan:
             value = given.get(name, missing)
             if value is missing:
                 value = None
-            elif convert is not None:
-                value = convert[name](value)
+            elif load is not None:
+                value = load(value)
+            # A stored NULL is a value nobody gave, which is what the
+            # default is for -- the rule the property constructor keeps.
             if value is None:
-                value = (
-                    creator._default()
-                    if creator._default_is_callable
-                    else creator._default
-                )
+                value = default() if callable_default else default
             if value is None:
-                if creator._required:
+                if required:
                     raise exc.PropertyRequired(name=name)
-            elif not creator._property_type.validate(value):
-                raise exc.TypeError(value=value, property_type=creator._property_type)
-            values[name] = value
-            if creator._mutable:
+            elif not validate(value):
+                creator = property_collection.properties[name]
+                raise exc.TypeError(
+                    value=value, property_type=creator.get_property_type()
+                )
+            kept[name] = value
+            if mutable:
                 # The one value that can change without passing through
                 # the model: a list appended to, a dict written into.
                 first_values[name] = copy.deepcopy(value)

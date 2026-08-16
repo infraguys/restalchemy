@@ -81,7 +81,9 @@ class ModelTestCase(base.BaseTestCase):
 
     def test_obj(self):
         self.assertEqual(self.test_instance.properties, self.PM_MOCK)
-        self.pm_mock.assert_called_once_with(models.Model.properties, self.kwargs, None)
+        self.pm_mock.assert_called_once_with(
+            models.Model.properties, self.kwargs, None, None
+        )
 
     def test_obj_getattr(self):
         self.assertEqual(

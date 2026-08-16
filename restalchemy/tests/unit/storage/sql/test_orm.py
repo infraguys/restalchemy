@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 import mock
 import orjson
 
@@ -90,6 +91,32 @@ class TestRestoreWithJSONModelTestCase(base.BaseTestCase):
         self.assertEqual(model.a, FAKE_DICT)
         self.assertEqual(model.b, FAKE_LIST)
 
+    def test_json_parsed_for_a_page(self):
+        rows = [
+            {"a": FAKE_DICT_JSON, "b": FAKE_LIST_JSON},
+            {"a": FAKE_DICT_JSON, "b": FAKE_LIST_JSON},
+        ]
+
+        models_ = FakeRestoreWithJSONModel.restore_many_from_storage(rows)
+
+        self.assertEqual([m.a for m in models_], [FAKE_DICT, FAKE_DICT])
+        self.assertEqual([m.b for m in models_], [FAKE_LIST, FAKE_LIST])
+
+    def test_a_page_leaves_natively_decoded_fields_alone(self):
+        rows = [{"a": FAKE_DICT, "b": FAKE_LIST}]
+
+        models_ = FakeRestoreWithJSONModel.restore_many_from_storage(rows)
+
+        self.assertEqual(models_[0].a, FAKE_DICT)
+        self.assertEqual(models_[0].b, FAKE_LIST)
+
+    def test_a_page_does_not_rewrite_the_rows_it_was_given(self):
+        rows = [{"a": FAKE_DICT_JSON, "b": FAKE_LIST_JSON}]
+
+        FakeRestoreWithJSONModel.restore_many_from_storage(rows)
+
+        self.assertEqual(rows, [{"a": FAKE_DICT_JSON, "b": FAKE_LIST_JSON}])
+
     def test_json_dumped(self):
         model = FakeRestoreWithJSONModel(a=FAKE_DICT, b=FAKE_LIST)
         prepared_data = model._get_prepared_data()
@@ -107,7 +134,75 @@ class TestRestoreWithJSONModelTestCase(base.BaseTestCase):
         with self.assertRaises(orm.UndefinedAttribute):
             model.restore_from_storage()
         with self.assertRaises(orm.UndefinedAttribute):
+            type(model).restore_many_from_storage([{}])
+        with self.assertRaises(orm.UndefinedAttribute):
             model._get_prepared_data()
+
+
+class FakeKeywordRestoreModel(models.Model, orm.SQLStorableMixin):
+    """A model that puts its own `restore_from_storage` in the way."""
+
+    __tablename__ = "fake_table"
+
+    a = properties.property(types.String())
+
+    @classmethod
+    def restore_from_storage(cls, source=FAKE_VALUE_B, **kwargs):
+        obj = super(FakeKeywordRestoreModel, cls).restore_from_storage(**kwargs)
+        obj.source = source
+        return obj
+
+
+class FakeRowRestoreModel(models.Model, orm.SQLStorableMixin):
+    """A model that settles something on every read, where it is read."""
+
+    __tablename__ = "fake_table"
+
+    a = properties.property(types.String())
+
+    @classmethod
+    def restore_row(cls, row, pour=None):
+        row = dict(row)
+        source = row.pop("source", FAKE_VALUE_B)
+        obj = super(FakeRowRestoreModel, cls).restore_row(row, pour)
+        obj.source = source
+        return obj
+
+
+class TestWhereEveryReadPassesTestCase(base.BaseTestCase):
+    def test_a_page_does_not_go_through_restore_from_storage(self):
+        rows = [{"a": FAKE_VALUE_A}, {"a": FAKE_VALUE_A}]
+
+        models_ = FakeKeywordRestoreModel.restore_many_from_storage(rows)
+
+        for model in models_:
+            self.assertFalse(hasattr(model, "source"))
+
+    def test_a_single_read_still_goes_through_it(self):
+        model = FakeKeywordRestoreModel.restore_from_storage(a=FAKE_VALUE_A)
+
+        self.assertEqual(model.source, FAKE_VALUE_B)
+
+    def test_restore_row_is_where_both_ways_arrive(self):
+        page = FakeRowRestoreModel.restore_many_from_storage(
+            [{"a": FAKE_VALUE_A}, {"a": FAKE_VALUE_A, "source": "row"}]
+        )
+        one = FakeRowRestoreModel.restore_from_storage(a=FAKE_VALUE_A)
+
+        self.assertEqual([m.source for m in page], [FAKE_VALUE_B, "row"])
+        self.assertEqual(one.source, FAKE_VALUE_B)
+
+    def test_a_page_hands_every_row_the_same_answer(self):
+        rows = [{"a": FAKE_VALUE_A} for _ in range(3)]
+
+        with mock.patch.object(
+            FakeRowRestoreModel,
+            "_get_pour",
+            wraps=FakeRowRestoreModel._get_pour,
+        ) as get_pour:
+            FakeRowRestoreModel.restore_many_from_storage(rows)
+
+        get_pour.assert_called_once_with()
 
 
 class TestSimplifyModelTestCase(base.BaseTestCase):
