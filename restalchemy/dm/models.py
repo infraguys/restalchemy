@@ -68,6 +68,9 @@ class MetaModel(abc.ABCMeta):
         for key, prop in attrs["properties"].items():
             if prop.is_id_property():
                 attrs["id_properties"][key] = attrs["properties"].properties[key]
+        # Which names they are is the class's answer; the mapping over a
+        # model's own is built by whoever asks it for one.
+        attrs["id_properties"] = _IdPropertiesAccess(attrs["id_properties"])
         dm_class = super(MetaModel, cls).__new__(cls, name, bases, attrs)
         dm_class.__operational_storage__ = DmOperationalStorage()
         return dm_class
@@ -84,6 +87,28 @@ class MetaModel(abc.ABCMeta):
         }
         spec.update(types.build_prop_kwargs(kwargs=prop_kwargs))
         return spec
+
+
+class _IdPropertiesAccess(object):
+    """The declaration's answer to a class, a model's own to a model.
+
+    Read off the class -- `cls.id_properties` -- these are the names, as
+    `MetaModel` worked them out. Read off a model, they are that model's
+    properties, built here the first time and kept on the model itself,
+    where every later read finds them without passing through this.
+    """
+
+    def __init__(self, names):
+        self._names = names
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self._names
+        id_properties = IdProperties(obj.properties, self._names)
+        # Straight past `__setattr__`: it exists to tell a property name
+        # from a plain attribute, and this one is known not to be one.
+        object.__setattr__(obj, "id_properties", id_properties)
+        return id_properties
 
 
 class IdProperties(collections_abc.Mapping):
@@ -176,13 +201,6 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         # Straight past `__setattr__`: it exists to tell a property name
         # from a plain attribute, and these two are known not to be one.
         object.__setattr__(self, "properties", manager)
-        # Which names are id properties is decided by the declaration,
-        # and `MetaModel` already worked it out for the class. The
-        # properties themselves are only ever wanted when the model is
-        # written, so they are left to the mapping to hand over then.
-        object.__setattr__(
-            self, "id_properties", IdProperties(manager, type(self).id_properties)
-        )
         try:
             self.validate()
         except exc.PropertyRequired as e:
