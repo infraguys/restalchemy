@@ -109,11 +109,11 @@ class Property(BaseProperty):
             self.set_value_force(default())
         else:
             self.set_value_force(default)
-        self.__first_value = copy.deepcopy(self.value) if mutable else self.value
+        self._first_value = copy.deepcopy(self.value) if mutable else self.value
         self._example = example
 
     def is_dirty(self):
-        return not self.__first_value == self.value
+        return not self._first_value == self.value
 
     def _safe_value(self, value):
         if value is None or self._type.validate(value):
@@ -135,7 +135,7 @@ class Property(BaseProperty):
 
     @builtins.property
     def old_value(self):
-        return self.__first_value
+        return self._first_value
 
     @builtins.property
     def value(self):
@@ -168,6 +168,13 @@ class IDProperty(Property):
         return True
 
 
+# The keyword arguments `Property.__init__` understands, minus `value`,
+# which a creator supplies per property built.
+_PLAIN_PROPERTY_KWARGS = frozenset(
+    ("default", "required", "read_only", "mutable", "example")
+)
+
+
 class PropertyCreator(object):
     def __init__(self, prop_class, prop_type, args, kwargs):
         self._property = prop_class
@@ -176,10 +183,57 @@ class PropertyCreator(object):
         self._kwargs = kwargs
         self._prefetch = kwargs.pop("prefetch", False)
 
-    def __call__(self, value):
-        return self._property(
-            value=value, property_type=self._property_type, *self._args, **self._kwargs
+        # A declaration is read once and built from per model, so
+        # everything about it that does not depend on the value is settled
+        # here. What is left per property is a validate and an allocation
+        # -- `Property.__init__` used to re-answer, per property per
+        # model, questions the declaration had already answered.
+        #
+        # Only the two property classes shipped here take the short path:
+        # a subclass may mean anything by these arguments, and gets the
+        # constructor call it always got.
+        self._fast = (
+            prop_class in (Property, IDProperty)
+            and not args
+            and not (set(kwargs) - _PLAIN_PROPERTY_KWARGS)
         )
+        if self._fast:
+            _check_property_type(prop_type)
+            default = kwargs.get("default")
+            self._default = default
+            self._default_is_callable = callable(default)
+            self._required = bool(kwargs.get("required", False))
+            self._read_only = bool(kwargs.get("read_only", False))
+            self._mutable = bool(kwargs.get("mutable", False))
+            self._example = kwargs.get("example")
+
+    def __call__(self, value):
+        if not self._fast:
+            return self._property(
+                value=value,
+                property_type=self._property_type,
+                *self._args,
+                **self._kwargs,
+            )
+
+        if value is None:
+            value = self._default() if self._default_is_callable else self._default
+
+        property_type = self._property_type
+        if value is None:
+            if self._required:
+                raise exc.PropertyRequired()
+        elif not property_type.validate(value):
+            raise exc.TypeError(value=value, property_type=property_type)
+
+        prop = self._property.__new__(self._property)
+        prop._type = property_type
+        prop._required = self._required
+        prop._read_only = self._read_only
+        prop._value = value
+        prop._first_value = copy.deepcopy(value) if self._mutable else value
+        prop._example = self._example
+        return prop
 
     def get_property_class(self):
         return self._property
@@ -303,13 +357,26 @@ class PropertyManager(PropertyMapping):
     def __init__(self, property_collection, **kwargs):
         self._properties = {}
         nested_names = property_collection.nested_names
+        # What a collection instantiates a property with is the creator
+        # this loop is already holding; going back through the collection
+        # to look it up again put a frame on the path of every property of
+        # every model built. A collection that instantiates its own way
+        # keeps being asked to.
+        direct = (
+            getattr(type(property_collection), "instantiate_property", None)
+            is PropertyCollection.instantiate_property
+        )
         for name, item in property_collection.properties.items():
             if name in nested_names:
                 prop = PropertyManager(item, **kwargs.pop(name, {}))
             else:
                 try:
-                    prop = property_collection.instantiate_property(
-                        name, kwargs.pop(name, None)
+                    prop = (
+                        item(kwargs.pop(name, None))
+                        if direct
+                        else property_collection.instantiate_property(
+                            name, kwargs.pop(name, None)
+                        )
                     )
                 except exc.PropertyRequired:
                     raise exc.PropertyRequired(name=name)

@@ -436,3 +436,175 @@ class PropertyFuncTestCase(base.BaseTestCase):
             *self.ARGS,
             **self.KWARGS,
         )
+
+
+class PropertyCreatorBuildsTestCase(base.BaseTestCase):
+    """What a creator builds, on the short path and off it.
+
+    A creator answers everything a declaration settles once, and builds
+    the property from there; the two paths must not disagree about
+    defaults, validation or what counts as dirty.
+    """
+
+    def test_a_value_beats_the_default(self):
+        creator = properties.property(types.String(), default="d")
+
+        self.assertEqual("v", creator("v").value)
+        self.assertEqual("d", creator(None).value)
+
+    def test_a_callable_default_is_called_per_property(self):
+        creator = properties.property(types.TypedList(types.String()), default=list)
+
+        first, second = creator(None), creator(None)
+        first.value.append("x")
+
+        self.assertEqual(["x"], first.value)
+        self.assertEqual([], second.value)
+
+    def test_a_mutable_property_notices_it_was_changed(self):
+        creator = properties.property(
+            types.TypedList(types.String()), default=list, mutable=True
+        )
+
+        prop = creator(None)
+        prop.value.append("x")
+
+        self.assertEqual([], prop.old_value)
+        self.assertTrue(prop.is_dirty())
+
+    def test_a_value_of_the_wrong_type_is_refused(self):
+        creator = properties.property(types.String())
+
+        self.assertRaises(exceptions.TypeError, creator, 1)
+
+    def test_a_required_property_without_a_value_is_refused(self):
+        creator = properties.required_property(types.String())
+
+        self.assertRaises(exceptions.PropertyRequired, creator, None)
+
+    def test_a_read_only_property_keeps_its_flags(self):
+        prop = properties.readonly_property(types.String())("v")
+
+        self.assertTrue(prop.is_read_only())
+        self.assertTrue(prop.is_required())
+        self.assertRaises(exceptions.ReadOnlyProperty, setattr, prop, "value", "o")
+
+    def test_an_id_property_says_so(self):
+        prop = properties.property(types.String(), id_property=True)("v")
+
+        self.assertIsInstance(prop, properties.IDProperty)
+        self.assertTrue(prop.is_id_property())
+
+    def test_a_property_class_of_its_own_is_built_as_before(self):
+        class LocalProperty(properties.Property):
+            pass
+
+        prop = properties.property(
+            types.String(), property_class=LocalProperty, default="d"
+        )(None)
+
+        self.assertIsInstance(prop, LocalProperty)
+        self.assertEqual("d", prop.value)
+
+    def test_the_example_is_carried_over(self):
+        prop = properties.property(types.String(), example="e")(None)
+
+        self.assertEqual("e", prop.example())
+
+    def test_a_type_that_is_not_one_is_refused_at_declaration(self):
+        self.assertRaises(TypeError, properties.property, object())
+
+
+class PropertyCreatorPathsAgreeTestCase(base.BaseTestCase):
+    """The short path must build what the constructor would.
+
+    A creator answers everything a declaration settles and fills the
+    property in itself, which is a second place that knows what a
+    property is made of. This is what keeps the two from drifting: the
+    objects have to come out indistinguishable, down to the attributes
+    they carry.
+    """
+
+    DECLARATIONS = (
+        ("plain", types.String(), {}),
+        ("default", types.String(), {"default": "d"}),
+        ("callable default", types.TypedList(types.String()), {"default": list}),
+        ("required", types.String(), {"required": True}),
+        ("read only", types.String(), {"read_only": True}),
+        (
+            "mutable",
+            types.TypedList(types.String()),
+            {"default": list, "mutable": True},
+        ),
+        ("example", types.String(), {"example": "e"}),
+        ("id", types.String(), {"id_property": True}),
+        (
+            "everything",
+            types.TypedList(types.String()),
+            {
+                "default": list,
+                "required": True,
+                "read_only": True,
+                "mutable": True,
+                "example": ["e"],
+            },
+        ),
+    )
+
+    VALUES = (None, "v", ["v"])
+
+    def test_both_paths_build_the_same_property(self):
+        for label, prop_type, kwargs in self.DECLARATIONS:
+            creator = properties.property(prop_type, **kwargs)
+            constructor_kwargs = dict(kwargs)
+            property_class = (
+                properties.IDProperty
+                if constructor_kwargs.pop("id_property", False)
+                else properties.Property
+            )
+            for value in self.VALUES:
+                fast = self._build(creator, value)
+                slow = self._build(
+                    lambda v: property_class(
+                        property_type=prop_type, value=v, **constructor_kwargs
+                    ),
+                    value,
+                )
+
+                self.assertEqual(
+                    type(fast).__name__,
+                    type(slow).__name__,
+                    "%s / %r" % (label, value),
+                )
+                if isinstance(fast, Exception) or isinstance(slow, Exception):
+                    self.assertEqual(repr(fast), repr(slow), "%s / %r" % (label, value))
+                    continue
+                self.assertEqual(vars(fast), vars(slow), "%s / %r" % (label, value))
+                self.assertEqual(
+                    (
+                        fast.value,
+                        fast.old_value,
+                        fast.is_dirty(),
+                        fast.is_required(),
+                        fast.is_read_only(),
+                        fast.is_id_property(),
+                        fast.example(),
+                    ),
+                    (
+                        slow.value,
+                        slow.old_value,
+                        slow.is_dirty(),
+                        slow.is_required(),
+                        slow.is_read_only(),
+                        slow.is_id_property(),
+                        slow.example(),
+                    ),
+                    "%s / %r" % (label, value),
+                )
+
+    @staticmethod
+    def _build(build, value):
+        try:
+            return build(value)
+        except Exception as error:
+            return error
