@@ -214,8 +214,13 @@ class String(BasePythonType):
         self.max_length = int(max_length)
 
     def validate(self, value):
-        result = super(String, self).validate(value)
-        return result and self.min_length <= len(str(value)) <= self.max_length
+        # Inlined: `isinstance` is what the base does, and `str(value)`
+        # hands a string straight back -- both were a call on the path of
+        # every string property of every model built.
+        return (
+            isinstance(value, self._python_type)
+            and self.min_length <= len(value) <= self.max_length
+        )
 
     def from_unicode(self, value):
         return str(value)
@@ -778,15 +783,49 @@ class UTCDateTime(BasePythonType):
         )
 
     def to_simple_type(self, value):
-        return value.strftime(MYSQL_DATETIME_FMT)
+        # `strftime` walks a format string and consults the locale; both
+        # formats this type uses are fixed and ASCII, so the parts are
+        # written out directly. Same bytes, several times cheaper, and a
+        # stored row or an API field is written per property per object.
+        return "%04d-%02d-%02d %02d:%02d:%02d.%06d" % (
+            value.year,
+            value.month,
+            value.day,
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+        )
 
     def dump_value(self, value):
         # Converting value in api response
-        return value.strftime(OPENAPI_DATETIME_FMT)
+        return "%04d-%02d-%02dT%02d:%02d:%02d.%06dZ" % (
+            value.year,
+            value.month,
+            value.day,
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+        )
 
     def from_simple_type(self, value):
         if isinstance(value, datetime.datetime):
             return value
+        if type(value) is str and not value.endswith("Z"):
+            # The stored format is ISO 8601, and `fromisoformat` reads it
+            # in C, where `strptime` builds a regexp and consults the
+            # locale per call. Anything it refuses falls through to
+            # `strptime`, so nothing that parsed before stops parsing.
+            #
+            # The API format is left to `strptime` on purpose: on 3.11+
+            # `fromisoformat` reads its trailing `Z` and hands back an
+            # aware datetime, where this type -- the naive one -- has
+            # always produced a naive one.
+            try:
+                return datetime.datetime.fromisoformat(value)
+            except ValueError:
+                pass
         try:
             return datetime.datetime.strptime(value, MYSQL_DATETIME_FMT)
         except ValueError:
