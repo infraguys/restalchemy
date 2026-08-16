@@ -25,6 +25,7 @@ from restalchemy.api import field_permissions
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties as ra_properties
 from restalchemy.dm import relationships as ra_relationsips
+from restalchemy.dm import types as ra_types
 
 
 class ResourceMap(object):
@@ -148,9 +149,29 @@ class AbstractResourceProperty(metaclass=abc.ABCMeta):
     def dump_value(self, value):
         return NotImplementedError()
 
+    def get_dump_callable(self):
+        """What turns a model value into the value the API writes out.
+
+        `None` says the value goes out as it stands, which lets a packer
+        leave the call out altogether rather than reach the identity two
+        frames down. A field that does not know either way says so by
+        handing back its own `dump_value`.
+        """
+        return self.dump_value
+
 
 class ResourceProperty(AbstractResourceProperty):
     pass
+
+
+# The `to_simple_type` implementations that hand the value back unchanged.
+_IDENTITY_TO_SIMPLE_TYPES = frozenset(
+    (
+        ra_types.BasePythonType.to_simple_type,
+        ra_types.BaseRegExpType.to_simple_type,
+        ra_types.Enum.to_simple_type,
+    )
+)
 
 
 class ResourceRAProperty(ResourceProperty):
@@ -170,6 +191,20 @@ class ResourceRAProperty(ResourceProperty):
 
     def dump_value(self, value):
         return self._prop_type.dump_value(value)
+
+    def get_dump_callable(self):
+        prop_type_class = type(self._prop_type)
+        if (
+            prop_type_class.dump_value is ra_types.BaseType.dump_value
+            and prop_type_class.to_simple_type in _IDENTITY_TO_SIMPLE_TYPES
+        ):
+            # A string, an integer, an enum: the simple form is the value.
+            # Say so, instead of calling two methods to be handed it back.
+            # Which implementation the type resolved to is what is
+            # checked, so a subclass that converts (`Decimal`) is not
+            # mistaken for the base it inherits from.
+            return None
+        return self._prop_type.dump_value
 
 
 class ResourceRelationship(AbstractResourceProperty):
@@ -394,6 +429,10 @@ class AbstractResource(metaclass=abc.ABCMeta):
                                  with READWRITE permissions to all fields
         """
         super(AbstractResource, self).__init__()
+        # Resource fields already built, by (model field name, public).
+        self._field_cache = {}
+        # API names already worked out, by model field name.
+        self._api_names = {}
         self._model_class = model_class
         self._name_map = name_map or {}
         self._inv_name_map = {v: k for k, v in self._name_map.items()}
@@ -480,8 +519,16 @@ class AbstractResource(metaclass=abc.ABCMeta):
         return name.replace("-", "_") if self._convert_underscore else name
 
     def get_resource_field_name(self, model_field_name):
-        name = self._m2r_name_map.get(model_field_name, model_field_name)
-        return name.replace("_", "-") if self._convert_underscore else name
+        # Asked per field per request, twice over -- once to decide
+        # visibility, once for the name to write out -- and the answer is
+        # a property of the resource.
+        try:
+            return self._api_names[model_field_name]
+        except KeyError:
+            name = self._m2r_name_map.get(model_field_name, model_field_name)
+            name = name.replace("_", "-") if self._convert_underscore else name
+            self._api_names[model_field_name] = name
+            return name
 
     def is_public_field(self, model_field_name):
         return not (
@@ -582,23 +629,36 @@ class AbstractResource(metaclass=abc.ABCMeta):
 class ResourceByRAModel(AbstractResource):
     def _prep_field(self, name, prop, override_is_public_field_func=None):
         is_public_field = override_is_public_field_func or self.is_public_field
+        public = is_public_field(name)
+
+        # A resource field is what the model declared plus one bit the
+        # request decides, so there are two of each at most, and both were
+        # rebuilt per field per request -- for a collection that is a
+        # `issubclass` against an abstract base and an object per field.
+        cached = self._field_cache.get((name, public))
+        if cached is not None:
+            return cached
+
         if issubclass(prop, ra_properties.BaseProperty):
-            return ResourceRAProperty(
+            field = ResourceRAProperty(
                 resource=self,
                 prop_type=(
                     self._model_class.properties.properties[name].get_property_type()
                 ),
                 model_property_name=name,
-                public=is_public_field(name),
+                public=public,
             )
         elif issubclass(prop, ra_relationsips.BaseRelationship):
-            return ResourceRelationship(
+            field = ResourceRelationship(
                 self,
                 model_property_name=name,
-                public=is_public_field(name),
+                public=public,
             )
         else:
             raise TypeError("Unknown property type %s" % type(prop))
+
+        self._field_cache[(name, public)] = field
+        return field
 
     def get_field(self, name, override_is_public_field_func=None):
         if not (prop := self._model_class.properties.get(name)):
@@ -656,15 +716,11 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
             # native property doesn't exist, try custom property
             pass
         try:
-            is_public_field = override_is_public_field_func or self.is_public_field
-            return ResourceRAProperty(
-                resource=self,
-                prop_type=self._model_class.get_custom_property_type(name),
-                model_property_name=name,
-                public=is_public_field(name),
-            )
+            prop_type = self._model_class.get_custom_property_type(name)
         except KeyError:
             raise ValueError("Model doesn't have field %s" % name)
+        is_public_field = override_is_public_field_func or self.is_public_field
+        return self._prep_custom_field(name, prop_type, is_public_field(name))
 
     def get_fields(self, override_is_public_field_func=None):
         """Get resource fields
@@ -680,15 +736,21 @@ class ResourceByModelWithCustomProps(ResourceByRAModel):
         for name, prop in fields:
             yield name, prop
         for name, prop_type in self._model_class.get_custom_properties():
-            yield (
-                name,
-                ResourceRAProperty(
-                    resource=self,
-                    prop_type=prop_type,
-                    model_property_name=name,
-                    public=is_public_field(name),
-                ),
+            yield name, self._prep_custom_field(name, prop_type, is_public_field(name))
+
+    def _prep_custom_field(self, name, prop_type, public):
+        """A custom property's resource field, built once per visibility."""
+        key = (name, public)
+        field = self._field_cache.get(key)
+        if field is None:
+            field = ResourceRAProperty(
+                resource=self,
+                prop_type=prop_type,
+                model_property_name=name,
+                public=public,
             )
+            self._field_cache[key] = field
+        return field
 
     def get_property_type(self, property_name):
         try:

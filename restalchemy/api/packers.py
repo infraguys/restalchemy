@@ -20,12 +20,14 @@ import copy
 import logging
 import types
 import typing
+import weakref
 
 import orjson
 
 from restalchemy.api import constants
 from restalchemy.common import exceptions
 from restalchemy.common import utils
+from restalchemy.dm import properties as ra_properties
 
 DEFAULT_VALUE = object()
 CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = (
@@ -39,6 +41,30 @@ def get_content_type(headers):
     return headers.get("Content-Type") or constants.DEFAULT_CONTENT_TYPE
 
 
+_CLASS_ATTRIBUTE_NAMES = weakref.WeakKeyDictionary()
+
+
+def _class_attribute_names(klass):
+    """Every name the class or one of its bases defines.
+
+    A model's declared properties are not among them -- the metaclass
+    moves them off the class -- so this is exactly the set of names a
+    model answers with something other than a stored property value.
+
+    Read once per class: a class gains its attributes when it is
+    defined. A `@property` added to a model class after something has
+    already been packed from it would not be noticed.
+    """
+    names = _CLASS_ATTRIBUTE_NAMES.get(klass)
+    if names is None:
+        names = set()
+        for base in klass.__mro__:
+            names.update(base.__dict__)
+        names = frozenset(names)
+        _CLASS_ATTRIBUTE_NAMES[klass] = names
+    return names
+
+
 class BaseResourcePacker(object):
     _skip_none = True
 
@@ -48,6 +74,7 @@ class BaseResourcePacker(object):
         self._fields = None
         self._visible_fields = None
         self._fields_resource = None
+        self._fields_by_model = {}
 
     def _get_fields(self):
         """The resource fields, resolved once per packer.
@@ -65,19 +92,44 @@ class BaseResourcePacker(object):
             self._fields_resource = self._rt
             self._fields = list(self._rt.get_fields_by_request(self._req))
             self._visible_fields = None
+            self._fields_by_model = {}
         return self._fields
 
     def _get_visible_fields(self):
-        """The fields packing writes out, with their API names."""
+        """The fields packing writes out, with their API names.
+
+        Each carries the call that writes its value out, resolved here
+        rather than reached through the field per object: `None` for a
+        field whose value is already what goes on the wire.
+        """
         fields = self._get_fields()
         if self._visible_fields is None:
             self._visible_fields = [
-                (name, prop.api_name, prop)
+                (name, prop.api_name, prop.get_dump_callable())
                 for name, prop in fields
                 if prop.is_public()
                 and not self._rt._fields_permissions.is_hidden(name, self._req)
             ]
         return self._visible_fields
+
+    def _get_fields_for_model(self, model_class):
+        """The visible fields, saying which are the model's own to read.
+
+        `getattr` on a model property is a failed attribute lookup, a
+        `__getattr__` frame and a mapping behind it -- per field per
+        object packed. A name the class itself defines (a `@property`
+        computing a value, a custom property) is not the model's to hand
+        over, and keeps the attribute lookup it has always had.
+        """
+        fields = self._fields_by_model.get(model_class)
+        if fields is None:
+            defined = _class_attribute_names(model_class)
+            fields = [
+                (name, api_name, dump, name not in defined)
+                for name, api_name, dump in self._get_visible_fields()
+            ]
+            self._fields_by_model[model_class] = fields
+        return fields
 
     def pack_resource(self, obj):
         if isinstance(
@@ -85,17 +137,35 @@ class BaseResourcePacker(object):
             (str, int, float, bool, type(None), list, tuple, dict),
         ):
             return obj
-        else:
+
+        obj_properties = getattr(obj, "properties", None)
+        if type(obj_properties) is not ra_properties.PropertyManager:
             result = {}
-            for name, api_name, prop in self._get_visible_fields():
+            for name, api_name, dump in self._get_visible_fields():
                 value = getattr(obj, name)
                 if value is None:
                     if not self._skip_none:
                         result[api_name] = value
+                elif dump is None:
+                    result[api_name] = value
                 else:
-                    result[api_name] = prop.dump_value(value)
-
+                    result[api_name] = dump(value)
             return result
+
+        values = obj_properties._properties
+        result = {}
+        for name, api_name, dump, own in self._get_fields_for_model(type(obj)):
+            prop = values.get(name) if own else None
+            value = prop.value if prop is not None else getattr(obj, name)
+            if value is None:
+                if not self._skip_none:
+                    result[api_name] = value
+            elif dump is None:
+                result[api_name] = value
+            else:
+                result[api_name] = dump(value)
+
+        return result
 
     def pack(self, obj):
         if isinstance(obj, list) or isinstance(obj, types.GeneratorType):
