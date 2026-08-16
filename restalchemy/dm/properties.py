@@ -476,11 +476,18 @@ class PropertyManager(PropertyMapping):
     #: what a name absent from the values given is, before defaults
     MISSING = object()
 
+    #: Stood in for until something writes one: a model read out of
+    #: storage keeps no value that can be changed in place. Whoever
+    #: writes puts a mapping of its own here first -- this one is shared
+    #: by every manager and must stay empty. `_properties` is not one of
+    #: these: `PropertyMapping` hands out a view over it that would go
+    #: on viewing the mapping it was built over.
+    _first_values = {}
+
     def __init__(self, property_collection, **kwargs):
         self._collection = property_collection
         self._properties = {}
         self._values = {}
-        self._first_values = {}
 
         if property_collection.values_can_stand_alone:
             self._pour_values(property_collection, kwargs, None)
@@ -506,7 +513,6 @@ class PropertyManager(PropertyMapping):
         manager._collection = property_collection
         manager._properties = {}
         manager._values = {}
-        manager._first_values = {}
         # A plan is only ever answered by a declaration that stands on
         # its values, so having one is the answer to that question.
         if plan is not None or property_collection.values_can_stand_alone:
@@ -541,7 +547,6 @@ class PropertyManager(PropertyMapping):
         given = values
         missing = self.MISSING
         kept = self._values
-        first_values = self._first_values
         for name, load, validate, default, callable_default, required, mutable in plan:
             value = given.get(name, missing)
             if value is missing:
@@ -564,7 +569,9 @@ class PropertyManager(PropertyMapping):
             if mutable:
                 # The one value that can change without passing through
                 # the model: a list appended to, a dict written into.
-                first_values[name] = copy.deepcopy(value)
+                if not self._first_values:
+                    self._first_values = {}
+                self._first_values[name] = copy.deepcopy(value)
 
     def _build_properties(self, property_collection, kwargs):
         nested_names = property_collection.nested_names
