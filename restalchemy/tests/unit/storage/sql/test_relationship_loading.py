@@ -65,7 +65,9 @@ class FakeSession(object):
                 match = self._find(name, right_col, key)
                 joined.update(self._prefixed(match, join_alias))
             if self._matches(statement, values, joined):
-                rows.append(joined)
+                # A join-free `SELECT` names no aliases, so the driver
+                # names the columns itself.
+                rows.append(joined if joins else self._unprefixed(joined, alias))
         return rows
 
     def _find(self, table, column, value):
@@ -77,6 +79,11 @@ class FakeSession(object):
     @staticmethod
     def _key(alias, column):
         return "%s_%s" % (alias, column) if alias else column
+
+    @classmethod
+    def _unprefixed(cls, row, alias):
+        cut = len(alias) + 1 if alias else 0
+        return {name[cut:]: value for name, value in row.items()}
 
     @classmethod
     def _prefixed(cls, row, alias):
