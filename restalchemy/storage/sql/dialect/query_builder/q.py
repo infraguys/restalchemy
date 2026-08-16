@@ -15,7 +15,9 @@
 import abc
 import collections
 import threading
+import weakref
 
+from restalchemy.dm import properties as ra_properties
 from restalchemy.storage import base
 from restalchemy.storage.sql import filters as sql_filters
 from restalchemy.storage.sql.dialect.query_builder import common
@@ -201,17 +203,29 @@ class ResultNode(object):
     def __init__(self):
         super(ResultNode, self).__init__()
         self._child_nodes = {}
+        # The names this node reads straight out of the row, as
+        # (name, alias) pairs -- everything but a nested node, which has a
+        # row of its own to walk. A model without prefetched relationships
+        # is entirely flat, and then parsing a row is one loop instead of
+        # a call per column per row.
+        self._flat_fields = []
 
     def add_child_field(self, name, alias_name):
         self._child_nodes[name] = ResultField(alias_name=alias_name)
+        self._flat_fields.append((name, alias_name))
         return self._child_nodes[name]
 
     def add_child_node(self, name):
         self._child_nodes[name] = ResultNode()
+        self._flat_fields = [field for field in self._flat_fields if field[0] != name]
         return self._child_nodes[name]
 
     def parse(self, row):
         result = base.PrefetchResult()
+        if len(self._flat_fields) == len(self._child_nodes):
+            for name, alias_name in self._flat_fields:
+                result[name] = row[alias_name]
+            return result
         for name, child_node in self._child_nodes.items():
             result[name] = child_node.parse(row)
         return result
@@ -227,30 +241,153 @@ class ResultParser(object):
         return self._root
 
 
+class _EngineSession(object):
+    """Stands in for a session where only the engine is ever asked for.
+
+    Everything a `SELECT` builds out of a model -- tables, columns,
+    aliases -- reads one thing off the session it is handed: how the
+    engine escapes a name. Holding a real session in a structure that
+    outlives the request would pin a connection to it; this holds the
+    engine and nothing else.
+    """
+
+    __slots__ = ("_engine", "__weakref__")
+
+    def __init__(self, engine):
+        # Weakly: what is built from an engine is kept under that engine
+        # in a weak map, and a strong reference from the value back to
+        # the key would keep every engine ever queried alive -- with its
+        # connections, which are closed when it is collected.
+        self._engine = weakref.ref(engine)
+
+    @property
+    def engine(self):
+        return self._engine()
+
+
+class _SelectShape(object):
+    """The part of a `SELECT` that a model and an engine already decide.
+
+    Which columns are selected, under which aliases, from which tables,
+    and how a row of them maps back onto the model: none of it depends on
+    the filters, the ordering or the limit, and all of it was rebuilt --
+    an object per column, three deep -- per query. It is built once per
+    model per engine and read from there.
+
+    Read-only once built: a query appends only to lists of its own.
+    """
+
+    __slots__ = (
+        "model_table",
+        "select_expressions",
+        "table_references",
+        "result_parser",
+        "prefix",
+    )
+
+    def __init__(
+        self,
+        model_table,
+        select_expressions,
+        table_references,
+        result_parser,
+        prefix,
+    ):
+        self.model_table = model_table
+        self.select_expressions = select_expressions
+        self.table_references = table_references
+        self.result_parser = result_parser
+        self.prefix = prefix
+
+
+# Per engine, per model. Weak on the engine so that a short-lived one --
+# a test builds them freely -- is not kept alive by having been queried.
+_SHAPE_CACHE = weakref.WeakKeyDictionary()
+_SHAPE_CACHE_LOCK = threading.Lock()
+
+# The declaration these shapes were built from. A model's properties can
+# be reordered after a query has run (`sort_properties()` does that), and
+# then nothing built from the old order is worth keeping.
+_SHAPE_CACHE_VERSION = ra_properties.declaration_version
+
+
+def clear_shape_cache():
+    """Forget what models looked like when they were last queried."""
+    with _SHAPE_CACHE_LOCK:
+        _SHAPE_CACHE.clear()
+
+
 class SelectQ(common.AbstractClause):
     def __init__(self, model, session):
         super(SelectQ, self).__init__(session)
-        self._autoinc = 0
-        self._autoinc_lock = threading.RLock()
-        self._result_parser = ResultParser()
-        self._model_table = common.TableAlias(
-            Table(model, session=session),
-            self._build_table_alias_name(),
-            session=session,
-        )
-        self._select_expressions = []
-        self._table_references = [self._model_table]  # type: list
+        # What the shape refers to weakly, a query being built refers to
+        # strongly: the engine has to outlive the compile it is part of.
+        self._engine = session.engine
+        shape = self._get_shape(model, session)
+        self._model_table = shape.model_table
+        self._select_expressions = shape.select_expressions
+        self._table_references = shape.table_references
+        self._result_parser = shape.result_parser
+        self._prefix = shape.prefix
         self._where_expression = sql_filters.AND()
         self._order_by_expressions = []
         self._for_expression = None
         self._limit_condition = None
-        self._add_column_to_select_expressions(
-            result_parser_node=self._result_parser.root,
-            columns=self._model_table.get_columns(with_prefetch=False),
+
+    @classmethod
+    def _get_shape(cls, model, session):
+        global _SHAPE_CACHE_VERSION
+
+        engine = session.engine
+        if _SHAPE_CACHE_VERSION == ra_properties.declaration_version:
+            shapes = _SHAPE_CACHE.get(engine)
+            if shapes is not None:
+                shape = shapes.get(model)
+                if shape is not None:
+                    return shape
+        else:
+            clear_shape_cache()
+            _SHAPE_CACHE_VERSION = ra_properties.declaration_version
+        with _SHAPE_CACHE_LOCK:
+            shapes = _SHAPE_CACHE.setdefault(engine, {})
+            shape = shapes.get(model)
+            if shape is None:
+                shape = cls._build_shape(model, engine)
+                shapes[model] = shape
+        return shape
+
+    @classmethod
+    def _build_shape(cls, model, engine):
+        builder = cls.__new__(cls)
+        common.AbstractClause.__init__(builder, _EngineSession(engine))
+        builder._autoinc = 0
+        builder._autoinc_lock = threading.RLock()
+        builder._result_parser = ResultParser()
+        builder._model_table = common.TableAlias(
+            Table(model, session=builder._session),
+            builder._build_table_alias_name(),
+            session=builder._session,
         )
-        self._resolve_model_dependency(
-            table=self._model_table,
-            result_parser_node=self._result_parser.root,
+        builder._select_expressions = []
+        builder._table_references = [builder._model_table]
+        builder._add_column_to_select_expressions(
+            result_parser_node=builder._result_parser.root,
+            columns=builder._model_table.get_columns(with_prefetch=False),
+        )
+        builder._resolve_model_dependency(
+            table=builder._model_table,
+            result_parser_node=builder._result_parser.root,
+        )
+        return _SelectShape(
+            model_table=builder._model_table,
+            select_expressions=builder._select_expressions,
+            table_references=builder._table_references,
+            result_parser=builder._result_parser,
+            prefix="SELECT %s FROM %s"
+            % (
+                ", ".join([exp.compile() for exp in builder._select_expressions]),
+                " ".join([tbl.compile() for tbl in builder._table_references]),
+            ),
         )
 
     def _resolve_model_dependency(self, table, result_parser_node):
@@ -362,10 +499,7 @@ class SelectQ(common.AbstractClause):
 
     def compile(self):
         # noinspection SqlInjection
-        expression = "SELECT %s FROM %s" % (
-            ", ".join([exp.compile() for exp in self._select_expressions]),
-            " ".join([tbl.compile() for tbl in self._table_references]),
-        )
+        expression = self._prefix
         where_expressions = self._where_expression.construct_expression()
         if where_expressions:
             expression += " WHERE " + where_expressions
