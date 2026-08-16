@@ -305,8 +305,12 @@ class Integer(BasePythonType):
         self.max_value = max_value if max_value == INFINITY else int(max_value)
 
     def validate(self, value):
-        result = super(Integer, self).validate(value)
-        return result and self.min_value <= value <= self.max_value
+        # Inlined as `String` is: the base call is one `isinstance`, run
+        # per integer property of every model built.
+        return (
+            isinstance(value, self._python_type)
+            and self.min_value <= value <= self.max_value
+        )
 
     def from_unicode(self, value):
         return int(value)
@@ -864,11 +868,15 @@ class UTCDateTimeZ(UTCDateTime):
         )
 
     def from_simple_type(self, value):
-        result = super(UTCDateTimeZ, self).from_simple_type(value)
-        if result.tzinfo is not None:
-            return result.astimezone(datetime.timezone.utc)
+        if not isinstance(value, datetime.datetime):
+            # Not what a driver hands back for a timestamp column, so
+            # the parent reads it; a datetime it would hand straight
+            # back, and only the timezone is left to settle.
+            value = super(UTCDateTimeZ, self).from_simple_type(value)
+        if value.tzinfo is not None:
+            return value.astimezone(datetime.timezone.utc)
         # If datetime is naive, it's assumed that timezone is UTC, add it
-        return result.replace(tzinfo=datetime.timezone.utc)
+        return value.replace(tzinfo=datetime.timezone.utc)
 
     @property
     def example(self):
