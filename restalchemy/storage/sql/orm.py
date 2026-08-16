@@ -40,6 +40,21 @@ _VALUES_AS_STORED = frozenset(
         ra_types.Enum.from_simple_type,
     )
 )
+# The types that can only build a value of their own type, so that
+# checking what one of them just built against the type that built it
+# answers the same every time. These are the exact classes and not what
+# inherits them: a subclass keeps the conversion but may have a check of
+# its own to make, and that one still has to run. The naive
+# `UTCDateTime` is deliberately not here: it reads a stored string into
+# whatever timezone the string names, and its own check is what refuses
+# one that is neither UTC nor naive.
+_TYPES_THAT_CHECK_THEMSELVES = frozenset(
+    (
+        ra_types.UUID,
+        ra_types.Boolean,
+        ra_types.UTCDateTimeZ,
+    )
+)
 
 
 class ObjectCollection(
@@ -232,10 +247,10 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
         """The declaration's plan, with the stored form folded in.
 
         The plan says what to check and what to fall back on; this adds
-        what turns the stored value into a model one -- and leaves it
-        out where the type hands the value straight back, so a column
-        that needs nothing costs nothing. A declaration that cannot
-        stand on its values has no plan, and reads a row the long way.
+        what turns the stored value into a model one -- and leaves out
+        both where the type answers them itself, so a column that needs
+        nothing costs nothing. A declaration that cannot stand on its
+        values has no plan, and reads a row the long way.
         """
         stored = cls.__operational_storage__
         try:
@@ -251,12 +266,21 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
         loaders = cls._get_storage_loaders()
         declared = cls.properties.properties
         plan = []
-        for name, _, *rest in declared_plan:
-            stored_form = type(declared[name].get_property_type()).from_simple_type
+        for name, _, validate, *rest in declared_plan:
+            declared_type = type(declared[name].get_property_type())
             plan.append(
                 (
                     name,
-                    None if stored_form in _VALUES_AS_STORED else loaders[name],
+                    (
+                        None
+                        if declared_type.from_simple_type in _VALUES_AS_STORED
+                        else loaders[name]
+                    ),
+                    (
+                        None
+                        if declared_type in _TYPES_THAT_CHECK_THEMSELVES
+                        else validate
+                    ),
                     *rest,
                 )
             )

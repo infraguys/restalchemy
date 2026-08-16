@@ -533,6 +533,9 @@ class PropertyManager(PropertyMapping):
         are `build_value` and `build_first_value`, written here where
         they are run; a test holds all of them together.
 
+        A plan may say a value needs no checking -- the storage plan
+        says it of a value its own type has just built -- and then the
+        check is not in the plan to be run.
         """
         plan = plan or property_collection.pour_plan
         given = values
@@ -552,7 +555,7 @@ class PropertyManager(PropertyMapping):
             if value is None:
                 if required:
                     raise exc.PropertyRequired(name=name)
-            elif not validate(value):
+            elif validate is not None and not validate(value):
                 creator = property_collection.properties[name]
                 raise exc.TypeError(
                     value=value, property_type=creator.get_property_type()
