@@ -15,6 +15,7 @@
 #    under the License.
 
 # TODO(Eugene Frolov): Rewrite tests
+import datetime
 import decimal
 import uuid
 
@@ -22,6 +23,8 @@ import mock
 import orjson
 import webob
 
+from restalchemy.api import constants
+from restalchemy.api import contexts
 from restalchemy.api import field_permissions
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -416,3 +419,126 @@ class DumpCallableTestCase(base.BaseTestCase):
 
             self.assertIsNotNone(dump)
             self.assertEqual(field.dump_value(value), dump(value))
+
+
+class NativeTypesTestCase(base.BaseTestCase):
+    """What a packer hands over unconverted, and what that must not change."""
+
+    def setUp(self):
+        super(NativeTypesTestCase, self).setUp()
+        self._resource = resources.ResourceByRAModel(FakeModel)
+        # A real request, so the resource does share what it resolves --
+        # which is the thing these packers must not share blindly.
+        self._req = webob.Request.blank("/things/")
+        self._req.api_context = contexts.RequestContext(self._req)
+        self._req.api_context.set_active_method(constants.GET)
+        self._model = FakeModel(field2=2, field3=3, field4=4)
+
+    def tearDown(self):
+        super(NativeTypesTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+
+    def test_the_json_a_uuid_ends_up_in_is_the_same(self):
+        packer = packers.JSONPacker(self._resource, self._req)
+
+        self.assertEqual(
+            orjson.dumps(
+                {
+                    "uuid": str(self._model.uuid),
+                    "field2": 2,
+                    "field3": 3,
+                    "field4": 4,
+                }
+            ),
+            packer.pack(self._model),
+        )
+
+    def test_a_packer_that_writes_no_json_still_gets_a_string(self):
+        packer = packers.BaseResourcePacker(self._resource, self._req)
+
+        self.assertEqual(
+            str(self._model.uuid), packer.pack_resource(self._model)["uuid"]
+        )
+
+    def test_packers_do_not_share_what_they_write_out_differently(self):
+        # Both read the same resource for the same request, and the
+        # resource shares what it resolved between them -- but only one
+        # of them may leave a UUID for the document to write.
+        json_packer = packers.JSONPacker(self._resource, self._req)
+        plain_packer = packers.BaseResourcePacker(self._resource, self._req)
+
+        json_result = json_packer.pack_resource(self._model)
+        plain_result = plain_packer.pack_resource(self._model)
+
+        self.assertIsNotNone(self._resource.request_cache(self._req))
+
+        self.assertIsInstance(json_result["uuid"], uuid.UUID)
+        self.assertIsInstance(plain_result["uuid"], str)
+
+
+class TimestampModel(models.ModelWithUUID):
+    when = properties.property(types.UTCDateTimeZ(), required=True)
+    naive = properties.property(types.UTCDateTime(), required=True)
+    payload = properties.property(types.Dict(), default=dict)
+
+
+class TimestampFormatTestCase(base.BaseTestCase):
+    """The shape of a timestamp on the wire.
+
+    orjson writes a UTC datetime as RFC 3339 itself, and this packer
+    lets it: the same bytes as before, except that a timestamp landing
+    exactly on a second no longer carries `.000000`.
+    """
+
+    UTC = datetime.timezone.utc
+
+    def setUp(self):
+        super(TimestampFormatTestCase, self).setUp()
+        self._resource = resources.ResourceByRAModel(TimestampModel)
+        self._req = webob.Request.blank("/things/")
+        self._req.api_context = contexts.RequestContext(self._req)
+        self._req.api_context.set_active_method(constants.GET)
+
+    def tearDown(self):
+        super(TimestampFormatTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+
+    def _packed(self, when, naive=None, payload=None):
+        model = TimestampModel(
+            when=when,
+            naive=naive or datetime.datetime(2026, 8, 16, 1, 2, 3, 4),
+            payload=payload or {},
+        )
+        return orjson.loads(packers.JSONPacker(self._resource, self._req).pack(model))
+
+    def test_a_fraction_is_written_as_it_always_was(self):
+        packed = self._packed(
+            datetime.datetime(2026, 8, 16, 12, 34, 56, 123456, tzinfo=self.UTC)
+        )
+
+        self.assertEqual("2026-08-16T12:34:56.123456Z", packed["when"])
+
+    def test_a_whole_second_carries_no_fraction(self):
+        packed = self._packed(
+            datetime.datetime(2026, 8, 16, 12, 34, 56, tzinfo=self.UTC)
+        )
+
+        self.assertEqual("2026-08-16T12:34:56Z", packed["when"])
+
+    def test_the_naive_type_writes_its_own_form(self):
+        packed = self._packed(
+            datetime.datetime(2026, 8, 16, 12, 34, 56, tzinfo=self.UTC),
+            naive=datetime.datetime(2026, 8, 16, 12, 34, 56),
+        )
+
+        self.assertEqual("2026-08-16T12:34:56.000000Z", packed["naive"])
+
+    def test_a_timestamp_inside_a_value_ends_in_z(self):
+        packed = self._packed(
+            datetime.datetime(2026, 8, 16, 12, 34, 56, 1, tzinfo=self.UTC),
+            payload={
+                "seen": datetime.datetime(2026, 8, 16, 1, 2, 3, 4, tzinfo=self.UTC)
+            },
+        )
+
+        self.assertEqual("2026-08-16T01:02:03.000004Z", packed["payload"]["seen"])

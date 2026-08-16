@@ -115,6 +115,13 @@ Module: `restalchemy.api.packers`
 - `MultipartPacker`:
   - Handles `multipart/form-data` requests (e.g. file uploads).
 
+A timestamp is written as RFC 3339 in UTC: `2026-08-16T12:34:56.123456Z`.
+One that lands exactly on a second carries no fractional part --
+`2026-08-16T12:34:56Z` -- where before it carried `.000000`. A timestamp
+nested inside a value (a `Dict`, a `TypedList`) ends in `Z` as well, where
+before it ended in `+00:00`. The deprecated naive `UTCDateTime` writes the
+form it always did.
+
 ### 6. Contexts and permissions
 
 - `contexts.RequestContext`:

@@ -28,6 +28,7 @@ from restalchemy.api import constants
 from restalchemy.common import exceptions
 from restalchemy.common import utils
 from restalchemy.dm import properties as ra_properties
+from restalchemy.dm import types as ra_types
 
 DEFAULT_VALUE = object()
 CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = (
@@ -67,6 +68,12 @@ def _class_attribute_names(klass):
 
 class BaseResourcePacker(object):
     _skip_none = True
+
+    # Property types whose values this packer hands to whatever writes
+    # the document out, rather than converting them itself. Empty here:
+    # `pack` returns simple types, and only a packer that knows what
+    # comes after it can say otherwise.
+    _native_types = ()
 
     def __init__(self, resource_type, request):
         self._rt = resource_type
@@ -126,18 +133,28 @@ class BaseResourcePacker(object):
         """
         self._get_fields()
         if self._visible_fields is None:
+            # Keyed by what this packer writes out itself: two packers
+            # over one resource need not agree about that, and what is
+            # shared is shared by visibility, not by packer.
             self._visible_fields = self._shared_get(
-                "visible_fields", self._resolve_visible_fields
+                ("visible_fields", self._native_types),
+                self._resolve_visible_fields,
             )
         return self._visible_fields
 
     def _resolve_visible_fields(self):
-        return [
-            (name, prop.api_name, prop.get_dump_callable())
-            for name, prop in self._get_fields()
-            if prop.is_public()
-            and not self._rt._fields_permissions.is_hidden(name, self._req)
-        ]
+        native = self._native_types
+        fields = []
+        for name, prop in self._get_fields():
+            if not prop.is_public() or self._rt._fields_permissions.is_hidden(
+                name, self._req
+            ):
+                continue
+            dump = prop.get_dump_callable()
+            if dump is not None and native and type(prop.get_type()) in native:
+                dump = None
+            fields.append((name, prop.api_name, dump))
+        return fields
 
     def _get_fields_for_model(self, model_class):
         """The visible fields, saying which are the model's own to read.
@@ -151,7 +168,7 @@ class BaseResourcePacker(object):
         fields = self._fields_by_model.get(model_class)
         if fields is None:
             fields = self._shared_get(
-                ("model_fields", model_class),
+                ("model_fields", model_class, self._native_types),
                 lambda: self._resolve_fields_for_model(model_class),
             )
             self._fields_by_model[model_class] = fields
@@ -235,9 +252,22 @@ class BaseResourcePacker(object):
 
 
 class JSONPacker(BaseResourcePacker):
+    # orjson writes these in C, and writes them the way this API says
+    # they are written, so building the string here first is work the
+    # document then does again. A `uuid.UUID` comes out exactly as
+    # `str()` writes it; a UTC datetime comes out as RFC 3339 with `Z`,
+    # which is what `OPT_UTC_Z` is for -- with one difference from what
+    # this packer used to write: a timestamp landing exactly on a second
+    # has no fractional part, where before it had `.000000`. Both are
+    # RFC 3339. The same goes for a datetime nested inside a value, which
+    # orjson has always written itself and now ends in `Z` rather than
+    # `+00:00`.
+    _native_types = (ra_types.UUID, ra_types.UTCDateTimeZ)
+
     def pack(self, obj):
         return orjson.dumps(
-            super(JSONPacker, self).pack(obj), option=orjson.OPT_NON_STR_KEYS
+            super(JSONPacker, self).pack(obj),
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_UTC_Z,
         )
 
     def unpack(self, value):
