@@ -15,6 +15,9 @@
 #    under the License.
 
 # TODO(Eugene Frolov): Rewrite tests
+import decimal
+import uuid
+
 import mock
 import orjson
 import webob
@@ -325,3 +328,91 @@ class PackerResourceSwapTestCase(base.BaseTestCase):
         self._packer._rt = None
 
         self.assertEqual({"anything": 1}, self._packer.unpack({"anything": 1}))
+
+
+class ShadowedFieldModel(FakeModel):
+    """A model that computes a field its parent stores."""
+
+    @property
+    def field2(self):
+        return 22
+
+
+class PackerFieldSourceTestCase(base.BaseTestCase):
+    """Where a packed value comes from.
+
+    A stored property is read off the model's own properties; a name the
+    class itself defines -- a `@property` over a declared field -- keeps
+    the attribute lookup, and so keeps winning.
+    """
+
+    def setUp(self):
+        super(PackerFieldSourceTestCase, self).setUp()
+        self._req = mock.Mock()
+
+    def tearDown(self):
+        super(PackerFieldSourceTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+
+    def test_a_stored_field_is_packed_from_the_model(self):
+        packer = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(FakeModel), self._req
+        )
+        model = FakeModel(field2=2, field3=3, field4=4)
+
+        self.assertEqual(2, packer.pack_resource(model)["field2"])
+
+    def test_a_computed_field_beats_the_stored_one(self):
+        packer = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(ShadowedFieldModel), self._req
+        )
+        model = ShadowedFieldModel(field2=2, field3=3, field4=4)
+
+        self.assertEqual(22, packer.pack_resource(model)["field2"])
+
+    def test_an_object_that_is_not_a_model_is_packed_by_attribute(self):
+        packer = packers.BaseResourcePacker(
+            resources.ResourceByRAModel(FakeModel), self._req
+        )
+
+        self.assertEqual(
+            {"field2": 2, "field3": 3, "field4": 4},
+            packer.pack_resource(TestData()),
+        )
+
+
+class DumpCallableTestCase(base.BaseTestCase):
+    """Which types a packer may write out without converting."""
+
+    def tearDown(self):
+        super(DumpCallableTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+
+    def _field(self, prop_type):
+        return resources.ResourceRAProperty(
+            resource=resources.ResourceByRAModel(FakeModel),
+            prop_type=prop_type,
+            model_property_name="field1",
+        )
+
+    def test_a_value_that_is_its_own_simple_form_needs_no_call(self):
+        for prop_type in (
+            types.String(),
+            types.Integer(),
+            types.Boolean(),
+            types.Enum(["a", "b"]),
+            types.Mac(),
+        ):
+            self.assertIsNone(self._field(prop_type).get_dump_callable())
+
+    def test_a_value_that_is_converted_is_converted(self):
+        for prop_type, value in (
+            (types.UUID(), uuid.uuid4()),
+            (types.UTCDateTimeZ(), types.DEFAULT_DATE_Z),
+            (types.Decimal(), decimal.Decimal("1.5")),
+        ):
+            field = self._field(prop_type)
+            dump = field.get_dump_callable()
+
+            self.assertIsNotNone(dump)
+            self.assertEqual(field.dump_value(value), dump(value))
