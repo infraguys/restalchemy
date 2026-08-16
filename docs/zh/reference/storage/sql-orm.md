@@ -51,6 +51,19 @@ limitations under the License.
 - 通过 `engine.dialect` 获得的 SQL 方言。
 - 模型的 `restore_from_storage()` 方法，把数据库记录转换为 DM 模型。
 
+### 关联对象的加载
+
+查询未预取（`prefetch`）的关联以标识符的形式返回，它所指向的模型需要单独读取。
+`get_all()` 与 `query()` 会收集整页的标识符，按关联发出一次查询，而不是按行发出
+一次查询；对这些对象自身所指向的关联也同样处理。
+
+- 页内指向同一对象的记录，拿到的是同一个实例。
+- 页内没有找到的标识符会原样保留，因此指向缺失记录的行仍会像以前那样失败。
+- 以 `prefetch=True` 声明的关联由读取该页的同一条查询（`LEFT JOIN`）读取，不参与
+  此过程。
+- `SQLStorableMixin.RELATIONSHIP_BATCH_SIZE`（默认 1000）限制单条查询请求的标识符
+  数量。
+
 ---
 
 ## SQLStorableMixin

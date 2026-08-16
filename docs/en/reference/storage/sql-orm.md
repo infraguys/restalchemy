@@ -51,6 +51,22 @@ Key methods:
 - The SQL dialect via `engine.dialect`.
 - The model's `restore_from_storage()` method to convert rows into DM models.
 
+### Loading relationships
+
+A relationship the query did not prefetch arrives as an identifier, and the
+model it names is read separately. `get_all()` and `query()` gather the
+identifiers of the whole page and read them one query per relationship, rather
+than one query per row, and do the same for what those objects point at in
+turn.
+
+- Rows of the page naming the same object are handed the same instance.
+- An identifier the page does not find is left as it arrived, so a row pointing
+  at a missing record fails exactly as it did before.
+- A relationship declared with `prefetch=True` is read by the query that reads
+  the page (a `LEFT JOIN`) and does not take part in this.
+- `SQLStorableMixin.RELATIONSHIP_BATCH_SIZE` (1000 by default) caps how many
+  identifiers a single query asks for.
+
 ---
 
 ## SQLStorableMixin

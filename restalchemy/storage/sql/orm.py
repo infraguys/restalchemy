@@ -21,6 +21,7 @@ import orjson
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
+from restalchemy.dm import relationships as ra_relationships
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
@@ -78,7 +79,10 @@ class ObjectCollection(
             session=session,
             locked=locked,
         )
-        return [self.model_cls.restore_from_storage(**params) for params in result.rows]
+        return self.model_cls.restore_many_from_storage(
+            result.rows,
+            session=session,
+        )
 
     @base.error_catcher
     def get_one(self, filters=None, session=None, cache=False, locked=False):
@@ -115,10 +119,10 @@ class ObjectCollection(
             order_by=order_by,
             locked=locked,
         )
-        return [
-            self.model_cls.restore_from_storage(**params)
-            for params in list(result.fetchall())
-        ]
+        return self.model_cls.restore_many_from_storage(
+            result.fetchall(),
+            session=session,
+        )
 
     @base.error_catcher
     def query(
@@ -224,6 +228,107 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
             )
             return loaders
 
+    # Per class: the relationships a row carries as an identifier, and the
+    # model each points at. A query that prefetched a relationship brings
+    # the row of it along, and those are not among these.
+    OPERATIONAL_STORAGE_DEFERRED_KEY = "deferred_relationships"
+
+    # How many identifiers one query asks for. There is no reason to
+    # split a hundred, and a reason not to hand a driver a hundred
+    # thousand at once.
+    RELATIONSHIP_BATCH_SIZE = 1000
+
+    @classmethod
+    def _get_deferred_relationships(cls):
+        try:
+            return cls.__operational_storage__.get(
+                cls.OPERATIONAL_STORAGE_DEFERRED_KEY,
+            )
+        except common_exc.NotFoundOperationalStorageError:
+            deferred = {}
+            for name, prop in cls.properties.properties.items():
+                prop_class = prop.get_property_class()
+                if not (
+                    isinstance(prop_class, type)
+                    and issubclass(prop_class, ra_relationships.BaseRelationship)
+                ):
+                    continue
+                if prop.is_prefetch():
+                    continue
+                target = prop.get_property_type()
+                if isinstance(target, type) and issubclass(target, SQLStorableMixin):
+                    deferred[name] = target
+            cls.__operational_storage__.store(
+                cls.OPERATIONAL_STORAGE_DEFERRED_KEY,
+                deferred,
+            )
+            return deferred
+
+    @classmethod
+    def restore_many_from_storage(cls, rows, session=None):
+        """Restore rows, asking for a relationship once, not once per row.
+
+        A relationship the query did not prefetch reaches the model as an
+        identifier, and turning it into the object it names is a query --
+        per row, and per relationship. Sixty rows of a model with two
+        relationships were a hundred and twenty round trips behind the one
+        that read them.
+
+        The identifiers of a whole page are asked for together instead,
+        which is one query per relationship. What that does not find is
+        left as it arrived, so a row pointing at something that is not
+        there fails where it always did.
+        """
+        rows = list(rows)
+        if len(rows) > 1:
+            cls._preload_relationships(rows, session)
+        return [cls.restore_from_storage(**row) for row in rows]
+
+    @classmethod
+    def _preload_relationships(cls, rows, session):
+        for name, target in cls._get_deferred_relationships().items():
+            try:
+                id_name = target.get_id_property_name()
+            except TypeError:
+                # A model that does not answer with one identifier cannot
+                # be asked for a page of them. The per-row path takes it,
+                # as it always did.
+                continue
+            id_type = target.properties.properties[id_name].get_property_type()
+
+            found = {}
+            wanted = []
+            for row in rows:
+                value = row.get(name)
+                if value is None or isinstance(value, (models.Model, dict)):
+                    # Already an object, or a prefetched row of one.
+                    continue
+                try:
+                    key = id_type.from_simple_type(value)
+                except (ValueError, TypeError):
+                    # Not an identifier this model can read. Leave it to
+                    # the per-row path to fail the way it would have.
+                    continue
+                found.setdefault(key, None)
+                wanted.append((row, key))
+
+            if not wanted:
+                continue
+
+            keys = list(found)
+            batch = cls.RELATIONSHIP_BATCH_SIZE
+            for start in range(0, len(keys), batch):
+                for obj in target.objects.get_all(
+                    filters={id_name: dm_filters.In(keys[start : start + batch])},
+                    session=session,
+                ):
+                    found[obj.get_id()] = obj
+
+            for row, key in wanted:
+                obj = found.get(key)
+                if obj is not None:
+                    row[name] = obj
+
     @classmethod
     def restore_from_storage(cls, **kwargs):
         loaders = cls._get_storage_loaders()
@@ -305,6 +410,11 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
     def from_simple_type(cls, value):
         if value is None:
             return None
+        if isinstance(value, cls):
+            # Already the object it names: a collection resolves the
+            # relationships of a whole page at once and leaves what it
+            # found in the rows.
+            return value
         if isinstance(value, base.PrefetchResult):
             for name in cls.id_properties.keys():
                 if value[name]:
