@@ -209,18 +209,28 @@ class ResultNode(object):
         # is entirely flat, and then parsing a row is one loop instead of
         # a call per column per row.
         self._flat_fields = []
+        # Whether the row already reads as the mapping this node stands
+        # for: nothing nested, and every column under its own name.
+        self._verbatim = True
 
     def add_child_field(self, name, alias_name):
         self._child_nodes[name] = ResultField(alias_name=alias_name)
         self._flat_fields.append((name, alias_name))
+        self._verbatim = self._verbatim and name == alias_name
         return self._child_nodes[name]
 
     def add_child_node(self, name):
         self._child_nodes[name] = ResultNode()
         self._flat_fields = [field for field in self._flat_fields if field[0] != name]
+        self._verbatim = False
         return self._child_nodes[name]
 
     def parse(self, row):
+        if self._verbatim:
+            # The row is the mapping already -- which is what selecting
+            # without aliases is for. Both drivers build a row of their
+            # own per row, so it is the caller's to keep.
+            return row
         result = base.PrefetchResult()
         if len(self._flat_fields) == len(self._child_nodes):
             for name, alias_name in self._flat_fields:
@@ -370,9 +380,16 @@ class SelectQ(common.AbstractClause):
         )
         builder._select_expressions = []
         builder._table_references = [builder._model_table]
+        # A column is aliased so that two tables can both select one; a
+        # model without prefetched relationships is selected from one
+        # table, and then the alias only renames a row on its way back.
+        joins = bool(builder._model_table.get_prefetch_columns(wrap_alias=False))
         builder._add_column_to_select_expressions(
             result_parser_node=builder._result_parser.root,
-            columns=builder._model_table.get_columns(with_prefetch=False),
+            columns=builder._model_table.get_columns(
+                with_prefetch=False,
+                wrap_alias=joins,
+            ),
         )
         builder._resolve_model_dependency(
             table=builder._model_table,
