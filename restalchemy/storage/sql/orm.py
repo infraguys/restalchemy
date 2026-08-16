@@ -201,14 +201,33 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
     def _get_engine(cls):
         return engines.engine_factory.get_engine()
 
+    # Per class: the callable that turns a stored column into a model
+    # value, per property name. Which one it is a declaration decides, and
+    # it was looked up again -- a mapping lookup and two calls -- per
+    # column per row read.
+    OPERATIONAL_STORAGE_LOADERS_KEY = "storage_loaders"
+
+    @classmethod
+    def _get_storage_loaders(cls):
+        try:
+            return cls.__operational_storage__.get(
+                cls.OPERATIONAL_STORAGE_LOADERS_KEY,
+            )
+        except common_exc.NotFoundOperationalStorageError:
+            loaders = {
+                name: prop.get_property_type().from_simple_type
+                for name, prop in cls.properties.properties.items()
+            }
+            cls.__operational_storage__.store(
+                cls.OPERATIONAL_STORAGE_LOADERS_KEY,
+                loaders,
+            )
+            return loaders
+
     @classmethod
     def restore_from_storage(cls, **kwargs):
-        model_format = {}
-        model_properties = cls.properties.properties
-        for name, value in kwargs.items():
-            model_format[name] = (
-                model_properties[name].get_property_type().from_simple_type(value)
-            )
+        loaders = cls._get_storage_loaders()
+        model_format = {name: loaders[name](value) for name, value in kwargs.items()}
         obj = cls.restore(**model_format)
         obj._saved = True
         return obj
