@@ -86,6 +86,33 @@ class MetaModel(abc.ABCMeta):
         return spec
 
 
+class IdProperties(collections_abc.Mapping):
+    """A model's id properties, fetched when something wants them.
+
+    Which names they are the declaration settles; the property objects
+    behind them are wanted only when the model is written, and building
+    them per model built was one property object per row read.
+    """
+
+    def __init__(self, manager, names):
+        self._manager = manager
+        self._names = names
+
+    def __getitem__(self, name):
+        if name not in self._names:
+            raise KeyError(name)
+        return self._manager[name]
+
+    def __iter__(self):
+        return iter(self._names)
+
+    def __len__(self):
+        return len(self._names)
+
+    def copy(self):
+        return {name: self._manager[name] for name in self._names}
+
+
 class Model(collections_abc.Mapping, metaclass=MetaModel):
     _python_simple_types = (type(None), str, int, float, complex, bool)
 
@@ -95,10 +122,15 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
 
     def __getattr__(self, name):
         try:
-            # Straight at the mapping's dict: this runs for every model
-            # attribute read there is, and the read-only view in front of
-            # it adds a call per read without adding an answer.
-            return self.properties._properties[name].value
+            # Straight at what the mapping is keeping: this runs for
+            # every model attribute read there is. A value the model
+            # kept unwrapped is the answer already; anything else is a
+            # property and answers for itself.
+            properties = self.properties
+            values = properties._values
+            if name in values:
+                return values[name]
+            return properties._properties[name].value
         except KeyError:
             raise AttributeError(
                 "%s object has no attribute %s" % (type(self).__name__, name)
@@ -106,7 +138,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
 
     def __setattr__(self, name, value):
         props = self.properties
-        if name not in props._properties:
+        if name not in props:
             super(Model, self).__setattr__(name, value)
             return
         try:
@@ -122,25 +154,49 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
             raise exc.ReadOnlyProperty(name=name, model=type(self))
 
     def pour(self, **kwargs):
+        self.pour_values(kwargs)
+
+    def pour_values(self, values, convert=None):
+        """Fill the model in from a mapping, without spelling it out.
+
+        `pour(**kwargs)` rebuilds the mapping it was handed, and reading
+        a row rebuilt it three times over on the way here. What every one
+        of them wanted was this. `convert` turns a stored value into a
+        model one, by name, so that a row is walked once.
+        """
         try:
-            self.properties = properties.PropertyManager(self.properties, **kwargs)
+            manager = properties.PropertyManager.poured(
+                self.properties, values, convert
+            )
+        except exc.PropertyRequired as e:
+            raise exc.PropertyRequired(name=e.name, model=self.__class__)
+
+        # Straight past `__setattr__`: it exists to tell a property name
+        # from a plain attribute, and these two are known not to be one.
+        object.__setattr__(self, "properties", manager)
+        # Which names are id properties is decided by the declaration,
+        # and `MetaModel` already worked it out for the class. The
+        # properties themselves are only ever wanted when the model is
+        # written, so they are left to the mapping to hand over then.
+        object.__setattr__(
+            self, "id_properties", IdProperties(manager, type(self).id_properties)
+        )
+        try:
             self.validate()
         except exc.PropertyRequired as e:
             raise exc.PropertyRequired(name=e.name, model=self.__class__)
 
-        # Which names are id properties is decided by the declaration, and
-        # `MetaModel` already worked it out for the class; asking every
-        # property again per model built was the same answer each time.
-        props = self.properties
-        self.id_properties = {name: props[name] for name in type(self).id_properties}
-
     @classmethod
     def restore(cls, **kwargs):
+        return cls.restore_values(kwargs)
+
+    @classmethod
+    def restore_values(cls, values, convert=None):
         obj = cls.__new__(cls)
 
         # NOTE(aostapenko): We can't invoke 'pour' from __new__ because of
         #                   copy.copy of object becomes imposible
-        obj.pour(**kwargs)
+        obj.pour_values(values, convert)
         return obj
 
     def validate(self):
@@ -177,10 +233,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         return result
 
     def is_dirty(self):
-        for prop in self.properties.values():
-            if prop.is_dirty():
-                return True
-        return False
+        return self.properties.is_dirty()
 
     @classmethod
     def get_model_type(cls):
@@ -191,7 +244,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         props = self.properties
 
         for name in props:
-            val = props[name].value
+            val = props.get_value(name)
             if isinstance(val, Model):
                 plain_dict[name] = val.get_id()
             elif isinstance(val, self._python_simple_types):

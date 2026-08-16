@@ -336,6 +336,9 @@ class PropertyManagerTestCase(base.BaseTestCase):
                 "instantiate_property.return_value": FAKE_VALUE,
                 # Neither name holds a nested collection.
                 "nested_names": frozenset(),
+                # Its items are doubles, not creators, so a model of it
+                # cannot keep bare values.
+                "values_can_stand_alone": False,
             }
         )
 
@@ -608,3 +611,160 @@ class PropertyCreatorPathsAgreeTestCase(base.BaseTestCase):
             return build(value)
         except Exception as error:
             return error
+
+
+class ValuesStandingAloneTestCase(base.BaseTestCase):
+    """A model keeping values must be the model it would have been.
+
+    Everything a property object answers -- its value, what it held to
+    begin with, whether it may be written, whether it has changed -- has
+    to come out the same whether the object was built when the model was
+    or when something first asked for it.
+    """
+
+    def _collection(self, **declarations):
+        return properties.PropertyCollection(**declarations)
+
+    def test_a_plain_declaration_keeps_its_values(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+
+        manager = properties.PropertyManager(collection, name="n")
+
+        self.assertEqual({"name": "n", "count": 1}, manager._values)
+        self.assertEqual({}, manager._properties)
+
+    def test_a_property_of_its_own_is_built_as_it_was(self):
+        class LocalProperty(properties.Property):
+            pass
+
+        collection = self._collection(
+            name=properties.property(
+                types.String(), property_class=LocalProperty, default="d"
+            ),
+        )
+
+        manager = properties.PropertyManager(collection)
+
+        self.assertEqual({}, manager._values)
+        self.assertIsInstance(manager._properties["name"], LocalProperty)
+
+    def test_asking_for_one_builds_that_one(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+        manager = properties.PropertyManager(collection)
+
+        prop = manager["name"]
+
+        self.assertIsInstance(prop, properties.Property)
+        self.assertEqual("d", prop.value)
+        self.assertNotIn("name", manager._values)
+        self.assertIn("count", manager._values)
+
+    def test_what_it_answers_does_not_depend_on_when_it_was_built(self):
+        declarations = {
+            "name": properties.property(types.String(), default="d"),
+            "readonly": properties.readonly_property(types.String()),
+            "identifier": properties.property(types.String(), id_property=True),
+            "tags": properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        }
+        values = {"readonly": "r", "identifier": "i"}
+
+        early = properties.PropertyManager(self._collection(**declarations), **values)
+        early.materialise_all()
+        late = properties.PropertyManager(self._collection(**declarations), **values)
+
+        for name in declarations:
+            self.assertEqual(self._facts(early[name]), self._facts(late[name]), name)
+
+    def test_a_value_changed_in_place_is_still_noticed(self):
+        collection = self._collection(
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+        manager = properties.PropertyManager(collection)
+
+        manager.get_value("tags").append("x")
+
+        self.assertEqual([], manager["tags"].old_value)
+        self.assertTrue(manager["tags"].is_dirty())
+
+    def test_walking_the_mapping_hands_over_properties(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+        manager = properties.PropertyManager(collection)
+
+        walked = dict(manager.items())
+
+        self.assertEqual({"name", "count"}, set(walked))
+        for prop in walked.values():
+            self.assertIsInstance(prop, properties.Property)
+        self.assertEqual({}, manager._values)
+
+    def test_the_mapping_answers_the_same_before_and_after(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+        manager = properties.PropertyManager(collection)
+
+        self.assertEqual(2, len(manager))
+        self.assertIn("name", manager)
+        self.assertEqual({"name", "count"}, set(iter(manager)))
+        self.assertEqual({"name": "d", "count": 1}, manager.value)
+        manager.materialise_all()
+        self.assertEqual(2, len(manager))
+        self.assertIn("name", manager)
+        self.assertEqual({"name", "count"}, set(iter(manager)))
+        self.assertEqual({"name": "d", "count": 1}, manager.value)
+
+    @staticmethod
+    def _facts(prop):
+        return (
+            type(prop).__name__,
+            prop.value,
+            prop.old_value,
+            prop.is_dirty(),
+            prop.is_required(),
+            prop.is_read_only(),
+            prop.is_id_property(),
+            prop.get_property_type(),
+        )
+
+    def test_nothing_written_to_is_nothing_changed(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+        manager = properties.PropertyManager(collection)
+
+        # Answered without building a single property object.
+        self.assertFalse(manager.is_dirty())
+        self.assertEqual({}, manager._properties)
+
+    def test_a_write_is_a_change_however_it_arrived(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+
+        written = properties.PropertyManager(collection)
+        written["name"].value = "other"
+        in_place = properties.PropertyManager(collection)
+        in_place.get_value("tags").append("x")
+
+        self.assertTrue(written.is_dirty())
+        self.assertTrue(in_place.is_dirty())
