@@ -126,6 +126,13 @@ Module: `restalchemy.api.packers`
   - `UniversalPermissions`, `FieldsPermissions`, `FieldsPermissionsByRole`.
   - Control which fields are visible (`HIDDEN`), read-only (`RO`) or read-write (`RW`) per method and role.
 
+Which fields a request sees is resolved once for every request that would
+be told the same, and kept on the resource. What a request could change is
+the RA method, the caller's roles and the `fields` parameter; a request
+that passes `fields` resolves its own, as does a resource whose hidden
+fields or permissions are decided by a class of your own rather than the
+ones shipped here -- such a class is asked per request, as before.
+
 ### 7. Actions
 
 Module: `restalchemy.api.actions`

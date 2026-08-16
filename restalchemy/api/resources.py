@@ -236,6 +236,18 @@ class BaseHiddenFieldsMap(object):
     def is_hidden_field_by_method(self, model_field_name, method):
         return model_field_name in self
 
+    def visibility_key(self, req):
+        """What this request makes `is_hidden_field` depend on.
+
+        A hashable value standing for every answer this map will give
+        about this request; `None` when they cannot be summarised, and
+        then a resource resolves its fields per request as it always did.
+        See `_hidden_fields_key`, which does not take a subclass's word
+        for it.
+        """
+        # One set of hidden fields, whoever is asking.
+        return ()
+
     def __contains__(self, item):
         # NOTE(efrolov): backward compatibility
         return item in self._hidden_fields
@@ -300,6 +312,10 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
             return model_field_name in self._method_map[method]
         except KeyError:
             raise NotImplementedError("Unsupported RA method `%s`" % method)
+
+    def visibility_key(self, req):
+        method = field_permissions.active_method(req)
+        return None if method is None else (method,)
 
 
 class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
@@ -384,6 +400,41 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
     def is_hidden_field_by_method(self, model_field_name, method):
         return True
 
+    def visibility_key(self, req):
+        # Which role answers depends on the roles the request carries;
+        # what that role then answers is its own map's business. Every
+        # role the request carries is asked and any one of them can
+        # unhide a field, so the order they arrive in decides nothing and
+        # the set of them is the whole of what this depends on.
+        keys = [_hidden_fields_key(self._default_hidden_fields, req)]
+        for role, hidden_fields in self._hidden_fields_by_role.items():
+            keys.append(role)
+            keys.append(_hidden_fields_key(hidden_fields, req))
+        if any(key is None for key in keys):
+            return None
+        return (frozenset(self._get_roles(req)), tuple(keys))
+
+
+# The implementations shipped here, which `visibility_key` describes. A
+# map deciding visibility its own way inherits a key that does not
+# describe it, so the key is only trusted from these.
+_SHIPPED_HIDDEN_FIELDS = frozenset(
+    (
+        BaseHiddenFieldsMap.is_hidden_field,
+        HiddenFieldMap.is_hidden_field,
+        RoleBasedHiddenFieldContainer.is_hidden_field,
+    )
+)
+
+
+def _hidden_fields_key(hidden_fields, req):
+    """`hidden_fields`' key for this request, or `None` to reuse nothing."""
+    if getattr(type(hidden_fields), "is_hidden_field", None) not in (
+        _SHIPPED_HIDDEN_FIELDS
+    ):
+        return None
+    return hidden_fields.visibility_key(req)
+
 
 class AbstractResource(metaclass=abc.ABCMeta):
     def __init__(
@@ -433,6 +484,9 @@ class AbstractResource(metaclass=abc.ABCMeta):
         self._field_cache = {}
         # API names already worked out, by model field name.
         self._api_names = {}
+        # What was resolved for a request that may see what this one may,
+        # by visibility key. See `request_cache`.
+        self._visibility_caches = {}
         self._model_class = model_class
         self._name_map = name_map or {}
         self._inv_name_map = {v: k for k, v in self._name_map.items()}
@@ -488,6 +542,57 @@ class AbstractResource(metaclass=abc.ABCMeta):
             )
 
         return self.get_fields(override_is_public_field_func=is_public_field)
+
+    # How many visibilities to remember. The key carries the caller's
+    # roles, and there is no reason to hold every combination that ever
+    # arrived; past this, requests resolve their own.
+    _MAX_VISIBILITY_CACHES = 64
+
+    def request_cache(self, req):
+        """Somewhere to keep what any request seeing the same fields sees.
+
+        Resolving a resource's fields is a property object and three
+        predicates per field, and the answer is the same for every request
+        told the same about every field -- which is what the visibility
+        key stands for. A caller may keep whatever it derives from those
+        fields here too, as long as it does not change it afterwards.
+
+        `None` when nothing may be shared: the request narrows the fields
+        itself with `fields`, or something in the way visibility is
+        decided cannot say what it depends on. Then the caller resolves
+        its own, which is what always happened.
+        """
+        key = self._visibility_key(req)
+        if key is None:
+            return None
+        cache = self._visibility_caches.get(key)
+        if cache is None:
+            if len(self._visibility_caches) >= self._MAX_VISIBILITY_CACHES:
+                return None
+            cache = {}
+            self._visibility_caches[key] = cache
+        return cache
+
+    def _visibility_key(self, req):
+        context = getattr(req, "api_context", None)
+        if (
+            getattr(type(context), "can_be_shown_field", None)
+            is not contexts.RequestContext.can_be_shown_field
+        ):
+            return None
+        if context.fields_to_show:
+            # A projection this request asked for and the next one may
+            # not: narrow enough that resolving it per request is right.
+            return None
+        hidden_key = _hidden_fields_key(self._hidden_fields, req)
+        if hidden_key is None:
+            return None
+        permissions_key = field_permissions.visibility_key_of(
+            self._fields_permissions, req
+        )
+        if permissions_key is None:
+            return None
+        return (hidden_key, permissions_key)
 
     def get_fields_by_method(self, method):
         def is_public_field(model_field_name):

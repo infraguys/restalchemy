@@ -64,6 +64,15 @@ class RequestContext(object):
     def params_filters(self):
         return self.get_params_filters()
 
+    @property
+    def fields_to_show(self):
+        """The `fields` parameter: the projection the caller asked for.
+
+        Empty when the caller asked for none, which is when every field
+        the resource shows is shown.
+        """
+        return self._fields_to_show
+
     def can_be_shown_field(self, resource_field_name):
         if self._fields_to_show:
             return resource_field_name in self._fields_to_show

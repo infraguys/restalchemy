@@ -15,6 +15,15 @@
 #    under the License.
 
 from restalchemy.api import constants
+from restalchemy.api import contexts
+
+
+def active_method(req):
+    """The RA method this request is being answered as, or `None`."""
+    try:
+        return req.api_context.get_active_method()
+    except (AttributeError, contexts.CanNotGetActiveMethod):
+        return None
 
 
 class Permissions(object):
@@ -36,6 +45,21 @@ class BasePermissions(object):
 
     def meets_field_permission(self, model_field_name, req, current_permission):
         raise NotImplementedError()
+
+    def visibility_key(self, req):
+        """What this request makes the answers depend on.
+
+        A hashable value that stands for every answer this object will
+        give about this request: two requests with equal keys are told the
+        same about every field, so a resource may resolve its fields once
+        and hand the same answer to both.
+
+        `None` means the answers cannot be summarised, and then nothing is
+        reused between requests. That is the default, and what a class
+        deciding permissions its own way is left with -- see
+        `visibility_key_of`, which does not take a subclass's word for it.
+        """
+        return None
 
     def is_readonly(self, model_field_name, req):
         return self.meets_field_permission(
@@ -72,6 +96,10 @@ class UniversalPermissions(BasePermissions):
 
     def meets_field_permission(self, model_field_name, req, current_permission):
         return self._permission <= current_permission
+
+    def visibility_key(self, req):
+        # One permission for every field of every request.
+        return ()
 
 
 class FieldsPermissions(BasePermissions):
@@ -132,6 +160,10 @@ class FieldsPermissions(BasePermissions):
         )
 
         return permission <= current_permission
+
+    def visibility_key(self, req):
+        method = active_method(req)
+        return None if method is None else (method,)
 
 
 class FieldsPermissionsByRole(BasePermissions):
@@ -202,3 +234,52 @@ class FieldsPermissionsByRole(BasePermissions):
         return self.default.meets_field_permission(
             model_field_name, req, current_permission
         )
+
+    def visibility_key(self, req):
+        # Which role answers depends on the roles the request carries;
+        # what that role then answers is its own container's business, so
+        # every one of them has to be able to say.
+        keys = [visibility_key_of(self.default, req)]
+        for role, permissions in self.role_fields.items():
+            keys.append(role)
+            keys.append(visibility_key_of(permissions, req))
+        if any(key is None for key in keys):
+            return None
+        return (self._deciding_role(req), tuple(keys))
+
+    def _deciding_role(self, req):
+        """The role that answers for this request, or `None` for the default.
+
+        `meets_field_permission` takes the first role the request carries
+        that this was told about, so the order those roles arrive in is
+        part of the answer: a request carrying `["hide", "show"]` and one
+        carrying `["show", "hide"]` are not told the same thing. What the
+        answer turns on is which of them wins, so that is what the key
+        says -- not the set of them, which loses the order, and not the
+        whole list, which says more than the answer depends on.
+        """
+        for role in self._get_roles(req):
+            if role in self.role_fields:
+                return role
+        return None
+
+
+# The implementations shipped here, which `visibility_key` describes. A
+# class deciding permissions its own way inherits a key that does not
+# describe it, so the key is only trusted from these.
+_SHIPPED_PERMISSIONS = frozenset(
+    (
+        UniversalPermissions.meets_field_permission,
+        FieldsPermissions.meets_field_permission,
+        FieldsPermissionsByRole.meets_field_permission,
+    )
+)
+
+
+def visibility_key_of(permissions, req):
+    """`permissions`' key for this request, or `None` to reuse nothing."""
+    if getattr(type(permissions), "meets_field_permission", None) not in (
+        _SHIPPED_PERMISSIONS
+    ):
+        return None
+    return permissions.visibility_key(req)
