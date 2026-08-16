@@ -75,25 +75,47 @@ class BaseResourcePacker(object):
         self._visible_fields = None
         self._fields_resource = None
         self._fields_by_model = {}
+        self._shared = None
+
+    def _shared_get(self, key, build):
+        """What `build()` answers, kept for the requests it answers for.
+
+        The resource hands out somewhere to keep it when every request
+        that sees what this one sees would get the same answer; when it
+        does not, this is a plain call.
+        """
+        shared = self._shared
+        if shared is None:
+            return build()
+        value = shared.get(key)
+        if value is None:
+            value = build()
+            shared[key] = value
+        return value
 
     def _get_fields(self):
         """The resource fields, resolved once per packer.
 
-        `get_fields_by_request` rebuilds a property object per field on
-        every call, and the answer depends only on the request, which a
-        packer is built for and does not outlive. Packing a collection
-        called it once per object.
+        `get_fields_by_request` walks the model's properties and asks
+        three predicates per field, and the answer is the same for every
+        request that may see the same fields -- so it is resolved once for
+        all of them, in the resource, and only per packer where it cannot
+        be.
 
         The resource is not as fixed as the request: `routes.Action.do`
-        swaps `_rt` out after building the packer, so a cache is only
-        good for the resource it was built from.
+        swaps `_rt` out after building the packer, so what was resolved is
+        only good for the resource it was resolved from.
         """
         if self._fields is None or self._fields_resource is not self._rt:
             self._fields_resource = self._rt
-            self._fields = list(self._rt.get_fields_by_request(self._req))
+            self._shared = self._rt.request_cache(self._req) if self._rt else None
             self._visible_fields = None
             self._fields_by_model = {}
+            self._fields = self._shared_get("fields", self._resolve_fields)
         return self._fields
+
+    def _resolve_fields(self):
+        return list(self._rt.get_fields_by_request(self._req))
 
     def _get_visible_fields(self):
         """The fields packing writes out, with their API names.
@@ -102,15 +124,20 @@ class BaseResourcePacker(object):
         rather than reached through the field per object: `None` for a
         field whose value is already what goes on the wire.
         """
-        fields = self._get_fields()
+        self._get_fields()
         if self._visible_fields is None:
-            self._visible_fields = [
-                (name, prop.api_name, prop.get_dump_callable())
-                for name, prop in fields
-                if prop.is_public()
-                and not self._rt._fields_permissions.is_hidden(name, self._req)
-            ]
+            self._visible_fields = self._shared_get(
+                "visible_fields", self._resolve_visible_fields
+            )
         return self._visible_fields
+
+    def _resolve_visible_fields(self):
+        return [
+            (name, prop.api_name, prop.get_dump_callable())
+            for name, prop in self._get_fields()
+            if prop.is_public()
+            and not self._rt._fields_permissions.is_hidden(name, self._req)
+        ]
 
     def _get_fields_for_model(self, model_class):
         """The visible fields, saying which are the model's own to read.
@@ -123,13 +150,19 @@ class BaseResourcePacker(object):
         """
         fields = self._fields_by_model.get(model_class)
         if fields is None:
-            defined = _class_attribute_names(model_class)
-            fields = [
-                (name, api_name, dump, name not in defined)
-                for name, api_name, dump in self._get_visible_fields()
-            ]
+            fields = self._shared_get(
+                ("model_fields", model_class),
+                lambda: self._resolve_fields_for_model(model_class),
+            )
             self._fields_by_model[model_class] = fields
         return fields
+
+    def _resolve_fields_for_model(self, model_class):
+        defined = _class_attribute_names(model_class)
+        return [
+            (name, api_name, dump, name not in defined)
+            for name, api_name, dump in self._get_visible_fields()
+        ]
 
     def pack_resource(self, obj):
         if isinstance(

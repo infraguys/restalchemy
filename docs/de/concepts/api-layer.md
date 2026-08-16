@@ -126,6 +126,14 @@ Modul: `restalchemy.api.packers`
   - `UniversalPermissions`, `FieldsPermissions`, `FieldsPermissionsByRole`.
   - Steuern, ob Felder verborgen (`HIDDEN`), read-only (`RO`) oder read-write (`RW`) sind — abhängig von Methode und Rolle.
 
+Welche Felder eine Anfrage sieht, wird einmal für alle Anfragen ermittelt,
+denen dasselbe gesagt würde, und an der Ressource behalten. Darauf wirken
+die RA-Methode, die Rollen des Aufrufers und der Parameter `fields`; eine
+Anfrage mit `fields` ermittelt ihre eigenen Felder, ebenso eine Ressource,
+deren versteckte Felder oder Berechtigungen von einer eigenen Klasse statt
+von den hier ausgelieferten entschieden werden -- eine solche Klasse wird
+wie bisher pro Anfrage gefragt.
+
 ### 7. Actions
 
 Modul: `restalchemy.api.actions`
