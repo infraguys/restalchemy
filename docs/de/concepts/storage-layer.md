@@ -127,6 +127,24 @@ Dialekt-Module (`restalchemy.storage.sql.dialect.*`) und `tables.SQLTable`:
 
 Diese Komponenten sind intern; Sie müssen sie selten direkt verwenden.
 
+### 5. Was das Lesen einer Zeile tut
+
+- Ein Modell ohne vorgeladene Beziehungen wird aus einer Tabelle gelesen,
+  und seine Spalten werden unter ihren eigenen Namen selektiert. Ein
+  Prefetch fügt einen JOIN hinzu; dann erhält jede Spalte einen Alias,
+  damit zwei Tabellen gleichnamige Spalten selektieren können.
+- Ein gespeichertes `NULL` ist ein Wert, den niemand angegeben hat: der
+  Default der Property greift, genau wie bei einem im Konstruktor
+  ausgelassenen Wert.
+- Ein Wert, den der Typ selbst aus der gespeicherten Form baut — `UUID`,
+  `Boolean`, der von `UTCDateTimeZ` auf UTC gebrachte Zeitstempel — wird
+  gegen diesen Typ nicht erneut geprüft. Alle anderen Typen werden wie
+  bisher geprüft, auch das veraltete naive `UTCDateTime`.
+- Jedes Lesen kommt bei `restore_row` an — ein Modell wie eine ganze
+  Seite —, also gehört dorthin, was ein Modell bei jedem Lesen tun will.
+  `restore_from_storage` ist ein Weg hinein und kein Weg, das Lesen zu
+  ändern: Es zu überschreiben lässt eine Seite von Zeilen unberührt.
+
 ---
 
 ## Lebenszyklus eines SQL-gestützten Modells
