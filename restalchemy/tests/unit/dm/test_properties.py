@@ -780,3 +780,62 @@ class ValuesStandingAloneTestCase(base.BaseTestCase):
 
         self.assertTrue(written.is_dirty())
         self.assertTrue(in_place.is_dirty())
+
+
+class SharedEmptyMappingsTestCase(base.BaseTestCase):
+    """The mapping a manager stands in with must stay empty.
+
+    It is a class attribute shared by every manager there is, so a write
+    that lands in it instead of in a mapping of the manager's own is
+    every model's first value, not that model's.
+    """
+
+    def setUp(self):
+        super(SharedEmptyMappingsTestCase, self).setUp()
+        self._collection = properties.PropertyCollection(
+            name=properties.property(types.String(), default="d"),
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+
+    def _assert_shared_are_empty(self):
+        self.assertEqual({}, properties.PropertyManager._first_values)
+
+    def test_pouring_values_writes_neither(self):
+        manager = properties.PropertyManager(self._collection, name="n")
+
+        self.assertEqual("n", manager.get_value("name"))
+        self._assert_shared_are_empty()
+
+    def test_building_a_property_writes_a_mapping_of_its_own(self):
+        manager = properties.PropertyManager(self._collection, name="n")
+
+        self.assertEqual("n", manager["name"].value)
+        self.assertEqual(["name"], list(manager._properties))
+        self._assert_shared_are_empty()
+
+    def test_two_managers_do_not_see_each_other(self):
+        first = properties.PropertyManager(self._collection, name="one")
+        second = properties.PropertyManager(self._collection, name="two")
+
+        first["name"]
+        second["name"]
+
+        self.assertEqual("one", first["name"].value)
+        self.assertEqual("two", second["name"].value)
+        self._assert_shared_are_empty()
+
+    def test_a_declaration_that_cannot_stand_alone_writes_its_own(self):
+        nested = properties.PropertyCollection(
+            inner=properties.property(types.String(), default="d"),
+        )
+        collection = properties.PropertyCollection(
+            name=properties.property(types.String(), default="d"),
+            nested=nested,
+        )
+
+        manager = properties.PropertyManager(collection)
+
+        self.assertEqual(["name", "nested"], sorted(manager._properties))
+        self._assert_shared_are_empty()
