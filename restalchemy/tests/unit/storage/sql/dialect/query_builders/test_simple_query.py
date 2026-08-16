@@ -14,7 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import gc
 import unittest
+import weakref
+
+import mock
 
 from restalchemy.dm import filters
 from restalchemy.dm import models
@@ -332,5 +336,113 @@ class MySQLResultParserTestCase(unittest.TestCase):
                 "field_str": "FakeStr",
                 "uuid": "FakeUUID",
             },
+            result,
+        )
+
+
+class SharedModel(models.ModelWithUUID):
+    __tablename__ = "shared_table"
+
+    field_a = properties.property(types.String())
+    field_b = properties.property(types.String())
+
+
+class SelectShapeCacheTestCase(unittest.TestCase):
+    """What a `SELECT` reuses between queries, and what it must not.
+
+    The columns, the aliases and the row parser are the model's and the
+    engine's; the filters, the ordering and the limit are the query's.
+    """
+
+    def setUp(self):
+        super(SelectShapeCacheTestCase, self).setUp()
+        self.engine = fixtures.EngineFixture()
+        self.session = mock.Mock(engine=self.engine)
+
+    def tearDown(self):
+        super(SelectShapeCacheTestCase, self).tearDown()
+        q.clear_shape_cache()
+
+    def _select(self, **kwargs):
+        return q.Q.select(SharedModel, session=self.session, **kwargs)
+
+    def test_two_queries_over_a_model_compile_the_same(self):
+        self.assertEqual(self._select().compile(), self._select().compile())
+
+    def test_a_filter_does_not_leak_into_the_next_query(self):
+        filtered = self._select().where(filters={"field_a": filters.EQ("a")})
+
+        self.assertIn("WHERE", filtered.compile())
+        self.assertNotIn("WHERE", self._select().compile())
+
+    def test_an_order_and_a_limit_do_not_leak_either(self):
+        ordered = self._select()
+        ordered.order_by(property_name="field_a", sort_type="DESC")
+        ordered.limit(3)
+
+        self.assertIn("ORDER BY", ordered.compile())
+        self.assertIn("LIMIT 3", ordered.compile())
+        self.assertNotIn("ORDER BY", self._select().compile())
+        self.assertNotIn("LIMIT", self._select().compile())
+
+    def test_another_engine_escapes_its_own_way(self):
+        class DoubleQuoteEngine(fixtures.EngineFixture):
+            def escape(self, value):
+                return '"%s"' % value
+
+        other = q.Q.select(SharedModel, session=mock.Mock(engine=DoubleQuoteEngine()))
+
+        self.assertIn("`shared_table`", self._select().compile())
+        self.assertIn('"shared_table"', other.compile())
+
+    def test_reordering_the_properties_is_noticed(self):
+        class ReorderedModel(models.ModelWithUUID):
+            __tablename__ = "reordered_table"
+
+            zeta = properties.property(types.String())
+            alpha = properties.property(types.String())
+
+        def columns():
+            statement = q.Q.select(ReorderedModel, session=self.session).compile()
+            return [
+                part.split("AS")[-1].strip(" `,")
+                for part in statement.split("FROM")[0].split(",")
+            ]
+
+        before = columns()
+
+        ReorderedModel.properties.sort_properties()
+
+        self.assertEqual(["t1_uuid", "t1_zeta", "t1_alpha"], before)
+        self.assertEqual(["t1_alpha", "t1_uuid", "t1_zeta"], columns())
+
+    def test_what_is_kept_does_not_keep_the_engine(self):
+        # A shape outlives the query it was built for; an engine it held
+        # would outlive its own life, and a pool is closed when its
+        # engine is collected.
+        session = fixtures.SessionFixture()
+        engine = session.engine
+        q.Q.select(SharedModel, session=session).compile()
+        dead = weakref.ref(engine)
+
+        del engine, session
+        gc.collect()
+
+        self.assertIsNone(dead())
+
+    def test_a_row_still_parses_after_a_query_was_built_before_it(self):
+        self._select().compile()
+        select_clause = self._select()
+
+        result = select_clause.parse_row(
+            {
+                "t1_uuid": "FakeUUID",
+                "t1_field_a": "FakeA",
+                "t1_field_b": "FakeB",
+            }
+        )
+
+        self.assertEqual(
+            {"uuid": "FakeUUID", "field_a": "FakeA", "field_b": "FakeB"},
             result,
         )

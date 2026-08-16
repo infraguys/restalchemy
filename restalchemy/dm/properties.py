@@ -88,6 +88,14 @@ def _check_property_type(property_type):
     _verified_property_types.add(property_type_class)
 
 
+# Bumped whenever a declaration that was already readable changes -- which
+# `sort_properties()` does. Anything that reads a model's properties once
+# and builds from them (the SQL layer builds every query's column list
+# that way) compares this against what it last saw, instead of the data
+# model having to know who those readers are.
+declaration_version = 0
+
+
 class Property(BaseProperty):
     def __init__(
         self,
@@ -327,11 +335,15 @@ class PropertyCollection(PropertyMapping):
 
         Most often, this functionality is needed for tests.
         """
+        global declaration_version
+
         result = collections.OrderedDict()
         for key in sorted(self._properties):
             result[key] = self._properties[key]
         self._properties = result
         self._reset_properties_proxy()
+
+        declaration_version += 1
 
     def __getitem__(self, name):
         return self._properties[name].get_property_class()
