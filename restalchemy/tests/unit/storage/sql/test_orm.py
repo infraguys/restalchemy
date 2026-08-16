@@ -18,6 +18,7 @@
 import mock
 import orjson
 
+from restalchemy.common import exceptions as dm_exceptions
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
@@ -29,6 +30,8 @@ from restalchemy.tests.unit import base
 FAKE_VALUE_A = "FAKE_A"
 FAKE_VALUE_B = "FAKE_B"
 FAKE_UUID = "89d423c5-4365-4be2-bde9-2730909a9af8"
+#: version 1, where FAKE_UUID is version 4
+FAKE_UUID_V1 = "8e1e0c9a-8b3a-11f0-9d3a-0242ac120002"
 
 FAKE_DICT = {"key": "value", "list": [1, 2, 3], "dict": {"a": "A"}}
 FAKE_DICT_JSON = orjson.dumps(FAKE_DICT).decode()
@@ -318,3 +321,87 @@ class TestModelErrorHandlingCase(base.BaseTestCase):
             a=FAKE_VALUE_A, b=FAKE_VALUE_B
         )
         self.assertRaises(exceptions.DeadLock, model.delete)
+
+
+class StoragePlanChecksTestCase(base.BaseTestCase):
+    """What the plan says is checked, and what it leaves to the type.
+
+    A value the type built itself is of that type; a value the column
+    handed back as it was stored is not checked by anybody else.
+    """
+
+    class Model(models.ModelWithUUID, orm.SQLStorableMixin):
+        __tablename__ = "plan_table"
+
+        name = properties.property(types.String())
+        enabled = properties.property(types.Boolean(), default=False)
+        stamp = properties.property(types.UTCDateTimeZ(), required=True)
+        naive = properties.property(types.UTCDateTime(), required=True)
+
+    def _checks(self):
+        return {name: check for name, _, check, *_ in self.Model._get_storage_plan()}
+
+    def test_a_value_its_type_built_is_not_checked_again(self):
+        checks = self._checks()
+
+        self.assertIsNone(checks["uuid"])
+        self.assertIsNone(checks["enabled"])
+        self.assertIsNone(checks["stamp"])
+
+    def test_a_value_handed_back_as_stored_is_checked(self):
+        checks = self._checks()
+
+        self.assertIsNotNone(checks["name"])
+        # The naive timestamp reads a stored string into whatever
+        # timezone the string names, so its own check still runs.
+        self.assertIsNotNone(checks["naive"])
+
+    def test_the_check_that_stays_still_refuses_a_wrong_value(self):
+        self.assertRaises(
+            dm_exceptions.TypeError,
+            self.Model.restore_row,
+            {
+                "uuid": FAKE_UUID,
+                "name": 42,
+                "enabled": True,
+                "stamp": "2026-08-16 12:00:00.000000",
+                "naive": "2026-08-16 12:00:00.000000",
+            },
+        )
+
+
+class VersionOneUUID(types.UUID):
+    """A UUID a model will only take one version of.
+
+    It builds its value the way `UUID` does and adds a rule of its own --
+    which is the case the plan has to keep checking.
+    """
+
+    def validate(self, value):
+        return super(VersionOneUUID, self).validate(value) and value.version == 1
+
+
+class StoragePlanChecksASubclassTestCase(base.BaseTestCase):
+    """A type that inherits a conversion may still have its own rule."""
+
+    class Model(models.Model, orm.SQLStorableMixin):
+        __tablename__ = "plan_table"
+
+        uuid = properties.property(VersionOneUUID(), id_property=True)
+
+    def test_the_subclass_keeps_its_check(self):
+        checks = {name: check for name, _, check, *_ in self.Model._get_storage_plan()}
+
+        self.assertIsNotNone(checks["uuid"])
+
+    def test_the_subclass_check_refuses_what_the_built_in_would_take(self):
+        self.assertRaises(
+            dm_exceptions.TypeError,
+            self.Model.restore_row,
+            {"uuid": FAKE_UUID},
+        )
+
+    def test_the_subclass_check_takes_what_it_is_meant_to(self):
+        model = self.Model.restore_row({"uuid": FAKE_UUID_V1})
+
+        self.assertEqual(str(model.uuid), FAKE_UUID_V1)
