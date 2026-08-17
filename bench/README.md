@@ -106,6 +106,36 @@ resource** by id, and **POST one resource**, which writes a row.
 - **Rows created by the POSTs are swept after every stack's turn**, so
   every stack in a round reads the same table.
 
+## The guard in the suite
+
+This benchmark is a report: run by hand, on a machine somebody trusts,
+and it publishes a table. The functional suite carries a smaller relative
+of it, `restalchemy/tests/functional/perf/`, which runs on every push and
+fails when a request of ours costs more of the floor than it may — 2.5×
+for a collection, 3× for a resource, 3× for a create, against 1.6×, 2.1×
+and 1.9× measured today. PostgreSQL only: the floor is a raw psycopg one,
+so the MySQL run skips it.
+
+A ratio is what a build machine can be held to, where microseconds are
+not: a runner that is slow or busy is slow for the floor too, and under a
+fully loaded machine every ratio above *falls*. What that buys is a wall
+against losing a factor rather than a tenth — on the requests where our
+own work is the smaller part of the whole, a regression under about half
+again lands inside the room the wall leaves for the machine. That is what
+running the benchmark is for.
+
+Beside it a second guard serves two thousand requests and counts what the
+process kept: no objects at all, and under 32 bytes each. Measured, after
+the caches settle: nothing and about a byte. Both run in a process of
+their own — RestAlchemy keeps one application per process, and what a
+request keeps cannot be counted in a process other tests allocate in.
+
+```bash
+tox -e py312-functional          # both, with the rest of the suite
+DATABASE_URI=postgresql://user@host/db python -m \
+    restalchemy.tests.functional.perf.probe --mode speed   # or --mode memory
+```
+
 ## What the numbers do not say
 
 **Transactions are not the same across stacks.** Counted from the server's
