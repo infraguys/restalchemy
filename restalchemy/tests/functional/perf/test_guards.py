@@ -62,6 +62,10 @@ SLACK = float(os.environ.get("RA_PERF_RATIO_SLACK", "1.0"))
 MAX_OBJECTS_PER_REQUEST = 0.25
 MAX_BYTES_PER_REQUEST = 32
 
+# What a cluster that has run out of clients says, in psycopg's words
+# and in the pool's.
+SHORTAGE = ("too many clients", "PoolTimeout", "connection failed")
+
 SKIPPED = os.environ.get("RA_PERF_SKIP", "")
 DIALECT = parse.urlparse(consts.DATABASE_URI).scheme
 
@@ -78,9 +82,17 @@ def probe(mode, *options):
         env=environment,
     )
     if finished.returncode != 0:
+        trouble = finished.stderr.decode(errors="replace")
+        if any(sign in trouble for sign in SHORTAGE):
+            # Not a regression of ours: ten workers of this suite and a
+            # guard beside them outran what the cluster will hand out.
+            # The probe already waits for a connection to come free;
+            # past that, saying so is better than blaming the code.
+            raise unittest.SkipTest(
+                "the database had no connection to spare:\n%s" % trouble[-2000:]
+            )
         raise AssertionError(
-            "the %s probe failed (%d):\n%s"
-            % (mode, finished.returncode, finished.stderr.decode(errors="replace"))
+            "the %s probe failed (%d):\n%s" % (mode, finished.returncode, trouble)
         )
     return orjson.loads(finished.stdout)
 

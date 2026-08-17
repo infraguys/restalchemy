@@ -87,14 +87,14 @@ def best_of(stack, scenario, calls):
     return best * 1e6
 
 
-def measure_speed(db_url, arguments):
+def measure_speed(db_url, book, arguments):
     """Time both stacks, turn by turn, and read one against the other.
 
     Rounds are interleaved: within a round each stack answers once, so a
     machine that slows down mid-run slows both of them down together and
     the ratio survives it.
     """
-    stacks.seed(db_url, arguments.rows)
+    stacks.seed(book, arguments.rows)
     both = [
         stacks.RawStack(db_url, arguments.page),
         stacks.RestAlchemyStack(db_url, arguments.page),
@@ -103,7 +103,7 @@ def measure_speed(db_url, arguments):
         stack.setup()
         stacks.check(stack, arguments.page)
         note("%s: warmed with %d calls" % (stack.name, warm(stack, arguments.warmup)))
-    stacks.sweep(db_url)
+    stacks.sweep(book)
 
     samples = {
         stack.name: {scenario: [] for scenario in stacks.SCENARIOS} for stack in both
@@ -119,7 +119,7 @@ def measure_speed(db_url, arguments):
                 )
             # Swept per turn, so every stack reads the table the first
             # one read, wherever the rotation put it.
-            stacks.sweep(db_url)
+            stacks.sweep(book)
         note("round %d/%d" % (number + 1, arguments.rounds))
 
     # Checked again: a stack that broke mid-run would have been timed
@@ -127,7 +127,7 @@ def measure_speed(db_url, arguments):
     for stack in both:
         stacks.check(stack, arguments.page)
         stack.teardown()
-    stacks.sweep(db_url)
+    stacks.sweep(book)
 
     raw, ours = (stack.name for stack in both)
     median = {
@@ -152,7 +152,7 @@ def measure_speed(db_url, arguments):
     }
 
 
-def measure_memory(db_url, arguments):
+def measure_memory(db_url, book, arguments):
     """Serve batch after batch and watch what the process keeps.
 
     Every request builds a model, a document and a query and should hand
@@ -161,7 +161,7 @@ def measure_memory(db_url, arguments):
     before the first count is taken, so what a later batch adds is what a
     request does not give back.
     """
-    stacks.seed(db_url, arguments.rows)
+    stacks.seed(book, arguments.rows)
     stack = stacks.RestAlchemyStack(db_url, arguments.page)
     stack.setup()
     stacks.check(stack, arguments.page)
@@ -173,7 +173,7 @@ def measure_memory(db_url, arguments):
     for number in range(arguments.batches):
         for call in range(arguments.batch):
             asks[call % len(asks)](stack)
-        stacks.sweep(db_url)
+        stacks.sweep(book)
         gc.collect()
         tracked = gc.get_objects()
         objects = len(tracked)
@@ -193,7 +193,7 @@ def measure_memory(db_url, arguments):
 
     stacks.check(stack, arguments.page)
     stack.teardown()
-    stacks.sweep(db_url)
+    stacks.sweep(book)
 
     # Read over the second half only. A cache that converges does its
     # growing early -- the first batches hold what the warm-up had not
@@ -229,13 +229,20 @@ def main():
     if not db_url.startswith("postgresql"):
         raise SystemExit("the probe reads a PostgreSQL floor: %s" % db_url)
 
+    # One connection for the table this run seeds, sweeps and drops,
+    # held from here to the end: a cluster with ten workers on it has
+    # none to spare for a guard opening one per statement.
+    book = stacks.connect(db_url)
     try:
         if arguments.mode == "speed":
-            answer = measure_speed(db_url, arguments)
+            answer = measure_speed(db_url, book, arguments)
         else:
-            answer = measure_memory(db_url, arguments)
+            answer = measure_memory(db_url, book, arguments)
     finally:
-        stacks.drop(db_url)
+        try:
+            stacks.drop(book)
+        finally:
+            book.close()
 
     sys.stdout.write(orjson.dumps(answer, option=orjson.OPT_INDENT_2).decode())
     sys.stdout.write("\n")
