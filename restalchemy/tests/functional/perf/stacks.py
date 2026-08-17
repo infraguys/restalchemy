@@ -28,6 +28,7 @@ psycopg is the driver both sides then share.
 
 import datetime
 import io
+import time
 import uuid
 
 import orjson
@@ -63,6 +64,13 @@ CREATE_BODY = orjson.dumps(
 )
 FIRST_ID = str(uuid.UUID(int=1))
 
+# One connection each, and a wait rather than a failure when the cluster
+# has none to give: the guard runs beside ten workers of the same suite.
+POOL = {"min_size": 1, "max_size": 1}
+CONNECT_ATTEMPTS = 8
+CONNECT_PAUSE = 0.5
+MAX_PAUSE = 2.0
+
 SCHEMA = """
 DROP TABLE IF EXISTS %(table)s;
 CREATE TABLE %(table)s (
@@ -83,7 +91,25 @@ def _now():
     return datetime.datetime.now(datetime.timezone.utc)
 
 
-def seed(db_url, rows):
+def connect(db_url):
+    """One connection, opened once and kept for the run's bookkeeping.
+
+    Ten workers of a suite are close enough to a cluster's limit on
+    clients that a guard has no business opening a connection per
+    statement, and no business failing the moment somebody else holds
+    the last one -- so it also waits for one to come free.
+    """
+    last = None
+    for attempt in range(CONNECT_ATTEMPTS):
+        try:
+            return psycopg.connect(db_url, autocommit=True)
+        except psycopg.OperationalError as error:
+            last = error
+            time.sleep(min(CONNECT_PAUSE * (attempt + 1), MAX_PAUSE))
+    raise last
+
+
+def seed(connection, rows):
     """The same rows every run: seeded ids, seeded timestamps."""
     epoch = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
     records = [
@@ -99,25 +125,22 @@ def seed(db_url, rows):
         )
         for number in range(rows)
     ]
-    with psycopg.connect(db_url, autocommit=True) as connection:
-        connection.execute(SCHEMA)
-        connection.cursor().executemany(
-            "INSERT INTO %s (%s) VALUES (%s)" % (TABLE, COLUMNS, ", ".join(["%s"] * 8)),
-            records,
-        )
+    connection.execute(SCHEMA)
+    connection.cursor().executemany(
+        "INSERT INTO %s (%s) VALUES (%s)" % (TABLE, COLUMNS, ", ".join(["%s"] * 8)),
+        records,
+    )
 
 
-def sweep(db_url):
+def sweep(connection):
     """Take the rows the POSTs wrote back out."""
-    with psycopg.connect(db_url, autocommit=True) as connection:
-        connection.execute(
-            "DELETE FROM %s WHERE quantity >= %d" % (TABLE, CREATED_QUANTITY)
-        )
+    connection.execute(
+        "DELETE FROM %s WHERE quantity >= %d" % (TABLE, CREATED_QUANTITY)
+    )
 
 
-def drop(db_url):
-    with psycopg.connect(db_url, autocommit=True) as connection:
-        connection.execute("DROP TABLE IF EXISTS %s" % TABLE)
+def drop(connection):
+    connection.execute("DROP TABLE IF EXISTS %s" % TABLE)
 
 
 def wsgi(app, method, path, body=b""):
@@ -176,7 +199,8 @@ class RawStack(object):
         self._page = page
 
     def setup(self):
-        self._pool = ConnectionPool(self._db_url, min_size=1, max_size=4, open=True)
+        self._pool = ConnectionPool(self._db_url, open=True, **POOL)
+        self._pool.wait(timeout=CONNECT_ATTEMPTS * CONNECT_PAUSE * 2)
 
     def teardown(self):
         self._pool.close()
@@ -292,7 +316,7 @@ class RestAlchemyStack(object):
 
     def setup(self):
         ItemController.page = self._page
-        engines.engine_factory.configure_factory(db_url=self._db_url)
+        engines.engine_factory.configure_factory(db_url=self._db_url, config=dict(POOL))
         self._app = applications.WSGIApp(route_class=Root)
 
     def teardown(self):
