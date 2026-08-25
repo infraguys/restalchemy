@@ -136,7 +136,8 @@ As a user, you rarely need to touch them directly — they are driven by models 
 - A value the type itself builds out of the stored form — a `UUID`, a
   `Boolean`, the UTC timestamp `UTCDateTimeZ` settles the timezone of — is
   not checked against that type again. Every other type is checked as
-  before, including the deprecated naive `UTCDateTime`.
+  before, and so is anything that inherits one of those three: a subclass
+  keeps the conversion but may have a rule of its own to apply.
 - Every read arrives at `restore_row` — one model and a whole page
   alike — so whatever a model wants done on every read belongs there.
   `restore_from_storage` is a way in and not a way to change what

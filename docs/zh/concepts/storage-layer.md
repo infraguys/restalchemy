@@ -132,7 +132,8 @@ engines.engine_factory.configure_factory(
   省略该值完全一致。
 - 由类型自身依据存储形式构造出的值——`UUID`、`Boolean`、由
   `UTCDateTimeZ` 归一到 UTC 的时间戳——不会再用同一类型校验一次。其余
-  类型仍照旧校验，包括已废弃的朴素 `UTCDateTime`。
+  类型仍照旧校验，继承这三者之一的子类同样如此：子类沿用转换，但可能有
+  自己的规则要校验。
 - 每一次读取都到达 `restore_row`——单个模型与整页皆然——因此模型希望
   在每次读取时做的事都应放在那里。`restore_from_storage` 是入口，而不是
   改变读取行为的地方：覆盖它不会影响一页行的读取。

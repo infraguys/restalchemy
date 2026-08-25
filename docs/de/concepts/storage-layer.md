@@ -139,7 +139,8 @@ Diese Komponenten sind intern; Sie müssen sie selten direkt verwenden.
 - Ein Wert, den der Typ selbst aus der gespeicherten Form baut — `UUID`,
   `Boolean`, der von `UTCDateTimeZ` auf UTC gebrachte Zeitstempel — wird
   gegen diesen Typ nicht erneut geprüft. Alle anderen Typen werden wie
-  bisher geprüft, auch das veraltete naive `UTCDateTime`.
+  bisher geprüft, und ebenso alles, was einen dieser drei erbt: eine
+  Unterklasse behält die Umwandlung, kann aber eine eigene Regel haben.
 - Jedes Lesen kommt bei `restore_row` an — ein Modell wie eine ganze
   Seite —, also gehört dorthin, was ein Modell bei jedem Lesen tun will.
   `restore_from_storage` ist ein Weg hinein und kein Weg, das Lesen zu
