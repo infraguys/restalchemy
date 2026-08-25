@@ -44,10 +44,7 @@ _VALUES_AS_STORED = frozenset(
 # checking what one of them just built against the type that built it
 # answers the same every time. These are the exact classes and not what
 # inherits them: a subclass keeps the conversion but may have a check of
-# its own to make, and that one still has to run. The naive
-# `UTCDateTime` is deliberately not here: it reads a stored string into
-# whatever timezone the string names, and its own check is what refuses
-# one that is neither UTC nor naive.
+# its own to make, and that one still has to run.
 _TYPES_THAT_CHECK_THEMSELVES = frozenset(
     (
         ra_types.UUID,

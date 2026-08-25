@@ -98,11 +98,14 @@ status = properties.property(status_type, default="pending")
 
 ## Дата и время
 
-### `UTCDateTime` (устаревший) и `UTCDateTimeZ`
+### `UTCDateTimeZ`
 
-- Оба оборачивают `datetime.datetime`.
-- `UTCDateTimeZ` требует `tzinfo == datetime.timezone.utc` и рекомендуется к использованию.
-- Сериализуют в строку в формате MySQL / RFC3339-подобном.
+- Оборачивает `datetime.datetime` и требует `tzinfo == datetime.timezone.utc`.
+- Сериализует в строку в формате MySQL / RFC3339-подобном.
+- Наивный `UTCDateTime`, забиравший ту зону, которую называла хранимая
+  строка, удалён в 16.0.0. Он читал и писал те же два формата, поэтому
+  свойство, объявленное через него, становится `UTCDateTimeZ`, а хранимые
+  значения читаются без изменений — как UTC, чем их и считали.
 
 ### `TimeDelta`
 

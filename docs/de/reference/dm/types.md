@@ -98,11 +98,15 @@ status = properties.property(status_type, default="pending")
 
 ## Datums- und Zeittypen
 
-### `UTCDateTime` (deprecated) und `UTCDateTimeZ`
+### `UTCDateTimeZ`
 
-- Beide kapseln `datetime.datetime`.
-- `UTCDateTimeZ` erzwingt `tzinfo == datetime.timezone.utc` und ist empfohlen.
+- Kapselt `datetime.datetime` und erzwingt `tzinfo == datetime.timezone.utc`.
 - Serialisierung als String im MySQL- bzw. RFC3339-ähnlichen Format.
+- Das naive `UTCDateTime`, das die Zeitzone übernahm, die ein gespeicherter
+  String nannte, wurde in 16.0.0 entfernt. Es las und schrieb dieselben
+  zwei Formate, daher wird eine damit deklarierte Property zu
+  `UTCDateTimeZ`, und gespeicherte Werte werden unverändert gelesen — als
+  UTC, wofür sie ohnehin gehalten wurden.
 
 ### `TimeDelta`
 

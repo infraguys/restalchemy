@@ -119,8 +119,7 @@ Ein Zeitstempel wird als RFC 3339 in UTC geschrieben:
 `2026-08-16T12:34:56.123456Z`. Einer, der genau auf einer Sekunde liegt,
 trägt keinen Sekundenbruchteil -- `2026-08-16T12:34:56Z` --, wo zuvor
 `.000000` stand. Ein Zeitstempel innerhalb eines Wertes (`Dict`,
-`TypedList`) endet ebenfalls auf `Z` statt auf `+00:00`. Das veraltete
-naive `UTCDateTime` schreibt die Form, die es immer geschrieben hat.
+`TypedList`) endet ebenfalls auf `Z` statt auf `+00:00`.
 
 ### 6. Contexts und Feldberechtigungen
 

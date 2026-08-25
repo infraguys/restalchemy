@@ -643,86 +643,6 @@ class TypedDictTestCase(base.BaseTestCase):
         self.assertEqual(expect_data, res)
 
 
-class UTCDateTimeTestCase(base.BaseTestCase):
-    def setUp(self):
-        super(UTCDateTimeTestCase, self).setUp()
-
-        self.test_instance = types.UTCDateTime()
-
-    def test_validate_correct_value_with_explicit_utc_tz(self):
-        self.assertTrue(
-            self.test_instance.validate(datetime.datetime.now(datetime.timezone.utc))
-        )
-
-    def test_validate_correct_value(self):
-        self.assertTrue(self.test_instance.validate(datetime.datetime.utcnow()))
-
-    def test_validate_incorrect_value_type(self):
-        self.assertFalse(self.test_instance.validate(TEST_STR_VALUE))
-
-    def test_validate_incorrect_value_tzinfo(self):
-        self.assertFalse(
-            self.test_instance.validate(
-                datetime.datetime.utcnow().replace(tzinfo=datetime.tzinfo())
-            )
-        )
-
-    def test_zero_microseconds(self):
-        dt = datetime.datetime(2020, 3, 13, 11, 3, 25)
-        expected = "2020-03-13 11:03:25.000000"
-        dt_type = types.UTCDateTime()
-
-        result = dt_type.to_simple_type(dt)
-
-        self.assertEqual(result, expected)
-
-    def test_openapi_format(self):
-        dt = datetime.datetime(2020, 3, 13, 11, 3, 25, 123)
-
-        expected = "2020-03-13T11:03:25.000123Z"
-        dt_type = types.UTCDateTime()
-
-        result = dt_type.dump_value(dt)
-
-        self.assertEqual(result, expected)
-
-        result = dt_type.from_simple_type(expected)
-        self.assertEqual(result, dt)
-
-    def test_the_stored_format_is_read_back_naive(self):
-        result = self.test_instance.from_simple_type("2020-03-13 11:03:25.000123")
-
-        self.assertEqual(datetime.datetime(2020, 3, 13, 11, 3, 25, 123), result)
-        self.assertIsNone(result.tzinfo)
-
-    def test_the_api_format_is_read_back_naive(self):
-        # `fromisoformat` reads the trailing Z as UTC from 3.11 on; this
-        # type has always handed back a naive datetime.
-        result = self.test_instance.from_simple_type("2020-03-13T11:03:25.000123Z")
-
-        self.assertIsNone(result.tzinfo)
-
-    def test_a_year_below_1000_is_written_with_four_digits(self):
-        # `strftime("%Y")` leaves it to the C library, and glibc writes
-        # `1-02-03`, which neither of this type's readers can parse back.
-        early = datetime.datetime(1, 2, 3, 4, 5, 6, 7)
-
-        stored = self.test_instance.to_simple_type(early)
-
-        self.assertEqual("0001-02-03 04:05:06.000007", stored)
-        self.assertEqual(
-            "0001-02-03T04:05:06.000007Z", self.test_instance.dump_value(early)
-        )
-        self.assertEqual(early, self.test_instance.from_simple_type(stored))
-
-    def test_a_value_in_neither_format_is_refused(self):
-        self.assertRaises(
-            ValueError,
-            self.test_instance.from_simple_type,
-            "the thirteenth of March",
-        )
-
-
 class UTCDateTimeZTestCase(base.BaseTestCase):
     def setUp(self):
         super(UTCDateTimeZTestCase, self).setUp()
@@ -758,6 +678,42 @@ class UTCDateTimeZTestCase(base.BaseTestCase):
         self.assertEqual(result.tzinfo, datetime.timezone.utc)
         self.assertEqual(result, dtz.astimezone(datetime.timezone.utc))
         self.assertEqual(types.UTCDateTimeZ().to_simple_type(result), expected_utc)
+
+    def test_zero_microseconds(self):
+        dt = datetime.datetime(2020, 3, 13, 11, 3, 25, tzinfo=datetime.timezone.utc)
+
+        self.assertEqual(
+            "2020-03-13 11:03:25.000000", self.test_instance.to_simple_type(dt)
+        )
+
+    def test_the_api_format_is_written_and_read_back(self):
+        dt = datetime.datetime(
+            2020, 3, 13, 11, 3, 25, 123, tzinfo=datetime.timezone.utc
+        )
+        expected = "2020-03-13T11:03:25.000123Z"
+
+        self.assertEqual(expected, self.test_instance.dump_value(dt))
+        self.assertEqual(dt, self.test_instance.from_simple_type(expected))
+
+    def test_a_year_below_1000_is_written_with_four_digits(self):
+        # `strftime("%Y")` leaves it to the C library, and glibc writes
+        # `1-02-03`, which neither of this type's readers can parse back.
+        early = datetime.datetime(1, 2, 3, 4, 5, 6, 7, tzinfo=datetime.timezone.utc)
+
+        stored = self.test_instance.to_simple_type(early)
+
+        self.assertEqual("0001-02-03 04:05:06.000007", stored)
+        self.assertEqual(
+            "0001-02-03T04:05:06.000007Z", self.test_instance.dump_value(early)
+        )
+        self.assertEqual(early, self.test_instance.from_simple_type(stored))
+
+    def test_a_value_in_neither_format_is_refused(self):
+        self.assertRaises(
+            ValueError,
+            self.test_instance.from_simple_type,
+            "the thirteenth of March",
+        )
 
     def test_the_stored_format_is_read_back_as_utc(self):
         result = self.test_instance.from_simple_type("2020-03-13 11:03:25.000123")

@@ -39,8 +39,8 @@ class VM(models.ModelWithUUID):
         read_only=True,
     )
     updated = properties.property(
-        types.UTCDateTime(),
-        default=lambda: types.DEFAULT_DATE,
+        types.UTCDateTimeZ(),
+        default=lambda: types.DEFAULT_DATE_Z,
     )
 
 

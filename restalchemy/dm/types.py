@@ -766,16 +766,11 @@ class TypedDict(Dict):
         return {"key": self._nested_type.example}
 
 
-class UTCDateTime(BasePythonType):
-    """Deprecated utc datetime type. Use UTCDateTimeZ instead.
-
-    UTCDateTime should be used only for compatibility,
-    when you use naive datetime objects without datetimes.
-    It's strongly recommended to use UTCDateTimeZ.
-    """
+class UTCDateTimeZ(BasePythonType):
+    """A datetime in UTC, with the timezone it guarantees."""
 
     def __init__(self):
-        super(UTCDateTime, self).__init__(
+        super(UTCDateTimeZ, self).__init__(
             python_type=datetime.datetime,
             openapi_type="string",
             openapi_format="date-time",
@@ -783,7 +778,7 @@ class UTCDateTime(BasePythonType):
 
     def validate(self, value):
         return isinstance(value, datetime.datetime) and (
-            value.tzinfo == datetime.timezone.utc or value.tzinfo is None
+            value.tzinfo == datetime.timezone.utc
         )
 
     def to_simple_type(self, value):
@@ -814,18 +809,24 @@ class UTCDateTime(BasePythonType):
         )
 
     def from_simple_type(self, value):
-        if isinstance(value, datetime.datetime):
-            return value
-        if type(value) is str and not value.endswith("Z"):
-            # The stored format is ISO 8601, and `fromisoformat` reads it
-            # in C, where `strptime` builds a regexp and consults the
-            # locale per call. Anything it refuses falls through to
-            # `strptime`, so nothing that parsed before stops parsing.
-            #
-            # The API format is left to `strptime` on purpose: on 3.11+
-            # `fromisoformat` reads its trailing `Z` and hands back an
-            # aware datetime, where this type -- the naive one -- has
-            # always produced a naive one.
+        if not isinstance(value, datetime.datetime):
+            value = self._read(value)
+        if value.tzinfo is not None:
+            return value.astimezone(datetime.timezone.utc)
+        # If datetime is naive, it's assumed that timezone is UTC, add it
+        return value.replace(tzinfo=datetime.timezone.utc)
+
+    @staticmethod
+    def _read(value):
+        """The datetime a stored or an API string names.
+
+        Both formats are ISO 8601, and `fromisoformat` reads them in C,
+        where `strptime` builds a regexp and consults the locale per
+        call. What it refuses falls through to `strptime`, so nothing
+        that parsed before stops parsing -- the trailing `Z` of the API
+        format among it, which `fromisoformat` only reads from 3.11 on.
+        """
+        if type(value) is str:
             try:
                 return datetime.datetime.fromisoformat(value)
             except ValueError:
@@ -853,30 +854,6 @@ class UTCDateTime(BasePythonType):
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.dump_value)
         )
         return spec
-
-    @property
-    def example(self):
-        return self.dump_value(DEFAULT_DATE_Z)
-
-
-class UTCDateTimeZ(UTCDateTime):
-    """Appropriate datetime UTC type with guarantees for tzinfo existence."""
-
-    def validate(self, value):
-        return isinstance(value, datetime.datetime) and (
-            value.tzinfo == datetime.timezone.utc
-        )
-
-    def from_simple_type(self, value):
-        if not isinstance(value, datetime.datetime):
-            # Not what a driver hands back for a timestamp column, so
-            # the parent reads it; a datetime it would hand straight
-            # back, and only the timezone is left to settle.
-            value = super(UTCDateTimeZ, self).from_simple_type(value)
-        if value.tzinfo is not None:
-            return value.astimezone(datetime.timezone.utc)
-        # If datetime is naive, it's assumed that timezone is UTC, add it
-        return value.replace(tzinfo=datetime.timezone.utc)
 
     @property
     def example(self):

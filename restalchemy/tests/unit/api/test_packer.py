@@ -478,7 +478,6 @@ class NativeTypesTestCase(base.BaseTestCase):
 
 class TimestampModel(models.ModelWithUUID):
     when = properties.property(types.UTCDateTimeZ(), required=True)
-    naive = properties.property(types.UTCDateTime(), required=True)
     payload = properties.property(types.Dict(), default=dict)
 
 
@@ -503,12 +502,8 @@ class TimestampFormatTestCase(base.BaseTestCase):
         super(TimestampFormatTestCase, self).tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
-    def _packed(self, when, naive=None, payload=None):
-        model = TimestampModel(
-            when=when,
-            naive=naive or datetime.datetime(2026, 8, 16, 1, 2, 3, 4),
-            payload=payload or {},
-        )
+    def _packed(self, when, payload=None):
+        model = TimestampModel(when=when, payload=payload or {})
         return orjson.loads(packers.JSONPacker(self._resource, self._req).pack(model))
 
     def test_a_fraction_is_written_as_it_always_was(self):
@@ -524,14 +519,6 @@ class TimestampFormatTestCase(base.BaseTestCase):
         )
 
         self.assertEqual("2026-08-16T12:34:56Z", packed["when"])
-
-    def test_the_naive_type_writes_its_own_form(self):
-        packed = self._packed(
-            datetime.datetime(2026, 8, 16, 12, 34, 56, tzinfo=self.UTC),
-            naive=datetime.datetime(2026, 8, 16, 12, 34, 56),
-        )
-
-        self.assertEqual("2026-08-16T12:34:56.000000Z", packed["naive"])
 
     def test_a_timestamp_inside_a_value_ends_in_z(self):
         packed = self._packed(

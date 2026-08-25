@@ -336,7 +336,6 @@ class StoragePlanChecksTestCase(base.BaseTestCase):
         name = properties.property(types.String())
         enabled = properties.property(types.Boolean(), default=False)
         stamp = properties.property(types.UTCDateTimeZ(), required=True)
-        naive = properties.property(types.UTCDateTime(), required=True)
 
     def _checks(self):
         return {name: check for name, _, check, *_ in self.Model._get_storage_plan()}
@@ -352,9 +351,6 @@ class StoragePlanChecksTestCase(base.BaseTestCase):
         checks = self._checks()
 
         self.assertIsNotNone(checks["name"])
-        # The naive timestamp reads a stored string into whatever
-        # timezone the string names, so its own check still runs.
-        self.assertIsNotNone(checks["naive"])
 
     def test_the_check_that_stays_still_refuses_a_wrong_value(self):
         self.assertRaises(
@@ -365,7 +361,6 @@ class StoragePlanChecksTestCase(base.BaseTestCase):
                 "name": 42,
                 "enabled": True,
                 "stamp": "2026-08-16 12:00:00.000000",
-                "naive": "2026-08-16 12:00:00.000000",
             },
         )
 
