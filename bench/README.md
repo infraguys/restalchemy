@@ -11,25 +11,25 @@ number as a multiple of RestAlchemy's.
 
 | Stack | Collection of 100 | One resource | POST one | Per row |
 | --- | ---: | ---: | ---: | ---: |
-| raw psycopg + orjson | 1307 µs (0.8×) | 166 µs (0.5×) | 222 µs (0.6×) | 11.5 µs (0.8×) |
-| **RestAlchemy** | **1731 µs** | **310 µs** | **384 µs** | **14.4 µs** |
-| Flask + SQLAlchemy | 2275 µs (1.3×) | 628 µs (2.0×) | 588 µs (1.5×) | 16.6 µs (1.2×) |
-| FastAPI + SQLAlchemy | 2370 µs (1.4×) | 872 µs (2.8×) | 804 µs (2.1×) | 15.1 µs (1.0×) |
-| Litestar + SQLAlchemy | 2491 µs (1.4×) | 832 µs (2.7×) | 784 µs (2.0×) | 16.8 µs (1.2×) |
-| Django + DRF | 5254 µs (3.0×) | 924 µs (3.0×) | 868 µs (2.3×) | 43.7 µs (3.0×) |
+| raw psycopg + orjson | 1276 µs (0.7×) | 174 µs (0.5×) | 232 µs (0.6×) | 11.1 µs (0.8×) |
+| **RestAlchemy** | **1706 µs** | **317 µs** | **396 µs** | **14.0 µs** |
+| Flask + SQLAlchemy | 2269 µs (1.3×) | 636 µs (2.0×) | 604 µs (1.5×) | 16.5 µs (1.2×) |
+| FastAPI + SQLAlchemy | 2397 µs (1.4×) | 892 µs (2.8×) | 821 µs (2.1×) | 15.2 µs (1.1×) |
+| Litestar + SQLAlchemy | 2527 µs (1.5×) | 852 µs (2.7×) | 795 µs (2.0×) | 16.9 µs (1.2×) |
+| Django + DRF | 5331 µs (3.1×) | 942 µs (3.0×) | 895 µs (2.3×) | 44.3 µs (3.2×) |
 
 **First in this table on all three request patterns, because of how little
-it adds to the floor.** The bare single-row query costs 166 µs;
+it adds to the floor.** The bare single-row query costs 174 µs;
 RestAlchemy serves it as a REST resource — routed, fetched through its
-ORM, packed, answered — for 144 µs more. The bare insert costs 222 µs;
-served, 162 µs more. A row of a collection costs the floor 11.5 µs and
-RestAlchemy 14.4: three microseconds of framework per row. On every
+ORM, packed, answered — for 143 µs more. The bare insert costs 232 µs;
+served, 164 µs more. A row of a collection costs the floor 11.1 µs and
+RestAlchemy 14.0: under three microseconds of framework per row. On every
 request it stands nearer to the floor than to any framework behind it.
 
 Two numbers are worth separating. The **fixed part** of a request — what a
 stack spends before it looks at any data — is the single-resource column:
-310 µs. **A row** is the rest of the collection spread over its other 99
-rows: 14.4 µs, and it is the number that decides a page, because a
+317 µs. **A row** is the rest of the collection spread over its other 99
+rows: 14.0 µs, and it is the number that decides a page, because a
 collection is one fixed part and a hundred rows.
 
 ## Why it is light
