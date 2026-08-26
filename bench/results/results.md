@@ -1,7 +1,22 @@
 # Same three requests, 6 stacks, one PostgreSQL
 
-2026-08-26 10:39 UTC · 15 rounds × best of 20 calls, after 1.0s of warm-up per
+2026-08-26 11:30 UTC · 15 rounds × best of 20 calls, after 1.0s of warm-up per
 scenario · 1000 rows in the table, 100 per page · Python 3.12.3
+
+Measured on:
+
+- **CPU**: AMD EPYC 7742 64-Core Processor, 64 cores / 128 threads
+- **Frequency governor**: schedutil
+- **Memory**: 504 GiB at 2666 MT/s
+- **Kernel**: Linux 6.8.0-134-generic
+- **PostgreSQL**: 16.14 (Ubuntu 16.14-0ubuntu0.24.04.1)
+- **Load average before the first round**: 6.27, 6.23, 6.83
+
+Microseconds are only comparable against the same machine. This benchmark
+allocates and walks small objects, so it reads the memory subsystem at
+least as much as the clock, and a busy machine slows every stack at once —
+the load average is here so a reader can tell whether that happened. The
+ratios hold up better than the absolute numbers across machines.
 
 Each stack is called at its own interface in the same process — WSGI
 applications directly, ASGI ones through a bare event loop — so what is
@@ -24,34 +39,34 @@ time, and concurrency is a different question.
 
 | Stack | Median | 95% CI | × fastest | × RestAlchemy |
 | --- | ---: | :---: | ---: | ---: |
-| raw psycopg + orjson | 1276 µs | 1270 … 1288 | 1.00× | 0.75× |
-| RestAlchemy | 1706 µs | 1700 … 1771 | 1.34× | 1.00× |
-| Flask + SQLAlchemy | 2269 µs | 2256 … 2273 | 1.78× | 1.33× |
-| FastAPI + SQLAlchemy | 2397 µs | 2373 … 2449 | 1.88× | 1.41× |
-| Litestar + SQLAlchemy | 2527 µs | 2517 … 2538 | 1.98× | 1.48× |
-| Django + DRF | 5331 µs | 5259 … 5363 | 4.18× | 3.13× |
+| raw psycopg + orjson | 1272 µs | 1264 … 1283 | 1.00× | 0.75× |
+| RestAlchemy | 1705 µs | 1687 … 1759 | 1.34× | 1.00× |
+| Flask + SQLAlchemy | 2267 µs | 2257 … 2347 | 1.78× | 1.33× |
+| FastAPI + SQLAlchemy | 2417 µs | 2385 … 2429 | 1.90× | 1.42× |
+| Litestar + SQLAlchemy | 2524 µs | 2509 … 2536 | 1.98× | 1.48× |
+| Django + DRF | 5276 µs | 5160 … 5358 | 4.15× | 3.09× |
 
 ## GET one resource by id
 
 | Stack | Median | 95% CI | × fastest | × RestAlchemy |
 | --- | ---: | :---: | ---: | ---: |
 | raw psycopg + orjson | 174 µs | 173 … 175 | 1.00× | 0.55× |
-| RestAlchemy | 317 µs | 316 … 321 | 1.82× | 1.00× |
-| Flask + SQLAlchemy | 636 µs | 632 … 646 | 3.65× | 2.00× |
-| Litestar + SQLAlchemy | 852 µs | 845 … 858 | 4.89× | 2.68× |
-| FastAPI + SQLAlchemy | 892 µs | 887 … 896 | 5.12× | 2.81× |
-| Django + DRF | 942 µs | 932 … 960 | 5.41× | 2.97× |
+| RestAlchemy | 317 µs | 315 … 319 | 1.83× | 1.00× |
+| Flask + SQLAlchemy | 636 µs | 632 … 638 | 3.66× | 2.00× |
+| Litestar + SQLAlchemy | 857 µs | 848 … 902 | 4.94× | 2.70× |
+| FastAPI + SQLAlchemy | 894 µs | 889 … 902 | 5.15× | 2.82× |
+| Django + DRF | 943 µs | 934 … 972 | 5.43× | 2.97× |
 
 ## POST one resource
 
 | Stack | Median | 95% CI | × fastest | × RestAlchemy |
 | --- | ---: | :---: | ---: | ---: |
-| raw psycopg + orjson | 232 µs | 230 … 233 | 1.00× | 0.59× |
-| RestAlchemy | 396 µs | 394 … 402 | 1.71× | 1.00× |
-| Flask + SQLAlchemy | 604 µs | 601 … 612 | 2.61× | 1.53× |
-| Litestar + SQLAlchemy | 795 µs | 792 … 815 | 3.43× | 2.01× |
-| FastAPI + SQLAlchemy | 821 µs | 815 … 825 | 3.54× | 2.07× |
-| Django + DRF | 895 µs | 889 … 916 | 3.86× | 2.26× |
+| raw psycopg + orjson | 229 µs | 228 … 231 | 1.00× | 0.58× |
+| RestAlchemy | 397 µs | 392 … 399 | 1.73× | 1.00× |
+| Flask + SQLAlchemy | 606 µs | 600 … 612 | 2.64× | 1.53× |
+| Litestar + SQLAlchemy | 811 µs | 805 … 835 | 3.54× | 2.04× |
+| FastAPI + SQLAlchemy | 829 µs | 825 … 843 | 3.62× | 2.09× |
+| Django + DRF | 895 µs | 883 … 912 | 3.91× | 2.26× |
 
 ## What is fixed and what a row costs
 
@@ -63,7 +78,7 @@ row costs it.
 | --- | ---: | ---: | ---: |
 | raw psycopg + orjson | 174 µs | 11.1 µs | 1.00× |
 | RestAlchemy | 317 µs | 14.0 µs | 1.26× |
-| FastAPI + SQLAlchemy | 892 µs | 15.2 µs | 1.37× |
-| Flask + SQLAlchemy | 636 µs | 16.5 µs | 1.48× |
-| Litestar + SQLAlchemy | 852 µs | 16.9 µs | 1.52× |
-| Django + DRF | 942 µs | 44.3 µs | 3.98× |
+| FastAPI + SQLAlchemy | 894 µs | 15.4 µs | 1.39× |
+| Flask + SQLAlchemy | 636 µs | 16.5 µs | 1.49× |
+| Litestar + SQLAlchemy | 857 µs | 16.8 µs | 1.52× |
+| Django + DRF | 943 µs | 43.8 µs | 3.94× |

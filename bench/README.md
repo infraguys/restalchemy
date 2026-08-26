@@ -6,23 +6,26 @@ people reach for instead, and by the floor: a hand-written query and
 JSON cost before anything else runs.
 
 15 rounds × best of 20 calls, 1000 rows in the table, 100 per page,
-Python 3.12, PostgreSQL 16 on a local socket. In parentheses: the same
-number as a multiple of RestAlchemy's.
+Python 3.12, PostgreSQL 16 on a local socket, one AMD EPYC 7742 with
+DDR4-2666. In
+parentheses: the same number as a multiple of RestAlchemy's. Microseconds
+are only comparable against the same machine — `results/results.md`
+records which one it was, and how busy.
 
 | Stack | Collection of 100 | One resource | POST one | Per row |
 | --- | ---: | ---: | ---: | ---: |
-| raw psycopg + orjson | 1276 µs (0.7×) | 174 µs (0.5×) | 232 µs (0.6×) | 11.1 µs (0.8×) |
-| **RestAlchemy** | **1706 µs** | **317 µs** | **396 µs** | **14.0 µs** |
-| Flask + SQLAlchemy | 2269 µs (1.3×) | 636 µs (2.0×) | 604 µs (1.5×) | 16.5 µs (1.2×) |
-| FastAPI + SQLAlchemy | 2397 µs (1.4×) | 892 µs (2.8×) | 821 µs (2.1×) | 15.2 µs (1.1×) |
-| Litestar + SQLAlchemy | 2527 µs (1.5×) | 852 µs (2.7×) | 795 µs (2.0×) | 16.9 µs (1.2×) |
-| Django + DRF | 5331 µs (3.1×) | 942 µs (3.0×) | 895 µs (2.3×) | 44.3 µs (3.2×) |
+| raw psycopg + orjson | 1272 µs (0.7×) | 174 µs (0.5×) | 229 µs (0.6×) | 11.1 µs (0.8×) |
+| **RestAlchemy** | **1705 µs** | **317 µs** | **397 µs** | **14.0 µs** |
+| Flask + SQLAlchemy | 2267 µs (1.3×) | 636 µs (2.0×) | 606 µs (1.5×) | 16.5 µs (1.2×) |
+| FastAPI + SQLAlchemy | 2417 µs (1.4×) | 894 µs (2.8×) | 829 µs (2.1×) | 15.4 µs (1.1×) |
+| Litestar + SQLAlchemy | 2524 µs (1.5×) | 857 µs (2.7×) | 811 µs (2.0×) | 16.8 µs (1.2×) |
+| Django + DRF | 5276 µs (3.1×) | 943 µs (3.0×) | 895 µs (2.3×) | 43.8 µs (3.1×) |
 
 **First in this table on all three request patterns, because of how little
 it adds to the floor.** The bare single-row query costs 174 µs;
 RestAlchemy serves it as a REST resource — routed, fetched through its
-ORM, packed, answered — for 143 µs more. The bare insert costs 232 µs;
-served, 164 µs more. A row of a collection costs the floor 11.1 µs and
+ORM, packed, answered — for 143 µs more. The bare insert costs 229 µs;
+served, 168 µs more. A row of a collection costs the floor 11.1 µs and
 RestAlchemy 14.0: under three microseconds of framework per row. On every
 request it stands nearer to the floor than to any framework behind it.
 
@@ -59,6 +62,10 @@ and seeds it; every later run reuses both. `DATABASE_URL` points it
 somewhere else if you would rather, and `RESTALCHEMY_PATH` measures a
 RestAlchemy other than the one this file sits in. Results land in
 `results/results.md`, the raw per-round samples beside it in JSON.
+
+The report names the machine it ran on. It reads what it can; the speed of
+the DIMMs only `dmidecode` knows and only root may ask, so
+`BENCH_MEMORY_SPEED="2666 MT/s"` says it where nobody can.
 
 ## What is compared
 
