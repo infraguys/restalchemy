@@ -21,6 +21,7 @@ import psycopg
 
 from bench import config
 from bench import database
+from bench import machine
 from bench import payload
 from bench import stacks as stack_registry
 from bench import stats
@@ -111,7 +112,7 @@ def table(header, alignment, rows):
     return "\n".join(["| %s |" % " | ".join(header), alignment] + rows)
 
 
-def report(samples, order, rounds, calls, warmup):
+def report(samples, order, rounds, calls, warmup, postgres=None, load=None):
     medians = {
         scenario: {
             stack: statistics.median(samples[stack][scenario]) for stack in order
@@ -177,6 +178,7 @@ def report(samples, order, rounds, calls, warmup):
         page=config.PAGE,
         rest=config.PAGE - 1,
         python=sys.version.split()[0],
+        machine=machine.describe(postgres=postgres, load=load),
         **sections,
     )
 
@@ -209,6 +211,9 @@ def main():
 
     order = [stack.name for stack in loaded]
     samples = {name: {scenario: [] for scenario in SCENARIOS} for name in order}
+    # Before the first round, because after the last one the benchmark is
+    # itself most of what the machine has been doing.
+    load_before = machine.load_average()
 
     for round_number in range(arguments.rounds):
         turn = list(loaded)
@@ -234,7 +239,15 @@ def main():
     for stack in loaded:
         stack.teardown()
 
-    text = report(samples, order, arguments.rounds, arguments.calls, arguments.warmup)
+    text = report(
+        samples,
+        order,
+        arguments.rounds,
+        arguments.calls,
+        arguments.warmup,
+        postgres=database.server_version(),
+        load=load_before,
+    )
     os.makedirs(os.path.dirname(arguments.out), exist_ok=True)
     with open(arguments.out, "w") as handle:
         handle.write(text)

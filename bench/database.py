@@ -120,6 +120,12 @@ def stop():
     )
 
 
+def server_version():
+    """What PostgreSQL answered the calls, as it names itself."""
+    with psycopg.connect(config.DATABASE_URL) as connection:
+        return connection.execute("SHOW server_version").fetchone()[0]
+
+
 def seed(rows=None):
     """The same rows every time: seeded ids, seeded timestamps."""
     rows = rows or config.ROWS

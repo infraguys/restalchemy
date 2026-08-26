@@ -3,6 +3,16 @@
 {stamp} · {rounds} rounds × best of {calls} calls, after {warmup:.1f}s of warm-up per
 scenario · {rows} rows in the table, {page} per page · Python {python}
 
+Measured on:
+
+{machine}
+
+Microseconds are only comparable against the same machine. This benchmark
+allocates and walks small objects, so it reads the memory subsystem at
+least as much as the clock, and a busy machine slows every stack at once —
+the load average is here so a reader can tell whether that happened. The
+ratios hold up better than the absolute numbers across machines.
+
 Each stack is called at its own interface in the same process — WSGI
 applications directly, ASGI ones through a bare event loop — so what is
 timed is the framework and its database work, not a web server. Each is
