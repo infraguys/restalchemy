@@ -708,6 +708,43 @@ class UTCDateTimeZTestCase(base.BaseTestCase):
         )
         self.assertEqual(early, self.test_instance.from_simple_type(stored))
 
+    def test_a_whole_second_is_read_back_from_either_format(self):
+        # RFC 3339 does not require a fractional part, and a peer that
+        # writes none -- Go drops trailing zeros -- has to be read on
+        # every version this package supports, not only where
+        # `fromisoformat` takes the trailing `Z` itself.
+        dt = datetime.datetime(2020, 3, 13, 11, 3, 25, tzinfo=datetime.timezone.utc)
+
+        self.assertEqual(
+            dt, self.test_instance.from_simple_type("2020-03-13T11:03:25Z")
+        )
+        self.assertEqual(dt, self.test_instance.from_simple_type("2020-03-13 11:03:25"))
+
+    def test_a_short_fraction_is_read_through_the_fallback(self):
+        # Below 3.11 `fromisoformat` takes a fraction of three or six
+        # digits and nothing else, so a peer that trims trailing zeros
+        # reaches `strptime` -- which is given the string as it came,
+        # not the one with the `Z` spelled out.
+        result = self.test_instance.from_simple_type("2020-03-13T11:03:25.5Z")
+
+        self.assertEqual(
+            datetime.datetime(
+                2020, 3, 13, 11, 3, 25, 500000, tzinfo=datetime.timezone.utc
+            ),
+            result,
+        )
+
+    def test_a_whole_second_survives_a_round_trip(self):
+        dt = datetime.datetime(2020, 3, 13, 11, 3, 25, tzinfo=datetime.timezone.utc)
+
+        dumped = self.test_instance.dump_value(dt)
+        stored = self.test_instance.to_simple_type(dt)
+
+        self.assertEqual("2020-03-13T11:03:25.000000Z", dumped)
+        self.assertEqual("2020-03-13 11:03:25.000000", stored)
+        self.assertEqual(dt, self.test_instance.from_simple_type(dumped))
+        self.assertEqual(dt, self.test_instance.from_simple_type(stored))
+
     def test_a_value_in_neither_format_is_refused(self):
         self.assertRaises(
             ValueError,

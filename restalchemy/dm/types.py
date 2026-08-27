@@ -77,6 +77,10 @@ DEFAULT_DATE_Z = DEFAULT_DATE.replace(tzinfo=datetime.timezone.utc)
 # python's datetime doesn't support nanosecond precision
 # + now without timezone, example "2006-01-02T15:04:05.999999999Z07:00"
 OPENAPI_DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
+# `fromisoformat` reads the trailing `Z` from 3.11 on. Below that the
+# suffix has to be spelled out as the offset it stands for, and the
+# version is settled once here rather than per value read.
+ISO_READER_TAKES_Z = sys.version_info >= (3, 11)
 
 
 def build_prop_kwargs(kwargs, to_simple_type=None):
@@ -823,12 +827,19 @@ class UTCDateTimeZ(BasePythonType):
         Both formats are ISO 8601, and `fromisoformat` reads them in C,
         where `strptime` builds a regexp and consults the locale per
         call. What it refuses falls through to `strptime`, so nothing
-        that parsed before stops parsing -- the trailing `Z` of the API
-        format among it, which `fromisoformat` only reads from 3.11 on.
+        that parsed before stops parsing.
+
+        A `Z` the reader of the running version does not take is spelled
+        out as the offset it stands for, so that a whole second -- which
+        RFC 3339 lets a peer write without a fractional part, and Go
+        does -- is read the same on every version this package supports.
         """
         if type(value) is str:
+            iso = value
+            if not ISO_READER_TAKES_Z and value.endswith("Z"):
+                iso = value[:-1] + "+00:00"
             try:
-                return datetime.datetime.fromisoformat(value)
+                return datetime.datetime.fromisoformat(iso)
             except ValueError:
                 pass
         try:
