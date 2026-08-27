@@ -15,6 +15,7 @@
 #    under the License.
 
 import abc
+import collections
 import inspect
 
 from webob.request import Request
@@ -23,6 +24,7 @@ from restalchemy.api import constants
 from restalchemy.api import contexts
 from restalchemy.api import field_permissions
 from restalchemy.common import exceptions as exc
+from restalchemy.common import utils
 from restalchemy.dm import properties as ra_properties
 from restalchemy.dm import relationships as ra_relationsips
 from restalchemy.dm import types as ra_types
@@ -222,6 +224,16 @@ class ResourceRelationship(AbstractResourceProperty):
 
 
 class BaseHiddenFieldsMap(object):
+    _REMOVED = {
+        "is_hidden_field": "hidden_for",
+        "is_hidden_field_by_method": "hidden_for_method",
+        "visibility_key": "hidden_for",
+    }
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        utils.refuse_removed_overrides(cls, BaseHiddenFieldsMap._REMOVED)
+
     def __init__(self, hidden_fields=None):
         super(BaseHiddenFieldsMap, self).__init__()
         self._hidden_fields = set(hidden_fields or [])
@@ -230,23 +242,24 @@ class BaseHiddenFieldsMap(object):
     def hidden_fields(self):
         return self._hidden_fields
 
-    def is_hidden_field(self, model_field_name, req):
-        return model_field_name in self
+    def hidden_for(self, req, field_names):
+        """Which of `field_names` this request does not see, as one set.
 
-    def is_hidden_field_by_method(self, model_field_name, method):
-        return model_field_name in self
-
-    def visibility_key(self, req):
-        """What this request makes `is_hidden_field` depend on.
-
-        A hashable value standing for every answer this map will give
-        about this request; `None` when they cannot be summarised, and
-        then a resource resolves its fields per request as it always did.
-        See `_hidden_fields_key`, which does not take a subclass's word
-        for it.
+        The one method a map of your own writes. It is asked once per
+        request for every field at once, so whatever the answer turns on
+        is read once -- and the set it returns is what a resource keeps
+        its resolved fields by, so there is no separate summary to write
+        and none to keep in step.
         """
-        # One set of hidden fields, whoever is asking.
-        return ()
+        return frozenset(self._hidden_fields.intersection(field_names))
+
+    def hidden_for_method(self, method, field_names):
+        """Which of `field_names` are hidden from `method` alone.
+
+        There is no request here: this is what the OpenAPI spec is built
+        from, where a method is all there is to go on.
+        """
+        return frozenset(self._hidden_fields.intersection(field_names))
 
     def __contains__(self, item):
         # NOTE(efrolov): backward compatibility
@@ -294,28 +307,21 @@ class HiddenFieldMap(BaseHiddenFieldsMap):
         super(HiddenFieldMap, self).__init__(hidden_fields=all_values)
         self._method_map = {m: set(v) for m, v in params.items()}
 
-    def is_hidden_field(self, model_field_name, req):
-        """Checks that a field is in the list of hidden list
+    def hidden_for(self, req, field_names):
+        """Which of `field_names` this request does not see.
 
-        :param model_field_name: The field name
-        :param req: The webob request
-        :return: True or False
+        The method is what the answer turns on, so it is read once
+        rather than once per field.
         """
-        try:
-            method = req.api_context.get_active_method()
-            return model_field_name in self._method_map[method]
-        except KeyError:
-            raise NotImplementedError("Unsupported RA method `%s`" % req)
+        method = req.api_context.get_active_method()
+        return self.hidden_for_method(method, field_names)
 
-    def is_hidden_field_by_method(self, model_field_name, method):
+    def hidden_for_method(self, method, field_names):
         try:
-            return model_field_name in self._method_map[method]
+            hidden = self._method_map[method]
         except KeyError:
             raise NotImplementedError("Unsupported RA method `%s`" % method)
-
-    def visibility_key(self, req):
-        method = field_permissions.active_method(req)
-        return None if method is None else (method,)
+        return frozenset(hidden.intersection(field_names))
 
 
 class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
@@ -377,63 +383,73 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
 
         return roles
 
-    def is_hidden_field(self, model_field_name, req):
-        """Checks that a field is in the list of hidden list
+    def hidden_for(self, req, field_names):
+        """Which of `field_names` this request does not see.
 
-        The field is considered hidden if the field is included to all hidden
-        fields lists    for the specified roles.
-
-        :param model_field_name: The field name
-        :param req: The webob request that can contain oslo context
-        :return: True or False
+        A field is hidden when every role the request carries that this
+        was told about hides it, and the default map hides it too. The
+        roles are read once and each map is asked once.
         """
         context_roles = self._get_roles(req)
-
+        hidden = self._default_hidden_fields.hidden_for(req, field_names)
         for rname, h_fields in self._hidden_fields_by_role.items():
-            if rname in context_roles and not h_fields.is_hidden_field(
-                model_field_name,
-                req,
-            ):
-                return False
-        return self._default_hidden_fields.is_hidden_field(model_field_name, req)
+            if rname in context_roles:
+                hidden &= h_fields.hidden_for(req, field_names)
+        return hidden
 
-    def is_hidden_field_by_method(self, model_field_name, method):
-        return True
+    def hidden_for_method(self, method, field_names):
+        """Which of `field_names` the OpenAPI spec does not carry.
 
-    def visibility_key(self, req):
-        # Which role answers depends on the roles the request carries;
-        # what that role then answers is its own map's business. Every
-        # role the request carries is asked and any one of them can
-        # unhide a field, so the order they arrive in decides nothing and
-        # the set of them is the whole of what this depends on.
-        keys = [_hidden_fields_key(self._default_hidden_fields, req)]
-        for role, hidden_fields in self._hidden_fields_by_role.items():
-            keys.append(role)
-            keys.append(_hidden_fields_key(hidden_fields, req))
-        if any(key is None for key in keys):
-            return None
-        return (frozenset(self._get_roles(req)), tuple(keys))
+        There is no request here and so no roles, and the spec is built
+        for a request carrying none -- which is the request the default
+        map answers for, and the one the permissions are asked about in
+        the same place. A field only a role may see stays out of a spec
+        anyone may read.
+        """
+        return self._default_hidden_fields.hidden_for_method(method, field_names)
 
 
-# The implementations shipped here, which `visibility_key` describes. A
-# map deciding visibility its own way inherits a key that does not
-# describe it, so the key is only trusted from these.
-_SHIPPED_HIDDEN_FIELDS = frozenset(
-    (
-        BaseHiddenFieldsMap.is_hidden_field,
-        HiddenFieldMap.is_hidden_field,
-        RoleBasedHiddenFieldContainer.is_hidden_field,
-    )
-)
+class Visibility(object):
+    """What one request is told about a resource's fields.
 
+    Hashable, and equal for two requests told the same thing -- which is
+    what a resource keeps its resolved fields by. It is the answer as
+    much as the key: there is no summary here that could come to
+    describe something other than what the containers say.
+    """
 
-def _hidden_fields_key(hidden_fields, req):
-    """`hidden_fields`' key for this request, or `None` to reuse nothing."""
-    if getattr(type(hidden_fields), "is_hidden_field", None) not in (
-        _SHIPPED_HIDDEN_FIELDS
-    ):
-        return None
-    return hidden_fields.visibility_key(req)
+    __slots__ = ("_names", "_permissions", "hidden", "shown", "_key", "_by_name")
+
+    def __init__(self, names, permissions, hidden, shown):
+        # Held against the model's own order rather than sorted, so that
+        # equal answers hash equal without a sort per request.
+        self._names = names
+        self._permissions = tuple(permissions[name] for name in names)
+        self.hidden = hidden
+        self.shown = shown
+        self._key = (self._permissions, self.hidden, self.shown)
+        self._by_name = None
+
+    def permission_of(self, model_field_name):
+        if self._by_name is None:
+            self._by_name = dict(zip(self._names, self._permissions))
+        return self._by_name[model_field_name]
+
+    def is_hidden(self, model_field_name):
+        return (
+            model_field_name in self.hidden
+            or self.permission_of(model_field_name)
+            <= field_permissions.Permissions.HIDDEN
+        )
+
+    def is_readonly(self, model_field_name):
+        return self.permission_of(model_field_name) <= field_permissions.Permissions.RO
+
+    def __hash__(self):
+        return hash(self._key)
+
+    def __eq__(self, other):
+        return isinstance(other, Visibility) and self._key == other._key
 
 
 class AbstractResource(metaclass=abc.ABCMeta):
@@ -485,8 +501,11 @@ class AbstractResource(metaclass=abc.ABCMeta):
         # API names already worked out, by model field name.
         self._api_names = {}
         # What was resolved for a request that may see what this one may,
-        # by visibility key. See `request_cache`.
-        self._visibility_caches = {}
+        # by visibility, least recently asked for first. See
+        # `request_cache`.
+        self._visibility_caches = collections.OrderedDict()
+        # The model's field names and their API spelling, worked out once.
+        self._declared = None
         self._model_class = model_class
         self._name_map = name_map or {}
         self._inv_name_map = {v: k for k, v in self._name_map.items()}
@@ -530,69 +549,106 @@ class AbstractResource(metaclass=abc.ABCMeta):
         :param req: the webob request
         :return: A dict of fields for specific method
         """
+        return self.get_fields_by_visibility(self.resolve_visibility(req))
+
+    def get_fields_by_visibility(self, visibility):
+        """The fields a request resolving to `visibility` is answered from.
+
+        Which fields there are is what the hidden-fields map and the
+        caller's projection settled; what may be done with each of them
+        is the permissions', and that is asked further down, where a
+        field hidden by permission still has to be told apart from one
+        the model does not have.
+        """
 
         def is_public_field(model_field_name):
-            return self.is_public_field_by_request(
-                req=req,
-                model_field_name=model_field_name,
-            ) and req.api_context.can_be_shown_field(
-                self.get_resource_field_name(
-                    model_field_name=model_field_name,
-                )
+            return (
+                not model_field_name.startswith("_")
+                and model_field_name not in visibility.hidden
+                and self.get_resource_field_name(model_field_name) in visibility.shown
             )
 
         return self.get_fields(override_is_public_field_func=is_public_field)
 
-    # How many visibilities to remember. The key carries the caller's
-    # roles, and there is no reason to hold every combination that ever
-    # arrived; past this, requests resolve their own.
+    # How many visibilities to remember. A resolution carries whatever
+    # the caller's roles, permissions and projection made of the fields,
+    # and there is no reason to hold every combination that ever arrived;
+    # past this, the one longest unasked for is dropped.
     _MAX_VISIBILITY_CACHES = 64
 
-    def request_cache(self, req):
-        """Somewhere to keep what any request seeing the same fields sees.
+    def resolve_visibility(self, req):
+        """Everything this request is told about this resource's fields.
+
+        The permission each field carries, which of them are hidden, and
+        which the caller asked to be shown -- asked of each of the three
+        once, for every field at once.
+
+        This is both the answer and what the answer is kept by: two
+        requests resolving to the same value are told the same about
+        every field, because the value *is* what they were told. Nothing
+        here is a summary that could describe the wrong thing.
+        """
+        kept = getattr(req.api_context, "resolved_visibilities", None)
+        if isinstance(kept, dict):
+            visibility = kept.get(self)
+            if visibility is not None:
+                return visibility
+            visibility = self._resolve_visibility(req)
+            kept[self] = visibility
+            return visibility
+        return self._resolve_visibility(req)
+
+    def _resolve_visibility(self, req):
+        names, api_names = self._declared_names()
+        return Visibility(
+            names=names,
+            permissions=self._fields_permissions.resolve(req, names),
+            hidden=self._hidden_fields.hidden_for(req, names),
+            shown=req.api_context.shown_fields(api_names),
+        )
+
+    def _declared_names(self):
+        """Every field this resource has, and how the API spells each.
+
+        Asked of `get_fields` rather than of the model, because a
+        resource may have fields the model does not declare -- a custom
+        property is one. Neither answer turns on a request, so both are
+        worked out once.
+        """
+        if self._declared is None:
+            names = tuple(
+                name for name, _ in self.get_fields(lambda model_field_name: True)
+            )
+            self._declared = (
+                names,
+                tuple(self.get_resource_field_name(name) for name in names),
+            )
+        return self._declared
+
+    def request_cache(self, visibility):
+        """Somewhere to keep what any request told the same thing sees.
 
         Resolving a resource's fields is a property object and three
-        predicates per field, and the answer is the same for every request
-        told the same about every field -- which is what the visibility
-        key stands for. A caller may keep whatever it derives from those
-        fields here too, as long as it does not change it afterwards.
+        predicates per field, and the answer is the same for every
+        request handed the same visibility. A caller may keep whatever it
+        derives from those fields here too, as long as it does not change
+        it afterwards.
 
-        `None` when nothing may be shared: the request narrows the fields
-        itself with `fields`, or something in the way visibility is
-        decided cannot say what it depends on. Then the caller resolves
-        its own, which is what always happened.
+        Only so many are held at once, and the one longest unasked for
+        goes when the next arrives. A caller decides part of what it is
+        told -- `fields` is its own to pick -- so a stream of visibilities
+        nobody asks for twice has to cost the ones that are asked for
+        again nothing more than being resolved afresh.
         """
-        key = self._visibility_key(req)
-        if key is None:
-            return None
-        cache = self._visibility_caches.get(key)
-        if cache is None:
-            if len(self._visibility_caches) >= self._MAX_VISIBILITY_CACHES:
-                return None
-            cache = {}
-            self._visibility_caches[key] = cache
+        cache = self._visibility_caches.get(visibility)
+        if cache is not None:
+            self._visibility_caches.move_to_end(visibility)
+            return cache
+        cache = {}
+        self._visibility_caches[visibility] = cache
+        if len(self._visibility_caches) > self._MAX_VISIBILITY_CACHES:
+            self._visibility_caches.popitem(last=False)
         return cache
-
-    def _visibility_key(self, req):
-        context = getattr(req, "api_context", None)
-        if (
-            getattr(type(context), "can_be_shown_field", None)
-            is not contexts.RequestContext.can_be_shown_field
-        ):
-            return None
-        if context.fields_to_show:
-            # A projection this request asked for and the next one may
-            # not: narrow enough that resolving it per request is right.
-            return None
-        hidden_key = _hidden_fields_key(self._hidden_fields, req)
-        if hidden_key is None:
-            return None
-        permissions_key = field_permissions.visibility_key_of(
-            self._fields_permissions, req
-        )
-        if permissions_key is None:
-            return None
-        return (hidden_key, permissions_key)
 
     def get_fields_by_method(self, method):
         def is_public_field(model_field_name):
@@ -645,22 +701,11 @@ class AbstractResource(metaclass=abc.ABCMeta):
     def fields_permissions(self):
         return self._fields_permissions
 
-    def is_public_field_by_request(self, req, model_field_name):
-        return not (
-            model_field_name.startswith("_")
-            or self._hidden_fields.is_hidden_field(
-                model_field_name=model_field_name,
-                req=req,
-            )
-        )
-
     def is_public_field_by_method(self, method, model_field_name):
         return not (
             model_field_name.startswith("_")
-            or self._hidden_fields.is_hidden_field_by_method(
-                model_field_name=model_field_name,
-                method=method,
-            )
+            or model_field_name
+            in self._hidden_fields.hidden_for_method(method, (model_field_name,))
         )
 
     def get_property_type(self, property_name):

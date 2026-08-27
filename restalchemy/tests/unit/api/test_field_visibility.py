@@ -21,6 +21,8 @@ every other request that would be told the same. These are the requests
 that must not be told the same.
 """
 
+import itertools
+
 import mock
 import webob
 
@@ -39,6 +41,14 @@ class VisibilityModel(models.ModelWithUUID):
     name = properties.property(types.String(), default="n")
     secret = properties.property(types.String(), default="s")
     other = properties.property(types.String(), default="o")
+
+
+class WideModel(models.ModelWithUUID):
+    """Enough fields that a caller can name more projections than are kept."""
+
+    for _number in range(8):
+        vars()["field%d" % _number] = properties.property(types.String(), default="v")
+    del _number
 
 
 def request_for(method=constants.GET, roles=(), fields=()):
@@ -204,7 +214,8 @@ class RoleTestCase(FieldVisibilityTestCase):
         padded = request_for(roles=["stranger", "hide"])
 
         self.assertEqual(
-            resource._visibility_key(plain), resource._visibility_key(padded)
+            resource.resolve_visibility(plain),
+            resource.resolve_visibility(padded),
         )
         self.assertEqual(packed_names(resource, plain), packed_names(resource, padded))
 
@@ -247,68 +258,80 @@ class ProjectionTestCase(FieldVisibilityTestCase):
             packed_names(self.resource, request_for(fields=["other"])),
         )
 
-    def test_a_projection_is_not_kept(self):
+    def test_a_projection_is_kept_for_the_ones_that_asked_for_it(self):
+        # The projection is part of what a request is told, so two asking
+        # for the same one share a resolution and neither shares with a
+        # request that asked for none.
         packed_names(self.resource, request_for(fields=["name"]))
+        packed_names(self.resource, request_for(fields=["name"]))
+        self.assertEqual(1, len(self.resource._visibility_caches))
 
-        self.assertEqual({}, self.resource._visibility_caches)
+        packed_names(self.resource, request_for())
+        self.assertEqual(2, len(self.resource._visibility_caches))
 
 
 class DecidesItsOwnWayTestCase(FieldVisibilityTestCase):
-    """Nothing is reused for a resource that decides visibility itself."""
+    """A container of one's own is reused, and told apart, like any other.
+
+    What a resource keeps its resolved fields by is what the containers
+    answered, so a container written downstream needs to say nothing
+    about itself: its answers are the key.
+    """
 
     def test_a_hidden_fields_map_of_its_own(self):
-        class EverySecondRequest(resources.BaseHiddenFieldsMap):
-            def __init__(self):
-                super(EverySecondRequest, self).__init__()
-                self.calls = 0
+        class ByRole(resources.BaseHiddenFieldsMap):
+            def hidden_for(self, req, field_names):
+                if "show" in req.context.roles:
+                    return frozenset()
+                return frozenset({"secret"}.intersection(field_names))
 
-            def is_hidden_field(self, model_field_name, req):
-                if model_field_name != "secret":
-                    return False
-                self.calls += 1
-                return self.calls % 2 == 1
+        resource = resources.ResourceByRAModel(VisibilityModel, hidden_fields=ByRole())
 
-        hidden_fields = EverySecondRequest()
-        resource = resources.ResourceByRAModel(
-            VisibilityModel, hidden_fields=hidden_fields
-        )
-
+        self.assertIn("secret", packed_names(resource, request_for(roles=["show"])))
         self.assertNotIn("secret", packed_names(resource, request_for()))
-        self.assertIn("secret", packed_names(resource, request_for()))
-        self.assertEqual({}, resource._visibility_caches)
+        self.assertIn("secret", packed_names(resource, request_for(roles=["show"])))
+        self.assertEqual(2, len(resource._visibility_caches))
 
     def test_permissions_of_its_own(self):
-        class EverySecondRequest(fp.BasePermissions):
-            def __init__(self):
-                super(EverySecondRequest, self).__init__()
-                self.calls = 0
-
-            def meets_field_permission(self, model_field_name, req, current_permission):
-                if model_field_name != "secret":
-                    return fp.Permissions.RW <= current_permission
-                self.calls += 1
-                return self.calls % 2 == 1
+        class ByRole(fp.BasePermissions):
+            def resolve(self, req, field_names):
+                allowed = "show" in req.context.roles
+                return {
+                    name: (
+                        fp.Permissions.RW
+                        if name != "secret" or allowed
+                        else fp.Permissions.HIDDEN
+                    )
+                    for name in field_names
+                }
 
         resource = resources.ResourceByRAModel(
-            VisibilityModel, fields_permissions=EverySecondRequest()
+            VisibilityModel, fields_permissions=ByRole()
         )
 
+        self.assertIn("secret", packed_names(resource, request_for(roles=["show"])))
         self.assertNotIn("secret", packed_names(resource, request_for()))
-        self.assertIn("secret", packed_names(resource, request_for()))
-        self.assertEqual({}, resource._visibility_caches)
+        self.assertIn("secret", packed_names(resource, request_for(roles=["show"])))
+        self.assertEqual(2, len(resource._visibility_caches))
 
     def test_a_request_context_of_its_own(self):
         class PickyContext(contexts.RequestContext):
-            def can_be_shown_field(self, resource_field_name):
-                return resource_field_name != "secret"
+            def shown_fields(self, resource_field_names):
+                return frozenset(
+                    name for name in resource_field_names if name != "secret"
+                )
 
         resource = resources.ResourceByRAModel(VisibilityModel)
-        req = request_for()
-        req.api_context = PickyContext(req)
-        req.api_context.set_active_method(constants.GET)
 
-        self.assertNotIn("secret", packed_names(resource, req))
-        self.assertEqual({}, resource._visibility_caches)
+        def picky():
+            req = request_for()
+            req.api_context = PickyContext(req)
+            req.api_context.set_active_method(constants.GET)
+            return req
+
+        self.assertNotIn("secret", packed_names(resource, picky()))
+        self.assertIn("secret", packed_names(resource, request_for()))
+        self.assertNotIn("secret", packed_names(resource, picky()))
 
     def test_the_shipped_maps_are_reused(self):
         resource = resources.ResourceByRAModel(
@@ -319,3 +342,122 @@ class DecidesItsOwnWayTestCase(FieldVisibilityTestCase):
         packed_names(resource, request_for())
 
         self.assertEqual(1, len(resource._visibility_caches))
+
+
+class ARemovedHookIsRefusedTestCase(FieldVisibilityTestCase):
+    """A class written against the old hooks does not run half-answered.
+
+    Each hook has a replacement that answers for every field at once.
+    Where the replacement's own answer is the permissive one, a class
+    still writing the old name would be passed over in silence and the
+    base would show what that class was hiding.
+    """
+
+    def test_a_hidden_fields_map_still_writing_the_old_hook(self):
+        with self.assertRaises(TypeError):
+
+            class Old(resources.BaseHiddenFieldsMap):
+                def is_hidden_field(self, model_field_name, req):
+                    return model_field_name == "secret"
+
+    def test_a_hidden_fields_map_still_writing_the_old_method_hook(self):
+        with self.assertRaises(TypeError):
+
+            class Old(resources.BaseHiddenFieldsMap):
+                def is_hidden_field_by_method(self, model_field_name, method):
+                    return model_field_name == "secret"
+
+    def test_a_request_context_still_writing_the_old_hook(self):
+        with self.assertRaises(TypeError):
+
+            class Old(contexts.RequestContext):
+                def can_be_shown_field(self, resource_field_name):
+                    return resource_field_name != "secret"
+
+    def test_permissions_still_writing_the_old_hook(self):
+        with self.assertRaises(TypeError):
+
+            class Old(fp.BasePermissions):
+                def meets_field_permission(
+                    self, model_field_name, req, current_permission
+                ):
+                    return True
+
+    def test_a_container_still_describing_its_answers(self):
+        with self.assertRaises(TypeError):
+
+            class Old(fp.BasePermissions):
+                def resolve(self, req, field_names):
+                    return {name: fp.Permissions.RW for name in field_names}
+
+                def visibility_key(self, req):
+                    return ()
+
+    def test_the_name_it_asks_for_is_the_one_that_works(self):
+        class New(resources.BaseHiddenFieldsMap):
+            def hidden_for(self, req, field_names):
+                return frozenset({"secret"}.intersection(field_names))
+
+        resource = resources.ResourceByRAModel(VisibilityModel, hidden_fields=New())
+
+        self.assertEqual(
+            ["name", "other", "uuid"], packed_names(resource, request_for())
+        )
+
+
+class VisibilityCacheTestCase(FieldVisibilityTestCase):
+    def test_a_flood_of_projections_does_not_cost_the_requests_without_one(self):
+        # `fields` is the caller's to pick, so a stream of projections
+        # nobody asks for twice must not take the room a plain request
+        # keeps coming back to.
+        resource = resources.ResourceByRAModel(WideModel)
+        plain = resource.resolve_visibility(request_for())
+        kept = resource.request_cache(plain)
+        kept["fields"] = "resolved once"
+
+        projections = itertools.combinations(WideModel.properties.properties, 2)
+        for number, projection in enumerate(projections):
+            if number >= resource._MAX_VISIBILITY_CACHES * 3:
+                break
+            packed_names(resource, request_for(fields=projection))
+            self.assertIs(kept, resource.request_cache(plain))
+
+        self.assertLessEqual(
+            len(resource._visibility_caches),
+            resource._MAX_VISIBILITY_CACHES,
+        )
+
+
+class SpecTestCase(FieldVisibilityTestCase):
+    """What the OpenAPI schema of a role-guarded resource carries.
+
+    The schema is built for a request carrying no roles, and asks the
+    permissions about exactly that request. The hidden fields answer for
+    the same one.
+    """
+
+    def _schema(self, hidden_fields):
+        resource = resources.ResourceByRAModel(
+            VisibilityModel, hidden_fields=hidden_fields
+        )
+        return resource.generate_schema_object(constants.GET, "3.0.3")
+
+    def test_a_role_guarded_resource_still_has_properties(self):
+        schema = self._schema(
+            resources.RoleBasedHiddenFieldContainer(
+                default=resources.HiddenFieldMap(get=["secret"]),
+                admin=resources.HiddenFieldMap(get=[]),
+            )
+        )
+
+        self.assertEqual(["name", "other", "uuid"], sorted(schema["properties"]))
+
+    def test_what_only_a_role_may_see_is_not_in_a_spec_anyone_may_read(self):
+        schema = self._schema(
+            resources.RoleBasedHiddenFieldContainer(
+                default=resources.HiddenFieldMap(get=["secret", "other"]),
+                admin=resources.HiddenFieldMap(get=["other"]),
+            )
+        )
+
+        self.assertEqual(["name", "uuid"], sorted(schema["properties"]))
