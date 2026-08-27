@@ -120,3 +120,24 @@ def raise_parse_error_on_fail(func):
 def find_first(seq, predicate):
     """Return first item in seq for which predicate(item) is True"""
     return next((x for x in seq if predicate(x)), None)
+
+
+def refuse_removed_overrides(cls, removed):
+    """Refuse a subclass defining a method its base no longer calls.
+
+    Removing a hook is silent for whoever overrode it: the subclass
+    still defines the name, nothing calls it, and the base answers in
+    its place. Where the base answer is the permissive one, that is a
+    field the caller was never meant to see, arriving with no exception
+    and no log line. Raising here moves the failure to class creation,
+    where the name still is.
+
+    :param cls: the subclass being created
+    :param removed: removed method name -> what to write instead
+    """
+    for name, replacement in removed.items():
+        if name in vars(cls):
+            raise TypeError(
+                "%s.%s is not called any more. Write %s instead."
+                % (cls.__name__, name, replacement)
+            )

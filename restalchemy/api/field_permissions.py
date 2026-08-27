@@ -15,22 +15,14 @@
 #    under the License.
 
 from restalchemy.api import constants
-from restalchemy.api import contexts
-
-
-def active_method(req):
-    """The RA method this request is being answered as, or `None`."""
-    try:
-        return req.api_context.get_active_method()
-    except (AttributeError, contexts.CanNotGetActiveMethod):
-        return None
+from restalchemy.common import utils
 
 
 class Permissions(object):
     __slots__ = ()
     HIDDEN = 1
-    RO = READONLY = 2
-    RW = READWRITE = 3
+    RO = 2
+    RW = 3
 
     ALL_PERMISSIONS = (
         HIDDEN,
@@ -40,40 +32,55 @@ class Permissions(object):
 
 
 class BasePermissions(object):
+    """What a request may do with each of a resource's fields.
+
+    `resolve` is the one method a container of your own writes. It is
+    asked once per request for every field at once, rather than once per
+    field, so whatever the answers turn on -- the RA method, a role, a
+    rule an enforcer answers -- is read once.
+
+    Asking for all of them together is also what lets a resource resolve
+    its fields once and hand the answer to every request told the same:
+    the mapping `resolve` returns is what the answer is kept by. That is
+    not a promise a container makes and has to keep in step with its own
+    logic -- there is nothing to keep in step, because the mapping is the
+    logic's own output.
+    """
+
+    _REMOVED = {
+        "meets_field_permission": "resolve",
+        "visibility_key": "resolve",
+    }
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        utils.refuse_removed_overrides(cls, BasePermissions._REMOVED)
+
     def __init__(self, permission=Permissions.RW):
         self._permission = permission
 
-    def meets_field_permission(self, model_field_name, req, current_permission):
+    def resolve(self, req, field_names):
+        """What this request may do with each of `field_names`.
+
+        A mapping of field name to `Permissions`, covering every name
+        given.
+        """
         raise NotImplementedError()
 
-    def visibility_key(self, req):
-        """What this request makes the answers depend on.
+    def permission_of(self, model_field_name, req):
+        """What this request may do with one field.
 
-        A hashable value that stands for every answer this object will
-        give about this request: two requests with equal keys are told the
-        same about every field, so a resource may resolve its fields once
-        and hand the same answer to both.
-
-        `None` means the answers cannot be summarised, and then nothing is
-        reused between requests. That is the default, and what a class
-        deciding permissions its own way is left with -- see
-        `visibility_key_of`, which does not take a subclass's word for it.
+        Spelled out of `resolve`, so a container answers one way and one
+        way only. Reading a single field is the cold path -- a resource
+        being packed asks for all of them at once.
         """
-        return None
+        return self.resolve(req, (model_field_name,))[model_field_name]
 
     def is_readonly(self, model_field_name, req):
-        return self.meets_field_permission(
-            model_field_name=model_field_name,
-            req=req,
-            current_permission=Permissions.RO,
-        )
+        return self.permission_of(model_field_name, req) <= Permissions.RO
 
     def is_hidden(self, model_field_name, req):
-        return self.meets_field_permission(
-            model_field_name=model_field_name,
-            req=req,
-            current_permission=Permissions.HIDDEN,
-        )
+        return self.permission_of(model_field_name, req) <= Permissions.HIDDEN
 
 
 class UniversalPermissions(BasePermissions):
@@ -94,12 +101,10 @@ class UniversalPermissions(BasePermissions):
         """
         super(UniversalPermissions, self).__init__(permission)
 
-    def meets_field_permission(self, model_field_name, req, current_permission):
-        return self._permission <= current_permission
-
-    def visibility_key(self, req):
+    def resolve(self, req, field_names):
         # One permission for every field of every request.
-        return ()
+        permission = self._permission
+        return {name: permission for name in field_names}
 
 
 class FieldsPermissions(BasePermissions):
@@ -138,32 +143,34 @@ class FieldsPermissions(BasePermissions):
         :param fields: dict of field model name and permissions
         :param default: default permission for non-described fields
         """
-        for method_permission in fields.values():
+        for field, method_permission in fields.items():
             for method, permission in method_permission.items():
-                assert (
-                    method.upper() in constants.ALL_RA_METHODS
-                    and permission in Permissions.ALL_PERMISSIONS
-                )
+                if method.upper() not in constants.ALL_RA_METHODS:
+                    raise ValueError(
+                        "Unknown RA method %r for field %r" % (method, field)
+                    )
+                if permission not in Permissions.ALL_PERMISSIONS:
+                    raise ValueError(
+                        "Unknown permission %r for field %r" % (permission, field)
+                    )
         super(FieldsPermissions, self).__init__(permission=default)
         self.fields = fields
 
-    def meets_field_permission(self, model_field_name, req, current_permission):
-
-        method = req.api_context.get_active_method()
-        field_permission = self.fields.get(model_field_name, {})
-
+    def _permission_for(self, model_field_name, method):
+        field_permission = self.fields.get(model_field_name)
+        if not field_permission:
+            return self._permission
+        permission = field_permission.get(method)
+        if permission is None:
+            permission = field_permission.get(constants.ALL)
         # NOTE(g.melikov): By DEFAULT permission is Permissions.RW
-        permission = (
-            field_permission.get(method)
-            or field_permission.get(constants.ALL)
-            or self._permission
-        )
+        return self._permission if permission is None else permission
 
-        return permission <= current_permission
-
-    def visibility_key(self, req):
-        method = active_method(req)
-        return None if method is None else (method,)
+    def resolve(self, req, field_names):
+        # The method is what every field's answer turns on, so it is read
+        # once rather than once per field.
+        method = req.api_context.get_active_method()
+        return {name: self._permission_for(name, method) for name in field_names}
 
 
 class FieldsPermissionsByRole(BasePermissions):
@@ -204,9 +211,9 @@ class FieldsPermissionsByRole(BasePermissions):
         :param default: default permission for non-described roles
         :param kwargs: dict of roles with FieldsPermissions.
         """
-        for role, permissions in kwargs.items():
+        for role, permissions in dict(kwargs, default=default).items():
             if not isinstance(permissions, BasePermissions):
-                raise NotImplementedError(
+                raise TypeError(
                     "Permissions for %s must be inherited BasePermissions class" % role
                 )
         self.default = default
@@ -222,64 +229,17 @@ class FieldsPermissionsByRole(BasePermissions):
             else []
         )
 
-    def meets_field_permission(self, model_field_name, req, current_permission):
+    def _deciding(self, req):
+        """The container that answers for this request.
 
-        for current_role in self._get_roles(req):
-            if current_role in self.role_fields:
-                fields = self.role_fields[current_role]
-                return fields.meets_field_permission(
-                    model_field_name, req, current_permission
-                )
-
-        return self.default.meets_field_permission(
-            model_field_name, req, current_permission
-        )
-
-    def visibility_key(self, req):
-        # Which role answers depends on the roles the request carries;
-        # what that role then answers is its own container's business, so
-        # every one of them has to be able to say.
-        keys = [visibility_key_of(self.default, req)]
-        for role, permissions in self.role_fields.items():
-            keys.append(role)
-            keys.append(visibility_key_of(permissions, req))
-        if any(key is None for key in keys):
-            return None
-        return (self._deciding_role(req), tuple(keys))
-
-    def _deciding_role(self, req):
-        """The role that answers for this request, or `None` for the default.
-
-        `meets_field_permission` takes the first role the request carries
-        that this was told about, so the order those roles arrive in is
-        part of the answer: a request carrying `["hide", "show"]` and one
-        carrying `["show", "hide"]` are not told the same thing. What the
-        answer turns on is which of them wins, so that is what the key
-        says -- not the set of them, which loses the order, and not the
-        whole list, which says more than the answer depends on.
+        The first role the request carries that this was told about, so
+        the order they arrive in is part of the answer -- and it needs no
+        saying anywhere else, because what comes back is the answer.
         """
         for role in self._get_roles(req):
             if role in self.role_fields:
-                return role
-        return None
+                return self.role_fields[role]
+        return self.default
 
-
-# The implementations shipped here, which `visibility_key` describes. A
-# class deciding permissions its own way inherits a key that does not
-# describe it, so the key is only trusted from these.
-_SHIPPED_PERMISSIONS = frozenset(
-    (
-        UniversalPermissions.meets_field_permission,
-        FieldsPermissions.meets_field_permission,
-        FieldsPermissionsByRole.meets_field_permission,
-    )
-)
-
-
-def visibility_key_of(permissions, req):
-    """`permissions`' key for this request, or `None` to reuse nothing."""
-    if getattr(type(permissions), "meets_field_permission", None) not in (
-        _SHIPPED_PERMISSIONS
-    ):
-        return None
-    return permissions.visibility_key(req)
+    def resolve(self, req, field_names):
+        return self._deciding(req).resolve(req, field_names)

@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -22,6 +21,7 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.tests.unit import base
+from restalchemy.tests.unit.api import base as api_base
 
 
 class FakeModel(models.ModelWithUUID):
@@ -36,7 +36,7 @@ class BasePackerTestCase(base.BaseTestCase):
             resources.ResourceByRAModel(
                 FakeModel, hidden_fields=["_hidden"], convert_underscore=False
             ),
-            mock.Mock(),
+            api_base.request_mock(),
         )
 
     def tearDown(self):

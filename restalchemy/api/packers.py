@@ -83,6 +83,7 @@ class BaseResourcePacker(object):
         self._fields_resource = None
         self._fields_by_model = {}
         self._shared = None
+        self._visibility = None
 
     def _shared_get(self, key, build):
         """What `build()` answers, kept for the requests it answers for.
@@ -115,14 +116,19 @@ class BaseResourcePacker(object):
         """
         if self._fields is None or self._fields_resource is not self._rt:
             self._fields_resource = self._rt
-            self._shared = self._rt.request_cache(self._req) if self._rt else None
+            self._visibility = (
+                self._rt.resolve_visibility(self._req) if self._rt else None
+            )
+            self._shared = (
+                self._rt.request_cache(self._visibility) if self._rt else None
+            )
             self._visible_fields = None
             self._fields_by_model = {}
             self._fields = self._shared_get("fields", self._resolve_fields)
         return self._fields
 
     def _resolve_fields(self):
-        return list(self._rt.get_fields_by_request(self._req))
+        return list(self._rt.get_fields_by_visibility(self._visibility))
 
     def _get_visible_fields(self):
         """The fields packing writes out, with their API names.
@@ -146,9 +152,7 @@ class BaseResourcePacker(object):
         native = self._native_types
         fields = []
         for name, prop in self._get_fields():
-            if not prop.is_public() or self._rt._fields_permissions.is_hidden(
-                name, self._req
-            ):
+            if not prop.is_public() or self._visibility.is_hidden(name):
                 continue
             dump = prop.get_dump_callable()
             if dump is not None and native and type(prop.get_type()) in native:
@@ -247,7 +251,7 @@ class BaseResourcePacker(object):
                 if not prop.is_public():
                     raise exceptions.ValidationPropertyPrivateError(property=api_name)
 
-                if self._rt._fields_permissions.is_readonly(name, self._req):
+                if self._visibility.is_readonly(name):
                     raise exceptions.FieldPermissionError(field=name)
                 result[name] = self._parse_value(api_name, prop_value, prop)
 

@@ -16,6 +16,7 @@
 from webob import multidict
 
 from restalchemy.common import exceptions
+from restalchemy.common import utils
 
 
 class CanNotGetActiveMethod(exceptions.RestAlchemyException):
@@ -27,11 +28,21 @@ class RequestContext(object):
         ("fields", "page_limit", "page_marker", "sort_key", "sort_dir")
     )
 
+    _REMOVED = {"can_be_shown_field": "shown_fields"}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        utils.refuse_removed_overrides(cls, RequestContext._REMOVED)
+
     def __init__(self, request):
         super(RequestContext, self).__init__()
         self._req = request
         self._fields_to_show = request.params.getall("fields")
         self._method = None
+        # What each resource resolved for this request. A request that
+        # builds more than one packer over a resource -- a create reads a
+        # body and then writes one -- asks it once.
+        self.resolved_visibilities = {}
 
     def set_active_method(self, method):
         self._method = method
@@ -73,7 +84,15 @@ class RequestContext(object):
         """
         return self._fields_to_show
 
-    def can_be_shown_field(self, resource_field_name):
+    def shown_fields(self, resource_field_names):
+        """Which of these the caller asked to be shown, as one set.
+
+        The one method to override to narrow what a response carries. It
+        is asked once per request for every field at once, and the set it
+        returns is part of what a resource keeps its resolved fields by,
+        so a context of your own is reused correctly without saying
+        anything more about itself.
+        """
         if self._fields_to_show:
-            return resource_field_name in self._fields_to_show
-        return True
+            return frozenset(self._fields_to_show).intersection(resource_field_names)
+        return frozenset(resource_field_names)

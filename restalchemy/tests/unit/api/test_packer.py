@@ -19,7 +19,6 @@ import datetime
 import decimal
 import uuid
 
-import mock
 import orjson
 import webob
 
@@ -33,6 +32,7 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.tests.unit import base
+from restalchemy.tests.unit.api import base as api_base
 
 
 class FakeModel(models.ModelWithUUID):
@@ -54,7 +54,7 @@ class BasePackerTestCase(base.BaseTestCase):
     def setUp(self):
         super(BasePackerTestCase, self).setUp()
         self._test_instance = packers.BaseResourcePacker(
-            resources.ResourceByRAModel(FakeModel), mock.Mock()
+            resources.ResourceByRAModel(FakeModel), api_base.request_mock()
         )
 
     def tearDown(self):
@@ -72,7 +72,7 @@ class BasePackerTestCase(base.BaseTestCase):
 
 class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
     def setUp(self):
-        req = mock.Mock()
+        req = api_base.request_mock()
         req.context.roles = ["owner"]
 
         super(PackerFieldPermissionsHiddenTestCase, self).setUp()
@@ -112,7 +112,7 @@ class PackerFieldPermissionsHiddenTestCase(base.BaseTestCase):
 
 class PackerFieldPermissionsNonDefaultHiddenTestCase(base.BaseTestCase):
     def setUp(self):
-        req = mock.Mock()
+        req = api_base.request_mock()
         req.context.roles = ["owner"]
 
         super().setUp()
@@ -155,7 +155,7 @@ class PackerFieldPermissionsNonDefaultHiddenTestCase(base.BaseTestCase):
 
 class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
     def setUp(self):
-        req = mock.Mock()
+        req = api_base.request_mock()
         req.context.roles = ["owner"]
 
         super(PackerFieldPermissionsRWTestCase, self).setUp()
@@ -190,7 +190,7 @@ class PackerFieldPermissionsRWTestCase(base.BaseTestCase):
 
 class JSONPackerIncludeNullTestCase(base.BaseTestCase):
     def setUp(self):
-        req = mock.Mock()
+        req = api_base.request_mock()
         req.context.roles = ["owner"]
 
         super(JSONPackerIncludeNullTestCase, self).setUp()
@@ -293,7 +293,7 @@ class PackerResourceSwapTestCase(base.BaseTestCase):
 
     def setUp(self):
         super(PackerResourceSwapTestCase, self).setUp()
-        req = mock.Mock()
+        req = api_base.request_mock()
         req.context.roles = ["owner"]
         self._req = req
         self._packer = packers.BaseResourcePacker(
@@ -351,7 +351,7 @@ class PackerFieldSourceTestCase(base.BaseTestCase):
 
     def setUp(self):
         super(PackerFieldSourceTestCase, self).setUp()
-        self._req = mock.Mock()
+        self._req = api_base.request_mock()
 
     def tearDown(self):
         super(PackerFieldSourceTestCase, self).tearDown()

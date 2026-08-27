@@ -240,14 +240,9 @@ class Controller(object):
         not get an exception: hiding is the narrower statement of the two,
         and the safer one to let win.
         """
-        if not self.__resource__.is_public_field_by_request(
-            req=self._req,
-            model_field_name=model_field_name,
-        ):
-            return False
-        return not self.__resource__.fields_permissions.is_hidden(
-            model_field_name=model_field_name,
-            req=self._req,
+        visibility = self.__resource__.resolve_visibility(self._req)
+        return not (
+            model_field_name.startswith("_") or visibility.is_hidden(model_field_name)
         )
 
     def _resolve_filter_field(self, param_name):
