@@ -18,6 +18,18 @@ DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql://%s@127.0.0.1:%d/%s" % (USER, PORT, DATABASE)
 )
 
+# The one table the benchmark writes, named so that it cannot be a table
+# a database already had. A run recreates it from scratch, and a database
+# someone else's data lives in is a database this must be able to point
+# at without taking anything with it.
+TABLE = os.environ.get("BENCH_TABLE", "restalchemy_bench_items")
+# Written on the table as its own mark, and read back before dropping it:
+# what the benchmark did not create, the benchmark does not remove.
+TABLE_MARK = "restalchemy benchmark scratch table"
+# Say so explicitly to let a run drop a table of that name it did not
+# create. Nothing in the benchmark sets this; a person does.
+DROP_UNMARKED = os.environ.get("BENCH_DROP_UNMARKED", "") == "yes"
+
 ROWS = int(os.environ.get("BENCH_ROWS", "1000"))
 PAGE = int(os.environ.get("BENCH_PAGE", "100"))
 ROUNDS = int(os.environ.get("BENCH_ROUNDS", "10"))

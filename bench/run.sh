@@ -8,7 +8,9 @@
 #
 # Brings up a PostgreSQL of its own under bench/.pgdata unless DATABASE_URL
 # is set, seeds the same rows every time, and leaves the cluster running for
-# the next run.
+# the next run. The one table it writes is restalchemy_bench_items, and a
+# table of that name it did not create stops the run rather than being
+# dropped -- see "Against a database of your own" in bench/README.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

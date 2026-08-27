@@ -105,7 +105,7 @@ def time_scenario(stack, scenario, calls):
 
 def sweep_created():
     with psycopg.connect(config.DATABASE_URL, autocommit=True) as connection:
-        connection.execute("DELETE FROM items WHERE quantity >= 10000000")
+        connection.execute("DELETE FROM %s WHERE quantity >= 10000000" % config.TABLE)
 
 
 def table(header, alignment, rows):

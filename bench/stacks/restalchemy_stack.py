@@ -24,7 +24,7 @@ KIND = "framework + its own ORM"
 
 
 class Item(models.ModelWithID, orm.SQLStorableMixin):
-    __tablename__ = "items"
+    __tablename__ = config.TABLE
 
     id = properties.property(
         types.UUID(), id_property=True, default=lambda: uuid.uuid4()

@@ -39,7 +39,8 @@ class Stack(object):
         with self._pool.connection() as connection:
             with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
                 cursor.execute(
-                    "SELECT %s FROM items ORDER BY quantity LIMIT %%s" % COLUMNS,
+                    "SELECT %s FROM %s ORDER BY quantity LIMIT %%s"
+                    % (COLUMNS, config.TABLE),
                     (config.PAGE,),
                 )
                 documents = [self._document(row) for row in cursor.fetchall()]
@@ -49,7 +50,8 @@ class Stack(object):
         with self._pool.connection() as connection:
             with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
                 cursor.execute(
-                    "SELECT %s FROM items WHERE id = %%s" % COLUMNS, (item_id,)
+                    "SELECT %s FROM %s WHERE id = %%s" % (COLUMNS, config.TABLE),
+                    (item_id,),
                 )
                 row = cursor.fetchone()
         return 200, orjson.dumps(self._document(row))
@@ -70,8 +72,9 @@ class Stack(object):
         with self._pool.connection() as connection:
             with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
                 cursor.execute(
-                    "INSERT INTO items (%s) VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)"
-                    " RETURNING %s" % (COLUMNS, COLUMNS),
+                    "INSERT INTO %s (%s)"
+                    " VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)"
+                    " RETURNING %s" % (config.TABLE, COLUMNS, COLUMNS),
                     values,
                 )
                 row = cursor.fetchone()

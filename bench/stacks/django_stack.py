@@ -76,7 +76,7 @@ class Item(django_models.Model):
     updated_at = django_models.DateTimeField()
 
     class Meta:
-        db_table = "items"
+        db_table = config.TABLE
         app_label = "django_stack"
         managed = False
 
