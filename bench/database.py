@@ -8,6 +8,7 @@ that a later run has to reckon with.
 import datetime
 import glob
 import os
+import re
 import subprocess
 import time
 import uuid
@@ -17,8 +18,8 @@ import psycopg
 from bench import config
 
 SCHEMA = """
-DROP TABLE IF EXISTS items;
-CREATE TABLE items (
+DROP TABLE IF EXISTS {table};
+CREATE TABLE {table} (
     id uuid PRIMARY KEY,
     name varchar(255) NOT NULL,
     description varchar(255) NOT NULL,
@@ -28,7 +29,8 @@ CREATE TABLE items (
     created_at timestamptz NOT NULL,
     updated_at timestamptz NOT NULL
 );
-CREATE INDEX items_project_id ON items (project_id);
+CREATE INDEX {table}_project_id ON {table} (project_id);
+COMMENT ON TABLE {table} IS '{mark}';
 """
 
 
@@ -120,6 +122,52 @@ def stop():
     )
 
 
+def _table_name():
+    """The table to work in, checked before it is spelled into SQL.
+
+    The name comes from the environment, and everything below writes it
+    into statements that cannot take a parameter in its place.
+    """
+    name = config.TABLE
+    if not re.match(r"^[a-z_][a-z0-9_]*$", name):
+        raise SystemExit(
+            "BENCH_TABLE must be a plain lowercase identifier, got %r" % name
+        )
+    return name
+
+
+def _existing_mark(connection, table):
+    """The comment on an existing table, or None if there is no table."""
+    row = connection.execute(
+        "SELECT obj_description(c.oid, 'pg_class')"
+        " FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace"
+        " WHERE c.relname = %s AND c.relkind = 'r'"
+        " AND n.nspname = ANY (current_schemas(false))",
+        (table,),
+    ).fetchone()
+    return None if row is None else (row[0] or "")
+
+
+def refuse_unmarked(connection, table):
+    """Stop before a run recreates a table the benchmark did not create.
+
+    DATABASE_URL is there so the benchmark can be pointed at a database
+    someone chose, and a database someone chose has tables in it. A run
+    recreates its own table, so it must be sure the table is its own:
+    the mark it writes says so, and a table without it is somebody's.
+    """
+    mark = _existing_mark(connection, table)
+    if mark is None or mark == config.TABLE_MARK or config.DROP_UNMARKED:
+        return
+    raise SystemExit(
+        "the table %r in this database was not created by the benchmark"
+        " (it carries %r, not the benchmark's mark), and a run would drop"
+        " it.\nPoint BENCH_TABLE at a name of your own, or set"
+        " BENCH_DROP_UNMARKED=yes if dropping this one is what you mean."
+        % (table, mark)
+    )
+
+
 def server_version():
     """What PostgreSQL answered the calls, as it names itself."""
     with psycopg.connect(config.DATABASE_URL) as connection:
@@ -147,13 +195,15 @@ def seed(rows=None):
                 epoch + datetime.timedelta(seconds=number, microseconds=number % 3),
             )
         )
+    table = _table_name()
     with psycopg.connect(config.DATABASE_URL, autocommit=True) as connection:
-        connection.execute(SCHEMA)
+        refuse_unmarked(connection, table)
+        connection.execute(SCHEMA.format(table=table, mark=config.TABLE_MARK))
         with connection.cursor() as cursor:
             cursor.executemany(
-                "INSERT INTO items (id, name, description, enabled, quantity,"
+                "INSERT INTO %s (id, name, description, enabled, quantity,"
                 " project_id, created_at, updated_at)"
-                " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                " VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)" % table,
                 records,
             )
     return records
@@ -164,6 +214,9 @@ def expected(page=None):
     page = page or config.PAGE
     with psycopg.connect(config.DATABASE_URL) as connection:
         with connection.cursor(row_factory=psycopg.rows.dict_row) as cursor:
-            cursor.execute("SELECT * FROM items ORDER BY quantity LIMIT %s", (page,))
+            cursor.execute(
+                "SELECT * FROM %s ORDER BY quantity LIMIT %%s" % _table_name(),
+                (page,),
+            )
             collection = cursor.fetchall()
     return collection

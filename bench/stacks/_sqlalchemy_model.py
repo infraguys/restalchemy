@@ -12,13 +12,15 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
+from bench import config
+
 
 class Base(DeclarativeBase):
     pass
 
 
 class Item(Base):
-    __tablename__ = "items"
+    __tablename__ = config.TABLE
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255))

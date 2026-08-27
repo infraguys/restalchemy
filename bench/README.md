@@ -63,6 +63,33 @@ somewhere else if you would rather, and `RESTALCHEMY_PATH` measures a
 RestAlchemy other than the one this file sits in. Results land in
 `results/results.md`, the raw per-round samples beside it in JSON.
 
+### Against a database of your own
+
+Setting up a run recreates the one table it reads and writes, so pointing
+`DATABASE_URL` at a database that already has something in it has to be
+safe. Two things make it so. The table is called
+`restalchemy_bench_items`, not `items` — nothing a database is likely to
+already have — and `BENCH_TABLE` renames it if even that collides. And the
+benchmark marks the table as its own when it creates it: a table of that
+name it did not create stops the run rather than being dropped.
+
+```
+the table 'items' in this database was not created by the benchmark
+(it carries 'orders of ours', not the benchmark's mark), and a run
+would drop it.
+Point BENCH_TABLE at a name of your own, or set
+BENCH_DROP_UNMARKED=yes if dropping this one is what you mean.
+```
+
+`BENCH_DROP_UNMARKED=yes` is the way to say that dropping it is what you
+meant. Nothing in the benchmark sets it.
+
+What that leaves alone, and what it refuses, is checked:
+
+```bash
+bench/.venv/bin/python -m bench.tests.test_database
+```
+
 The report names the machine it ran on. It reads what it can; the speed of
 the DIMMs only `dmidecode` knows and only root may ask, so
 `BENCH_MEMORY_SPEED="2666 MT/s"` says it where nobody can.
