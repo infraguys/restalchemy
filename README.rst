@@ -29,6 +29,51 @@ Features
 - Built-in migration tooling for evolving database schemas.
 
 
+Performance
+-----------
+
+**On all three request patterns, RESTAlchemy is the fastest framework
+measured here, and stands nearer to the floor of what such a request can
+cost at all than to any framework behind it.** The benchmark in this
+repository asks six stacks the same three questions against the same
+PostgreSQL and the same rows: read a collection of 100, read one
+resource, create one. The first row of the table is not one of them: it
+is a hand-written query and ``orjson.dumps``, which is what the database
+and the JSON cost before any framework has run.
+
+15 rounds × best of 20 calls, 1000 rows in the table, 100 per page,
+Python 3.12, PostgreSQL 16, one AMD EPYC 7742. The full run, with
+confidence intervals and the machine it was measured on, is in
+`bench/results/results.md <bench/results/results.md>`_; these are its
+numbers. In parentheses: the same number as a multiple of RESTAlchemy's.
+
+=======================  =================  =============  =============  ==============
+Stack                    Collection of 100  One resource   POST one       Per row
+=======================  =================  =============  =============  ==============
+raw psycopg + orjson †   1272 µs (0.7×)     174 µs (0.5×)  229 µs (0.6×)  11.1 µs (0.8×)
+RESTAlchemy              **1705 µs**        **317 µs**     **397 µs**     **14.0 µs**
+Flask + SQLAlchemy       2267 µs (1.3×)     636 µs (2.0×)  606 µs (1.5×)  16.5 µs (1.2×)
+FastAPI + SQLAlchemy     2417 µs (1.4×)     894 µs (2.8×)  829 µs (2.1×)  15.4 µs (1.1×)
+Litestar + SQLAlchemy    2524 µs (1.5×)     857 µs (2.7×)  811 µs (2.0×)  16.8 µs (1.2×)
+Django + DRF             5276 µs (3.1×)     943 µs (3.0×)  895 µs (2.3×)  43.8 µs (3.1×)
+=======================  =================  =============  =============  ==============
+
+† Not a framework, and faster than every framework under it, as it should
+be: it is the floor the rest are read against, not a stack anyone would
+build a service on.
+
+RESTAlchemy adds 143 µs to that bare single-row query, 168 µs to the bare
+insert, and under three microseconds to each row of a collection — a REST
+service, routed, validated and packed, for a few microseconds over the
+floor.
+
+Every stack is written the way its own documentation writes it, answers
+with the same rows — checked field by field before anything is timed — and
+is called at its own interface, so what is measured is the framework and
+its database work rather than a web server. The command that runs it, and
+what the numbers do not say, are in `bench/README.md <bench/README.md>`_.
+
+
 Documentation
 -------------
 
@@ -71,45 +116,6 @@ Define a simple DM model (simplified from the getting started guide):
 
 For a complete in-memory REST service example, including controllers, routes and a WSGI application, see
 `docs/en/getting-started.md <docs/en/getting-started.md>`_.
-
-
-Performance
------------
-
-**On all three request patterns, RESTAlchemy comes out ahead of every
-stack measured here, and close to the floor of what such a request can
-cost at all.** The benchmark in this repository asks six stacks the same
-three questions against the same PostgreSQL and the same rows: read a
-collection of 100, read one resource, create one. The floor is set by a
-hand-written query and ``orjson.dumps``, no framework at all.
-
-15 rounds × best of 20 calls, 1000 rows in the table, 100 per page,
-Python 3.12, PostgreSQL 16. In parentheses: the same number as a multiple
-of RESTAlchemy's.
-
-=====================  =================  =============  =============  ==============
-Stack                  Collection of 100  One resource   POST one       Per row
-=====================  =================  =============  =============  ==============
-raw psycopg + orjson   1307 µs (0.8×)     166 µs (0.5×)  222 µs (0.6×)  11.5 µs (0.8×)
----------------------  -----------------  -------------  -------------  --------------
-RESTAlchemy            **1731 µs**        **310 µs**     **384 µs**     **14.4 µs**
-Flask + SQLAlchemy     2275 µs (1.3×)     628 µs (2.0×)  588 µs (1.5×)  16.6 µs (1.2×)
-FastAPI + SQLAlchemy   2370 µs (1.4×)     872 µs (2.8×)  804 µs (2.1×)  15.1 µs (1.0×)
-Litestar + SQLAlchemy  2491 µs (1.4×)     832 µs (2.7×)  784 µs (2.0×)  16.8 µs (1.2×)
-Django + DRF           5254 µs (3.0×)     924 µs (3.0×)  868 µs (2.3×)  43.7 µs (3.0×)
-=====================  =================  =============  =============  ==============
-
-The first row is what everything is priced against: what the database and
-the JSON cost before any framework has run. RESTAlchemy adds 144 µs to the
-bare single-row query, 162 µs to the bare insert, and three microseconds
-to each row of a collection — a REST service, routed, validated and
-packed, for a few microseconds over the floor.
-
-Every stack is written the way its own documentation writes it, answers
-with the same rows — checked field by field before anything is timed — and
-is called at its own interface, so what is measured is the framework and
-its database work rather than a web server. The command that runs it, and
-what the numbers do not say, are in `bench/README.md <bench/README.md>`_.
 
 
 Examples

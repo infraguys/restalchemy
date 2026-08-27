@@ -21,13 +21,16 @@ records which one it was, and how busy.
 | Litestar + SQLAlchemy | 2524 µs (1.5×) | 857 µs (2.7×) | 811 µs (2.0×) | 16.8 µs (1.2×) |
 | Django + DRF | 5276 µs (3.1×) | 943 µs (3.0×) | 895 µs (2.3×) | 43.8 µs (3.1×) |
 
-**First in this table on all three request patterns, because of how little
-it adds to the floor.** The bare single-row query costs 174 µs;
+**The fastest framework here on all three request patterns, because of how
+little it adds to the floor.** The first row is not a framework and is
+faster than all of them, as it should be: it is what the request costs
+before any framework has run, and the point of the table is how close to
+it a framework can stay. The bare single-row query costs 174 µs;
 RestAlchemy serves it as a REST resource — routed, fetched through its
 ORM, packed, answered — for 143 µs more. The bare insert costs 229 µs;
 served, 168 µs more. A row of a collection costs the floor 11.1 µs and
 RestAlchemy 14.0: under three microseconds of framework per row. On every
-request it stands nearer to the floor than to any framework behind it.
+request it stands nearer to the floor than to the framework behind it.
 
 Two numbers are worth separating. The **fixed part** of a request — what a
 stack spends before it looks at any data — is the single-resource column:
