@@ -58,8 +58,16 @@ def build_prop_kwargs(kwargs):
     return result
 
 
-class UnknownType(Exception):
-    pass
+class UnknownType(ra_exc.ParseError):
+    """The 'kind' of a value does not match any of the known kinds.
+
+    The value carrying the kind comes from the outside - a request body or a
+    stored document - so this is a parse error (HTTP 400), just like the
+    unknown-field and unparsable-field errors raised next to it, and not an
+    internal one.
+    """
+
+    message = "Unknown kind for value: %(value)s"
 
 
 class AbstractKindType(types.BasePythonType):
@@ -296,7 +304,7 @@ class KindModelSelectorType(types.BaseType):
             value_class = self._kind_type_map[value_type_name]
             return value_class.from_simple_type(value)
         except (AttributeError, KeyError):
-            raise UnknownType("Unknown kind for value: %s" % value)
+            raise UnknownType(value=value)
 
     def from_unicode(self, value):
         """

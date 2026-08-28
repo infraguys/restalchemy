@@ -102,6 +102,10 @@ def raise_parse_error_on_fail(func):
     converts them into ParseError with HTTP 400 BadRequest status. Other
     exceptions are propagated to the error middleware for further processing.
 
+    A ParseError raised by the field itself keeps its own class: the field
+    named a more precise error than "cannot parse", and only the offending
+    field name is added to it.
+
     Any validation errors from controllers or properties related to validating
     the correctness of a value must be subclasses of ValueError or TypeError.
     """
@@ -112,7 +116,7 @@ def raise_parse_error_on_fail(func):
         except (ValueError, TypeError):
             raise ra_exc.ParseError(value="%s=%s" % (name, value))
         except ra_exc.ParseError as e:
-            raise ra_exc.ParseError(value="%s=%s" % (name, e.value))
+            raise type(e)(value="%s=%s" % (name, e.value))
 
     return wrapper
 
