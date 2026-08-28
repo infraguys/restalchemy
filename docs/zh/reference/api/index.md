@@ -30,5 +30,6 @@ limitations under the License.
 - `restalchemy.api.contexts`
 - `restalchemy.api.field_permissions`
 - `restalchemy.api.middlewares.*`
+- `restalchemy.api.batch`
 
 目前该参考以单页概览的形式提供。

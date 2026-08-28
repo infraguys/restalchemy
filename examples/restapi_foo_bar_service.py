@@ -19,10 +19,12 @@
 from wsgiref.simple_server import make_server
 
 from restalchemy.api import applications
+from restalchemy.api import batch
 from restalchemy.api import controllers
 from restalchemy.api import middlewares
 from restalchemy.api import resources
 from restalchemy.api import routes
+from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
@@ -77,10 +79,13 @@ class FooController(controllers.Controller):
         return foo
 
     def get(self, uuid):
-        return foo_storage[uuid]
+        try:
+            return foo_storage[str(uuid)]
+        except KeyError:
+            raise common_exc.NotFoundError(path=str(uuid))
 
     def filter(self, filters, order_by=None):
-        return foo_storage.values()
+        return list(foo_storage.values())
 
 
 bar_resource = resources.ResourceByRAModel(BarModel, process_filters=True)
@@ -103,10 +108,10 @@ class BarController2(controllers.Controller):
     __resource__ = bar_resource
 
     def get(self, uuid):
-        return bar_storage[uuid]
+        return bar_storage[str(uuid)]
 
     def delete(self, uuid):
-        del bar_storage[uuid]
+        del bar_storage[str(uuid)]
 
 
 # -----------------------------------------------------------------------------
@@ -153,6 +158,15 @@ setattr(
     UserApiApp,
     "v1",
     routes.route(V1Route),
+)
+
+# Route to /batch/ endpoint (see restapi_batch_client.py). This does not
+# require any changes to the routes/controllers declared above -- batch
+# just replays requests through them.
+setattr(
+    UserApiApp,
+    "batch",
+    routes.route(batch.BatchRoute),
 )
 
 

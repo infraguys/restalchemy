@@ -47,6 +47,31 @@ def exception2dict(exception):
     }
 
 
+def get_status_code_for_exception(
+    exception,
+    not_found_exc=(ra_exceptions.RecordNotFound,),
+    conflict_exc=(ra_exceptions.ConflictRecords,),
+    valid_exc=(comm_exc.ValidationErrorException,),
+    common_exc=(comm_exc.RestAlchemyException,),
+):
+    """Map an exception instance to an HTTP status code.
+
+    Shared between ErrorsHandlerMiddleware (whole-request errors) and
+    restalchemy.api.batch.BatchController (per-item errors in a batch), so
+    both use the same exception-type-to-status-code rules.
+    """
+    if isinstance(exception, not_found_exc):
+        return http_client.NOT_FOUND
+    elif isinstance(exception, conflict_exc):
+        return http_client.CONFLICT
+    elif isinstance(exception, valid_exc):
+        return http_client.BAD_REQUEST
+    elif isinstance(exception, common_exc):
+        return exception.code
+    else:
+        return http_client.INTERNAL_SERVER_ERROR
+
+
 class ErrorsHandlerMiddleware(middlewares.Middleware):
     not_found_exc = (ra_exceptions.RecordNotFound,)
     conflict_exc = (ra_exceptions.ConflictRecords,)
@@ -54,25 +79,14 @@ class ErrorsHandlerMiddleware(middlewares.Middleware):
     valid_exc = (comm_exc.ValidationErrorException,)
 
     def _construct_error_response(self, req, e):
-        if isinstance(e, self.not_found_exc):
-            return req.ResponseClass(
-                status=http_client.NOT_FOUND, json=exception2dict(e)
-            )
-        elif isinstance(e, self.conflict_exc):
-            return req.ResponseClass(
-                status=http_client.CONFLICT, json=exception2dict(e)
-            )
-        elif isinstance(e, self.valid_exc):
-            return req.ResponseClass(
-                status=http_client.BAD_REQUEST, json=exception2dict(e)
-            )
-        elif isinstance(e, self.common_exc):
-            return req.ResponseClass(status=e.code, json=exception2dict(e))
-        else:
-            return req.ResponseClass(
-                status=http_client.INTERNAL_SERVER_ERROR,
-                json=exception2dict(e),
-            )
+        status = get_status_code_for_exception(
+            e,
+            not_found_exc=self.not_found_exc,
+            conflict_exc=self.conflict_exc,
+            valid_exc=self.valid_exc,
+            common_exc=self.common_exc,
+        )
+        return req.ResponseClass(status=status, json=exception2dict(e))
 
     def process_request(self, req):
         try:
