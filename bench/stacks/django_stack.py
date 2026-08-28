@@ -58,11 +58,11 @@ def _configure():
 
 _configure()
 
-from django.db import models as django_models  # noqa: E402
-from django.urls import path  # noqa: E402
-from rest_framework import serializers  # noqa: E402
-from rest_framework.decorators import api_view  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
+from django.db import models as django_models
+from django.urls import path
+from rest_framework import serializers
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 
 class Item(django_models.Model):
@@ -127,7 +127,7 @@ urlpatterns = [
 ]
 
 
-class Stack(object):
+class Stack:
     name = NAME
     kind = KIND
 
@@ -145,7 +145,7 @@ class Stack(object):
         return call.wsgi(self._app, "GET", "/items/")
 
     def resource(self, item_id):
-        return call.wsgi(self._app, "GET", "/items/%s" % item_id)
+        return call.wsgi(self._app, "GET", f"/items/{item_id}")
 
     def create(self, document):
         return call.wsgi(self._app, "POST", "/items/", document)

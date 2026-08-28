@@ -30,7 +30,6 @@ from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import tables
 from restalchemy.storage.sql.dialect import exceptions as exc
 
-
 # The `from_simple_type` implementations that hand the stored value
 # straight back: a column of such a type needs no converting at all.
 _VALUES_AS_STORED = frozenset(

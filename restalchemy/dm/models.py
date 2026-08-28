@@ -89,7 +89,7 @@ class MetaModel(abc.ABCMeta):
         return spec
 
 
-class _IdPropertiesAccess(object):
+class _IdPropertiesAccess:
     """The declaration's answer to a class, a model's own to a model.
 
     Read off the class -- `cls.id_properties` -- these are the names, as

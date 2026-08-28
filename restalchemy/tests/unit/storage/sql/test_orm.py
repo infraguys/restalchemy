@@ -151,7 +151,7 @@ class FakeKeywordRestoreModel(models.Model, orm.SQLStorableMixin):
 
     @classmethod
     def restore_from_storage(cls, source=FAKE_VALUE_B, **kwargs):
-        obj = super(FakeKeywordRestoreModel, cls).restore_from_storage(**kwargs)
+        obj = super().restore_from_storage(**kwargs)
         obj.source = source
         return obj
 
@@ -167,7 +167,7 @@ class FakeRowRestoreModel(models.Model, orm.SQLStorableMixin):
     def restore_row(cls, row, pour=None):
         row = dict(row)
         source = row.pop("source", FAKE_VALUE_B)
-        obj = super(FakeRowRestoreModel, cls).restore_row(row, pour)
+        obj = super().restore_row(row, pour)
         obj.source = source
         return obj
 
@@ -373,7 +373,7 @@ class VersionOneUUID(types.UUID):
     """
 
     def validate(self, value):
-        return super(VersionOneUUID, self).validate(value) and value.version == 1
+        return super().validate(value) and value.version == 1
 
 
 class StoragePlanChecksASubclassTestCase(base.BaseTestCase):

@@ -786,7 +786,9 @@ class UTCDateTimeZ(BasePythonType):
         # formats this type uses are fixed and ASCII, so the parts are
         # written out directly. Same bytes, several times cheaper, and a
         # stored row or an API field is written per property per object.
-        return "%04d-%02d-%02d %02d:%02d:%02d.%06d" % (
+        # `%` stays: the f-string this reads as costs about twice as much,
+        # which is the whole point of writing the parts out by hand.
+        return "%04d-%02d-%02d %02d:%02d:%02d.%06d" % (  # noqa: UP031
             value.year,
             value.month,
             value.day,
@@ -797,8 +799,9 @@ class UTCDateTimeZ(BasePythonType):
         )
 
     def dump_value(self, value):
-        # Converting value in api response
-        return "%04d-%02d-%02dT%02d:%02d:%02d.%06dZ" % (
+        # Converting value in api response. `%` for the same reason as
+        # `to_simple_type`: this one is written per field per response.
+        return "%04d-%02d-%02dT%02d:%02d:%02d.%06dZ" % (  # noqa: UP031
             value.year,
             value.month,
             value.day,
@@ -1175,13 +1178,12 @@ class AllowNone(BaseType):
                         spec["type"].append("null")
                 elif spec["type"] != "null":
                     spec["type"] = [spec["type"], "null"]
-            elif "oneOf" in spec:
-                # A sum type names no type of its own, so the null has to
-                # join the alternatives -- exactly one of which matches it.
-                if not any(
-                    alternative.get("type") == "null" for alternative in spec["oneOf"]
-                ):
-                    spec["oneOf"].append({"type": "null"})
+            # A sum type names no type of its own, so the null has to join
+            # the alternatives -- exactly one of which matches it.
+            elif "oneOf" in spec and not any(
+                alternative.get("type") == "null" for alternative in spec["oneOf"]
+            ):
+                spec["oneOf"].append({"type": "null"})
         else:
             spec["nullable"] = True
         return spec

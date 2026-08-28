@@ -306,7 +306,7 @@ class JSONPackerPreEncoded(JSONPacker):
     def pack(self, obj: typing.Any) -> bytes:
         if isinstance(obj, bytes):
             return obj
-        return super(JSONPackerPreEncoded, self).pack(obj)
+        return super().pack(obj)
 
 
 class MultipartPacker(JSONPacker):

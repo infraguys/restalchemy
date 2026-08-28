@@ -59,7 +59,7 @@ class BasePermissions:
         deciding permissions its own way is left with -- see
         `visibility_key_of`, which does not take a subclass's word for it.
         """
-        return None
+        return
 
     def is_readonly(self, model_field_name, req):
         return self.meets_field_permission(

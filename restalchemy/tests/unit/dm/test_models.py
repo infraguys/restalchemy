@@ -342,7 +342,7 @@ class ModelBuiltWithoutInitTestCase(base.BaseTestCase):
         other = Other(only="other")
 
         try:
-            setattr(self.Poured.__new__(self.Poured), "first", "poison")
+            self.Poured.__new__(self.Poured).first = "poison"
         except exceptions.PropertyClassAssignment:
             pass
 
@@ -354,7 +354,7 @@ class ModelBuiltWithoutInitTestCase(base.BaseTestCase):
         two = self.Poured(first="two", second="2")
 
         try:
-            setattr(self.Poured.__new__(self.Poured), "first", "poison")
+            self.Poured.__new__(self.Poured).first = "poison"
         except exceptions.PropertyClassAssignment:
             pass
 

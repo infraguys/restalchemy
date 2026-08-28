@@ -3,9 +3,9 @@
 import datetime
 import uuid
 
-import orjson
 from flask import Flask
 from flask import request
+import orjson
 from sqlalchemy import create_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ NAME = "Flask + SQLAlchemy"
 KIND = "framework + ORM"
 
 
-class Stack(object):
+class Stack:
     name = NAME
     kind = KIND
 
@@ -77,7 +77,7 @@ class Stack(object):
         return call.wsgi(self._app, "GET", "/items/")
 
     def resource(self, item_id):
-        return call.wsgi(self._app, "GET", "/items/%s" % item_id)
+        return call.wsgi(self._app, "GET", f"/items/{item_id}")
 
     def create(self, document):
         return call.wsgi(self._app, "POST", "/items/", document)

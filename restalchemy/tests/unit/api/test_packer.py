@@ -292,7 +292,7 @@ class PackerResourceSwapTestCase(base.BaseTestCase):
     """
 
     def setUp(self):
-        super(PackerResourceSwapTestCase, self).setUp()
+        super().setUp()
         req = mock.Mock()
         req.context.roles = ["owner"]
         self._req = req
@@ -302,7 +302,7 @@ class PackerResourceSwapTestCase(base.BaseTestCase):
         )
 
     def tearDown(self):
-        super(PackerResourceSwapTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._packer
 
@@ -350,11 +350,11 @@ class PackerFieldSourceTestCase(base.BaseTestCase):
     """
 
     def setUp(self):
-        super(PackerFieldSourceTestCase, self).setUp()
+        super().setUp()
         self._req = mock.Mock()
 
     def tearDown(self):
-        super(PackerFieldSourceTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
     def test_a_stored_field_is_packed_from_the_model(self):
@@ -388,7 +388,7 @@ class DumpCallableTestCase(base.BaseTestCase):
     """Which types a packer may write out without converting."""
 
     def tearDown(self):
-        super(DumpCallableTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
     def _field(self, prop_type):
@@ -425,7 +425,7 @@ class NativeTypesTestCase(base.BaseTestCase):
     """What a packer hands over unconverted, and what that must not change."""
 
     def setUp(self):
-        super(NativeTypesTestCase, self).setUp()
+        super().setUp()
         self._resource = resources.ResourceByRAModel(FakeModel)
         # A real request, so the resource does share what it resolves --
         # which is the thing these packers must not share blindly.
@@ -435,7 +435,7 @@ class NativeTypesTestCase(base.BaseTestCase):
         self._model = FakeModel(field2=2, field3=3, field4=4)
 
     def tearDown(self):
-        super(NativeTypesTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
     def test_the_json_a_uuid_ends_up_in_is_the_same(self):
@@ -492,14 +492,14 @@ class TimestampFormatTestCase(base.BaseTestCase):
     UTC = datetime.timezone.utc
 
     def setUp(self):
-        super(TimestampFormatTestCase, self).setUp()
+        super().setUp()
         self._resource = resources.ResourceByRAModel(TimestampModel)
         self._req = webob.Request.blank("/things/")
         self._req.api_context = contexts.RequestContext(self._req)
         self._req.api_context.set_active_method(constants.GET)
 
     def tearDown(self):
-        super(TimestampFormatTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
     def _packed(self, when, payload=None):

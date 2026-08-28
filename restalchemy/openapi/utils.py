@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import json
 import logging
 import typing
@@ -28,7 +30,7 @@ LOG = logging.getLogger(__name__)
 SCHEMA_METHOD_ORDER = (c.GET, c.CREATE, c.UPDATE, c.FILTER)
 
 
-def sorted_schema_methods(methods: typing.Iterable[str]) -> typing.List[str]:
+def sorted_schema_methods(methods: typing.Iterable[str]) -> list[str]:
     known_methods = list(methods)
     known = [m for m in SCHEMA_METHOD_ORDER if m in known_methods]
     return known + [m for m in known_methods if m not in SCHEMA_METHOD_ORDER]
@@ -48,7 +50,7 @@ def resource_field_parameter_name(resource_name: str, prop_name: str) -> str:
     otherwise overwrite the id parameter -- leaving the `{ResourceUuid}` of
     the path with nothing declaring it.
     """
-    return "{}_{}".format(resource_name, prop_name)
+    return f"{resource_name}_{prop_name}"
 
 
 def schema_body_key(body: typing.Any) -> str:

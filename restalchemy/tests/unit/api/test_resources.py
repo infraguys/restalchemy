@@ -51,7 +51,7 @@ class FakeCollided(models.ModelWithUUID):
 FakeCollidedIdModel = FakeCollided
 
 
-class FakeCollided(models.ModelWithID):  # noqa: F811 -- the name is the point
+class FakeCollided(models.ModelWithID):
     """Another model of the very same name, holding `uuid` as a plain field."""
 
     res_uuid = properties.property(
