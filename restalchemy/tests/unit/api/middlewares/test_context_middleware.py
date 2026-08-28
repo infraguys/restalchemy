@@ -14,7 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
+
 import pytest
 
 from restalchemy.api.middlewares import contexts
@@ -188,17 +189,16 @@ class TestReadonlyIntegration:
 
         with mock.patch.object(
             engines.engine_factory, "get_engine", side_effect=_get_engine
-        ):
-            with mock.patch.object(readonly_engine, "get_session") as mock_get_session:
-                mock_session = mock.Mock()
-                mock_storage = mock.Mock()
-                mock_get_session.return_value = mock_session
-                readonly_engine.get_session_storage.return_value = mock_storage
+        ), mock.patch.object(readonly_engine, "get_session") as mock_get_session:
+            mock_session = mock.Mock()
+            mock_storage = mock.Mock()
+            mock_get_session.return_value = mock_session
+            readonly_engine.get_session_storage.return_value = mock_storage
 
-                _ = mw.process_request(req)
+            _ = mw.process_request(req)
 
-                readonly_engine.get_session.assert_called_once()
-                primary_engine.get_session.assert_not_called()
+            readonly_engine.get_session.assert_called_once()
+            primary_engine.get_session.assert_not_called()
 
     def test_readonly_session_skips_commit(self):
         """Test that readonly session skips commit."""

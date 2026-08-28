@@ -25,7 +25,7 @@ from restalchemy.storage.sql.dialect.query_builder import common
 
 class Table(common.AbstractClause):
     def __init__(self, model, session):
-        super(Table, self).__init__(session)
+        super().__init__(session)
         self._name = model.__tablename__
         self._model = model
         self._columns = self._build_columns(self._model)
@@ -68,16 +68,16 @@ class Table(common.AbstractClause):
 
 class Limit(common.AbstractClause):
     def __init__(self, value, session):
-        super(Limit, self).__init__(session)
+        super().__init__(session)
         self._value = value
 
     def compile(self):
-        return "LIMIT %d" % self._value
+        return f"LIMIT {self._value}"
 
 
 class For(common.AbstractClause):
     def __init__(self, session, share=False):
-        super(For, self).__init__(session)
+        super().__init__(session)
         self._is_share = share
 
     def compile(self):
@@ -86,22 +86,21 @@ class For(common.AbstractClause):
 
 class Criteria(common.AbstractClause, metaclass=abc.ABCMeta):
     def __init__(self, clause1, clause2, session):
-        super(Criteria, self).__init__(session)
+        super().__init__(session)
         self._clause1 = clause1
         self._clause2 = clause2
 
 
 class EQCriteria(Criteria):
     def compile(self):
-        return "%s = %s" % (
-            self._clause1.original.compile(),
-            self._clause2.original.compile(),
+        return (
+            f"{self._clause1.original.compile()} = {self._clause2.original.compile()}"
         )
 
 
 class On(common.AbstractClause):
     def __init__(self, list_of_criteria, session):
-        super(On, self).__init__(session)
+        super().__init__(session)
         self._list_of_criteria = list_of_criteria
 
     def compile(self):
@@ -111,15 +110,12 @@ class On(common.AbstractClause):
 class LeftJoin(common.AbstractClause):
     def __init__(self, table, on, session):
         # type: (common.TableAlias, On) -> LeftJoin
-        super(LeftJoin, self).__init__(session)
+        super().__init__(session)
         self._table = table
         self._on = on
 
     def compile(self):
-        return "LEFT JOIN %s ON (%s)" % (
-            self._table.compile(),
-            self._on.compile(),
-        )
+        return f"LEFT JOIN {self._table.compile()} ON ({self._on.compile()})"
 
 
 class OrderByValue(common.AbstractClause):
@@ -135,14 +131,14 @@ class OrderByValue(common.AbstractClause):
     )
 
     def __init__(self, column, session, sort_type=None):
-        super(OrderByValue, self).__init__(session)
+        super().__init__(session)
         self._column = column
         if not sort_type:
             self._sort_type = "ASC"
         else:
             self._sort_type = sort_type.upper()
             if self._sort_type not in self.SORT_TYPES:
-                raise ValueError("Unknown order: %s" % self._sort_type)
+                raise ValueError(f"Unknown order: {self._sort_type}")
 
     def compile(self):
         """
@@ -173,7 +169,7 @@ class OrderByValue(common.AbstractClause):
 
         # Handle simple ASC/DESC without NULLS specification
         if self._sort_type in ("ASC", "DESC"):
-            return "%s %s" % (column_name, self._sort_type)
+            return f"{column_name} {self._sort_type}"
 
         # Handle NULLS FIRST/LAST with a generic CASE approach
         order_map = {
@@ -190,18 +186,18 @@ class OrderByValue(common.AbstractClause):
         )
 
 
-class ResultField(object):
+class ResultField:
     def __init__(self, alias_name):
-        super(ResultField, self).__init__()
+        super().__init__()
         self._alias_name = alias_name
 
     def parse(self, row):
         return row[self._alias_name]
 
 
-class ResultNode(object):
+class ResultNode:
     def __init__(self):
-        super(ResultNode, self).__init__()
+        super().__init__()
         self._child_nodes = {}
         # The names this node reads straight out of the row, as
         # (name, alias) pairs -- everything but a nested node, which has a
@@ -241,9 +237,9 @@ class ResultNode(object):
         return result
 
 
-class ResultParser(object):
+class ResultParser:
     def __init__(self):
-        super(ResultParser, self).__init__()
+        super().__init__()
         self._root = ResultNode()
 
     @property
@@ -251,7 +247,7 @@ class ResultParser(object):
         return self._root
 
 
-class _EngineSession(object):
+class _EngineSession:
     """Stands in for a session where only the engine is ever asked for.
 
     Everything a `SELECT` builds out of a model -- tables, columns,
@@ -261,7 +257,7 @@ class _EngineSession(object):
     engine and nothing else.
     """
 
-    __slots__ = ("_engine", "__weakref__")
+    __slots__ = ("__weakref__", "_engine")
 
     def __init__(self, engine):
         # Weakly: what is built from an engine is kept under that engine
@@ -275,7 +271,7 @@ class _EngineSession(object):
         return self._engine()
 
 
-class _SelectShape(object):
+class _SelectShape:
     """The part of a `SELECT` that a model and an engine already decide.
 
     Which columns are selected, under which aliases, from which tables,
@@ -289,10 +285,10 @@ class _SelectShape(object):
 
     __slots__ = (
         "model_table",
+        "prefix",
+        "result_parser",
         "select_expressions",
         "table_references",
-        "result_parser",
-        "prefix",
     )
 
     def __init__(
@@ -329,7 +325,7 @@ def clear_shape_cache():
 
 class SelectQ(common.AbstractClause):
     def __init__(self, model, session):
-        super(SelectQ, self).__init__(session)
+        super().__init__(session)
         # What the shape refers to weakly, a query being built refers to
         # strongly: the engine has to outlive the compile it is part of.
         self._engine = session.engine
@@ -400,8 +396,7 @@ class SelectQ(common.AbstractClause):
             select_expressions=builder._select_expressions,
             table_references=builder._table_references,
             result_parser=builder._result_parser,
-            prefix="SELECT %s FROM %s"
-            % (
+            prefix="SELECT {} FROM {}".format(
                 ", ".join([exp.compile() for exp in builder._select_expressions]),
                 " ".join([tbl.compile() for tbl in builder._table_references]),
             ),
@@ -415,17 +410,17 @@ class SelectQ(common.AbstractClause):
             id_properties = dep_model.get_id_property()
             if len(id_properties) != 1:
                 msg = (
-                    "Can't automatic resolve dependency for %s table"
-                    " because the number of fields for primary keys (%r)"
-                    " of model (%r) is not equal to 1."
-                ) % (table.name, id_properties, dep_model)
+                    f"Can't automatic resolve dependency for {table.name} table"
+                    f" because the number of fields for primary keys ({id_properties!r})"
+                    f" of model ({dep_model!r}) is not equal to 1."
+                )
                 raise ValueError(msg)
             alias = common.TableAlias(
                 Table(dep_model, session=self._session),
                 self._build_table_alias_name(),
                 session=self._session,
             )
-            id_column = alias.get_column_by_name(list(id_properties.keys())[0])
+            id_column = alias.get_column_by_name(next(iter(id_properties.keys())))
 
             # Construct Left Join for prefetch dependency
             left_join = LeftJoin(
@@ -464,7 +459,7 @@ class SelectQ(common.AbstractClause):
         return [
             common.ColumnAlias(
                 field,
-                "%s_%s" % (table.name, field.name),
+                f"{table.name}_{field.name}",
                 session=self._session,
             )
             for field in fields
@@ -507,7 +502,7 @@ class SelectQ(common.AbstractClause):
         return self
 
     def _build_table_alias_name(self):
-        return "t%d" % self._get_inc()
+        return f"t{self._get_inc()}"
 
     def _get_inc(self):
         with self._autoinc_lock:
@@ -521,13 +516,13 @@ class SelectQ(common.AbstractClause):
         if where_expressions:
             expression += " WHERE " + where_expressions
         if self._order_by_expressions:
-            expression += " ORDER BY %s" % ", ".join(
-                [exp.compile() for exp in self._order_by_expressions]
+            expression += " ORDER BY {}".format(
+                ", ".join([exp.compile() for exp in self._order_by_expressions])
             )
         if self._limit_condition:
-            expression += " %s" % self._limit_condition.compile()
+            expression += f" {self._limit_condition.compile()}"
         if self._for_expression:
-            expression += " %s" % self._for_expression.compile()
+            expression += f" {self._for_expression.compile()}"
         return expression
 
     def values(self):
@@ -541,7 +536,7 @@ class SelectQ(common.AbstractClause):
         return [self.parse_row(row) for row in rows]
 
 
-class Q(object):
+class Q:
     @staticmethod
     def select(model, session):
         return SelectQ(model, session)

@@ -24,6 +24,8 @@ from restalchemy.common import config
 from restalchemy.common import log as ra_log
 from restalchemy.storage.sql import migrations
 
+LOGGER = logging.getLogger(__name__)
+
 
 def suggest_filename(file, migration_files):
     index = "{:04d}".format(migration_files["index"])
@@ -31,9 +33,9 @@ def suggest_filename(file, migration_files):
     uuid = migration_files["uuid"].split("-")[0][:6]
 
     if not migration_files["is_manual"]:
-        result = "{}-{}-{}.py".format(index, filename, uuid)
+        result = f"{index}-{filename}-{uuid}.py"
     else:
-        result = "MANUAL-{}-{}.py".format(filename, uuid)
+        result = f"MANUAL-{filename}-{uuid}.py"
 
     return result
 
@@ -59,12 +61,12 @@ def main():
 
     migration_files = engine.get_all_migrations()
 
-    logging.info("Parsing files in folder - %s", CONF.path)
+    LOGGER.info("Parsing files in folder - %s", CONF.path)
 
-    for file in migration_files.keys():
+    for file in migration_files:
         suggested_name = suggest_filename(file, migration_files[file])
 
-        logging.info("Renaming %s to %s", file, suggested_name)
+        LOGGER.info("Renaming %s to %s", file, suggested_name)
 
         os.rename(
             os.path.join(CONF.path, file),
@@ -82,7 +84,7 @@ def main():
                     d,
                     migration_files[d],
                 )
-                logging.info(
+                LOGGER.info(
                     "Renaming depends %s to %s",
                     d,
                     suggested_depends_name,

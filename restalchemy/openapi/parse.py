@@ -18,11 +18,11 @@ import re
 import sys
 
 PARAM_OR_RETURNS_REGEX = re.compile(":(?:param|returns)")
-RETURNS_REGEX = re.compile(":returns: (?P<doc>.*)", re.S)
+RETURNS_REGEX = re.compile(":returns: (?P<doc>.*)", re.DOTALL)
 PARAM_REGEX = re.compile(
     r":param (?P<name>[\*\w]+): (?P<doc>.*?)"
     r"(?:(?=:param)|(?=:return)|(?=:raises)|\Z)",
-    re.S,
+    re.DOTALL,
 )
 
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
         :returns: NIL
         """
-        return None
+        return
 
     res = parse_docstring(sample.__doc__)
     print(res)

@@ -225,7 +225,7 @@ class ParserTestCase(base.BaseTestCase):
 
 class BinderTestCase(base.BaseTestCase):
     def setUp(self):
-        super(BinderTestCase, self).setUp()
+        super().setUp()
         self._resolver = filter_lang.ModelFieldResolver(
             FilterModel, dialect="postgresql"
         )
@@ -252,7 +252,7 @@ class BinderTestCase(base.BaseTestCase):
             (">", dm_filters.GT),
             (">=", dm_filters.GE),
         ):
-            built = self._build("size %s 10" % comparator)
+            built = self._build(f"size {comparator} 10")
 
             self.assertIsInstance(built["size"], clause)
 
@@ -333,13 +333,13 @@ class BinderTestCase(base.BaseTestCase):
                 self.assertRaises(
                     ra_exc.ValidationFilterIncompatibleError,
                     self._build,
-                    'spec."%s" = 1' % key.replace("\\", "\\\\"),
+                    'spec."{}" = 1'.format(key.replace("\\", "\\\\")),
                 )
 
     def test_an_ordinary_json_key_still_binds(self):
         for key in ("kind", "device_id", "a-b", "период"):
             with self.subTest(key=key):
-                built = self._build('spec."%s" = 1' % key)
+                built = self._build(f'spec."{key}" = 1')
 
                 self.assertEqual([key], list(built["spec"].value))
 
@@ -507,7 +507,7 @@ class DialectGateTestCase(base.BaseTestCase):
     """
 
     def setUp(self):
-        super(DialectGateTestCase, self).setUp()
+        super().setUp()
         self._mysql = filter_lang.ModelFieldResolver(FilterModel, dialect="mysql")
 
     def test_array_containment_is_refused_on_mysql(self):
@@ -548,7 +548,7 @@ class _PostgreSqlEngineFixture(mock.Mock):
         return dialect
 
     def escape(self, name):
-        return '"%s"' % name
+        return f'"{name}"'
 
 
 class _PostgreSqlSessionFixture(mock.Mock):
@@ -565,7 +565,7 @@ class SqlTestCase(base.BaseTestCase):
     """End to end: a filter string down to the SQL it compiles to."""
 
     def setUp(self):
-        super(SqlTestCase, self).setUp()
+        super().setUp()
         self._resolver = filter_lang.ModelFieldResolver(
             FilterModel, dialect="postgresql"
         )

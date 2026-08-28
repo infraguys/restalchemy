@@ -20,7 +20,7 @@ from restalchemy.openapi import constants
 from restalchemy.openapi import structures
 
 
-class OpenApi310(object):
+class OpenApi310:
     """OpenAPI Specification 3.1.0
 
     The OpenAPI Specification (OAS) defines a standard, language-agnostic
@@ -72,7 +72,7 @@ class OpenApi310(object):
         tags=None,
         external_docs=None,
     ):
-        super(OpenApi310, self).__init__()
+        super().__init__()
         self._info = info or structures.OpenApiInfo()
         self._paths = paths or structures.OpenApiPaths()
         self._servers = servers or structures.OpenApiServers()

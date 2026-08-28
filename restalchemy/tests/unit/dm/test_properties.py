@@ -15,7 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from restalchemy.common import exceptions
 from restalchemy.dm import properties
@@ -29,18 +29,12 @@ FAKE_VALUE3 = "FAKE_VALUE3"
 
 class PropertyTestCase(base.BaseTestCase):
     def setUp(self):
-        super(PropertyTestCase, self).setUp()
+        super().setUp()
         self.positive_fake_property_type = mock.MagicMock(
-            **{
-                "validate": mock.MagicMock(return_value=True),
-                "spec": types.BaseType,
-            }
+            validate=mock.MagicMock(return_value=True), spec=types.BaseType
         )
         self.negative_fake_property_type = mock.MagicMock(
-            **{
-                "validate": mock.MagicMock(return_value=False),
-                "spec": types.BaseType,
-            }
+            validate=mock.MagicMock(return_value=False), spec=types.BaseType
         )
 
     def _set_property_value(self, obj, value):
@@ -226,8 +220,8 @@ class PropertyTestCase(base.BaseTestCase):
 
 
 class PropertyCreatorTestCase(base.BaseTestCase):
-    ARGS = [1, 2, 3]
-    KWARGS = {"fake_key1": "fake_value1", "fake_key2": "fake_value2"}
+    ARGS = [1, 2, 3]  # noqa: RUF012
+    KWARGS = {"fake_key1": "fake_value1", "fake_key2": "fake_value2"}  # noqa: RUF012
 
     def setUp(self):
         self.property_mock = mock.Mock(return_value=FAKE_VALUE)
@@ -239,9 +233,9 @@ class PropertyCreatorTestCase(base.BaseTestCase):
     def test_call_object(self):
         self.assertEqual(self.test_instance(FAKE_VALUE2), FAKE_VALUE)
         self.property_mock.assert_called_once_with(
-            value=FAKE_VALUE2,
-            property_type=self.prop_type_mock,
+            self.prop_type_mock,
             *self.ARGS,
+            value=FAKE_VALUE2,
             **self.KWARGS,
         )
 
@@ -397,7 +391,7 @@ class PropertyManagerTestCase(base.BaseTestCase):
 @mock.patch("restalchemy.dm.properties.PropertyCreator", return_value=FAKE_VALUE)
 class PropertyFuncTestCase(base.BaseTestCase):
     ARGS = (1, 2, 3)
-    KWARGS = {"fake_key1": "fake_value1", "fake_key2": "fake_value2"}
+    KWARGS = {"fake_key1": "fake_value1", "fake_key2": "fake_value2"}  # noqa: RUF012
 
     def test_create_property(self, pc_mock):
         self.assertEqual(properties.property(*self.ARGS, **self.KWARGS), FAKE_VALUE)
@@ -420,7 +414,7 @@ class PropertyFuncTestCase(base.BaseTestCase):
 
         self.assertEqual(
             properties.property(
-                property_class=LocalProperty, *self.ARGS, **self.KWARGS
+                *self.ARGS, property_class=LocalProperty, **self.KWARGS
             ),
             FAKE_VALUE,
         )
@@ -435,8 +429,8 @@ class PropertyFuncTestCase(base.BaseTestCase):
         self.assertRaises(
             ValueError,
             properties.property,
-            property_class=object,
             *self.ARGS,
+            property_class=object,
             **self.KWARGS,
         )
 
@@ -568,21 +562,19 @@ class PropertyCreatorPathsAgreeTestCase(base.BaseTestCase):
             for value in self.VALUES:
                 fast = self._build(creator, value)
                 slow = self._build(
-                    lambda v: property_class(
-                        property_type=prop_type, value=v, **constructor_kwargs
-                    ),
+                    self._slow_builder(property_class, prop_type, constructor_kwargs),
                     value,
                 )
 
                 self.assertEqual(
                     type(fast).__name__,
                     type(slow).__name__,
-                    "%s / %r" % (label, value),
+                    f"{label} / {value!r}",
                 )
                 if isinstance(fast, Exception) or isinstance(slow, Exception):
-                    self.assertEqual(repr(fast), repr(slow), "%s / %r" % (label, value))
+                    self.assertEqual(repr(fast), repr(slow), f"{label} / {value!r}")
                     continue
-                self.assertEqual(vars(fast), vars(slow), "%s / %r" % (label, value))
+                self.assertEqual(vars(fast), vars(slow), f"{label} / {value!r}")
                 self.assertEqual(
                     (
                         fast.value,
@@ -602,14 +594,26 @@ class PropertyCreatorPathsAgreeTestCase(base.BaseTestCase):
                         slow.is_id_property(),
                         slow.example(),
                     ),
-                    "%s / %r" % (label, value),
+                    f"{label} / {value!r}",
                 )
+
+    @staticmethod
+    def _slow_builder(property_class, prop_type, constructor_kwargs):
+        """The declaration built the long way, bound to one row."""
+
+        def build(value):
+            return property_class(
+                property_type=prop_type, value=value, **constructor_kwargs
+            )
+
+        return build
 
     @staticmethod
     def _build(build, value):
         try:
             return build(value)
-        except Exception as error:
+        # Whatever either path raises is what the other has to raise.
+        except Exception as error:  # noqa: BLE001
             return error
 
 
@@ -791,7 +795,7 @@ class SharedEmptyMappingsTestCase(base.BaseTestCase):
     """
 
     def setUp(self):
-        super(SharedEmptyMappingsTestCase, self).setUp()
+        super().setUp()
         self._collection = properties.PropertyCollection(
             name=properties.property(types.String(), default="d"),
             tags=properties.property(

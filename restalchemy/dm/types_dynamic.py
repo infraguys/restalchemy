@@ -43,7 +43,7 @@ def build_prop_kwargs(kwargs):
     """
     result = {}
     for k, v in types.KWARGS_OPENAPI_MAP.items():
-        if k in kwargs.keys():
+        if k in kwargs:
             value = kwargs[k]() if callable(kwargs[k]) else kwargs[k]
             if isinstance(value, (types.UUID, uuid.UUID)):
                 value = "uuid"
@@ -126,7 +126,7 @@ class KindModelType(types.BasePythonType):
         :param model: the model class to be represented by this type.
         :type model: type
         """
-        super(KindModelType, self).__init__(
+        super().__init__(
             python_type=model,
             openapi_type="object",
         )
@@ -171,11 +171,11 @@ class KindModelType(types.BasePythonType):
                     val = copied_value.pop(name)
                     parsed_value[name] = property_type.from_simple_type(val)
                 except (ValueError, TypeError):
-                    raise ra_exc.ParseError(value="%s=%s" % (name, val))
+                    raise ra_exc.ParseError(value=f"{name}={val}")
                 except ra_exc.ParseError as e:
-                    raise ra_exc.ParseError(value="%s=%s" % (name, e.value))
+                    raise ra_exc.ParseError(value=f"{name}={e.value}")
         if copied_value:
-            raise ra_exc.ParseError(value="(Unknown fields: %s)" % copied_value)
+            raise ra_exc.ParseError(value=f"(Unknown fields: {copied_value})")
         return self._python_type(**parsed_value)
 
     def to_simple_type(self, value):
@@ -233,7 +233,7 @@ class KindModelSelectorType(types.BaseType):
         :param args: A variable number of arguments
             of :py:class:`KindModelType` instances.
         """
-        super(KindModelSelectorType, self).__init__(openapi_type="object")
+        super().__init__(openapi_type="object")
         self._kind_type_map = {model.kind: model for model in args}
 
     def validate(self, value):
@@ -296,7 +296,7 @@ class KindModelSelectorType(types.BaseType):
             value_class = self._kind_type_map[value_type_name]
             return value_class.from_simple_type(value)
         except (AttributeError, KeyError):
-            raise UnknownType("Unknown kind for value: %s" % value)
+            raise UnknownType(f"Unknown kind for value: {value}")
 
     def from_unicode(self, value):
         """

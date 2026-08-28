@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import json
 import logging
 import typing
@@ -28,7 +30,7 @@ LOG = logging.getLogger(__name__)
 SCHEMA_METHOD_ORDER = (c.GET, c.CREATE, c.UPDATE, c.FILTER)
 
 
-def sorted_schema_methods(methods: typing.Iterable[str]) -> typing.List[str]:
+def sorted_schema_methods(methods: typing.Iterable[str]) -> list[str]:
     known_methods = list(methods)
     known = [m for m in SCHEMA_METHOD_ORDER if m in known_methods]
     return known + [m for m in known_methods if m not in SCHEMA_METHOD_ORDER]
@@ -48,7 +50,7 @@ def resource_field_parameter_name(resource_name: str, prop_name: str) -> str:
     otherwise overwrite the id parameter -- leaving the `{ResourceUuid}` of
     the path with nothing declaring it.
     """
-    return "{}_{}".format(resource_name, prop_name)
+    return f"{resource_name}_{prop_name}"
 
 
 def schema_body_key(body: typing.Any) -> str:
@@ -90,9 +92,9 @@ def filter_lang_parameter(name, field_names=()):
     return parameter
 
 
-class ResourceSchemaGenerator(object):
+class ResourceSchemaGenerator:
     def __init__(self, resource, route, openapi_version):
-        super(ResourceSchemaGenerator, self).__init__()
+        super().__init__()
         self._resource = resource
         self._route = route
         self._openapi_version = openapi_version
@@ -102,7 +104,7 @@ class ResourceSchemaGenerator(object):
         return self._resource.get_model().__name__
 
     def resource_method_name(self, method):
-        return "{}_{}".format(self.resource_name, method.capitalize())
+        return f"{self.resource_name}_{method.capitalize()}"
 
     def resource_prop_name(self, prop_name):
         return resource_parameter_name(self.resource_name, prop_name)
@@ -155,7 +157,7 @@ class ResourceSchemaGenerator(object):
             try:
                 model = self._resource.get_model()
                 id_prop_struct = model.get_id_property()
-                id_prop = list(id_prop_struct.items())[0]
+                id_prop = next(iter(id_prop_struct.items()))
                 name, prop = id_prop
                 prop = prop(value=prop._kwargs.get("default", 0))
                 prop_kwargs = self.get_prop_kwargs(name)
@@ -175,7 +177,7 @@ class ResourceSchemaGenerator(object):
         return self._resource.generate_schema_object(method, self._openapi_version)
 
 
-class Schema(object):
+class Schema:
     def __init__(
         self,
         summary=None,

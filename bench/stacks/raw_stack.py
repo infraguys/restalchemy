@@ -15,7 +15,7 @@ KIND = "no framework"
 COLUMNS = "id, name, description, enabled, quantity, project_id, created_at, updated_at"
 
 
-class Stack(object):
+class Stack:
     name = NAME
     kind = KIND
 
@@ -36,24 +36,25 @@ class Stack(object):
         return row
 
     def collection(self):
-        with self._pool.connection() as connection:
-            with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
-                cursor.execute(
-                    "SELECT %s FROM %s ORDER BY quantity LIMIT %%s"
-                    % (COLUMNS, config.TABLE),
-                    (config.PAGE,),
-                )
-                documents = [self._document(row) for row in cursor.fetchall()]
+        with self._pool.connection() as connection, connection.cursor(
+            row_factory=pg_rows.dict_row
+        ) as cursor:
+            cursor.execute(
+                f"SELECT {COLUMNS} FROM {config.TABLE} ORDER BY quantity LIMIT %s",
+                (config.PAGE,),
+            )
+            documents = [self._document(row) for row in cursor.fetchall()]
         return 200, orjson.dumps(documents)
 
     def resource(self, item_id):
-        with self._pool.connection() as connection:
-            with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
-                cursor.execute(
-                    "SELECT %s FROM %s WHERE id = %%s" % (COLUMNS, config.TABLE),
-                    (item_id,),
-                )
-                row = cursor.fetchone()
+        with self._pool.connection() as connection, connection.cursor(
+            row_factory=pg_rows.dict_row
+        ) as cursor:
+            cursor.execute(
+                f"SELECT {COLUMNS} FROM {config.TABLE} WHERE id = %s",
+                (item_id,),
+            )
+            row = cursor.fetchone()
         return 200, orjson.dumps(self._document(row))
 
     def create(self, document):
@@ -69,13 +70,14 @@ class Stack(object):
             now,
             now,
         )
-        with self._pool.connection() as connection:
-            with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
-                cursor.execute(
-                    "INSERT INTO %s (%s)"
-                    " VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)"
-                    " RETURNING %s" % (config.TABLE, COLUMNS, COLUMNS),
-                    values,
-                )
-                row = cursor.fetchone()
+        with self._pool.connection() as connection, connection.cursor(
+            row_factory=pg_rows.dict_row
+        ) as cursor:
+            cursor.execute(
+                f"INSERT INTO {config.TABLE} ({COLUMNS})"
+                " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                f" RETURNING {COLUMNS}",
+                values,
+            )
+            row = cursor.fetchone()
         return 201, orjson.dumps(self._document(row))

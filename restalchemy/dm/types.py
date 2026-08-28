@@ -69,7 +69,7 @@ KWARGS_OPENAPI_MAP = {
 }
 MYSQL_DATETIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
 DEFAULT_UUID = str(uuid.UUID("00000000-0000-0000-0000-000000000000"))
-DEFAULT_DATE = datetime.datetime.strptime(
+DEFAULT_DATE = datetime.datetime.strptime(  # noqa: DTZ007
     "2006-01-02 15:04:05.000576", MYSQL_DATETIME_FMT
 )
 DEFAULT_DATE_Z = DEFAULT_DATE.replace(tzinfo=datetime.timezone.utc)
@@ -87,7 +87,7 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
     openapi_type = kwargs.pop(OPENAPI_KEYWORD, None)
     result = {}
     for k, v in KWARGS_OPENAPI_MAP.items():
-        if k in kwargs.keys():
+        if k in kwargs:
             value = kwargs[k]() if callable(kwargs[k]) else kwargs[k]
             if value is None:
                 # `default=None` on a type that does not accept None means
@@ -125,7 +125,7 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
 
 class BaseType(metaclass=abc.ABCMeta):
     def __init__(self, openapi_type="object", openapi_format=None):
-        super(BaseType, self).__init__()
+        super().__init__()
         self._openapi_type = openapi_type
         self._openapi_format = openapi_format
 
@@ -179,7 +179,7 @@ class BaseType(metaclass=abc.ABCMeta):
 
 class BasePythonType(BaseType):
     def __init__(self, python_type, **kwargs):
-        super(BasePythonType, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._python_type = python_type
 
     def validate(self, value):
@@ -197,7 +197,7 @@ class BasePythonType(BaseType):
 
 class Boolean(BasePythonType):
     def __init__(self):
-        super(Boolean, self).__init__(bool, openapi_type="boolean")
+        super().__init__(bool, openapi_type="boolean")
 
     def from_simple_type(self, value):
         return bool(value)
@@ -213,7 +213,7 @@ class Boolean(BasePythonType):
 class String(BasePythonType):
     def __init__(self, min_length=0, max_length=sys.maxsize, **kwargs):
         openapi_type = kwargs.pop("openapi_type", "string")
-        super(String, self).__init__(str, openapi_type=openapi_type, **kwargs)
+        super().__init__(str, openapi_type=openapi_type, **kwargs)
         self.min_length = int(min_length)
         self.max_length = int(max_length)
 
@@ -271,7 +271,7 @@ class Email(String):
         """
         openapi_type = kwargs.pop("openapi_type", "string")
         openapi_format = kwargs.pop("openapi_format", "email")
-        super(Email, self).__init__(
+        super().__init__(
             min_length=min_length,
             max_length=max_length,
             openapi_type=openapi_type,
@@ -287,7 +287,7 @@ class Email(String):
         :param value: Value to validate
         :return: True if value is valid, False otherwise
         """
-        result = super(Email, self).validate(value)
+        result = super().validate(value)
         try:
             email_validator.validate_email(
                 value,
@@ -304,7 +304,7 @@ class Email(String):
 
 class Integer(BasePythonType):
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
-        super(Integer, self).__init__(int, openapi_type="integer")
+        super().__init__(int, openapi_type="integer")
         self.min_value = min_value if min_value == -INFINITY else int(min_value)
         self.max_value = max_value if max_value == INFINITY else int(max_value)
 
@@ -357,7 +357,7 @@ class Integer(BasePythonType):
 
 class Int8(Integer):
     def __init__(self):
-        super(Int8, self).__init__(min_value=0, max_value=2**8 - 1)
+        super().__init__(min_value=0, max_value=2**8 - 1)
 
     @property
     def example(self):
@@ -366,14 +366,12 @@ class Int8(Integer):
 
 class Float(BasePythonType):
     def __init__(self, min_value=-INFINITY, max_value=INFINITY):
-        super(Float, self).__init__(
-            float, openapi_type="number", openapi_format="float"
-        )
+        super().__init__(float, openapi_type="number", openapi_format="float")
         self.min_value = min_value if min_value == -INFINITY else float(min_value)
         self.max_value = max_value if max_value == INFINITY else float(max_value)
 
     def validate(self, value):
-        result = super(Float, self).validate(value)
+        result = super().validate(value)
         return result and self.min_value <= value <= self.max_value
 
     @property
@@ -484,7 +482,7 @@ class Decimal(BasePythonType):
 
 class UUID(BaseType):
     def __init__(self):
-        super(UUID, self).__init__(openapi_type="string", openapi_format="uuid")
+        super().__init__(openapi_type="string", openapi_format="uuid")
 
     def to_simple_type(self, value):
         return str(value)
@@ -530,7 +528,7 @@ class ComplexPythonType(BasePythonType):
 
 class List(ComplexPythonType):
     def __init__(self):
-        super(List, self).__init__(list, openapi_type="array", openapi_format="string")
+        super().__init__(list, openapi_type="array", openapi_format="string")
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
@@ -549,15 +547,15 @@ class List(ComplexPythonType):
 
 class TypedList(List):
     def __init__(self, nested_type):
-        super(TypedList, self).__init__()
+        super().__init__()
         if not isinstance(nested_type, BaseType):
             raise TypeError(
-                "Nested type '%s' is not inherited from %s" % (nested_type, BaseType)
+                f"Nested type '{nested_type}' is not inherited from {BaseType}"
             )
         self._nested_type = nested_type
 
     def validate(self, value):
-        return super(TypedList, self).validate(value) and all(
+        return super().validate(value) and all(
             self._nested_type.validate(item) for item in value
         )
 
@@ -593,12 +591,10 @@ class TypedList(List):
 
 class Dict(ComplexPythonType):
     def __init__(self):
-        super(Dict, self).__init__(dict)
+        super().__init__(dict)
 
     def validate(self, value):
-        return super(Dict, self).validate(value) and all(
-            isinstance(k, str) for k in value
-        )
+        return super().validate(value) and all(isinstance(k, str) for k in value)
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
@@ -633,10 +629,10 @@ def _validate_scheme(scheme):
             invalid_types.append(val)
 
     if non_string_keys:
-        raise ValueError("Scheme keys %r are not strings" % non_string_keys)
+        raise ValueError(f"Scheme keys {non_string_keys!r} are not strings")
     if invalid_types:
         raise ValueError(
-            "Scheme values %r are not %s instances" % (invalid_types, BaseType)
+            f"Scheme values {invalid_types!r} are not {BaseType} instances"
         )
 
 
@@ -652,13 +648,13 @@ def _validate_scheme(scheme):
 
 class SoftSchemeDict(Dict):
     def __init__(self, scheme):
-        super(SoftSchemeDict, self).__init__()
+        super().__init__()
         _validate_scheme(scheme)
         self._scheme = scheme
 
     def validate(self, value):
         return (
-            super(SoftSchemeDict, self).validate(value)
+            super().validate(value)
             and set(value.keys()).issubset(set(self._scheme.keys()))
             and all(self._scheme[k].validate(v) for k, v in value.items())
         )
@@ -667,7 +663,7 @@ class SoftSchemeDict(Dict):
         return {k: self._scheme[k].to_simple_type(v) for k, v in value.items()}
 
     def from_simple_type(self, value):
-        value = super(SoftSchemeDict, self).from_simple_type(value)
+        value = super().from_simple_type(value)
         return {k: self._scheme[k].from_simple_type(v) for k, v in value.items()}
 
     def to_openapi_spec(self, prop_kwargs):
@@ -689,13 +685,13 @@ class SoftSchemeDict(Dict):
 
 class SchemeDict(Dict):
     def __init__(self, scheme):
-        super(SchemeDict, self).__init__()
+        super().__init__()
         _validate_scheme(scheme)
         self._scheme = scheme
 
     def validate(self, value):
         return (
-            super(SchemeDict, self).validate(value)
+            super().validate(value)
             and set(value.keys()) == set(self._scheme.keys())
             and all(scheme.validate(value[key]) for key, scheme in self._scheme.items())
         )
@@ -707,7 +703,7 @@ class SchemeDict(Dict):
         }
 
     def from_simple_type(self, value):
-        value = super(SchemeDict, self).from_simple_type(value)
+        value = super().from_simple_type(value)
         return {
             key: scheme.from_simple_type(value.get(key, None))
             for key, scheme in self._scheme.items()
@@ -732,15 +728,15 @@ class SchemeDict(Dict):
 
 class TypedDict(Dict):
     def __init__(self, nested_type):
-        super(TypedDict, self).__init__()
+        super().__init__()
         if not isinstance(nested_type, BaseType):
             raise TypeError(
-                "Nested type '%s' is not inherited from %s" % (nested_type, BaseType)
+                f"Nested type '{nested_type}' is not inherited from {BaseType}"
             )
         self._nested_type = nested_type
 
     def validate(self, value):
-        return super(TypedDict, self).validate(value) and all(
+        return super().validate(value) and all(
             self._nested_type.validate(element) for element in value.values()
         )
 
@@ -748,7 +744,7 @@ class TypedDict(Dict):
         return {k: self._nested_type.to_simple_type(v) for k, v in value.items()}
 
     def from_simple_type(self, value):
-        value = super(TypedDict, self).from_simple_type(value)
+        value = super().from_simple_type(value)
         return {k: self._nested_type.from_simple_type(v) for k, v in value.items()}
 
     def to_openapi_spec(self, prop_kwargs):
@@ -774,7 +770,7 @@ class UTCDateTimeZ(BasePythonType):
     """A datetime in UTC, with the timezone it guarantees."""
 
     def __init__(self):
-        super(UTCDateTimeZ, self).__init__(
+        super().__init__(
             python_type=datetime.datetime,
             openapi_type="string",
             openapi_format="date-time",
@@ -790,7 +786,9 @@ class UTCDateTimeZ(BasePythonType):
         # formats this type uses are fixed and ASCII, so the parts are
         # written out directly. Same bytes, several times cheaper, and a
         # stored row or an API field is written per property per object.
-        return "%04d-%02d-%02d %02d:%02d:%02d.%06d" % (
+        # `%` stays: the f-string this reads as costs about twice as much,
+        # which is the whole point of writing the parts out by hand.
+        return "%04d-%02d-%02d %02d:%02d:%02d.%06d" % (  # noqa: UP031
             value.year,
             value.month,
             value.day,
@@ -801,8 +799,9 @@ class UTCDateTimeZ(BasePythonType):
         )
 
     def dump_value(self, value):
-        # Converting value in api response
-        return "%04d-%02d-%02dT%02d:%02d:%02d.%06dZ" % (
+        # Converting value in api response. `%` for the same reason as
+        # `to_simple_type`: this one is written per field per response.
+        return "%04d-%02d-%02dT%02d:%02d:%02d.%06dZ" % (  # noqa: UP031
             value.year,
             value.month,
             value.day,
@@ -843,11 +842,11 @@ class UTCDateTimeZ(BasePythonType):
             except ValueError:
                 pass
         try:
-            return datetime.datetime.strptime(value, MYSQL_DATETIME_FMT)
+            return datetime.datetime.strptime(value, MYSQL_DATETIME_FMT)  # noqa: DTZ007
         except ValueError:
             # Used in cases, than we manually convert openapi string in
             # http response to ra type in model
-            return datetime.datetime.strptime(value, OPENAPI_DATETIME_FMT)
+            return datetime.datetime.strptime(value, OPENAPI_DATETIME_FMT)  # noqa: DTZ007
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
@@ -940,13 +939,13 @@ class TimeDelta(BasePythonType):
 
 class DateTime(BasePythonType):
     def __init__(self, min_value=None, max_value=None):
-        super(DateTime, self).__init__(python_type=datetime.datetime)
+        super().__init__(python_type=datetime.datetime)
 
     def to_simple_type(self, value):
         return int(time.mktime(value.utctimetuple()))
 
     def from_simple_type(self, value):
-        return datetime.datetime.utcfromtimestamp(value)
+        return datetime.datetime.fromtimestamp(value, tz=datetime.timezone.utc)
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
@@ -981,7 +980,7 @@ def enum_openapi_type(enum_values):
 
 class Enum(BaseType):
     def __init__(self, enum_values):
-        super(Enum, self).__init__(openapi_type=enum_openapi_type(enum_values))
+        super().__init__(openapi_type=enum_openapi_type(enum_values))
         self._enums_values = copy.deepcopy(enum_values)
 
     @property
@@ -1002,14 +1001,14 @@ class Enum(BaseType):
             if value == str(enum_value):
                 return enum_value
         raise TypeError(
-            "Can't convert '%s' to enum type."
-            " Allowed values are %s" % (value, self._enums_values)
+            f"Can't convert '{value}' to enum type."
+            f" Allowed values are {self._enums_values}"
         )
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
-            "enum": sorted(list(self.values)),
+            "enum": sorted(self.values),
             "example": self.example,
         }
         spec.update(build_prop_kwargs(kwargs=prop_kwargs))
@@ -1025,7 +1024,7 @@ class BaseRegExpType(BaseType):
     """BaseCompiledRegExpTypeFromAttr is preferred to be used"""
 
     def __init__(self, pattern, openapi_type="string", **kwargs):
-        super(BaseRegExpType, self).__init__(openapi_type, **kwargs)
+        super().__init__(openapi_type, **kwargs)
         self._pattern = re.compile(pattern)
 
     def validate(self, value):
@@ -1074,16 +1073,14 @@ class BaseCompiledRegExpType(BaseRegExpType):
 
 class BaseCompiledRegExpTypeFromAttr(BaseCompiledRegExpType):
     def __init__(self, **kwargs):
-        super(BaseCompiledRegExpTypeFromAttr, self).__init__(
-            pattern=self.pattern, **kwargs
-        )
+        super().__init__(pattern=self.pattern, **kwargs)
 
 
 class Uri(BaseCompiledRegExpTypeFromAttr):
-    pattern = re.compile(r"^(/[A-Za-z0-9\-_]*)*/%s$" % UUID_RE_TEMPLATE)
+    pattern = re.compile(rf"^(/[A-Za-z0-9\-_]*)*/{UUID_RE_TEMPLATE}$")
 
     def __init__(self):
-        super(Uri, self).__init__(
+        super().__init__(
             openapi_type="string",
             openapi_format="uri",
         )
@@ -1097,7 +1094,7 @@ class Mac(BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
 
     def __init__(self):
-        super(Mac, self).__init__(
+        super().__init__(
             openapi_type="string",
             openapi_format="mac",
         )
@@ -1113,7 +1110,7 @@ class Hostname(BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(HOSTNAME_RE_TEMPLATE)
 
     def __init__(self):
-        super(Hostname, self).__init__(
+        super().__init__(
             openapi_type="hostname",
         )
 
@@ -1132,7 +1129,7 @@ class Url(BaseCompiledRegExpTypeFromAttr):
     # Since OpenAPI patterns do not support Python's re.IGNORECASE flag, lowercase a-z symbols are explicitly added to the regex pattern.
     pattern = re.compile(
         r"^(?:http|ftp)s?://"
-        r"(?:(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:[A-Za-z]{2,6}\.?|[A-Za-z0-9-]{2,}\.?)|"  # noqa
+        r"(?:(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:[A-Za-z]{2,6}\.?|[A-Za-z0-9-]{2,}\.?)|"
         r"localhost|"
         r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
         r"(?::\d+)?"
@@ -1147,7 +1144,7 @@ class Url(BaseCompiledRegExpTypeFromAttr):
 
 class AllowNone(BaseType):
     def __init__(self, nested_type):
-        super(AllowNone, self).__init__(openapi_type="string")
+        super().__init__(openapi_type="string")
         self._nested_type = nested_type
 
     @property
@@ -1181,13 +1178,12 @@ class AllowNone(BaseType):
                         spec["type"].append("null")
                 elif spec["type"] != "null":
                     spec["type"] = [spec["type"], "null"]
-            elif "oneOf" in spec:
-                # A sum type names no type of its own, so the null has to
-                # join the alternatives -- exactly one of which matches it.
-                if not any(
-                    alternative.get("type") == "null" for alternative in spec["oneOf"]
-                ):
-                    spec["oneOf"].append({"type": "null"})
+            # A sum type names no type of its own, so the null has to join
+            # the alternatives -- exactly one of which matches it.
+            elif "oneOf" in spec and not any(
+                alternative.get("type") == "null" for alternative in spec["oneOf"]
+            ):
+                spec["oneOf"].append({"type": "null"})
         else:
             spec["nullable"] = True
         return spec

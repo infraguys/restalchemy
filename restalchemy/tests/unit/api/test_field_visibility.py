@@ -21,7 +21,8 @@ every other request that would be told the same. These are the requests
 that must not be told the same.
 """
 
-import mock
+from unittest import mock
+
 import webob
 
 from restalchemy.api import constants
@@ -42,7 +43,7 @@ class VisibilityModel(models.ModelWithUUID):
 
 
 def request_for(method=constants.GET, roles=(), fields=()):
-    query = "&".join("fields=%s" % name for name in fields)
+    query = "&".join(f"fields={name}" for name in fields)
     req = webob.Request.blank("/things/" + ("?" + query if query else ""))
     req.api_context = contexts.RequestContext(req)
     req.api_context.set_active_method(method)
@@ -57,13 +58,13 @@ def packed_names(resource, req):
 
 class FieldVisibilityTestCase(base.BaseTestCase):
     def tearDown(self):
-        super(FieldVisibilityTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
 
 class MethodTestCase(FieldVisibilityTestCase):
     def setUp(self):
-        super(MethodTestCase, self).setUp()
+        super().setUp()
         self.resource = resources.ResourceByRAModel(
             VisibilityModel,
             hidden_fields=resources.HiddenFieldMap(
@@ -219,7 +220,7 @@ class RoleTestCase(FieldVisibilityTestCase):
         for number in range(resource._MAX_VISIBILITY_CACHES * 3):
             self.assertEqual(
                 ["name", "other", "uuid"],
-                packed_names(resource, request_for(roles=["role-%d" % number])),
+                packed_names(resource, request_for(roles=[f"role-{number}"])),
             )
 
         self.assertLessEqual(
@@ -230,7 +231,7 @@ class RoleTestCase(FieldVisibilityTestCase):
 
 class ProjectionTestCase(FieldVisibilityTestCase):
     def setUp(self):
-        super(ProjectionTestCase, self).setUp()
+        super().setUp()
         self.resource = resources.ResourceByRAModel(VisibilityModel)
 
     def test_a_projection_narrows_only_the_request_that_asked(self):

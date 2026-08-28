@@ -23,7 +23,7 @@ from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import utils as oa_utils
 
 
-class OpenApiContact(object):
+class OpenApiContact:
     """Contact Object
 
     Contact information for the exposed API.
@@ -39,7 +39,7 @@ class OpenApiContact(object):
     """
 
     def __init__(self, name=None, url=None, email=None):
-        super(OpenApiContact, self).__init__()
+        super().__init__()
         self._name = name
         self._url = url
         self._email = email
@@ -54,7 +54,7 @@ class OpenApiContact(object):
         return {"contact": {k: v for k, v in contact_spec.items()}}
 
 
-class OpenApiLicense(object):
+class OpenApiLicense:
     """License Object
 
     License information for the exposed API.
@@ -67,7 +67,7 @@ class OpenApiLicense(object):
     """
 
     def __init__(self, name, url=None):
-        super(OpenApiLicense, self).__init__()
+        super().__init__()
         self._name = name
         self._url = url
 
@@ -84,13 +84,13 @@ class OpenApiLicense(object):
 
 class OpenApiApacheLicense(OpenApiLicense):
     def __init__(self):
-        super(OpenApiApacheLicense, self).__init__(
+        super().__init__(
             name="Apache 2.0",
             url="https://www.apache.org/licenses/LICENSE-2.0.html",
         )
 
 
-class OpenApiInfo(object):
+class OpenApiInfo:
     """Info Object
 
     The object provides metadata about the API. The metadata MAY be used by
@@ -126,7 +126,7 @@ class OpenApiInfo(object):
         terms_of_service=None,
         contact=None,
     ):
-        super(OpenApiInfo, self).__init__()
+        super().__init__()
         self._title = title or "OpenAPI service schema"
         self._version = version or "1.0.0"
         self._description = description or ""
@@ -154,9 +154,9 @@ class OpenApiInfo(object):
         return {"info": info_spec}
 
 
-class OpenApiPaths(object):
+class OpenApiPaths:
     def __init__(self):
-        super(OpenApiPaths, self).__init__()
+        super().__init__()
 
     def _build_api_paths(
         self, route, current_path, paths_traveled, request, parameters=None
@@ -192,7 +192,7 @@ class OpenApiPaths(object):
                             next_route, next_path, paths_traveled, request, parameters
                         )
                     )
-                    paths, schemas = next_route(request).build_openapi_specification(
+                    paths, _schemas = next_route(request).build_openapi_specification(
                         next_path, parameters
                     )
                     result_spec.update(paths)
@@ -209,10 +209,10 @@ class OpenApiPaths(object):
         return {"paths": paths_spec}
 
 
-class OpenApiComponents(object):
+class OpenApiComponents:
     def __init__(self, openapi_version):
         self.openapi_version = openapi_version
-        super(OpenApiComponents, self).__init__()
+        super().__init__()
 
     @staticmethod
     def _build_schemas_by_resources(route, schema_generator):
@@ -293,12 +293,12 @@ class OpenApiComponents(object):
         return {"components": component_spec}
 
 
-class OpenApiSecurity(object):
+class OpenApiSecurity:
     def __init__(self):
-        super(OpenApiSecurity, self).__init__()
+        super().__init__()
 
 
-class OpenApiTag(object):
+class OpenApiTag:
     """Tag Object
 
     Adds metadata to a single tag that is used by the Operation Object. It is
@@ -312,7 +312,7 @@ class OpenApiTag(object):
     """
 
     def __init__(self, name, description="", external_docs=None):
-        super(OpenApiTag, self).__init__()
+        super().__init__()
         self._name = name
         self._description = description
         self._external_docs = external_docs
@@ -323,33 +323,25 @@ class OpenApiTag(object):
 
     def build(self, request=None):
         value = {"name": self._name, "description": self._description}
-        if self._external_docs:
-            if isinstance(self._external_docs, OpenApiExternalDocs):
-                value["externalDocs"] = self._external_docs.build(request)
+        if self._external_docs and isinstance(self._external_docs, OpenApiExternalDocs):
+            value["externalDocs"] = self._external_docs.build(request)
         return value
 
 
-class OpenApiTags(object):
+class OpenApiTags:
     """Tags Object"""
 
     def __init__(self, tags):
-        super(OpenApiTags, self).__init__()
+        super().__init__()
         self._tags = tags
 
     def _build_route_tag(self, route, current_path, request):
-        result_spec = list()
+        result_spec = []
 
         # process next routes
         for route_name in route.get_routes():
             next_route = route.get_route(route_name)
-            if next_route.is_collection_route():
-                next_path = posixpath.join(current_path, route_name)
-                result_spec.extend(
-                    self._build_route_tag(next_route, next_path, request)
-                )
-                tags = next_route(request).openapi_tags()
-                result_spec.extend(tags)
-            elif next_route.is_resource_route():
+            if next_route.is_collection_route() or next_route.is_resource_route():
                 next_path = posixpath.join(current_path, route_name)
                 result_spec.extend(
                     self._build_route_tag(next_route, next_path, request)
@@ -373,9 +365,9 @@ class OpenApiTags(object):
         return tags
 
 
-class OpenApiExternalDocs(object):
+class OpenApiExternalDocs:
     def __init__(self, url, description=None):
-        super(OpenApiExternalDocs, self).__init__()
+        super().__init__()
         self._url = url
         self._description = description
 
@@ -383,9 +375,9 @@ class OpenApiExternalDocs(object):
         return {"url": self._url, "description": self._description}
 
 
-class OpenApiServers(object):
+class OpenApiServers:
     def __init__(self, url=None, description=None, variables=None, versions=None):
-        super(OpenApiServers, self).__init__()
+        super().__init__()
         self._url = url
         self._description = description
         self._variables = variables

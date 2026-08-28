@@ -142,7 +142,7 @@ def build_openapi_create_response(ref_name):
             "description": ref_name,
             "content": {
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                    "schema": {"$ref": "#/components/schemas/{}".format(ref_name)}
+                    "schema": {"$ref": f"#/components/schemas/{ref_name}"}
                 }
             },
         },
@@ -156,7 +156,7 @@ def build_openapi_get_update_response(ref_name):
             "description": ref_name,
             "content": {
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
-                    "schema": {"$ref": "#/components/schemas/{}".format(ref_name)}
+                    "schema": {"$ref": f"#/components/schemas/{ref_name}"}
                 }
             },
         },
@@ -172,7 +172,7 @@ def build_openapi_list_model_response(ref_name):
                 ra_const.CONTENT_TYPE_APPLICATION_JSON: {
                     "schema": {
                         "type": "array",
-                        "items": {"$ref": "#/components/schemas/{}".format(ref_name)},
+                        "items": {"$ref": f"#/components/schemas/{ref_name}"},
                     }
                 }
             },

@@ -15,8 +15,8 @@
 #    under the License.
 
 import http.client as http_client
+from unittest import mock
 
-import mock
 from webob import request
 
 from restalchemy.api.middlewares import errors
@@ -25,7 +25,7 @@ from restalchemy.storage import exceptions as ra_exceptions
 from restalchemy.tests.unit import base
 
 
-class FakeResponse(object):
+class FakeResponse:
     def __init__(self, status, json, **kwargs):
         self.status = status
         self.status_code = int(status)

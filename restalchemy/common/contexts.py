@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import contextlib
 import logging
 import threading
@@ -24,7 +26,7 @@ from restalchemy.storage.sql import engines
 LOG = logging.getLogger(__name__)
 
 
-class Context(object):
+class Context:
     def __init__(
         self,
         engine_name=engines.DEFAULT_NAME,
@@ -40,7 +42,7 @@ class Context(object):
             use when the context is in read-only mode.
         :type readonly_engine_name: str
         """
-        super(Context, self).__init__()
+        super().__init__()
         self._engine_name = engine_name
         self._readonly_engine_name = readonly_engine_name
         self._is_readonly = False
@@ -227,7 +229,7 @@ class ContextIsNotExistsInStorage(ContextRuntimeException):
 
 
 class Storage:
-    def __init__(self, data: dict = None):
+    def __init__(self, data: dict | None = None):
         """
         Initialize the global storage.
 
@@ -285,9 +287,8 @@ class Storage:
             force is False.
         """
 
-        if name in self._storage and self._storage[name]["read_only"]:
-            if not force:
-                raise ReadOnlyStorage(name=name)
+        if name in self._storage and self._storage[name]["read_only"] and not force:
+            raise ReadOnlyStorage(name=name)
 
         del self._storage[name]
 
@@ -314,7 +315,7 @@ class ContextWithStorage(Context):
             use when the context is in read-only mode. Defaults to None.
         :type readonly_engine_name: str or None
         """
-        super(ContextWithStorage, self).__init__(
+        super().__init__(
             engine_name=engine_name,
             readonly_engine_name=readonly_engine_name,
         )

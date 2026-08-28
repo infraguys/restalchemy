@@ -26,17 +26,17 @@ OTHER_ROW = ("a row that was here first",)
 def _table_named(name):
     """A table of somebody else's, with a row in it to recognise."""
     with psycopg.connect(config.DATABASE_URL, autocommit=True) as connection:
-        connection.execute("DROP TABLE IF EXISTS %s" % name)
-        connection.execute("CREATE TABLE %s (note text)" % name)
-        connection.execute("INSERT INTO %s (note) VALUES (%%s)" % name, OTHER_ROW)
+        connection.execute(f"DROP TABLE IF EXISTS {name}")
+        connection.execute(f"CREATE TABLE {name} (note text)")
+        connection.execute(f"INSERT INTO {name} (note) VALUES (%s)", OTHER_ROW)
         try:
             yield connection
         finally:
-            connection.execute("DROP TABLE IF EXISTS %s" % name)
+            connection.execute(f"DROP TABLE IF EXISTS {name}")
 
 
 def _rows(connection, name):
-    return connection.execute("SELECT note FROM %s" % name).fetchall()
+    return connection.execute(f"SELECT note FROM {name}").fetchall()
 
 
 def test_a_run_leaves_an_unrelated_table_alone():
@@ -90,7 +90,7 @@ def main():
     for name, check in sorted(globals().items()):
         if name.startswith("test_"):
             check()
-            print("ok   %s" % name)
+            print(f"ok   {name}")
 
 
 if __name__ == "__main__":

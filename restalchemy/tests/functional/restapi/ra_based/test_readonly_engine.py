@@ -52,7 +52,7 @@ def _can_connect_db(db_url):
             conn.close()
             pool._remove_connections()
             return True
-    except Exception:
+    except Exception:  # noqa: S110, BLE001
         pass
     return False
 
@@ -67,11 +67,11 @@ def _get_db_uri(schema):
     if schema == "postgresql":
         if env_uri and env_uri.split(":")[0] == "postgresql":
             return env_uri
-        return "postgresql://postgres:1234@172.17.0.2:5432/postgres_core"
+        return "postgresql://postgres:test_password@localhost:5432/ra_database"
     else:
         if env_uri and env_uri.split(":")[0] == "mysql":
             return env_uri
-        return "mysql://root:1234@172.17.0.3:3306/mysql"
+        return "mysql://root:test_password@localhost:3306/ra_database"
 
 
 _PG_URI = _get_db_uri("postgresql")
@@ -86,11 +86,11 @@ class TestPostgresReadonlyEngineFunctional(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestPostgresReadonlyEngineFunctional, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        super(TestPostgresReadonlyEngineFunctional, cls).tearDownClass()
+        super().tearDownClass()
         engines.engine_factory.destroy_all_engines()
 
     @unittest.skipIf(not _PG_AVAILABLE, "PostgreSQL not available")
@@ -135,7 +135,7 @@ class TestPostgresReadonlyEngineFunctional(unittest.TestCase):
                 self.assertIn(
                     "read-only",
                     error_message,
-                    "Expected readonly transaction error, got: %s" % cm.exception,
+                    f"Expected readonly transaction error, got: {cm.exception}",
                 )
             finally:
                 session.close()
@@ -159,9 +159,8 @@ class TestPostgresReadonlyEngineFunctional(unittest.TestCase):
         # Setup: create test table with normal engine
         normal_engine = engines.PgSQLEngine(db_url=_PG_URI, readonly=False)
         normal_session = normal_engine.get_session()
-        normal_session.execute(
-            "CREATE TABLE IF NOT EXISTS _pg_rollback (id INT, value TEXT)"
-        )
+        normal_session.execute("DROP TABLE IF EXISTS _pg_rollback")
+        normal_session.execute("CREATE TABLE _pg_rollback (id INT, value TEXT)")
         normal_session.execute("INSERT INTO _pg_rollback VALUES (1, 'initial')")
         normal_session.commit()
         normal_session.close()
@@ -182,16 +181,15 @@ class TestPostgresReadonlyEngineFunctional(unittest.TestCase):
 
         # Try to write with readonly context - should fail with DB error
         ctx.set_readonly(True)
-        with self.assertRaises(Exception) as cm:
-            with ctx.session_manager() as session:
-                session.execute("INSERT INTO _pg_rollback VALUES (2, 'readonly_write')")
+        with self.assertRaises(Exception) as cm, ctx.session_manager() as session:
+            session.execute("INSERT INTO _pg_rollback VALUES (2, 'readonly_write')")
 
         # Verify the error is related to readonly transaction
         error_message = str(cm.exception).lower()
         self.assertIn(
             "read-only",
             error_message,
-            "Expected readonly error, got: %s" % cm.exception,
+            f"Expected readonly error, got: {cm.exception}",
         )
 
         # Verify data was not inserted
@@ -279,11 +277,11 @@ class TestMySQLEngineFunctional(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestMySQLEngineFunctional, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        super(TestMySQLEngineFunctional, cls).tearDownClass()
+        super().tearDownClass()
         engines.engine_factory.destroy_all_engines()
 
     @unittest.skipIf(not _MYSQL_AVAILABLE, "MySQL not available")
@@ -326,7 +324,7 @@ class TestMySQLEngineFunctional(unittest.TestCase):
                 self.assertIn(
                     "read only",
                     error_message,
-                    "Expected readonly error, got: %s" % cm.exception,
+                    f"Expected readonly error, got: {cm.exception}",
                 )
             finally:
                 session.close()

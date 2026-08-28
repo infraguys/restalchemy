@@ -20,6 +20,7 @@ import collections
 from collections import abc as collections_abc
 import copy
 import inspect
+import typing
 
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
@@ -84,7 +85,7 @@ def _check_property_type(property_type):
     if property_type_class in _verified_property_types:
         return
     if not isinstance(property_type, types.BaseType):
-        raise TypeError("Property type must be instance of %s" % types.BaseType)
+        raise TypeError(f"Property type must be instance of {types.BaseType}")
     _verified_property_types.add(property_type_class)
 
 
@@ -121,7 +122,7 @@ class Property(BaseProperty):
         self._example = example
 
     def is_dirty(self):
-        return not self._first_value == self.value
+        return self._first_value != self.value
 
     def _safe_value(self, value):
         if value is None or self._type.validate(value):
@@ -151,9 +152,8 @@ class Property(BaseProperty):
 
     @value.setter
     def value(self, value):
-        if self.is_read_only() or self.is_id_property():
-            if value != self._value:
-                raise exc.ReadOnlyProperty()
+        if (self.is_read_only() or self.is_id_property()) and value != self._value:
+            raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 
     def set_value_force(self, value):
@@ -183,7 +183,7 @@ _PLAIN_PROPERTY_KWARGS = frozenset(
 )
 
 
-class PropertyCreator(object):
+class PropertyCreator:
     def __init__(self, prop_class, prop_type, args, kwargs):
         self._property = prop_class
         self._property_type = prop_type
@@ -256,9 +256,9 @@ class PropertyCreator(object):
     def __call__(self, value):
         if not self._fast:
             return self._property(
-                value=value,
-                property_type=self._property_type,
+                self._property_type,
                 *self._args,
+                value=value,
                 **self._kwargs,
             )
 
@@ -338,7 +338,7 @@ class PropertyMapping(collections_abc.Mapping, metaclass=abc.ABCMeta):
 class PropertyCollection(PropertyMapping):
     # A declaration keeps no values, so a model reaching here before it
     # has any finds none -- the same shape a manager has.
-    _values = {}
+    _values: typing.ClassVar[dict] = {}
 
     def __init__(self, **kwargs):
         self._properties = kwargs
@@ -350,7 +350,7 @@ class PropertyCollection(PropertyMapping):
         self._plain = None
         self._pour_plan = None
         self._plan_version = -1
-        super(PropertyCollection, self).__init__()
+        super().__init__()
 
     @builtins.property
     def pour_plan(self):
@@ -448,8 +448,7 @@ class PropertyCollection(PropertyMapping):
             props.update(other.properties)
             return type(self)(**props)
         raise TypeError(
-            "Cannot concatenate %s and %s objects"
-            % (type(self).__name__, type(other).__name__)
+            f"Cannot concatenate {type(self).__name__} and {type(other).__name__} objects"
         )
 
     def instantiate_property(self, name, value=None):
@@ -482,7 +481,7 @@ class PropertyManager(PropertyMapping):
     #: by every manager and must stay empty. `_properties` is not one of
     #: these: `PropertyMapping` hands out a view over it that would go
     #: on viewing the mapping it was built over.
-    _first_values = {}
+    _first_values: typing.ClassVar[dict] = {}
 
     def __init__(self, property_collection, **kwargs):
         self._collection = property_collection
@@ -497,7 +496,7 @@ class PropertyManager(PropertyMapping):
         # commented because kwargs can contain 'context' etc. Figure out
         #        if len(kwargs) > 0:
         #            raise TypeError("Unknown parameters: %s" % str(kwargs))
-        super(PropertyManager, self).__init__()
+        super().__init__()
 
     @classmethod
     def poured(cls, property_collection, values, plan=None, convert=None):
@@ -640,7 +639,7 @@ class PropertyManager(PropertyMapping):
         if first_values:
             values = self._values
             for name, first in first_values.items():
-                if name in values and not first == values[name]:
+                if name in values and first != values[name]:
                     return True
         for prop in self._properties.values():
             if prop.is_dirty():
@@ -707,9 +706,8 @@ def property(property_type, *args, **kwargs):
         )
     else:
         raise ValueError(
-            "Value of property class argument (%s) must be"
+            f"Value of property class argument ({property_class!s}) must be"
             " inherited on AbstractProperty class"
-            "" % str(property_class)
         )
 
 
@@ -717,7 +715,7 @@ def container(**kwargs):
     kwargs = copy.deepcopy(kwargs)
     for prop in kwargs.values():
         if not isinstance(prop, (PropertyCreator, PropertyCollection)):
-            raise Exception("Only property, relationship and container are allowed.")
+            raise Exception("Only property, relationship and container are allowed.")  # noqa: TRY002, TRY004
     return PropertyCollection(**kwargs)
 
 

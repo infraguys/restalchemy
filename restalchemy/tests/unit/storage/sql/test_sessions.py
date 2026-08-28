@@ -14,8 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
-from mock import patch
+from unittest import mock
+from unittest.mock import patch
+
 from mysql.connector import errors
 
 from restalchemy.storage import exceptions as exc
@@ -25,11 +26,11 @@ from restalchemy.tests.unit import base
 
 class TestLocalThreadStorage(base.BaseTestCase):
     def setUp(self):
-        super(TestLocalThreadStorage, self).setUp()
+        super().setUp()
         self._storage = sessions.SessionThreadStorage()
 
     def tearDown(self):
-        super(TestLocalThreadStorage, self).tearDown()
+        super().tearDown()
         self._storage.remove_session()
         del self._storage
 

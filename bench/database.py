@@ -47,7 +47,8 @@ def running():
     try:
         with psycopg.connect(config.DATABASE_URL, connect_timeout=2):
             return True
-    except Exception:
+    # Whatever kept us out, the cluster is not ours to talk to.
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -76,7 +77,7 @@ def start():
             "-D",
             config.DATA_DIR,
             "-o",
-            "-p %d -h 127.0.0.1 -k %s" % (config.PORT, config.DATA_DIR),
+            f"-p {config.PORT} -h 127.0.0.1 -k {config.DATA_DIR}",
             "-l",
             os.path.join(config.DATA_DIR, "server.log"),
             "start",
@@ -109,7 +110,8 @@ def _database_ready(binary):
             stderr=subprocess.DEVNULL,
         )
         return running()
-    except Exception:
+    # A cluster that would not come up is reported, not raised.
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -131,7 +133,7 @@ def _table_name():
     name = config.TABLE
     if not re.match(r"^[a-z_][a-z0-9_]*$", name):
         raise SystemExit(
-            "BENCH_TABLE must be a plain lowercase identifier, got %r" % name
+            f"BENCH_TABLE must be a plain lowercase identifier, got {name!r}"
         )
     return name
 
@@ -160,11 +162,10 @@ def refuse_unmarked(connection, table):
     if mark is None or mark == config.TABLE_MARK or config.DROP_UNMARKED:
         return
     raise SystemExit(
-        "the table %r in this database was not created by the benchmark"
-        " (it carries %r, not the benchmark's mark), and a run would drop"
+        f"the table {table!r} in this database was not created by the benchmark"
+        f" (it carries {mark!r}, not the benchmark's mark), and a run would drop"
         " it.\nPoint BENCH_TABLE at a name of your own, or set"
         " BENCH_DROP_UNMARKED=yes if dropping this one is what you mean."
-        % (table, mark)
     )
 
 
@@ -184,8 +185,8 @@ def seed(rows=None):
         records.append(
             (
                 uuid.UUID(int=number + 1),
-                "item %d" % number,
-                "a description of item %d" % number,
+                f"item {number}",
+                f"a description of item {number}",
                 number % 3 != 0,
                 number,
                 project,
@@ -201,9 +202,9 @@ def seed(rows=None):
         connection.execute(SCHEMA.format(table=table, mark=config.TABLE_MARK))
         with connection.cursor() as cursor:
             cursor.executemany(
-                "INSERT INTO %s (id, name, description, enabled, quantity,"
+                f"INSERT INTO {table} (id, name, description, enabled, quantity,"
                 " project_id, created_at, updated_at)"
-                " VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, %%s)" % table,
+                " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                 records,
             )
     return records
@@ -212,11 +213,12 @@ def seed(rows=None):
 def expected(page=None):
     """What every stack must answer with, read straight from the table."""
     page = page or config.PAGE
-    with psycopg.connect(config.DATABASE_URL) as connection:
-        with connection.cursor(row_factory=psycopg.rows.dict_row) as cursor:
-            cursor.execute(
-                "SELECT * FROM %s ORDER BY quantity LIMIT %%s" % _table_name(),
-                (page,),
-            )
-            collection = cursor.fetchall()
+    with psycopg.connect(config.DATABASE_URL) as connection, connection.cursor(
+        row_factory=psycopg.rows.dict_row
+    ) as cursor:
+        cursor.execute(
+            f"SELECT * FROM {_table_name()} ORDER BY quantity LIMIT %s",
+            (page,),
+        )
+        collection = cursor.fetchall()
     return collection

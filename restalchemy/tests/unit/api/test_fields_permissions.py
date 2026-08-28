@@ -35,21 +35,21 @@ class FakeModel(models.CustomPropertiesMixin, models.ModelWithUUID):
     standard_field5 = properties.property(types.Integer())
 
 
-class FakeMemberContext(object):
-    roles = ["_member_"]
+class FakeMemberContext:
+    roles = ["_member_"]  # noqa: RUF012
 
 
-class FakeAdminContext(object):
-    roles = ["admin"]
+class FakeAdminContext:
+    roles = ["admin"]  # noqa: RUF012
 
 
-class FakeEmptyContext(object):
-    roles = []
+class FakeEmptyContext:
+    roles = []  # noqa: RUF012
 
 
 class ResourceByRAModelFieldsPermissions(unittest.TestCase):
     def setUp(self):
-        super(ResourceByRAModelFieldsPermissions, self).setUp()
+        super().setUp()
 
         self.resource = resources.ResourceByRAModel(
             FakeModel,
@@ -95,7 +95,7 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
         self._request.api_context = contexts.RequestContext(self._request)
 
     def tearDown(self):
-        super(ResourceByRAModelFieldsPermissions, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._request
 
@@ -167,7 +167,7 @@ class ResourceByRAModelFieldsPermissions(unittest.TestCase):
 
 class ResourceByRAModelFieldsPermissionsRoleAdmin(ResourceByRAModelFieldsPermissions):
     def setUp(self):
-        super(ResourceByRAModelFieldsPermissionsRoleAdmin, self).setUp()
+        super().setUp()
         admin_context = FakeAdminContext()
         self._request.context = admin_context
 
@@ -301,7 +301,7 @@ class ResourceByRAModelFieldsPermissionsRoleAdmin(ResourceByRAModelFieldsPermiss
 
 class ResourceByRAModelFieldsPermissionsNoRole(ResourceByRAModelFieldsPermissions):
     def setUp(self):
-        super(ResourceByRAModelFieldsPermissionsNoRole, self).setUp()
+        super().setUp()
         empty_context = FakeEmptyContext()
         self._request.context = empty_context
 
@@ -374,7 +374,7 @@ class ResourceByRAModelFieldsPermissionsNoRole(ResourceByRAModelFieldsPermission
 
 class ResourceByRAModelFieldsPermissionsRoleMember(ResourceByRAModelFieldsPermissions):
     def setUp(self):
-        super(ResourceByRAModelFieldsPermissionsRoleMember, self).setUp()
+        super().setUp()
         member_context = FakeMemberContext()
         self._request.context = member_context
 

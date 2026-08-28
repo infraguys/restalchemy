@@ -14,8 +14,7 @@
 #    under the License.
 
 import unittest
-
-import mock
+from unittest import mock
 
 from restalchemy.common import contexts
 from restalchemy.storage.sql import engines
@@ -65,9 +64,8 @@ class TestContext(unittest.TestCase):
         self._configure_mocks(engine_factory_mock)
         context = contexts.Context()
 
-        with self.assertRaises(SomeError):
-            with context.session_manager():
-                raise SomeError()
+        with self.assertRaises(SomeError), context.session_manager():
+            raise SomeError()
 
         self._session.commit.assert_not_called()
         self._session.rollback.assert_called_once()
@@ -91,9 +89,8 @@ class TestContext(unittest.TestCase):
         self._session.commit.side_effect = SomeError
         context = contexts.Context()
 
-        with self.assertRaises(SomeError):
-            with context.session_manager():
-                pass
+        with self.assertRaises(SomeError), context.session_manager():
+            pass
 
         self._session.commit.assert_called_once()
         self._session.rollback.assert_called_once()
@@ -110,9 +107,8 @@ class TestContext(unittest.TestCase):
         )
         context = contexts.Context()
 
-        with self.assertRaises(SomeError):
-            with context.session_manager():
-                pass
+        with self.assertRaises(SomeError), context.session_manager():
+            pass
 
         self._session.commit.assert_called_once()
         self._session.rollback.assert_called_once()
@@ -136,9 +132,8 @@ class TestContext(unittest.TestCase):
         context = contexts.Context(readonly_engine_name="readonly")
 
         context.set_readonly(True)
-        with self.assertRaises(SomeError):
-            with context.session_manager():
-                raise SomeError()
+        with self.assertRaises(SomeError), context.session_manager():
+            raise SomeError()
 
         self._session.commit.assert_not_called()
         self._session.rollback.assert_called_once()

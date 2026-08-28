@@ -25,7 +25,7 @@ DEFAULT_SAVEPOINT_NAME = "default_savepoint"
 
 
 def escape(value):
-    return "`%s`" % value
+    return f"`{value}`"
 
 
 @contextlib.contextmanager
@@ -53,20 +53,20 @@ def savepoint(name: str = DEFAULT_SAVEPOINT_NAME):
     elif dialect_name == mysql_dialect.MySQLDialect.DIALECT_NAME:
         expression_map = mysql_dialect.SAVEPOINT_EXP_MAP
     else:
-        raise ValueError("Unsupported database dialect: %s" % dialect_name)
+        raise ValueError(f"Unsupported database dialect: {dialect_name}")
 
     savepoint_exp = expression_map["savepoint"].format(name=name)
     rollback_exp = expression_map["rollback"].format(name=name)
     release_exp = expression_map["release"].format(name=name)
 
     session = ctx.get_session()
-    session.execute(savepoint_exp, tuple())
+    session.execute(savepoint_exp, ())
 
     try:
         yield session
     except Exception:
         LOG.error("Exception occurred, rolling back to savepoint")
-        session.execute(rollback_exp, tuple())
+        session.execute(rollback_exp, ())
         raise
     finally:
-        session.execute(release_exp, tuple())
+        session.execute(release_exp, ())

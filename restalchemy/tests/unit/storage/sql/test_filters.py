@@ -233,7 +233,7 @@ class LETestCase(base.BaseTestCase):
 
 
 class InTestCase(base.BaseTestCase):
-    TEST_LIST_VALUES = [1, 2, 3]
+    TEST_LIST_VALUES = [1, 2, 3]  # noqa: RUF012
 
     def setUp(self):
         self._expr = filters.MySqlIn(
@@ -254,7 +254,7 @@ class InTestCase(base.BaseTestCase):
 
 
 class NotInTestCase(base.BaseTestCase):
-    TEST_LIST_VALUES = [1, 2, 3]
+    TEST_LIST_VALUES = [1, 2, 3]  # noqa: RUF012
 
     def setUp(self):
         self._expr = filters.MySqlNotIn(
@@ -300,7 +300,7 @@ class _PostgreSqlSessionFixture(mock.Mock):
 
 
 class PostgreSqlInTestCase(base.BaseTestCase):
-    TEST_LIST_VALUES = [1, 2, 3]
+    TEST_LIST_VALUES = [1, 2, 3]  # noqa: RUF012
 
     def setUp(self):
         self._expr = filters.PostgreSqlIn(
@@ -321,7 +321,7 @@ class PostgreSqlInTestCase(base.BaseTestCase):
 class PostgreSqlNotInTestCase(base.BaseTestCase):
     """NOT IN must not use != ANY (PostgreSQL OR semantics)."""
 
-    TEST_LIST_VALUES = ["pending", "cancelled"]
+    TEST_LIST_VALUES = ["pending", "cancelled"]  # noqa: RUF012
 
     def setUp(self):
         self._expr = filters.PostgreSqlNotIn(
@@ -333,7 +333,7 @@ class PostgreSqlNotInTestCase(base.BaseTestCase):
 
     def test_construct_expression_uses_negated_any(self):
         result = self._expr.construct_expression()
-        self.assertEqual("NOT (%s = ANY(%%s))" % TEST_NAME, result)
+        self.assertEqual(f"NOT ({TEST_NAME} = ANY(%s))", result)
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, self.TEST_LIST_VALUES)
@@ -495,7 +495,7 @@ class TaggedModel(models.Model):
 
 
 class PostgreSqlContainsAllTestCase(base.BaseTestCase):
-    TEST_TAGS = ["env:prod", "region:us"]
+    TEST_TAGS = ["env:prod", "region:us"]  # noqa: RUF012
 
     def setUp(self):
         self._expr = filters.PostgreSqlContainsAll(
@@ -513,7 +513,7 @@ class PostgreSqlContainsAllTestCase(base.BaseTestCase):
 
 
 class PostgreSqlContainsAnyTestCase(base.BaseTestCase):
-    TEST_TAGS = ["env:prod", "region:us"]
+    TEST_TAGS = ["env:prod", "region:us"]  # noqa: RUF012  # noqa: RUF012
 
     def setUp(self):
         self._expr = filters.PostgreSqlContainsAny(

@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from restalchemy.api import packers
 from restalchemy.api import resources
@@ -31,7 +31,7 @@ class FakeModel(models.ModelWithUUID):
 
 class BasePackerTestCase(base.BaseTestCase):
     def setUp(self):
-        super(BasePackerTestCase, self).setUp()
+        super().setUp()
         self._test_instance = packers.BaseResourcePacker(
             resources.ResourceByRAModel(
                 FakeModel, hidden_fields=["_hidden"], convert_underscore=False
@@ -40,7 +40,7 @@ class BasePackerTestCase(base.BaseTestCase):
         )
 
     def tearDown(self):
-        super(BasePackerTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._test_instance
 

@@ -29,6 +29,8 @@ the first one to build fills it for all of them, and the children inherit it
 through the fork.
 """
 
+from __future__ import annotations
+
 import collections
 import logging
 import threading
@@ -55,15 +57,13 @@ LOG = logging.getLogger(__name__)
 # before this cache existed.
 ENCODED_MAX_ENTRIES = 8
 
-_SPECIFICATIONS: typing.Dict[typing.Tuple[str, str], typing.Any] = {}
+_SPECIFICATIONS: dict[tuple[str, str], typing.Any] = {}
 
 # The same documents, already serialized, keyed additionally by the host they
 # were rendered for: that is the one thing in them that varies per caller.
 # Serving these avoids encoding a few hundred kilobytes on every request.
 # Ordered so the least recently served entry is the one at the front.
-_ENCODED: "typing.OrderedDict[typing.Tuple[str, str, str], bytes]" = (
-    collections.OrderedDict()
-)
+_ENCODED: typing.OrderedDict[tuple[str, str, str], bytes] = collections.OrderedDict()
 
 # Guards _ENCODED. Reordering it and trimming it are several operations each,
 # and workers serve requests in threads.
@@ -73,7 +73,7 @@ _ENCODED_LOCK = threading.Lock()
 def _application_key(application: typing.Any) -> str:
     """Name the application, so unrelated services never share an entry."""
     main_route = application.main_route
-    return "%s.%s" % (main_route.__module__, main_route.__qualname__)
+    return f"{main_route.__module__}.{main_route.__qualname__}"
 
 
 def load(application: typing.Any, version: str) -> typing.Any:

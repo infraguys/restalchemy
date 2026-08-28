@@ -1,5 +1,7 @@
 """Litestar with async SQLAlchemy, serialising through msgspec."""
 
+from __future__ import annotations
+
 import datetime
 import uuid
 
@@ -54,7 +56,7 @@ async def create(data: dict) -> dict:
     return model.document(item)
 
 
-class Stack(object):
+class Stack:
     name = NAME
     kind = KIND
 
@@ -76,7 +78,7 @@ class Stack(object):
         return self._caller("GET", "/items/")
 
     def resource(self, item_id):
-        return self._caller("GET", "/items/%s" % item_id)
+        return self._caller("GET", f"/items/{item_id}")
 
     def create(self, document):
         return self._caller("POST", "/items/", document)

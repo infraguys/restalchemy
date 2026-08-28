@@ -54,15 +54,16 @@ class InsertTestCase(base.BaseWithDbMigrationsTestCase):
         #   unique index for any primary key. Constant in mysql database.
         key_name = "PRIMARY" if self.engine.dialect.name == "mysql" else "uuid"
 
-        with self.engine.session_manager() as session:
-            with self.assertRaises(exc.ConflictRecords):
-                try:
-                    session.batch_insert([model1, model2, model3])
-                except exc.ConflictRecords as e:
-                    self.assertEqual(key_name, e.key)
-                    # NOTE(efrolov): all values from exception in string type
-                    self.assertEqual(str(dup_uuid), e.value)
-                    raise
+        with self.engine.session_manager() as session, self.assertRaises(
+            exc.ConflictRecords
+        ):
+            try:
+                session.batch_insert([model1, model2, model3])
+            except exc.ConflictRecords as e:
+                self.assertEqual(key_name, e.key)
+                # NOTE(efrolov): all values from exception in string type
+                self.assertEqual(str(dup_uuid), e.value)
+                raise
 
         all_models = BatchInsertModel.objects.get_all()
 
@@ -74,15 +75,16 @@ class InsertTestCase(base.BaseWithDbMigrationsTestCase):
         model2 = BatchInsertModel(foo_field1=dup_value, foo_field2="Model2")
         model3 = BatchInsertModel(foo_field1=dup_value, foo_field2="Model3")
 
-        with self.engine.session_manager() as session:
-            with self.assertRaises(exc.ConflictRecords):
-                try:
-                    session.batch_insert([model1, model2, model3])
-                except exc.ConflictRecords as e:
-                    self.assertEqual("foo_field1", e.key)
-                    # NOTE(efrolov): all values from exception in string type
-                    self.assertEqual(str(dup_value), e.value)
-                    raise
+        with self.engine.session_manager() as session, self.assertRaises(
+            exc.ConflictRecords
+        ):
+            try:
+                session.batch_insert([model1, model2, model3])
+            except exc.ConflictRecords as e:
+                self.assertEqual("foo_field1", e.key)
+                # NOTE(efrolov): all values from exception in string type
+                self.assertEqual(str(dup_value), e.value)
+                raise
 
         all_models = BatchInsertModel.objects.get_all()
 

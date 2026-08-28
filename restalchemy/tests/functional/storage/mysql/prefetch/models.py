@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -89,7 +89,7 @@ class ObjectCollection(orm.ObjectCollection):
             order_by=order_by,
             locked=locked,
         )
-        return super(ObjectCollection, self).get_all(
+        return super().get_all(
             filters=filters,
             session=session,
             limit=limit,

@@ -22,7 +22,7 @@ from restalchemy.dm import types_network
 
 class RecordNameTestCase(unittest.TestCase):
     def setUp(self):
-        super(RecordNameTestCase, self).setUp()
+        super().setUp()
         self.test_instance = types_network.RecordName()
 
     def test_validate_correct_value(self):
@@ -54,7 +54,7 @@ class RecordNameTestCase(unittest.TestCase):
 
 class RecordNameWithWildcardTestCase(unittest.TestCase):
     def setUp(self):
-        super(RecordNameWithWildcardTestCase, self).setUp()
+        super().setUp()
         self.test_instance = types_network.RecordNameWithWildcard()
 
     def test_validate_correct_value(self):
@@ -97,7 +97,7 @@ class SrvNameTest(unittest.TestCase):
 
 class HostnameTest(unittest.TestCase):
     def setUp(self):
-        super(HostnameTest, self).setUp()
+        super().setUp()
         self.fqdn = types_network.Hostname()
         self.fqdn_2level = types_network.Hostname(min_levels=2)
         self.fqdn_with_leading_underscore = types_network.Hostname(
@@ -117,16 +117,20 @@ class HostnameTest(unittest.TestCase):
             "1.2.3.4.com",
             "xn--kxae4bafwg.xn--pxaix.gr",
             "a23456789-123456789-123456789-123456789-123456789-123456789-123.b23.com",
-            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a234567.com",
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde."
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
-            "com",
+            (
+                "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a234567.com"
+            ),
+            (
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde."
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+                "com"
+            ),
         ]
         for fqdn in data:
             self.assertTrue(self.fqdn.validate(fqdn), fqdn)
@@ -175,17 +179,21 @@ class HostnameTest(unittest.TestCase):
             "-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com",
             "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com",
             "a23456789-123456789-123456789-123456789-123456789-123456789-1234.b23.com",
-            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.com",
+            (
+                "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.com"
+            ),
             "mx.gmail.com.",
-            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.com",
+            (
+                "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.com"
+            ),
         ]
         for fqdn in data:
             self.assertFalse(self.fqdn.validate(fqdn), fqdn)
@@ -211,7 +219,7 @@ class HostnameTest(unittest.TestCase):
 
 class FQDNTest(unittest.TestCase):
     def setUp(self):
-        super(FQDNTest, self).setUp()
+        super().setUp()
         self.fqdn = types_network.FQDN()
         self.fqdn_2level = types_network.FQDN(min_levels=2)
 
@@ -225,16 +233,20 @@ class FQDNTest(unittest.TestCase):
             "1.2.3.4.com.",
             "xn--kxae4bafwg.xn--pxaix.gr.",
             "a23456789-123456789-123456789-123456789-123456789-123456789-123.b23.com.",
-            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a234567.com.",
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde."
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
-            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
-            "com.",
+            (
+                "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a234567.com."
+            ),
+            (
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde."
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk."
+                "com."
+            ),
         ]
         for fqdn in data:
             self.assertTrue(self.fqdn.validate(fqdn), fqdn)
@@ -248,17 +260,21 @@ class FQDNTest(unittest.TestCase):
             "-ec2_35$160%210-253.us-west-2-.compute.amazonaws.com.",
             "ec2-35-160-210-253.us-west-2-.compute.amazonaws.com.",
             "a23456789-123456789-123456789-123456789-123456789-123456789-1234.b23.com.",
-            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.com.",
+            (
+                "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.com."
+            ),
             "mx.gmail.com",
-            "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
-            "a23456789.com.",
+            (
+                "a23456789-a23456789-a234567890.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.a23456789.a23456789.a23456789.a23456789.a23456789."
+                "a23456789.com."
+            ),
         ]
         for fqdn in data:
             self.assertFalse(self.fqdn.validate(fqdn), fqdn)

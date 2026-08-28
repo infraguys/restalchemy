@@ -30,7 +30,6 @@ from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import tables
 from restalchemy.storage.sql.dialect import exceptions as exc
 
-
 # The `from_simple_type` implementations that hand the stored value
 # straight back: a column of such a type needs no converting at all.
 _VALUES_AS_STORED = frozenset(
@@ -533,7 +532,7 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
             # found in the rows.
             return value
         if isinstance(value, base.PrefetchResult):
-            for name in cls.id_properties.keys():
+            for name in cls.id_properties:
                 if value[name]:
                     break
             else:
@@ -571,14 +570,12 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
             value = row[field]
             if isinstance(value, str):
                 row[field] = orjson.loads(value)
-        return super(SQLStorableWithJSONFieldsMixin, cls).restore_row(row, pour)
+        return super().restore_row(row, pour)
 
     def _get_prepared_data(self, properties=None):
         if self.__jsonfields__ is None:
             raise UndefinedAttribute(attr_name="__jsonfields__")
-        result = super(SQLStorableWithJSONFieldsMixin, self)._get_prepared_data(
-            properties
-        )
+        result = super()._get_prepared_data(properties)
         if properties is None:
             json_properties = self.__jsonfields__
         else:

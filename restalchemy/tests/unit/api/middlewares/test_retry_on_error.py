@@ -15,7 +15,8 @@
 #    under the License.
 
 
-import mock
+from unittest import mock
+
 from webob import request
 
 from restalchemy.api.middlewares import retry_on_error

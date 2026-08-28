@@ -51,7 +51,7 @@ class FakeCollided(models.ModelWithUUID):
 FakeCollidedIdModel = FakeCollided
 
 
-class FakeCollided(models.ModelWithID):  # noqa: F811 -- the name is the point
+class FakeCollided(models.ModelWithID):
     """Another model of the very same name, holding `uuid` as a plain field."""
 
     res_uuid = properties.property(
@@ -66,29 +66,29 @@ class FakeCollided(models.ModelWithID):  # noqa: F811 -- the name is the point
 FakeCollidedFieldModel = FakeCollided
 
 
-class FakeMemberContext(object):
-    roles = ["member", "some-role"]
+class FakeMemberContext:
+    roles = ["member", "some-role"]  # noqa: RUF012
 
 
-class FakeAdminContext(object):
-    roles = ["member", "admin"]
+class FakeAdminContext:
+    roles = ["member", "admin"]  # noqa: RUF012
 
 
-class FakeEmptyContext(object):
-    roles = []
+class FakeEmptyContext:
+    roles = []  # noqa: RUF012
 
 
-class FakeIncorrectFieldsRoleContext(object):
-    roles = ["incorrect_fields"]
+class FakeIncorrectFieldsRoleContext:
+    roles = ["incorrect_fields"]  # noqa: RUF012
 
 
-class FakeEmptyFieldsRoleContext(object):
-    roles = ["empty_fields"]
+class FakeEmptyFieldsRoleContext:
+    roles = ["empty_fields"]  # noqa: RUF012
 
 
 class ResourceSchemaGenerationTestCase(unittest.TestCase):
     def tearDown(self):
-        super(ResourceSchemaGenerationTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
     def test_schema_generation_does_not_mutate_model_property_kwargs(self):
@@ -168,7 +168,7 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
 # NOTE(efrolov): Interface tests
 class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
     def tearDown(self):
-        super(ResourceByRAModelHiddenFieldsInterfacesTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
 
     def test_hide_some_fields(self):
@@ -203,7 +203,7 @@ class ResourceByRAModelHiddenFieldsInterfacesTestCase(unittest.TestCase):
 
 class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
     def setUp(self):
-        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase, self).setUp()
+        super().setUp()
         self.target = resources.ResourceByRAModel(
             FakeModel,
             hidden_fields=resources.HiddenFieldMap(
@@ -221,7 +221,7 @@ class ResourceByRAModelHiddenFieldsNewInterfacesTestCase(unittest.TestCase):
         self._request.api_context = contexts.RequestContext(self._request)
 
     def tearDown(self):
-        super(ResourceByRAModelHiddenFieldsNewInterfacesTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._request
 
@@ -338,7 +338,7 @@ class ResourceByRAModelWithCustomPropsHiddenFieldsNewInterfacesTestCase(
 
 class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
     def setUp(self):
-        super(ResourceByRAModelRoleBasedHiddenFieldsTestCase, self).setUp()
+        super().setUp()
         self.target = resources.ResourceByRAModel(
             FakeModel,
             hidden_fields=resources.RoleBasedHiddenFieldContainer(
@@ -368,7 +368,7 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
         self._request.api_context = contexts.RequestContext(self._request)
 
     def tearDown(self):
-        super(ResourceByRAModelRoleBasedHiddenFieldsTestCase, self).tearDown()
+        super().tearDown()
         resources.ResourceMap.model_type_to_resource = {}
         del self._request
 

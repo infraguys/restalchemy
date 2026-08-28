@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 
-import mock
 import orjson
 
 from restalchemy.common import exceptions as dm_exceptions
@@ -46,7 +46,7 @@ class FakeRestoreModel(models.Model, orm.SQLStorableMixin):
     b = properties.property(types.String())
 
     def __init__(self, args, **kwargs):
-        super(FakeRestoreModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         raise AssertionError("Init method should not be called")
 
 
@@ -79,7 +79,7 @@ class TestRestoreModelTestCase(base.BaseTestCase):
 
 class FakeRestoreWithJSONModel(models.Model, orm.SQLStorableWithJSONFieldsMixin):
     __tablename__ = "fake_table"
-    __jsonfields__ = ["a", "b"]
+    __jsonfields__ = ["a", "b"]  # noqa: RUF012
 
     a = properties.property(types.Dict())
     b = properties.property(types.List())
@@ -151,7 +151,7 @@ class FakeKeywordRestoreModel(models.Model, orm.SQLStorableMixin):
 
     @classmethod
     def restore_from_storage(cls, source=FAKE_VALUE_B, **kwargs):
-        obj = super(FakeKeywordRestoreModel, cls).restore_from_storage(**kwargs)
+        obj = super().restore_from_storage(**kwargs)
         obj.source = source
         return obj
 
@@ -167,7 +167,7 @@ class FakeRowRestoreModel(models.Model, orm.SQLStorableMixin):
     def restore_row(cls, row, pour=None):
         row = dict(row)
         source = row.pop("source", FAKE_VALUE_B)
-        obj = super(FakeRowRestoreModel, cls).restore_row(row, pour)
+        obj = super().restore_row(row, pour)
         obj.source = source
         return obj
 
@@ -373,7 +373,7 @@ class VersionOneUUID(types.UUID):
     """
 
     def validate(self, value):
-        return super(VersionOneUUID, self).validate(value) and value.version == 1
+        return super().validate(value) and value.version == 1
 
 
 class StoragePlanChecksASubclassTestCase(base.BaseTestCase):

@@ -16,9 +16,8 @@
 
 import gc
 import unittest
+from unittest import mock
 import weakref
-
-import mock
 
 from restalchemy.dm import filters
 from restalchemy.dm import models
@@ -42,7 +41,7 @@ SimpleModel.properties.sort_properties()
 
 class MySQLQueryBuilderTestCase(unittest.TestCase):
     def setUp(self):
-        super(MySQLQueryBuilderTestCase, self).setUp()
+        super().setUp()
         self.Q = q.Q
         self.flt = filters.AND(
             {"field_bool": filters.EQ(True)},
@@ -51,7 +50,7 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         )
 
     def tearDown(self):
-        super(MySQLQueryBuilderTestCase, self).tearDown()
+        super().tearDown()
         del self.Q
 
     def test_simple_select(self):
@@ -355,12 +354,12 @@ class SelectShapeCacheTestCase(unittest.TestCase):
     """
 
     def setUp(self):
-        super(SelectShapeCacheTestCase, self).setUp()
+        super().setUp()
         self.engine = fixtures.EngineFixture()
         self.session = mock.Mock(engine=self.engine)
 
     def tearDown(self):
-        super(SelectShapeCacheTestCase, self).tearDown()
+        super().tearDown()
         q.clear_shape_cache()
 
     def _select(self, **kwargs):
@@ -388,7 +387,7 @@ class SelectShapeCacheTestCase(unittest.TestCase):
     def test_another_engine_escapes_its_own_way(self):
         class DoubleQuoteEngine(fixtures.EngineFixture):
             def escape(self, value):
-                return '"%s"' % value
+                return f'"{value}"'
 
         other = q.Q.select(SharedModel, session=mock.Mock(engine=DoubleQuoteEngine()))
 

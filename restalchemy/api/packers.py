@@ -33,7 +33,7 @@ from restalchemy.dm import types as ra_types
 DEFAULT_VALUE = object()
 CONTENT_TYPE_APPLICATION_JSON = DEFAULT_CONTENT_TYPE = (
     constants.CONTENT_TYPE_APPLICATION_JSON
-)  # noqa
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def _class_attribute_names(klass):
     return names
 
 
-class BaseResourcePacker(object):
+class BaseResourcePacker:
     _skip_none = True
 
     # Property types whose values this packer hands to whatever writes
@@ -226,7 +226,7 @@ class BaseResourcePacker(object):
         return result
 
     def pack(self, obj):
-        if isinstance(obj, list) or isinstance(obj, types.GeneratorType):
+        if isinstance(obj, (list, types.GeneratorType)):
             return [self.pack_resource(resource) for resource in obj]
         else:
             return self.pack_resource(obj)
@@ -274,20 +274,20 @@ class JSONPacker(BaseResourcePacker):
 
     def pack(self, obj):
         return orjson.dumps(
-            super(JSONPacker, self).pack(obj),
+            super().pack(obj),
             option=orjson.OPT_NON_STR_KEYS | orjson.OPT_UTC_Z,
         )
 
     def unpack(self, value):
         if isinstance(value, bytes):
             try:
-                return super(JSONPacker, self).unpack(
+                return super().unpack(
                     orjson.loads(value),
                 )
             except orjson.JSONDecodeError:
                 raise exceptions.ParseBodyError()
 
-        return super(JSONPacker, self).unpack(orjson.loads(value))
+        return super().unpack(orjson.loads(value))
 
 
 class JSONPackerIncludeNullFields(JSONPacker):
@@ -306,7 +306,7 @@ class JSONPackerPreEncoded(JSONPacker):
     def pack(self, obj: typing.Any) -> bytes:
         if isinstance(obj, bytes):
             return obj
-        return super(JSONPackerPreEncoded, self).pack(obj)
+        return super().pack(obj)
 
 
 class MultipartPacker(JSONPacker):
@@ -384,7 +384,9 @@ def get_packer(content_type):
         return packer_mapping[parse_content_type(content_type)]
     except KeyError:
         # TODO(Eugene Frolov): Specify Exception Type and message
-        raise Exception("Packer can't found for content type %s " % content_type)
+        raise Exception(  # noqa: TRY002
+            f"Packer can't found for content type {content_type} "
+        )
 
 
 def set_packer(content_type, packer_class):

@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from restalchemy.storage.sql import utils
 from restalchemy.tests.unit import base
@@ -40,8 +40,8 @@ class SavepointCtxTestCase(base.BaseTestCase):
         with utils.savepoint("sp") as s:
             self.assertIs(s, session)
 
-        session.execute.assert_any_call("SAVEPOINT sp;", tuple())
-        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", tuple())
+        session.execute.assert_any_call("SAVEPOINT sp;", ())
+        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", ())
 
     @mock.patch("restalchemy.storage.sql.utils.contexts.Context")
     def test_savepoint_postgresql_error(self, mock_ctx_cls):
@@ -50,13 +50,12 @@ class SavepointCtxTestCase(base.BaseTestCase):
 
         session = ctx.get_session.return_value
 
-        with self.assertRaises(RuntimeError):
-            with utils.savepoint("sp"):
-                raise RuntimeError("boom")
+        with self.assertRaises(RuntimeError), utils.savepoint("sp"):
+            raise RuntimeError("boom")
 
-        session.execute.assert_any_call("SAVEPOINT sp;", tuple())
-        session.execute.assert_any_call("ROLLBACK TO SAVEPOINT sp;", tuple())
-        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", tuple())
+        session.execute.assert_any_call("SAVEPOINT sp;", ())
+        session.execute.assert_any_call("ROLLBACK TO SAVEPOINT sp;", ())
+        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", ())
 
     @mock.patch("restalchemy.storage.sql.utils.contexts.Context")
     def test_savepoint_mysql_success(self, mock_ctx_cls):
@@ -68,8 +67,8 @@ class SavepointCtxTestCase(base.BaseTestCase):
         with utils.savepoint("sp") as s:
             self.assertIs(s, session)
 
-        session.execute.assert_any_call("SAVEPOINT sp;", tuple())
-        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", tuple())
+        session.execute.assert_any_call("SAVEPOINT sp;", ())
+        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", ())
 
     @mock.patch("restalchemy.storage.sql.utils.contexts.Context")
     def test_savepoint_mysql_error(self, mock_ctx_cls):
@@ -78,10 +77,9 @@ class SavepointCtxTestCase(base.BaseTestCase):
 
         session = ctx.get_session.return_value
 
-        with self.assertRaises(RuntimeError):
-            with utils.savepoint("sp"):
-                raise RuntimeError("boom")
+        with self.assertRaises(RuntimeError), utils.savepoint("sp"):
+            raise RuntimeError("boom")
 
-        session.execute.assert_any_call("SAVEPOINT sp;", tuple())
-        session.execute.assert_any_call("ROLLBACK TO sp;", tuple())
-        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", tuple())
+        session.execute.assert_any_call("SAVEPOINT sp;", ())
+        session.execute.assert_any_call("ROLLBACK TO sp;", ())
+        session.execute.assert_any_call("RELEASE SAVEPOINT sp;", ())

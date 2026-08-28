@@ -28,10 +28,10 @@ class RestAlchemyException(Exception):
 
     def __init__(self, **kwargs):
         self.msg = self.message % kwargs
-        super(RestAlchemyException, self).__init__(self.msg)
+        super().__init__(self.msg)
 
     def __repr__(self):
-        return "Code: %s, Message: %s" % (self.code, self.msg)
+        return f"Code: {self.code}, Message: {self.msg}"
 
     def get_code(self):
         """
@@ -58,7 +58,7 @@ class NotImplementedError(RestAlchemyException):
     def __init__(self, **kwargs):
         if "msg" not in kwargs:
             self.message = self.base_message
-        super(NotImplementedError, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class UnsupportedHttpMethod(RestAlchemyException):
@@ -111,7 +111,7 @@ class PropertyException(RestAlchemyException, ValueError):
     def __init__(self, name=None, model=None):
         self.name = name or "Unknown"
         self.model = model or "Unknown"
-        super(PropertyException, self).__init__(name=self.name, model=self.model)
+        super().__init__(name=self.name, model=self.model)
 
 
 class PropertyRequired(PropertyException):
@@ -153,7 +153,7 @@ class TypeError(RestAlchemyException, TypeError):
         else:
             property_type = type(property_type).__name__
 
-        super(TypeError, self).__init__(value=value, property_type=property_type)
+        super().__init__(value=value, property_type=property_type)
 
     def get_value(self):
         return self._value

@@ -28,9 +28,9 @@ from restalchemy.dm import properties
 from restalchemy.dm import types
 
 
-class DmOperationalStorage(object):
+class DmOperationalStorage:
     def __init__(self):
-        super(DmOperationalStorage, self).__init__()
+        super().__init__()
         self._storage = {}
 
     def store(self, name, data):
@@ -71,7 +71,7 @@ class MetaModel(abc.ABCMeta):
         # Which names they are is the class's answer; the mapping over a
         # model's own is built by whoever asks it for one.
         attrs["id_properties"] = _IdPropertiesAccess(attrs["id_properties"])
-        dm_class = super(MetaModel, cls).__new__(cls, name, bases, attrs)
+        dm_class = super().__new__(cls, name, bases, attrs)
         dm_class.__operational_storage__ = DmOperationalStorage()
         return dm_class
 
@@ -79,7 +79,7 @@ class MetaModel(abc.ABCMeta):
         try:
             return cls.properties[name]
         except KeyError:
-            raise AttributeError("%s object has no attribute %s" % (cls.__name__, name))
+            raise AttributeError(f"{cls.__name__} object has no attribute {name}")
 
     def to_openapi_spec(self, prop_kwargs):
         spec = {
@@ -89,7 +89,7 @@ class MetaModel(abc.ABCMeta):
         return spec
 
 
-class _IdPropertiesAccess(object):
+class _IdPropertiesAccess:
     """The declaration's answer to a class, a model's own to a model.
 
     Read off the class -- `cls.id_properties` -- these are the names, as
@@ -142,7 +142,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
     _python_simple_types = (type(None), str, int, float, complex, bool)
 
     def __init__(self, **kwargs):
-        super(Model, self).__init__()
+        super().__init__()
         self.pour(**kwargs)
 
     def __getattr__(self, name):
@@ -158,13 +158,13 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
             return properties._properties[name].value
         except KeyError:
             raise AttributeError(
-                "%s object has no attribute %s" % (type(self).__name__, name)
+                f"{type(self).__name__} object has no attribute {name}"
             )
 
     def __setattr__(self, name, value):
         props = self.properties
         if name not in props:
-            super(Model, self).__setattr__(name, value)
+            super().__setattr__(name, value)
             return
         try:
             props[name].value = value
@@ -232,9 +232,11 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
             return cls.id_properties.copy()
 
         raise TypeError(
-            "Model %s has %s properties which marked as "
+            "Model {} has {} properties which marked as "
             "id_property. Please implement get_id_property "
-            "method on your model." % (type(cls), "many" if cls.id_properties else "no")
+            "method on your model.".format(
+                type(cls), "many" if cls.id_properties else "no"
+            )
         )
 
     @classmethod
@@ -287,14 +289,14 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         if len(self.id_properties) == 0:
             return self.__repr__()
 
-        return "<%s %s>" % (self.__class__.__name__, self.get_id())
+        return f"<{self.__class__.__name__} {self.get_id()}>"
 
     def __repr__(self):
         result = []
         for k, v in self.items():
-            result.append("%s: %s" % (k, v))
+            result.append(f"{k}: {v}")
         result = ", ".join(result)
-        return "<%s {%s}>" % (self.__class__.__name__, result)
+        return f"<{self.__class__.__name__} {{{result}}}>"
 
 
 class ModelWithID(Model):
@@ -328,13 +330,12 @@ class ModelWithRequiredUUID(ModelWithUUID):
     )
 
 
-class CustomPropertiesMixin(object):
-    __custom_properties__ = {}
+class CustomPropertiesMixin:
+    __custom_properties__ = {}  # noqa: RUF012
 
     @classmethod
     def get_custom_properties(cls):
-        for name, prop_type in cls.__custom_properties__.items():
-            yield name, prop_type
+        yield from cls.__custom_properties__.items()
 
     @classmethod
     def get_custom_property_type(cls, property_name):
@@ -345,8 +346,7 @@ class CustomPropertiesMixin(object):
         prop_type.validate(value)
         if static and should_be != value:
             raise ValueError(
-                ("The value for property `%s` should be `%s` but actual value is `%s`")
-                % (name, should_be, value)
+                f"The value for property `{name}` should be `{should_be}` but actual value is `{value}`"
             )
 
 
@@ -367,7 +367,7 @@ class ModelWithTimestamp(Model):
             self.properties["updated_at"].set_value_force(
                 datetime.datetime.now(datetime.timezone.utc)
             )
-        super().update(session=session, force=force, *args, **kwargs)
+        super().update(session, force, *args, **kwargs)
 
 
 class ModelWithProject(Model):

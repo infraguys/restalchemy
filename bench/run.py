@@ -51,25 +51,23 @@ SCENARIOS = tuple(ASK)
 def check(stack, rows):
     """Nobody is timed before answering the same as the table."""
     status, body = stack.collection()
-    assert status == 200, "%s: collection answered %s" % (stack.name, status)
+    assert status == 200, f"{stack.name}: collection answered {status}"
     documents = orjson.loads(body)
-    assert payload.same(documents, rows), "%s: collection differs" % stack.name
+    assert payload.same(documents, rows), f"{stack.name}: collection differs"
 
     status, body = stack.resource(FIRST_ID)
-    assert status == 200, "%s: resource answered %s" % (stack.name, status)
-    assert payload.same(orjson.loads(body), rows[0]), (
-        "%s: resource differs" % stack.name
-    )
+    assert status == 200, f"{stack.name}: resource answered {status}"
+    assert payload.same(orjson.loads(body), rows[0]), f"{stack.name}: resource differs"
 
     status, body = stack.create(CREATE_BODY)
-    assert status == 201, "%s: create answered %s" % (stack.name, status)
+    assert status == 201, f"{stack.name}: create answered {status}"
     created = orjson.loads(body)
     posted = orjson.loads(CREATE_BODY)
     assert all(created[field] == posted[field] for field in posted), (
-        "%s: create echoes the posted fields back wrong" % stack.name
+        f"{stack.name}: create echoes the posted fields back wrong"
     )
     assert all(field in created for field in payload.FIELDS), (
-        "%s: create answers with less than a read does" % stack.name
+        f"{stack.name}: create answers with less than a read does"
     )
 
 
@@ -105,11 +103,11 @@ def time_scenario(stack, scenario, calls):
 
 def sweep_created():
     with psycopg.connect(config.DATABASE_URL, autocommit=True) as connection:
-        connection.execute("DELETE FROM %s WHERE quantity >= 10000000" % config.TABLE)
+        connection.execute(f"DELETE FROM {config.TABLE} WHERE quantity >= 10000000")
 
 
 def table(header, alignment, rows):
-    return "\n".join(["| %s |" % " | ".join(header), alignment] + rows)
+    return "\n".join(["| {} |".format(" | ".join(header)), alignment] + rows)
 
 
 def report(samples, order, rounds, calls, warmup, postgres=None, load=None):
@@ -134,8 +132,7 @@ def report(samples, order, rounds, calls, warmup, postgres=None, load=None):
         for stack in sorted(order, key=median.get):
             low, high = stats.interval(samples[stack][scenario])
             rows.append(
-                "| %s | %.0f µs | %.0f … %.0f | %.2f× | %s |"
-                % (
+                "| {} | {:.0f} µs | {:.0f} … {:.0f} | {:.2f}× | {} |".format(
                     stack,
                     median[stack],
                     low,
@@ -159,13 +156,13 @@ def report(samples, order, rounds, calls, warmup, postgres=None, load=None):
         ("Stack", "Fixed, per request", "Per row", "× fastest per row"),
         "| --- | ---: | ---: | ---: |",
         [
-            "| %s | %.0f µs | %.1f µs | %.2f× |"
-            % (stack, fixed[stack], marginal[stack], marginal[stack] / quickest)
+            f"| {stack} | {fixed[stack]:.0f} µs | {marginal[stack]:.1f} µs | {marginal[stack] / quickest:.2f}× |"
             for stack in sorted(order, key=marginal.get)
         ],
     )
 
-    template = open(os.path.join(os.path.dirname(__file__), "report.md")).read()
+    with open(os.path.join(os.path.dirname(__file__), "report.md")) as report:
+        template = report.read()
     return template.format(
         stacks=len(order),
         stamp=datetime.datetime.now(datetime.timezone.utc).strftime(
@@ -206,7 +203,7 @@ def main():
         stack.setup()
         check(stack, rows)
         warmed = warm(stack, arguments.warmup)
-        sys.stderr.write("%s: warmed with %d calls\n" % (stack.name, warmed))
+        sys.stderr.write(f"{stack.name}: warmed with {warmed} calls\n")
     sweep_created()
 
     order = [stack.name for stack in loaded]
@@ -228,7 +225,7 @@ def main():
             # Swept per turn, so every stack reads the table the first
             # one read, wherever the rotation put it.
             sweep_created()
-        sys.stderr.write("round %d/%d\n" % (round_number + 1, arguments.rounds))
+        sys.stderr.write(f"round {round_number + 1}/{arguments.rounds}\n")
 
     # Checked again after the last round: a stack that broke mid-run
     # would have been timed answering something cheaper than the work.

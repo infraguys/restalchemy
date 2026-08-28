@@ -36,7 +36,7 @@ HOSTNAME_TEMPLATE = (
 
 class IPAddress(types.BaseType):
     def __init__(self, **kwargs):
-        super(IPAddress, self).__init__(openapi_type="string", **kwargs)
+        super().__init__(openapi_type="string", **kwargs)
 
     def validate(self, value):
         return isinstance(value, netaddr.IPAddress)
@@ -70,7 +70,7 @@ class IPAddress(types.BaseType):
 
 class Network(types.BaseType):
     def __init__(self, **kwargs):
-        super(Network, self).__init__(openapi_type="string", **kwargs)
+        super().__init__(openapi_type="string", **kwargs)
 
     def validate(self, value):
         return isinstance(value, netaddr.IPNetwork)
@@ -106,7 +106,7 @@ class Network(types.BaseType):
 
 class IpWithMask(types.BaseType):
     def __init__(self, **kwargs):
-        super(IpWithMask, self).__init__(openapi_type="string", **kwargs)
+        super().__init__(openapi_type="string", **kwargs)
 
     def validate(self, value):
         return isinstance(value, netaddr.IPNetwork)
@@ -151,11 +151,11 @@ class RecordName(types.BaseCompiledRegExpTypeFromAttr):
     pattern = re.compile(r"^([a-zA-Z0-9-_]{1,61}\.{0,1}){0,30}$")
 
     def from_simple_type(self, value):
-        converted_value = super(RecordName, self).from_simple_type(value)
+        converted_value = super().from_simple_type(value)
         return converted_value.rstrip(".").rstrip("@")
 
     def to_simple_type(self, value):
-        converted_value = super(RecordName, self).to_simple_type(value)
+        converted_value = super().to_simple_type(value)
         return converted_value if len(converted_value) > 0 else "@"
 
     @property
@@ -186,10 +186,7 @@ class SrvName(RecordName):
 
         record_name = ".".join(parts[2:])
 
-        if record_name and not super(SrvName, self).validate(record_name):
-            return False
-
-        return True
+        return not (record_name and not super().validate(record_name))
 
     @property
     def example(self):
@@ -212,7 +209,7 @@ class FQDN(types.BaseCompiledRegExpTypeFromAttr):
             self.pattern = re.compile(
                 FQDN_TEMPLATE % (FQDN_MAX_LEN, DNS_LABEL_MAX_LEN, min_levels)
             )
-        super(FQDN, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @property
     def example(self):
@@ -243,7 +240,7 @@ class Hostname(types.BaseCompiledRegExpTypeFromAttr):
                 DNS_LABEL_MAX_LEN,
             )
         )
-        super(Hostname, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @property
     def example(self):
@@ -261,7 +258,7 @@ class IPRange(types.BaseType):
     SEPARATOR = "-"
 
     def __init__(self, **kwargs):
-        super(IPRange, self).__init__(openapi_type="string", **kwargs)
+        super().__init__(openapi_type="string", **kwargs)
 
     def validate(self, value):
         return isinstance(value, netaddr.IPRange)

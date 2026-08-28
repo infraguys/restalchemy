@@ -76,10 +76,10 @@ def probe(mode, *options):
     environment = dict(os.environ, DATABASE_URI=consts.get_database_uri())
     finished = subprocess.run(
         command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         timeout=TIMEOUT,
         env=environment,
+        check=False,
     )
     if finished.returncode != 0:
         trouble = finished.stderr.decode(errors="replace")
@@ -89,10 +89,10 @@ def probe(mode, *options):
             # The probe already waits for a connection to come free;
             # past that, saying so is better than blaming the code.
             raise unittest.SkipTest(
-                "the database had no connection to spare:\n%s" % trouble[-2000:]
+                f"the database had no connection to spare:\n{trouble[-2000:]}"
             )
         raise AssertionError(
-            "the %s probe failed (%d):\n%s" % (mode, finished.returncode, trouble)
+            f"the {mode} probe failed ({finished.returncode}):\n{trouble}"
         )
     return orjson.loads(finished.stdout)
 
@@ -100,7 +100,7 @@ def probe(mode, *options):
 @unittest.skipIf(SKIPPED, "RA_PERF_SKIP is set")
 @unittest.skipUnless(
     DIALECT == "postgresql",
-    "the floor is a raw psycopg one; this run is against %s" % DIALECT,
+    f"the floor is a raw psycopg one; this run is against {DIALECT}",
 )
 class PerfGuardTestCase(base.BaseFunctionalTestCase):
     def test_a_request_stays_near_the_floor(self):
@@ -137,38 +137,33 @@ class PerfGuardTestCase(base.BaseFunctionalTestCase):
     @staticmethod
     def _speed_report(answer, exceeded):
         lines = [
-            "a request costs more of the floor than it may"
-            " (%d rounds, best of %d calls, %d rows, page %d):"
-            % (
-                answer["rounds"],
-                answer["calls"],
-                answer["rows"],
-                answer["page"],
+            (
+                "a request costs more of the floor than it may"
+                f" ({answer['rounds']} rounds, best of {answer['calls']} calls,"
+                f" {answer['rows']} rows, page {answer['page']}):"
             )
         ]
         for scenario, ratio in answer["ratio"].items():
+            over = "  <-- over" if scenario in exceeded else ""
             lines.append(
-                "  %-11s floor %6.0f µs, ours %6.0f µs, %.2f× (at most %.2f×)%s"
-                % (
-                    scenario,
-                    answer["floor"][scenario],
-                    answer["restalchemy"][scenario],
-                    ratio,
-                    LIMIT[scenario] * SLACK,
-                    "  <-- over" if scenario in exceeded else "",
-                )
+                f"  {scenario:<11} floor {answer['floor'][scenario]:6.0f} µs,"
+                f" ours {answer['restalchemy'][scenario]:6.0f} µs,"
+                f" {ratio:.2f}× (at most {LIMIT[scenario] * SLACK:.2f}×){over}"
             )
         return "\n".join(lines)
 
     @staticmethod
     def _memory_report(answer, what):
         lines = [
-            "a request keeps %s: %.2f per request over the last %d of them"
-            % (what, answer["per_request"][what], answer["served"])
+            (
+                f"a request keeps {what}:"
+                f" {answer['per_request'][what]:.2f} per request"
+                f" over the last {answer['served']} of them"
+            )
         ]
         for step in answer["series"]:
             lines.append(
-                "  after %5d requests: %6d objects, %8d bytes"
-                % (step["requests"], step["objects"], step["bytes"])
+                f"  after {step['requests']:5d} requests:"
+                f" {step['objects']:6d} objects, {step['bytes']:8d} bytes"
             )
         return "\n".join(lines)

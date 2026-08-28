@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from __future__ import absolute_import
 
 import logging
 import re
@@ -34,7 +33,7 @@ class HttpMetricsMiddleware(middlewares.Middleware):
         error_metric_name,
         metric_sender,
     ):
-        super(HttpMetricsMiddleware, self).__init__(application)
+        super().__init__(application)
         self._re = re.compile(path_pattern)
         self._success_metric_name = success_metric_name
         self._error_metric_name = error_metric_name
@@ -51,7 +50,7 @@ class HttpMetricsMiddleware(middlewares.Middleware):
             if res.status_code >= 400:
                 self._sender.send_metric(self._error_metric_name, elapsed)
                 self._sender.send_metric(
-                    "%s.%d" % (self._error_metric_name, res.status_code),
+                    f"{self._error_metric_name}.{res.status_code}",
                     elapsed,
                 )
             else:
@@ -59,7 +58,7 @@ class HttpMetricsMiddleware(middlewares.Middleware):
             return res
         except Exception:
             self._sender.send_metric(
-                "%s.unexpected-error" % self._error_metric_name,
+                f"{self._error_metric_name}.unexpected-error",
                 time.time() - current_time,
             )
             raise
