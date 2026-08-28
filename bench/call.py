@@ -46,7 +46,7 @@ def wsgi(app, method, path, body=b""):
     return captured["status"], payload
 
 
-class AsgiCaller(object):
+class AsgiCaller:
     """One loop, reused: a fresh loop per call would time the loop."""
 
     def __init__(self, app):
@@ -63,7 +63,7 @@ class AsgiCaller(object):
             self._loop.close()
 
     async def _lifespan(self, event):
-        received = [{"type": "lifespan.%s" % event}]
+        received = [{"type": f"lifespan.{event}"}]
         done = asyncio.Event()
 
         async def receive():
@@ -83,8 +83,8 @@ class AsgiCaller(object):
                 ),
                 timeout=5,
             )
-        except Exception:
-            # A stack with no lifespan of its own is not a failure.
+        # A stack with no lifespan of its own is not a failure.
+        except Exception:  # noqa: BLE001, S110
             pass
 
     def __call__(self, method, path, body=b""):

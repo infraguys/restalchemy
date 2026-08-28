@@ -15,7 +15,7 @@ DATA_DIR = os.environ.get("BENCH_PG_DATA", os.path.join(HERE, ".pgdata"))
 USER = "bench"
 DATABASE = "bench"
 DATABASE_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://%s@127.0.0.1:%d/%s" % (USER, PORT, DATABASE)
+    "DATABASE_URL", f"postgresql://{USER}@127.0.0.1:{PORT}/{DATABASE}"
 )
 
 # The one table the benchmark writes, named so that it cannot be a table

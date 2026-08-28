@@ -102,7 +102,7 @@ def measure_speed(db_url, book, arguments):
     for stack in both:
         stack.setup()
         stacks.check(stack, arguments.page)
-        note("%s: warmed with %d calls" % (stack.name, warm(stack, arguments.warmup)))
+        note(f"{stack.name}: warmed with {warm(stack, arguments.warmup)} calls")
     stacks.sweep(book)
 
     samples = {
@@ -120,7 +120,7 @@ def measure_speed(db_url, book, arguments):
             # Swept per turn, so every stack reads the table the first
             # one read, wherever the rotation put it.
             stacks.sweep(book)
-        note("round %d/%d" % (number + 1, arguments.rounds))
+        note(f"round {number + 1}/{arguments.rounds}")
 
     # Checked again: a stack that broke mid-run would have been timed
     # answering something cheaper than the work.
@@ -165,7 +165,7 @@ def measure_memory(db_url, book, arguments):
     stack = stacks.RestAlchemyStack(db_url, arguments.page)
     stack.setup()
     stacks.check(stack, arguments.page)
-    note("%s: warmed with %d calls" % (stack.name, warm(stack, arguments.warmup)))
+    note(f"{stack.name}: warmed with {warm(stack, arguments.warmup)} calls")
 
     asks = list(stacks.ASK.values())
     series = []
@@ -186,8 +186,8 @@ def measure_memory(db_url, book, arguments):
             }
         )
         note(
-            "batch %d/%d: %d objects, %d bytes"
-            % (number + 1, arguments.batches, objects, series[-1]["bytes"])
+            f"batch {number + 1}/{arguments.batches}:"
+            f" {objects} objects, {series[-1]['bytes']} bytes"
         )
     tracemalloc.stop()
 
@@ -227,7 +227,7 @@ def main():
 
     db_url = consts.get_database_uri()
     if not db_url.startswith("postgresql"):
-        raise SystemExit("the probe reads a PostgreSQL floor: %s" % db_url)
+        raise SystemExit(f"the probe reads a PostgreSQL floor: {db_url}")
 
     # One connection for the table this run seeds, sweeps and drops,
     # held from here to the end: a cluster with ten workers on it has

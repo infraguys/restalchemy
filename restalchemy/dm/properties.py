@@ -20,6 +20,7 @@ import collections
 from collections import abc as collections_abc
 import copy
 import inspect
+import typing
 
 from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
@@ -337,7 +338,7 @@ class PropertyMapping(collections_abc.Mapping, metaclass=abc.ABCMeta):
 class PropertyCollection(PropertyMapping):
     # A declaration keeps no values, so a model reaching here before it
     # has any finds none -- the same shape a manager has.
-    _values = {}
+    _values: typing.ClassVar[dict] = {}
 
     def __init__(self, **kwargs):
         self._properties = kwargs
@@ -480,7 +481,7 @@ class PropertyManager(PropertyMapping):
     #: by every manager and must stay empty. `_properties` is not one of
     #: these: `PropertyMapping` hands out a view over it that would go
     #: on viewing the mapping it was built over.
-    _first_values = {}
+    _first_values: typing.ClassVar[dict] = {}
 
     def __init__(self, property_collection, **kwargs):
         self._collection = property_collection
@@ -638,7 +639,7 @@ class PropertyManager(PropertyMapping):
         if first_values:
             values = self._values
             for name, first in first_values.items():
-                if name in values and not first == values[name]:
+                if name in values and first != values[name]:
                     return True
         for prop in self._properties.values():
             if prop.is_dirty():

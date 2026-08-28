@@ -562,21 +562,19 @@ class PropertyCreatorPathsAgreeTestCase(base.BaseTestCase):
             for value in self.VALUES:
                 fast = self._build(creator, value)
                 slow = self._build(
-                    lambda v: property_class(
-                        property_type=prop_type, value=v, **constructor_kwargs
-                    ),
+                    self._slow_builder(property_class, prop_type, constructor_kwargs),
                     value,
                 )
 
                 self.assertEqual(
                     type(fast).__name__,
                     type(slow).__name__,
-                    "%s / %r" % (label, value),
+                    f"{label} / {value!r}",
                 )
                 if isinstance(fast, Exception) or isinstance(slow, Exception):
-                    self.assertEqual(repr(fast), repr(slow), "%s / %r" % (label, value))
+                    self.assertEqual(repr(fast), repr(slow), f"{label} / {value!r}")
                     continue
-                self.assertEqual(vars(fast), vars(slow), "%s / %r" % (label, value))
+                self.assertEqual(vars(fast), vars(slow), f"{label} / {value!r}")
                 self.assertEqual(
                     (
                         fast.value,
@@ -596,14 +594,26 @@ class PropertyCreatorPathsAgreeTestCase(base.BaseTestCase):
                         slow.is_id_property(),
                         slow.example(),
                     ),
-                    "%s / %r" % (label, value),
+                    f"{label} / {value!r}",
                 )
+
+    @staticmethod
+    def _slow_builder(property_class, prop_type, constructor_kwargs):
+        """The declaration built the long way, bound to one row."""
+
+        def build(value):
+            return property_class(
+                property_type=prop_type, value=value, **constructor_kwargs
+            )
+
+        return build
 
     @staticmethod
     def _build(build, value):
         try:
             return build(value)
-        except Exception as error:
+        # Whatever either path raises is what the other has to raise.
+        except Exception as error:  # noqa: BLE001
             return error
 
 
@@ -785,7 +795,7 @@ class SharedEmptyMappingsTestCase(base.BaseTestCase):
     """
 
     def setUp(self):
-        super(SharedEmptyMappingsTestCase, self).setUp()
+        super().setUp()
         self._collection = properties.PropertyCollection(
             name=properties.property(types.String(), default="d"),
             tags=properties.property(

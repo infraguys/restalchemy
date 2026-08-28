@@ -123,11 +123,11 @@ class TestRawResponses(unittest.TestCase):
         )
 
 
-class FirstAppRoute(object):
+class FirstAppRoute:
     pass
 
 
-class SecondAppRoute(object):
+class SecondAppRoute:
     pass
 
 
@@ -232,7 +232,7 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         # hold one copy of the document per value it sends.
         application = self._controller.request.application
         hosts = [
-            "http://host-%d" % number
+            f"http://host-{number}"
             for number in range(openapi_cache.ENCODED_MAX_ENTRIES * 4)
         ]
 
@@ -251,7 +251,7 @@ class TestOpenApiSpecificationCache(unittest.TestCase):
         # cache while something else cycles through names.
         application = self._controller.request.application
         hosts = [
-            "http://host-%d" % number
+            f"http://host-{number}"
             for number in range(openapi_cache.ENCODED_MAX_ENTRIES)
         ]
         for host in hosts:
@@ -1235,7 +1235,7 @@ class CustomFilterProcessingTestCase(unittest.TestCase):
         self._controller = CustomPropertyController(_request(""))
 
     def _rows(self, count):
-        return [CustomPropertyModel(name="vm%d" % i) for i in range(count)]
+        return [CustomPropertyModel(name=f"vm{i}") for i in range(count)]
 
     def test_no_filters_passes_the_rows_through(self):
         rows = self._rows(3)

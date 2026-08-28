@@ -16,9 +16,8 @@
 
 import gc
 import unittest
+from unittest import mock
 import weakref
-
-import mock
 
 from restalchemy.dm import filters
 from restalchemy.dm import models
@@ -355,12 +354,12 @@ class SelectShapeCacheTestCase(unittest.TestCase):
     """
 
     def setUp(self):
-        super(SelectShapeCacheTestCase, self).setUp()
+        super().setUp()
         self.engine = fixtures.EngineFixture()
         self.session = mock.Mock(engine=self.engine)
 
     def tearDown(self):
-        super(SelectShapeCacheTestCase, self).tearDown()
+        super().tearDown()
         q.clear_shape_cache()
 
     def _select(self, **kwargs):
@@ -388,7 +387,7 @@ class SelectShapeCacheTestCase(unittest.TestCase):
     def test_another_engine_escapes_its_own_way(self):
         class DoubleQuoteEngine(fixtures.EngineFixture):
             def escape(self, value):
-                return '"%s"' % value
+                return f'"{value}"'
 
         other = q.Q.select(SharedModel, session=mock.Mock(engine=DoubleQuoteEngine()))
 
