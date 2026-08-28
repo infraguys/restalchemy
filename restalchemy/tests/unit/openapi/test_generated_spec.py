@@ -34,14 +34,14 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import service
 def build_spec(version):
     app = service.build_wsgi_application(app_root=routes.Root)
     # PUT regenerates unconditionally, whatever this process has cached.
-    request = webob.Request.blank("/specifications/%s" % version)
+    request = webob.Request.blank(f"/specifications/{version}")
     request.method = "PUT"
     request.content_type = "application/json"
     request.body = b"{}"
     response = request.get_response(app)
     if response.status_code != 200:
         raise AssertionError(
-            "spec generation failed: %s %s" % (response.status, response.text[:500])
+            f"spec generation failed: {response.status} {response.text[:500]}"
         )
     return response.json
 
@@ -85,19 +85,19 @@ class GeneratedSpecTestCase(unittest.TestCase):
                     if ref.startswith("#/") and resolve(spec, ref) is None
                 }
             )
-            self.assertEqual([], broken, "dangling $refs in %s spec" % version)
+            self.assertEqual([], broken, f"dangling $refs in {version} spec")
 
     def test_operation_ids_are_unique(self):
         for version in self.VERSIONS:
             spec = build_spec(version)
             seen = collections.Counter()
-            for path, item in spec["paths"].items():
-                for method, operation in item.items():
+            for item in spec["paths"].values():
+                for operation in item.values():
                     if isinstance(operation, dict) and "operationId" in operation:
                         seen[operation["operationId"]] += 1
             duplicates = sorted(name for name, n in seen.items() if n > 1)
             self.assertEqual(
-                [], duplicates, "duplicate operationIds in %s spec" % version
+                [], duplicates, f"duplicate operationIds in {version} spec"
             )
 
     def test_every_path_placeholder_is_declared(self):
@@ -119,9 +119,9 @@ class GeneratedSpecTestCase(unittest.TestCase):
                         if parameter.get("in") == "path":
                             declared.add(parameter.get("name"))
                     for missing in sorted(placeholders - declared):
-                        undeclared.append("%s %s {%s}" % (method, path, missing))
+                        undeclared.append(f"{method} {path} {{{missing}}}")
             self.assertEqual(
-                [], undeclared, "undeclared path parameters in %s spec" % version
+                [], undeclared, f"undeclared path parameters in {version} spec"
             )
 
     def test_numeric_bounds_are_well_formed(self):
@@ -135,14 +135,17 @@ class GeneratedSpecTestCase(unittest.TestCase):
                     ("exclusiveMaximum", "maximum"),
                     ("exclusiveMinimum", "minimum"),
                 ):
-                    if exclusive in node and isinstance(node[exclusive], bool):
-                        if inclusive not in node:
-                            offenders.append("%s/%s" % (path, exclusive))
+                    if (
+                        exclusive in node
+                        and isinstance(node[exclusive], bool)
+                        and inclusive not in node
+                    ):
+                        offenders.append(f"{path}/{exclusive}")
                 for key, value in node.items():
-                    walk(value, "%s/%s" % (path, key))
+                    walk(value, f"{path}/{key}")
             elif isinstance(node, list):
                 for i, item in enumerate(node):
-                    walk(item, "%s/%d" % (path, i))
+                    walk(item, f"{path}/{i}")
 
         for version in self.VERSIONS:
             offenders = []

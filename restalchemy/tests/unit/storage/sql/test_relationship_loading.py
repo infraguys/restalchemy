@@ -23,9 +23,8 @@ counts what it was asked to execute.
 
 import contextlib
 import re
+from unittest import mock
 import uuid
-
-import mock
 
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -38,7 +37,7 @@ from restalchemy.storage.sql.dialect import pgsql
 from restalchemy.tests.unit import base
 
 
-class FakeSession(object):
+class FakeSession:
     """Answers a `SELECT` out of a dict of tables, and remembers it."""
 
     def __init__(self, engine, tables):
@@ -78,7 +77,7 @@ class FakeSession(object):
 
     @staticmethod
     def _key(alias, column):
-        return "%s_%s" % (alias, column) if alias else column
+        return f"{alias}_{column}" if alias else column
 
     @classmethod
     def _unprefixed(cls, row, alias):
@@ -108,7 +107,7 @@ class FakeSession(object):
         return [re.search(r'FROM "(\w+)"', s).group(1) for s in self.statements]
 
 
-class FakeEngine(object):
+class FakeEngine:
     dialect = pgsql.PgSQLDialect()
     query_cache = False
 
@@ -116,14 +115,14 @@ class FakeEngine(object):
         self.session = FakeSession(self, tables)
 
     def escape(self, name):
-        return '"%s"' % name
+        return f'"{name}"'
 
     @contextlib.contextmanager
     def session_manager(self, session=None):
         yield session or self.session
 
 
-class FakeEngineFactory(object):
+class FakeEngineFactory:
     def __init__(self, engine):
         self._engine = engine
 
@@ -174,22 +173,22 @@ class RelationshipLoadingTestCase(base.BaseTestCase):
     ROWS = 20
 
     def setUp(self):
-        super(RelationshipLoadingTestCase, self).setUp()
+        super().setUp()
 
-        self.orgs = [{"uuid": str(uuid.uuid4()), "name": "o%d" % i} for i in range(2)]
+        self.orgs = [{"uuid": str(uuid.uuid4()), "name": f"o{i}"} for i in range(2)]
         self.projects = [
             {
                 "uuid": str(uuid.uuid4()),
-                "name": "p%d" % i,
+                "name": f"p{i}",
                 "org": self.orgs[i % len(self.orgs)]["uuid"],
             }
             for i in range(5)
         ]
-        self.roles = [{"uuid": str(uuid.uuid4()), "name": "r%d" % i} for i in range(3)]
+        self.roles = [{"uuid": str(uuid.uuid4()), "name": f"r{i}"} for i in range(3)]
         self.bindings = [
             {
                 "uuid": str(uuid.uuid4()),
-                "name": "b%d" % i,
+                "name": f"b{i}",
                 "project": self.projects[i % len(self.projects)]["uuid"],
                 "role": self.roles[i % len(self.roles)]["uuid"],
             }
@@ -212,7 +211,7 @@ class RelationshipLoadingTestCase(base.BaseTestCase):
         engines.engine_factory = FakeEngineFactory(self.engine)
 
     def tearDown(self):
-        super(RelationshipLoadingTestCase, self).tearDown()
+        super().tearDown()
         engines.engine_factory = self._real_factory
 
     @property
@@ -302,4 +301,4 @@ class RelationshipLoadingTestCase(base.BaseTestCase):
 
         # The batch cannot read it, so the value reaches the per-row path,
         # which reports it the way it always has.
-        self.assertRaises(Exception, Binding.objects.get_all)
+        self.assertRaises(exceptions.UnknownStorageException, Binding.objects.get_all)

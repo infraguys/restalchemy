@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import itertools
 import logging
 import typing
@@ -82,7 +84,7 @@ class Controller:
 
     # Not for common cases (Example: for JSONPackerIncludeNullFields)
     # Holds the packer class, not an instance: get_packer() instantiates it.
-    __packer__: typing.Optional[typing.Type[packers.BaseResourcePacker]] = None
+    __packer__: type[packers.BaseResourcePacker] | None = None
 
     # You can also generate location header for GET and UPDATE methods,
     # just expand the list with the following constants:

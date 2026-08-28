@@ -247,7 +247,7 @@ class ResultParser:
         return self._root
 
 
-class _EngineSession(object):
+class _EngineSession:
     """Stands in for a session where only the engine is ever asked for.
 
     Everything a `SELECT` builds out of a model -- tables, columns,
@@ -257,7 +257,7 @@ class _EngineSession(object):
     engine and nothing else.
     """
 
-    __slots__ = ("_engine", "__weakref__")
+    __slots__ = ("__weakref__", "_engine")
 
     def __init__(self, engine):
         # Weakly: what is built from an engine is kept under that engine
@@ -271,7 +271,7 @@ class _EngineSession(object):
         return self._engine()
 
 
-class _SelectShape(object):
+class _SelectShape:
     """The part of a `SELECT` that a model and an engine already decide.
 
     Which columns are selected, under which aliases, from which tables,
@@ -285,10 +285,10 @@ class _SelectShape(object):
 
     __slots__ = (
         "model_table",
+        "prefix",
+        "result_parser",
         "select_expressions",
         "table_references",
-        "result_parser",
-        "prefix",
     )
 
     def __init__(
@@ -396,8 +396,7 @@ class SelectQ(common.AbstractClause):
             select_expressions=builder._select_expressions,
             table_references=builder._table_references,
             result_parser=builder._result_parser,
-            prefix="SELECT %s FROM %s"
-            % (
+            prefix="SELECT {} FROM {}".format(
                 ", ".join([exp.compile() for exp in builder._select_expressions]),
                 " ".join([tbl.compile() for tbl in builder._table_references]),
             ),

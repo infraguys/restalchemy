@@ -28,8 +28,8 @@ def _cpu():
     cores = _first("/proc/cpuinfo", r"^cpu cores\s*:\s*(\d+)$")
     threads = os.cpu_count()
     if cores and threads:
-        return "%s, %s cores / %d threads" % (name, cores, threads)
-    return "%s, %d threads" % (name, threads) if threads else name
+        return f"{name}, {cores} cores / {threads} threads"
+    return f"{name}, {threads} threads" if threads else name
 
 
 def _governor():
@@ -45,24 +45,27 @@ def _memory():
     # machine where nobody can, the size is still worth having.
     speed = os.environ.get("BENCH_MEMORY_SPEED")
     if speed:
-        return "%s at %s" % (size, speed) if size else speed
+        return f"{size} at {speed}" if size else speed
     try:
         out = subprocess.run(
             ["dmidecode", "-t", "memory"],
             capture_output=True,
             text=True,
             timeout=5,
+            check=False,
         )
         if out.returncode == 0:
             speeds = set(
-                re.findall(r"^\s*Configured Memory Speed: (\d+ MT/s)", out.stdout, re.M)
+                re.findall(
+                    r"^\s*Configured Memory Speed: (\d+ MT/s)", out.stdout, re.MULTILINE
+                )
             )
             if len(speeds) == 1:
                 speed = speeds.pop()
     except (OSError, subprocess.SubprocessError):
         pass
     if size and speed:
-        return "%s at %s" % (size, speed)
+        return f"{size} at {speed}"
     return size
 
 
@@ -72,7 +75,7 @@ def load_average():
         one, five, fifteen = os.getloadavg()
     except OSError:
         return None
-    return "%.2f, %.2f, %.2f" % (one, five, fifteen)
+    return f"{one:.2f}, {five:.2f}, {fifteen:.2f}"
 
 
 def describe(postgres=None, load=None):
@@ -85,8 +88,8 @@ def describe(postgres=None, load=None):
         ("CPU", _cpu()),
         ("Frequency governor", _governor()),
         ("Memory", _memory()),
-        ("Kernel", "%s %s" % (platform.system(), platform.release())),
+        ("Kernel", f"{platform.system()} {platform.release()}"),
         ("PostgreSQL", postgres),
         ("Load average before the first round", load),
     ]
-    return "\n".join("- **%s**: %s" % (name, value) for name, value in facts if value)
+    return "\n".join(f"- **{name}**: {value}" for name, value in facts if value)

@@ -15,9 +15,8 @@
 #    under the License.
 
 import gc
+from unittest import mock
 import weakref
-
-import mock
 
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -44,7 +43,7 @@ class SQLTableColumnNamesTestCase(base.BaseTestCase):
     """
 
     def setUp(self):
-        super(SQLTableColumnNamesTestCase, self).setUp()
+        super().setUp()
         self.engine = fixtures.EngineFixture()
         self.session = mock.Mock(engine=self.engine)
         self.table = tables.SQLTable(
@@ -86,7 +85,7 @@ class SQLTableColumnNamesTestCase(base.BaseTestCase):
     def test_each_engine_escapes_the_way_it_escapes(self):
         class DoubleQuoteEngine(fixtures.EngineFixture):
             def escape(self, value):
-                return '"%s"' % value
+                return f'"{value}"'
 
         other = mock.Mock(engine=DoubleQuoteEngine())
 

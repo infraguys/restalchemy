@@ -29,6 +29,7 @@ psycopg is the driver both sides then share.
 import datetime
 import io
 import time
+import typing
 import uuid
 
 import orjson
@@ -71,9 +72,9 @@ CONNECT_ATTEMPTS = 8
 CONNECT_PAUSE = 0.5
 MAX_PAUSE = 2.0
 
-SCHEMA = """
-DROP TABLE IF EXISTS %(table)s;
-CREATE TABLE %(table)s (
+SCHEMA = f"""
+DROP TABLE IF EXISTS {TABLE};
+CREATE TABLE {TABLE} (
     id uuid PRIMARY KEY,
     name varchar(255) NOT NULL,
     description varchar(255) NOT NULL,
@@ -83,8 +84,8 @@ CREATE TABLE %(table)s (
     created_at timestamptz NOT NULL,
     updated_at timestamptz NOT NULL
 );
-CREATE INDEX %(table)s_quantity ON %(table)s (quantity);
-""" % {"table": TABLE}
+CREATE INDEX {TABLE}_quantity ON {TABLE} (quantity);
+"""
 
 
 def _now():
@@ -115,8 +116,8 @@ def seed(connection, rows):
     records = [
         (
             uuid.UUID(int=number + 1),
-            "item %d" % number,
-            "a description of item %d" % number,
+            f"item {number}",
+            f"a description of item {number}",
             number % 3 != 0,
             number,
             PROJECT_ID,
@@ -127,20 +128,18 @@ def seed(connection, rows):
     ]
     connection.execute(SCHEMA)
     connection.cursor().executemany(
-        "INSERT INTO %s (%s) VALUES (%s)" % (TABLE, COLUMNS, ", ".join(["%s"] * 8)),
+        "INSERT INTO {} ({}) VALUES ({})".format(TABLE, COLUMNS, ", ".join(["%s"] * 8)),
         records,
     )
 
 
 def sweep(connection):
     """Take the rows the POSTs wrote back out."""
-    connection.execute(
-        "DELETE FROM %s WHERE quantity >= %d" % (TABLE, CREATED_QUANTITY)
-    )
+    connection.execute(f"DELETE FROM {TABLE} WHERE quantity >= {CREATED_QUANTITY}")
 
 
 def drop(connection):
-    connection.execute("DROP TABLE IF EXISTS %s" % TABLE)
+    connection.execute(f"DROP TABLE IF EXISTS {TABLE}")
 
 
 def wsgi(app, method, path, body=b""):
@@ -184,7 +183,7 @@ def wsgi(app, method, path, body=b""):
     return captured["status"], payload
 
 
-class RawStack(object):
+class RawStack:
     """psycopg and orjson, nothing else.
 
     It takes its connection from a pool, as a service would and as ours
@@ -214,22 +213,22 @@ class RawStack(object):
         return row
 
     def collection(self):
-        with self._pool.connection() as connection:
-            with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
-                cursor.execute(
-                    "SELECT %s FROM %s ORDER BY quantity LIMIT %%s" % (COLUMNS, TABLE),
-                    (self._page,),
-                )
-                documents = [self._document(row) for row in cursor.fetchall()]
+        with self._pool.connection() as connection, connection.cursor(
+            row_factory=pg_rows.dict_row
+        ) as cursor:
+            cursor.execute(
+                f"SELECT {COLUMNS} FROM {TABLE} ORDER BY quantity LIMIT %s",
+                (self._page,),
+            )
+            documents = [self._document(row) for row in cursor.fetchall()]
         return 200, orjson.dumps(documents)
 
     def resource(self, item_id):
-        with self._pool.connection() as connection:
-            with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
-                cursor.execute(
-                    "SELECT %s FROM %s WHERE id = %%s" % (COLUMNS, TABLE), (item_id,)
-                )
-                row = cursor.fetchone()
+        with self._pool.connection() as connection, connection.cursor(
+            row_factory=pg_rows.dict_row
+        ) as cursor:
+            cursor.execute(f"SELECT {COLUMNS} FROM {TABLE} WHERE id = %s", (item_id,))
+            row = cursor.fetchone()
         return 200, orjson.dumps(self._document(row))
 
     def create(self, document):
@@ -245,14 +244,16 @@ class RawStack(object):
             now,
             now,
         )
-        with self._pool.connection() as connection:
-            with connection.cursor(row_factory=pg_rows.dict_row) as cursor:
-                cursor.execute(
-                    "INSERT INTO %s (%s) VALUES (%s) RETURNING %s"
-                    % (TABLE, COLUMNS, ", ".join(["%s"] * 8), COLUMNS),
-                    values,
-                )
-                row = cursor.fetchone()
+        with self._pool.connection() as connection, connection.cursor(
+            row_factory=pg_rows.dict_row
+        ) as cursor:
+            cursor.execute(
+                "INSERT INTO {} ({}) VALUES ({}) RETURNING {}".format(
+                    TABLE, COLUMNS, ", ".join(["%s"] * 8), COLUMNS
+                ),
+                values,
+            )
+            row = cursor.fetchone()
         return 201, orjson.dumps(self._document(row))
 
 
@@ -296,16 +297,20 @@ class ItemController(controllers.Controller):
 
 class ItemsRoute(routes.Route):
     __controller__ = ItemController
-    __allow_methods__ = [routes.FILTER, routes.GET, routes.CREATE]
+    __allow_methods__: typing.ClassVar = [
+        routes.FILTER,
+        routes.GET,
+        routes.CREATE,
+    ]
 
 
 class Root(routes.Route):
     __controller__ = ItemController
-    __allow_methods__ = []
+    __allow_methods__: typing.ClassVar = []
     items = routes.route(ItemsRoute)
 
 
-class RestAlchemyStack(object):
+class RestAlchemyStack:
     """A REST resource of ours, routed, fetched through the ORM, packed."""
 
     name = "restalchemy"
@@ -326,7 +331,7 @@ class RestAlchemyStack(object):
         return wsgi(self._app, "GET", "/items/")
 
     def resource(self, item_id):
-        return wsgi(self._app, "GET", "/items/%s" % item_id)
+        return wsgi(self._app, "GET", f"/items/{item_id}")
 
     def create(self, document):
         return wsgi(self._app, "POST", "/items/", document)
@@ -345,25 +350,23 @@ def check(stack, page):
     """Nobody is measured before answering what the table holds."""
     status, body = stack.collection()
     documents = orjson.loads(body)
-    assert status == 200, "%s: collection answered %s" % (stack.name, status)
-    assert len(documents) == page, "%s: collection is %d rows, not %d" % (
-        stack.name,
-        len(documents),
-        page,
+    assert status == 200, f"{stack.name}: collection answered {status}"
+    assert len(documents) == page, (
+        f"{stack.name}: collection is {len(documents)} rows, not {page}"
     )
 
     status, body = stack.resource(FIRST_ID)
-    assert status == 200, "%s: resource answered %s" % (stack.name, status)
+    assert status == 200, f"{stack.name}: resource answered {status}"
     resource = orjson.loads(body)
-    assert resource["id"] == FIRST_ID, "%s: resource is another row" % stack.name
+    assert resource["id"] == FIRST_ID, f"{stack.name}: resource is another row"
     assert set(resource) >= set(documents[0]), (
-        "%s: a resource answers with less than a collection row" % stack.name
+        f"{stack.name}: a resource answers with less than a collection row"
     )
 
     status, body = stack.create(CREATE_BODY)
-    assert status == 201, "%s: create answered %s" % (stack.name, status)
+    assert status == 201, f"{stack.name}: create answered {status}"
     created = orjson.loads(body)
     posted = orjson.loads(CREATE_BODY)
     assert all(created[field] == posted[field] for field in posted), (
-        "%s: create echoes the posted fields back wrong" % stack.name
+        f"{stack.name}: create echoes the posted fields back wrong"
     )
