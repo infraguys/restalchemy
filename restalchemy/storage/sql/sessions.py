@@ -18,13 +18,19 @@ import contextlib
 import logging
 import threading
 
-from mysql.connector import errors
-from psycopg import errors as pg_errors
-from psycopg import rows as pg_rows
+try:
+    from mysql.connector import errors as mysql_errors
+except ImportError:
+    mysql_errors = None
+
+try:
+    from psycopg import errors as pg_errors
+    from psycopg import rows as pg_rows
+except ImportError:
+    pg_errors = None
+    pg_rows = None
 
 from restalchemy.storage import exceptions as exc
-from restalchemy.storage.sql.dialect import mysql
-from restalchemy.storage.sql.dialect import pgsql
 
 LOG = logging.getLogger(__name__)
 
@@ -122,6 +128,11 @@ class SessionQueryCache(object):
 
 class PgSQLSession(object):
     def __init__(self, engine):
+        if pg_rows is None:
+            raise ModuleNotFoundError(
+                "No module named 'psycopg'. "
+                "Install it via: pip install restalchemy[pgsql]"
+            )
         self._engine = engine
         self._conn = self._engine.get_connection()
         self._cursor = self._conn.cursor(row_factory=pg_rows.dict_row)
@@ -140,11 +151,16 @@ class PgSQLSession(object):
 
     def batch_insert(self, models):
         if models:
-            # Check models type
+            if pg_errors is None:
+                raise ModuleNotFoundError(
+                    "No module named 'psycopg'. "
+                    "Install it via: pip install restalchemy[pgsql]"
+                )
+            from restalchemy.storage.sql.dialect import pgsql
+
             first_model = models[0]
             self._check_models_same_type(first_model, models)
 
-            # process values
             values = []
             table = first_model.get_table()
             statement = pgsql.PgSQLInsert(
@@ -171,11 +187,11 @@ class PgSQLSession(object):
 
     def batch_delete(self, models):
         if models:
-            # Check models type
+            from restalchemy.storage.sql.dialect import pgsql
+
             first_model = models[0]
             self._check_models_same_type(first_model, models)
 
-            # process values
             table = first_model.get_table()
             values = []
             for model in models:
@@ -201,7 +217,7 @@ class PgSQLSession(object):
             )
             self._cursor.execute(statement, values)
             return self._cursor
-        except errors.DatabaseError:
+        except Exception:
             raise
 
     def execute_many(self, statement, values):
@@ -226,6 +242,11 @@ class PgSQLSession(object):
 
 class MySQLSession(object):
     def __init__(self, engine):
+        if mysql_errors is None:
+            raise ModuleNotFoundError(
+                "No module named 'mysql.connector'. "
+                "Install it via: pip install restalchemy[mysql]"
+            )
         self._engine = engine
         self._conn = self._engine.get_connection()
         self._cursor = self._conn.cursor(dictionary=True, buffered=True)
@@ -244,11 +265,16 @@ class MySQLSession(object):
 
     def batch_insert(self, models):
         if models:
-            # Check models type
+            if mysql_errors is None:
+                raise ModuleNotFoundError(
+                    "No module named 'mysql.connector'. "
+                    "Install it via: pip install restalchemy[mysql]"
+                )
+            from restalchemy.storage.sql.dialect import mysql
+
             first_model = models[0]
             self._check_models_same_type(first_model, models)
 
-            # process values
             values = []
             table = first_model.get_table()
             statement = mysql.MySQLInsert(
@@ -267,7 +293,7 @@ class MySQLSession(object):
 
             try:
                 return self.execute_many(statement, values)
-            except errors.IntegrityError as e:
+            except mysql_errors.IntegrityError as e:
                 # Error codes from Maria DB documentation. See more on website
                 # https://mariadb.com/kb/en/mariadb-error-codes/
                 # Errno: 1062 and sqlstate: 23000 is "Duplicate entry" error.
@@ -281,11 +307,11 @@ class MySQLSession(object):
 
     def batch_delete(self, models):
         if models:
-            # Check models type
+            from restalchemy.storage.sql.dialect import mysql
+
             first_model = models[0]
             self._check_models_same_type(first_model, models)
 
-            # process values
             table = first_model.get_table()
             values = []
             for model in models:
@@ -311,7 +337,7 @@ class MySQLSession(object):
             )
             self._cursor.execute(statement, values)
             return self._cursor
-        except errors.DatabaseError as e:
+        except mysql_errors.DatabaseError as e:
             if e.errno == 1213:
                 raise exc.DeadLock(msg=e.msg)
             raise

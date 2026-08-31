@@ -16,52 +16,64 @@
 
 from __future__ import absolute_import  # noqa
 
-from mysql.connector import conversion
+try:
+    from mysql.connector import conversion
+except ImportError:
+    conversion = None
 
+from restalchemy.common.exceptions import MissingOptionalDependency
 
-class MySQLConverter(conversion.MySQLConverter):
-    def _list_to_mysql(self, value):
-        """Convert list value to mysql driver type
+if conversion is not None:
 
-        Convert value to list in for in operation in with statement.
-        """
-        return [self.to_mysql(item) for item in value]
+    class MySQLConverter(conversion.MySQLConverter):
+        def _list_to_mysql(self, value):
+            """Convert list value to mysql driver type
 
-    def escape(self, value, sql_mode=None):
-        """Escape dangerous symbols in value
+            Convert value to list in for in operation in with statement.
+            """
+            return [self.to_mysql(item) for item in value]
 
-        Escapes special characters as they are expected to by when MySQL
-        receives them.
-        As found in MySQL source mysys/charset.c
-        Returns the value if not a string, or the escaped string.
-        """
-        if isinstance(value, list):
-            return [self.escape(item, sql_mode) for item in value]
-        return super(MySQLConverter, self).escape(value, sql_mode)
+        def escape(self, value, sql_mode=None):
+            """Escape dangerous symbols in value
 
-    def quote(self, buf):
-        """Quote all text values
+            Escapes special characters as they are expected to by when MySQL
+            receives them.
+            As found in MySQL source mysys/charset.c
+            Returns the value if not a string, or the escaped string.
+            """
+            if isinstance(value, list):
+                return [self.escape(item, sql_mode) for item in value]
+            return super(MySQLConverter, self).escape(value, sql_mode)
 
-        Quote the parameters for commands. General rules:
-          o numbers are returns as bytes using ascii codec
-          o None is returned as bytearray(b'NULL')
-          o Everything else is single quoted '<buf>'
-        Returns a bytearray object.
-        """
-        if isinstance(buf, list):
-            tmp_list_buf = [self.quote(item) for item in buf]
-            tmp_str_buf = b"(%s)" % (b", ".join(tmp_list_buf))
-            return bytearray(tmp_str_buf)
-        return super(MySQLConverter, self).quote(buf)
+        def quote(self, buf):
+            """Quote all text values
 
-    _JSON_to_python = conversion.MySQLConverter._string_to_python
+            Quote the parameters for commands. General rules:
+              o numbers are returns as bytes using ascii codec
+              o None is returned as bytearray(b'NULL')
+              o Everything else is single quoted '<buf>'
+            Returns a bytearray object.
+            """
+            if isinstance(buf, list):
+                tmp_list_buf = [self.quote(item) for item in buf]
+                tmp_str_buf = b"(%s)" % (b", ".join(tmp_list_buf))
+                return bytearray(tmp_str_buf)
+            return super(MySQLConverter, self).quote(buf)
 
-    def _BLOB_to_python(self, value, dsc=None):  # pylint: disable=C0103
-        """Convert BLOB data type to Python."""
-        if dsc is not None:
-            if (
-                dsc[7] & conversion.FieldFlag.BLOB
-                and dsc[7] & conversion.FieldFlag.BINARY
-            ):
-                return bytes(value)
-        return self._string_to_python(value, dsc)
+        _JSON_to_python = conversion.MySQLConverter._string_to_python
+
+        def _BLOB_to_python(self, value, dsc=None):
+            """Convert BLOB data type to Python."""
+            if dsc is not None:
+                if (
+                    dsc[7] & conversion.FieldFlag.BLOB
+                    and dsc[7] & conversion.FieldFlag.BINARY
+                ):
+                    return bytes(value)
+            return self._string_to_python(value, dsc)
+
+else:
+
+    class MySQLConverter:
+        def __init__(self, *args, **kwargs):
+            raise MissingOptionalDependency("mysql-connector-python", "mysql")
