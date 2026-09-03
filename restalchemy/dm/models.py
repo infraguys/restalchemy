@@ -433,11 +433,20 @@ class RestoreFromSimpleViewMixin:
     @classmethod
     def restore_from_simple_view(cls, skip_unknown_fields: bool = False, **kwargs):
         model_format = {}
+        # A custom property is one of this model's fields, declared somewhere
+        # else. Reading below falls back to it; skipping has to know about it
+        # too, or `skip_unknown_fields` drops a field the model has -- and a
+        # model whose `__init__` requires one is then not built at all.
+        custom_properties = getattr(cls, "__custom_properties__", ())
         for name, value in kwargs.items():
             name = name.replace("-", "_")
 
             # Ignore unknown fields
-            if skip_unknown_fields and name not in cls.properties.properties:
+            if (
+                skip_unknown_fields
+                and name not in cls.properties.properties
+                and name not in custom_properties
+            ):
                 continue
 
             try:

@@ -132,6 +132,20 @@ class SimpleViewModel(models.ModelWithUUID, models.SimpleViewMixin):
     none_property = properties.property(types.AllowNone(types.Integer()), default=None)
 
 
+class SimpleViewModelWithSecret(
+    models.ModelWithUUID,
+    models.CustomPropertiesMixin,
+    models.SimpleViewMixin,
+):
+    """A model that needs a custom property to be built at all."""
+
+    __custom_properties__ = {"secret": types.String(max_length=32)}
+
+    def __init__(self, secret, **kwargs):
+        super().__init__(**kwargs)
+        self.kept = secret
+
+
 class InheritModelTestCase(base.BaseTestCase):
     def test_correct_type_in_base_model(self):
         props = BaseModel.properties.properties
@@ -309,6 +323,40 @@ class SimpleViewMixinTestCase(base.BaseTestCase):
         self.assertEqual(simple_view_model.str_property, "bar")
         self.assertIs(simple_view_model.none_property, None)
         self.assertIs(simple_view_model.uuid.__class__, uuid.UUID)
+
+    def test_restore_skipping_unknown_fields(self):
+        view = {
+            "uuid": "2e39d8df-2662-4834-ad86-c637d1edd504",
+            "int_property": 2,
+            "unknown_property": "whatever",
+        }
+
+        simple_view_model = SimpleViewModel.restore_from_simple_view(
+            skip_unknown_fields=True, **view
+        )
+
+        self.assertEqual(simple_view_model.int_property, 2)
+        self.assertFalse(hasattr(simple_view_model, "unknown_property"))
+
+    def test_restore_skipping_unknown_fields_keeps_a_custom_property(self):
+        """A custom property is a field of the model, not an unknown name.
+
+        Skipping it dropped what the model was built from: one that takes it
+        in `__init__` raised `TypeError: missing 1 required positional
+        argument` instead of being restored.
+        """
+        view = {
+            "uuid": "2e39d8df-2662-4834-ad86-c637d1edd504",
+            "secret": "hunter2",
+            "unknown_property": "whatever",
+        }
+
+        model = SimpleViewModelWithSecret.restore_from_simple_view(
+            skip_unknown_fields=True, **view
+        )
+
+        self.assertEqual(model.kept, "hunter2")
+        self.assertFalse(hasattr(model, "unknown_property"))
 
 
 class ModelBuiltWithoutInitTestCase(base.BaseTestCase):
