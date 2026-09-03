@@ -83,6 +83,39 @@ class ResourceMap(object):
         return resource_locator.get_resource(request, uri, parent_resource)
 
     @classmethod
+    def get_locator_by_model_type(cls, model_type):
+        try:
+            resource = cls.model_type_to_resource[model_type]
+        except KeyError:
+            raise exc.CanNotFindResourceByModel(model=model_type)
+        if resource not in cls.resource_map:
+            raise exc.UnknownResourceLocation(resource=resource)
+        return cls.resource_map[resource]
+
+    @classmethod
+    def get_resource_by_uuid(cls, request, model_type, uuid):
+        """Get a resource of a known type by its UUID alone
+
+        `get_resource` is given a URI because the URI is what says which
+        collection to look in. A relationship already names the model it
+        holds, and a model is served by one resource, so that collection is
+        known without the value spelling it out -- as long as the resource
+        stands on a path of its own. A resource nested under a parent is
+        addressed through the parent's UUID too, and a bare UUID does not
+        carry it.
+
+        :param request: The user request
+        :param model_type: The model class the wanted resource is served by
+        :param uuid: The identifier of the wanted resource
+
+        :return: The resource which controller returns
+        """
+        locator = cls.get_locator_by_model_type(model_type)
+        if any(not isinstance(piece, str) for piece in locator.path_stack[:-1]):
+            raise exc.BareUuidForNestedResource(model=model_type, uuid=uuid)
+        return locator.get_resource(request, uuid)
+
+    @classmethod
     def set_resource_map(cls, resource_map):
         cls.resource_map = resource_map
 
@@ -210,7 +243,27 @@ class ResourceRAProperty(ResourceProperty):
 
 
 class ResourceRelationship(AbstractResourceProperty):
+    def __init__(
+        self,
+        resource,
+        model_property_name,
+        public=True,
+        parse_bare_uuid=False,
+    ):
+        super(ResourceRelationship, self).__init__(
+            resource=resource,
+            model_property_name=model_property_name,
+            public=public,
+        )
+        self._parse_bare_uuid = parse_bare_uuid
+
     def parse_value(self, req, value):
+        # A URI always carries a slash and a UUID never does, so which of
+        # the two the user sent is not a guess. Both are read while the
+        # option is on: the field is still dumped as a URI, and a user who
+        # sends back what they were given is understood.
+        if self._parse_bare_uuid and isinstance(value, str) and "/" not in value:
+            return ResourceMap.get_resource_by_uuid(req, self.get_type(), value)
         return ResourceMap.get_resource(req, value)
 
     def parse_value_from_unicode(self, req, value):
@@ -462,6 +515,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
         process_filters=False,
         model_subclasses=None,
         fields_permissions=None,
+        uuid_relationships=None,
     ):
         """Resource constructor
 
@@ -494,6 +548,16 @@ class AbstractResource(metaclass=abc.ABCMeta):
                                  fields_permissionsis wouldn't set,
                                  it would be the object of UniversalPermissions
                                  with READWRITE permissions to all fields
+        :param uuid_relationships: The list of relationship names, as the
+                                   model names them, whose value the API user
+                                   may give as a bare UUID instead of the URI
+                                   of the related resource. A URI is still
+                                   accepted, and the fields are still dumped
+                                   as URIs. A relationship is only listable
+                                   here if the related resource is served on
+                                   a path of its own: a resource nested under
+                                   a parent needs the parent's UUID as well,
+                                   which a bare UUID does not carry.
         """
         super(AbstractResource, self).__init__()
         # Resource fields already built, by (model field name, public).
@@ -518,6 +582,17 @@ class AbstractResource(metaclass=abc.ABCMeta):
         self._convert_underscore = convert_underscore
         self._process_filters = process_filters
         self._model_subclasses = model_subclasses or []
+        self._uuid_relationships = frozenset(uuid_relationships or ())
+        for name in self._uuid_relationships:
+            prop = model_class.properties.get(name)
+            if not (
+                inspect.isclass(prop)
+                and issubclass(prop, ra_relationsips.BaseRelationship)
+            ):
+                raise ValueError(
+                    "Model (%s) has no relationship (%s) to parse as a bare "
+                    "UUID." % (model_class, name)
+                )
         ResourceMap.add_model_to_resource_mapping(model_class, self)
         for model_subclass in self._model_subclasses:
             ResourceMap.add_model_to_resource_mapping(model_subclass, self)
@@ -538,6 +613,10 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
     def is_process_filters(self):
         return self._process_filters
+
+    def is_uuid_relationship(self, model_field_name):
+        """Whether the relationship reads a bare UUID as well as a URI"""
+        return model_field_name in self._uuid_relationships
 
     @abc.abstractmethod
     def get_fields(self, override_is_public_field_func=None):
@@ -803,6 +882,7 @@ class ResourceByRAModel(AbstractResource):
                 self,
                 model_property_name=name,
                 public=public,
+                parse_bare_uuid=self.is_uuid_relationship(name),
             )
         else:
             raise TypeError("Unknown property type %s" % type(prop))

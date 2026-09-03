@@ -85,6 +85,13 @@ class CanNotFindResourceByModel(NotFoundError):
     message = "Can not find a resource by model (%(model)r)."
 
 
+class BareUuidForNestedResource(RestAlchemyException):
+    message = (
+        "Model %(model)r is served as a resource nested under another one, "
+        "so the UUID '%(uuid)s' alone does not say where to find it."
+    )
+
+
 class IncorrectRouteAttributeClass(NotFoundError):
     message = "Route %(route)s is of unacceptable class."
 
