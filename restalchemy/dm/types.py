@@ -123,6 +123,14 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
     return result
 
 
+class JSONColumnType(object):
+    """Marker for a DM type whose value is stored as one JSON/JSONB column.
+
+    `api.filter_lang` traverses into such fields for `a.b = "x"` queries;
+    a type opts in by listing this among its bases, not by name.
+    """
+
+
 class BaseType(metaclass=abc.ABCMeta):
     def __init__(self, openapi_type="object", openapi_format=None):
         super(BaseType, self).__init__()
@@ -591,7 +599,7 @@ class TypedList(List):
         return [self._nested_type.example]
 
 
-class Dict(ComplexPythonType):
+class Dict(ComplexPythonType, JSONColumnType):
     def __init__(self):
         super(Dict, self).__init__(dict)
 
