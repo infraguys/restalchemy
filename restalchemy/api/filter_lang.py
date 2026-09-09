@@ -618,7 +618,7 @@ def _bind_json(restriction, resolver, storage_name, field_type):
     clause_class = _COMPARATOR_CLAUSES[restriction.comparator]
     if not resolver.supports(dm_filters.JSONFields):
         raise _unsupported(restriction, "JSON traversal needs PostgreSQL")
-    if not isinstance(field_type, dm_types.Dict):
+    if not isinstance(field_type, dm_types.JSONColumnType):
         # Traversing a column that holds no keys compiles to
         # `("name"->>'x')`, which PostgreSQL rejects as an undefined
         # operator -- a 500 for what the caller got wrong.

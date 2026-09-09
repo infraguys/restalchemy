@@ -126,7 +126,7 @@ class AbstractKindModel(models.Model, metaclass=abc.ABCMeta):
         super().__init__(kind=kind, **kwargs)
 
 
-class KindModelType(types.BasePythonType):
+class KindModelType(types.BasePythonType, types.JSONColumnType):
     def __init__(self, model):
         """
         Initialize the type.
@@ -233,7 +233,7 @@ class KindModelType(types.BasePythonType):
         return {"key": "value"}
 
 
-class KindModelSelectorType(types.BaseType):
+class KindModelSelectorType(types.BaseType, types.JSONColumnType):
     def __init__(self, *args):
         """
         Initialize the type.
