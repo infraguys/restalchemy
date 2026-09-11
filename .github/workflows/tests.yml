@@ -1,11 +1,13 @@
 name: tests
 
 on:
+  # A branch with a pull request open is covered by the pull_request event, so
+  # asking for pushes to it as well would run the suite twice for one change.
+  # A fork's pushes never reach this repository, and only the pull_request
+  # event carries them here.
   push:
+    branches: [master]
   pull_request:
-    # A push to the branch runs this workflow anyway, so only the opening of
-    # a pull request has to ask for it again.
-    types: [opened]
 
 permissions: {}
 
