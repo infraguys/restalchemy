@@ -66,6 +66,13 @@ MAX_BYTES_PER_REQUEST = 32
 # and in the pool's.
 SHORTAGE = ("too many clients", "PoolTimeout", "connection failed")
 
+# A tracer answers a different question than this one. Coverage follows
+# our Python, the probe's subprocess included, and hardly the psycopg and
+# orjson the floor is made of, so the ratio comes out describing the
+# tracer. pytest-cov announces itself to its subprocesses in the
+# environment, which is how a run under --cov can be recognized from here.
+TRACED = bool(os.environ.get("COV_CORE_SOURCE"))
+
 SKIPPED = os.environ.get("RA_PERF_SKIP", "")
 DIALECT = parse.urlparse(consts.DATABASE_URI).scheme
 
@@ -97,6 +104,7 @@ def probe(mode, *options):
     return orjson.loads(finished.stdout)
 
 
+@unittest.skipIf(TRACED, "coverage is measuring this run; the floor is not")
 @unittest.skipIf(SKIPPED, "RA_PERF_SKIP is set")
 @unittest.skipUnless(
     DIALECT == "postgresql",
