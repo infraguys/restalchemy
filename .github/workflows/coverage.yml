@@ -12,10 +12,12 @@ on:
       - completed
 
 concurrency:
-  # Group by the pull request branch: "github.ref" is always the default
-  # branch on "workflow_run", so runs for different pull requests would
-  # otherwise cancel each other.
-  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
+  # Group by the pull request's repository and branch: "github.ref" is always
+  # the default branch on "workflow_run", so runs for different pull requests
+  # would otherwise cancel each other. Forks commonly propose a branch named
+  # "master" or "patch-1", so the branch alone does not tell them apart.
+  group: >-
+    ${{ github.workflow }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 
 permissions: {}
