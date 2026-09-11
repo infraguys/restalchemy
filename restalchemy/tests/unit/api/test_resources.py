@@ -20,9 +20,13 @@ import webob
 
 from restalchemy.api import constants
 from restalchemy.api import contexts
+from restalchemy.api import controllers
 from restalchemy.api import resources
+from restalchemy.api import routes
+from restalchemy.common import exceptions
 from restalchemy.dm import models
 from restalchemy.dm import properties
+from restalchemy.dm import relationships
 from restalchemy.dm import types
 from restalchemy.openapi import utils as openapi_utils
 
@@ -457,4 +461,165 @@ class ResourceByRAModelRoleBasedHiddenFieldsTestCase(unittest.TestCase):
                 "standard_field5",
                 "uuid",
             ],
+        )
+
+
+class FakeUuidVM(models.ModelWithUUID):
+    name = properties.property(types.String(max_length=10), default="vm")
+
+
+class FakeUuidPort(models.ModelWithUUID):
+    vm = relationships.relationship(FakeUuidVM, required=True)
+
+
+class FakeUuidRule(models.ModelWithUUID):
+    vm = relationships.relationship(FakeUuidVM, required=True)
+    port = relationships.relationship(FakeUuidPort, required=True)
+    name = properties.property(types.String(max_length=10), default="rule")
+
+
+class FakeUuidVMController(controllers.Controller):
+    storage = {}
+
+    def get(self, uuid):
+        return self.storage[str(uuid)]
+
+
+class FakeUuidPortController(controllers.BaseNestedResourceController):
+    pass
+
+
+class FakeUuidPortRoute(routes.Route):
+    __controller__ = FakeUuidPortController
+    __allow_methods__ = [routes.GET]
+
+
+class FakeUuidVMRoute(routes.Route):
+    __controller__ = FakeUuidVMController
+    __allow_methods__ = [routes.GET]
+
+    ports = routes.route(FakeUuidPortRoute, resource_route=True)
+
+
+class FakeUuidV1Controller(controllers.Controller):
+    pass
+
+
+class FakeUuidV1Route(routes.Route):
+    __controller__ = FakeUuidV1Controller
+    __allow_methods__ = [routes.FILTER]
+
+    vms = routes.route(FakeUuidVMRoute)
+
+
+class UuidRelationshipsTestCase(unittest.TestCase):
+    """A relationship listed in `uuid_relationships` reads a bare UUID."""
+
+    def setUp(self):
+        super(UuidRelationshipsTestCase, self).setUp()
+        self._vm = FakeUuidVM()
+        FakeUuidVMController.storage = {str(self._vm.uuid): self._vm}
+        FakeUuidVMController.__resource__ = resources.ResourceByRAModel(FakeUuidVM)
+        FakeUuidPortController.__resource__ = resources.ResourceByRAModel(FakeUuidPort)
+        self._resource = resources.ResourceByRAModel(
+            FakeUuidRule,
+            uuid_relationships=["vm", "port"],
+        )
+        resources.ResourceMap.set_resource_map(
+            routes.Route.build_resource_map(FakeUuidV1Route),
+        )
+        self._request = webob.Request.blank("/v1/rules")
+        self._request.api_context = contexts.RequestContext(self._request)
+
+    def tearDown(self):
+        super(UuidRelationshipsTestCase, self).tearDown()
+        resources.ResourceMap.model_type_to_resource = {}
+        resources.ResourceMap.resource_map = {}
+        FakeUuidVMController.storage = {}
+        del self._request
+
+    def test_bare_uuid_is_parsed(self):
+        field = self._resource.get_field("vm")
+
+        self.assertIs(self._vm, field.parse_value(self._request, str(self._vm.uuid)))
+
+    def test_bare_uuid_is_parsed_from_unicode(self):
+        field = self._resource.get_field("vm")
+
+        self.assertIs(
+            self._vm,
+            field.parse_value_from_unicode(self._request, str(self._vm.uuid)),
+        )
+
+    def test_uri_is_still_parsed(self):
+        field = self._resource.get_field("vm")
+
+        self.assertIs(
+            self._vm,
+            field.parse_value(self._request, "/vms/%s" % self._vm.uuid),
+        )
+
+    def test_value_is_still_dumped_as_uri(self):
+        field = self._resource.get_field("vm")
+
+        self.assertEqual(
+            "/vms/%s" % self._vm.uuid,
+            field.dump_value(self._vm),
+        )
+
+    def test_unlisted_relationship_does_not_parse_bare_uuid(self):
+        resource = resources.ResourceByRAModel(FakeUuidRule)
+        field = resource.get_field("vm")
+
+        self.assertRaises(
+            exceptions.LocatorNotFound,
+            field.parse_value,
+            self._request,
+            str(self._vm.uuid),
+        )
+
+    def test_unknown_uuid_is_reported_by_the_controller(self):
+        field = self._resource.get_field("vm")
+
+        self.assertRaises(
+            KeyError,
+            field.parse_value,
+            self._request,
+            str(uuid.uuid4()),
+        )
+
+    def test_malformed_bare_uuid_is_rejected(self):
+        field = self._resource.get_field("vm")
+
+        self.assertRaises(
+            exceptions.ParseError,
+            field.parse_value,
+            self._request,
+            "not-a-uuid",
+        )
+
+    def test_bare_uuid_does_not_locate_a_nested_resource(self):
+        field = self._resource.get_field("port")
+
+        self.assertRaises(
+            exceptions.BareUuidForNestedResource,
+            field.parse_value,
+            self._request,
+            str(uuid.uuid4()),
+        )
+
+    def test_unknown_relationship_is_rejected(self):
+        self.assertRaises(
+            ValueError,
+            resources.ResourceByRAModel,
+            FakeUuidRule,
+            uuid_relationships=["there_is_no_such_field"],
+        )
+
+    def test_plain_property_is_rejected(self):
+        self.assertRaises(
+            ValueError,
+            resources.ResourceByRAModel,
+            FakeUuidRule,
+            uuid_relationships=["name"],
         )
