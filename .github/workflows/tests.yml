@@ -97,8 +97,21 @@ jobs:
         env:
           DATABASE_URI: "postgresql://postgres:test_password@localhost:5432/ra_database"
           COVERAGE_FILE: ".coverage.${{ matrix.python-version }}-pgsql"
+          # The performance guards run in the next step instead, without
+          # coverage. They compare a request of ours against a floor of raw
+          # psycopg and orjson, and coverage traces our side of that
+          # comparison -- including the probe subprocess -- but hardly the
+          # floor, which makes the ratio say more about the tracer than
+          # about the code.
+          RA_PERF_SKIP: "1"
         run: |
           tox -e ${{ matrix.python-version }}-functional
+      - name: Performance guards
+        env:
+          DATABASE_URI: "postgresql://postgres:test_password@localhost:5432/ra_database"
+          TEST_PATH: "restalchemy/tests/functional/perf"
+        run: |
+          tox -e ${{ matrix.python-version }}-functional -- --no-cov
       - name: Store coverage data
         uses: actions/upload-artifact@v7
         with:
