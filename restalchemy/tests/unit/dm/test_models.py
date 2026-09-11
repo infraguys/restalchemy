@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
 from unittest import mock
 import uuid
 
@@ -138,7 +139,9 @@ class SimpleViewModelWithSecret(
 ):
     """A model that needs a custom property to be built at all."""
 
-    __custom_properties__ = {"secret": types.String(max_length=32)}
+    __custom_properties__: typing.ClassVar[dict] = {
+        "secret": types.String(max_length=32)
+    }
 
     def __init__(self, secret, **kwargs):
         super().__init__(**kwargs)

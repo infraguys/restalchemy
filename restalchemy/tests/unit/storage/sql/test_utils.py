@@ -104,9 +104,8 @@ class SavepointCtxTestCase(base.BaseTestCase):
 
         session = ctx.get_session.return_value
 
-        with self.assertRaises(RuntimeError):
-            with utils.savepoint("sp", defer_release=True):
-                raise RuntimeError("boom")
+        with self.assertRaises(RuntimeError), utils.savepoint("sp", defer_release=True):
+            raise RuntimeError("boom")
 
         session.execute.assert_any_call("SAVEPOINT sp;", ())
         session.execute.assert_any_call("ROLLBACK TO SAVEPOINT sp;", ())
@@ -119,9 +118,8 @@ class SavepointCtxTestCase(base.BaseTestCase):
 
         session = ctx.get_session.return_value
 
-        with self.assertRaises(KeyboardInterrupt):
-            with utils.savepoint("sp"):
-                raise KeyboardInterrupt()
+        with self.assertRaises(KeyboardInterrupt), utils.savepoint("sp"):
+            raise KeyboardInterrupt()
 
         executed = [call.args[0] for call in session.execute.call_args_list]
         self.assertEqual(
@@ -138,7 +136,10 @@ class SavepointCtxTestCase(base.BaseTestCase):
 
         session = ctx.get_session.return_value
 
-        with self.assertRaises(KeyboardInterrupt):
+        # Combining these two would not fit on one line, and a
+        # parenthesized `with` is a syntax error on Python 3.8, which
+        # the test matrix still covers.
+        with self.assertRaises(KeyboardInterrupt):  # noqa: SIM117
             with utils.savepoint("sp", defer_release=True):
                 raise KeyboardInterrupt()
 
@@ -155,9 +156,8 @@ class SavepointCtxTestCase(base.BaseTestCase):
 
         session = ctx.get_session.return_value
 
-        with self.assertRaises(SystemExit):
-            with utils.savepoint("sp", defer_release=True):
-                raise SystemExit(1)
+        with self.assertRaises(SystemExit), utils.savepoint("sp", defer_release=True):
+            raise SystemExit(1)
 
         executed = [call.args[0] for call in session.execute.call_args_list]
         self.assertEqual(
@@ -166,15 +166,13 @@ class SavepointCtxTestCase(base.BaseTestCase):
         )
 
     def test_savepoint_invalid_name_raises(self):
-        with self.assertRaises(ValueError):
-            with utils.savepoint("invalid name!"):
-                pass
+        with self.assertRaises(ValueError), utils.savepoint("invalid name!"):
+            pass
 
     @mock.patch("restalchemy.storage.sql.utils.contexts.Context")
     def test_savepoint_unsupported_dialect_raises(self, mock_ctx_cls):
         ctx = self._make_ctx("sqlite")
         mock_ctx_cls.return_value = ctx
 
-        with self.assertRaises(ValueError):
-            with utils.savepoint("sp"):
-                pass
+        with self.assertRaises(ValueError), utils.savepoint("sp"):
+            pass

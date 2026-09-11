@@ -142,6 +142,6 @@ def refuse_removed_overrides(cls, removed):
     for name, replacement in removed.items():
         if name in vars(cls):
             raise TypeError(
-                "%s.%s is not called any more. Write %s instead."
-                % (cls.__name__, name, replacement)
+                f"{cls.__name__}.{name} is not called any more. "
+                f"Write {replacement} instead."
             )

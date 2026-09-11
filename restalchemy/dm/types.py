@@ -123,7 +123,7 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
     return result
 
 
-class JSONColumnType(object):
+class JSONColumnType:
     """Marker for a DM type whose value is stored as one JSON/JSONB column.
 
     `api.filter_lang` traverses into such fields for `a.b = "x"` queries;

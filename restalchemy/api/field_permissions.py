@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from restalchemy.api import constants
 from restalchemy.common import utils
 
@@ -47,7 +49,7 @@ class BasePermissions:
     logic's own output.
     """
 
-    _REMOVED = {
+    _REMOVED: typing.ClassVar[dict] = {
         "meets_field_permission": "resolve",
         "visibility_key": "resolve",
     }
