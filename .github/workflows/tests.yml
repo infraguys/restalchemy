@@ -87,3 +87,14 @@ jobs:
           DATABASE_URI: "postgresql://postgres:test_password@localhost:5432/ra_database"
         run: |
           tox -e ${{ matrix.python-version }}-functional
+      - name: Combine coverage
+        run: |
+          tox -e end
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: cover/coverage.xml
+          flags: python-${{ matrix.python-version }}
+          name: python-${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

@@ -4,6 +4,8 @@
    :target: https://img.shields.io/pypi/pyversions/restalchemy
 .. image:: https://img.shields.io/pypi/dm/restalchemy
    :target: https://img.shields.io/pypi/dm/restalchemy
+.. image:: https://codecov.io/gh/infraguys/restalchemy/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/infraguys/restalchemy
 
 |
 
@@ -162,7 +164,7 @@ Rolled back migrations:
 Tests
 -----
 
-Tests are managed via ``tox``. The default environment list includes Python 3.8, 3.10, 3.12 and 3.13.
+Tests are managed via ``tox``. The default environment list includes Python 3.8, 3.10, 3.11, 3.12, 3.13 and 3.14.
 
 Run the full test suite:
 
@@ -189,6 +191,47 @@ Run functional tests with PostgreSQL:
 
    export DATABASE_URI="postgresql://postgres:password@localhost:5432/radatabase"
    tox -e py310-functional
+
+
+Coverage
+--------
+
+The current coverage percentage is published by the Codecov badge at the top of this file and on
+`codecov.io/gh/infraguys/restalchemy <https://codecov.io/gh/infraguys/restalchemy>`_. The reported
+number is measured on every push: it combines the unit and the MySQL and PostgreSQL functional
+suites, for each supported Python version, with branch coverage enabled. For reference, the unit
+suite alone covers roughly 75% of the ``restalchemy`` package.
+
+Coverage measurement is wired into the default ``tox`` run. The ``begin`` environment erases
+previous data, every ``py3*`` environment records its own data file (``.coverage.<envname>``), and
+the ``end`` environment combines them into a single report:
+
+.. code-block:: bash
+
+   tox
+
+Reports are written to the ``cover/`` directory (``cover/index.html`` for the browsable HTML report
+and ``cover/coverage.xml`` for CI tools), and a summary of the files that are not fully covered is
+printed to the console.
+
+To combine and render reports without re-running the tests (for example after ``tox -e py310``):
+
+.. code-block:: bash
+
+   tox -e end
+
+To measure coverage for a single run directly, without ``tox``:
+
+.. code-block:: bash
+
+   pytest --cov --cov-report=term restalchemy/tests/unit
+
+Use ``pytest --cov`` rather than ``coverage run``: the suite runs under ``pytest-xdist``, and
+``coverage run`` does not measure the xdist worker processes, so it reports 0% coverage.
+
+Coverage settings live in the ``[tool.coverage.*]`` sections of ``pyproject.toml``: branch coverage
+is enabled, parallel data files are on so that several environments can be combined, ``restalchemy``
+is the measured source, and the test packages themselves are excluded.
 
 
 License
