@@ -169,6 +169,7 @@ restalchemy = ["*.yaml", "*.md"]
 
 [tool.coverage.run]
 branch = true
+parallel = true
 source = [
     "restalchemy"
 ]
