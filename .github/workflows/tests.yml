@@ -4,9 +4,13 @@ on:
   push:
   pull_request:
 
+permissions: {}
+
 jobs:
   Lint:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -25,6 +29,8 @@ jobs:
           tox -e ruff-check
   tests:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -75,26 +81,57 @@ jobs:
       - name: Install tox-uv
         run: uv tool install tox --with tox-uv
       - name: Unit tests
+        env:
+          # The ".coverage." prefix is required by "coverage combine", which
+          # the coverage job runs over every artifact collected here.
+          COVERAGE_FILE: ".coverage.${{ matrix.python-version }}-unit"
         run: |
           tox -e ${{ matrix.python-version }}
       - name: Functional MySQL tests
         env:
           DATABASE_URI: "mysql://root:test_password@localhost:3306/ra_database"
+          COVERAGE_FILE: ".coverage.${{ matrix.python-version }}-mysql"
         run: |
           tox -e ${{ matrix.python-version }}-functional
       - name: Functional PostgreSQL tests
         env:
           DATABASE_URI: "postgresql://postgres:test_password@localhost:5432/ra_database"
+          COVERAGE_FILE: ".coverage.${{ matrix.python-version }}-pgsql"
         run: |
           tox -e ${{ matrix.python-version }}-functional
-      - name: Combine coverage
-        run: |
-          tox -e end
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Store coverage data
+        uses: actions/upload-artifact@v7
         with:
-          files: cover/coverage.xml
-          flags: python-${{ matrix.python-version }}
-          name: python-${{ matrix.python-version }}
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+          name: coverage-${{ matrix.python-version }}
+          path: .coverage.${{ matrix.python-version }}-*
+          include-hidden-files: true
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-24.04
+    needs: tests
+    permissions:
+      # Forked pull_request runs are downgraded to read-only by GitHub, so
+      # these do not grant write access to untrusted code.
+      pull-requests: write  # Publish the coverage comment and update it later
+      contents: write  # Push the coverage data to the data branch
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+      - name: Coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v4
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MERGE_COVERAGE_FILES: true
+      - name: Store the comment to be posted for a forked pull request
+        uses: actions/upload-artifact@v7
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          name: python-coverage-comment-action
+          path: python-coverage-comment-action.txt

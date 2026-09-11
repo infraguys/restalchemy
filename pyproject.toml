@@ -170,6 +170,9 @@ restalchemy = ["*.yaml", "*.md"]
 [tool.coverage.run]
 branch = true
 parallel = true
+# Store paths relative to the project root so that data files produced by
+# different CI jobs can be combined.
+relative_files = true
 source = [
     "restalchemy"
 ]

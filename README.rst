@@ -4,8 +4,8 @@
    :target: https://img.shields.io/pypi/pyversions/restalchemy
 .. image:: https://img.shields.io/pypi/dm/restalchemy
    :target: https://img.shields.io/pypi/dm/restalchemy
-.. image:: https://codecov.io/gh/infraguys/restalchemy/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/infraguys/restalchemy
+.. image:: https://raw.githubusercontent.com/infraguys/restalchemy/python-coverage-comment-action-data/badge.svg
+   :target: https://github.com/infraguys/restalchemy/tree/python-coverage-comment-action-data
 
 |
 
@@ -241,11 +241,14 @@ Run functional tests with PostgreSQL:
 Coverage
 --------
 
-The current coverage percentage is published by the Codecov badge at the top of this file and on
-`codecov.io/gh/infraguys/restalchemy <https://codecov.io/gh/infraguys/restalchemy>`_. The reported
-number is measured on every push: it combines the unit and the MySQL and PostgreSQL functional
-suites, for each supported Python version, with branch coverage enabled. For reference, the unit
-suite alone covers roughly 75% of the ``restalchemy`` package.
+The current coverage percentage is shown by the badge at the top of this file. It is measured on
+every push by `python-coverage-comment-action
+<https://github.com/py-cov-action/python-coverage-comment-action>`_, which combines the unit and the
+MySQL and PostgreSQL functional suites of every supported Python version into one figure, with
+branch coverage enabled. The badge and the full HTML report are stored on the
+``python-coverage-comment-action-data`` branch, and pull requests receive a comment describing how
+they change coverage. For reference, the unit suite alone covers roughly 75% of the ``restalchemy``
+package.
 
 Coverage measurement is wired into the default ``tox`` run. The ``begin`` environment erases
 previous data, every ``py3*`` environment records its own data file (``.coverage.<envname>``), and
