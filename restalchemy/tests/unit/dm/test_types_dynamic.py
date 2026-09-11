@@ -16,20 +16,20 @@
 
 import http.client as http_client
 import unittest
+from unittest import mock
 
-import mock
 from webob import request
 
-from restalchemy.api.middlewares import errors
 from restalchemy.api import packers
 from restalchemy.api import resources
-from restalchemy.tests.unit.api import base as api_base
+from restalchemy.api.middlewares import errors
 from restalchemy.common import exceptions as ra_exc
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import types
 from restalchemy.dm import types_dynamic
 from restalchemy.openapi import constants as oa_c
+from restalchemy.tests.unit.api import base as api_base
 
 
 class FakeKindModel(types_dynamic.AbstractKindModel):
@@ -73,7 +73,7 @@ class OpenApiDialectTestCase(unittest.TestCase):
         self.assertNotIn("nullable", network)
 
 
-class FakeResponse(object):
+class FakeResponse:
     def __init__(self, status, json, **kwargs):
         self.status = status
         self.status_code = int(status)
@@ -84,7 +84,7 @@ class UnknownKindTestCase(unittest.TestCase):
     """A kind that came from the outside is bad input, not a server fault."""
 
     def setUp(self):
-        super(UnknownKindTestCase, self).setUp()
+        super().setUp()
         self._selector = types_dynamic.KindModelSelectorType(
             types_dynamic.KindModelType(FakeKindModel),
         )

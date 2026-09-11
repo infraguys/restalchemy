@@ -17,6 +17,7 @@
 import abc
 import collections
 import inspect
+import typing
 
 from webob.request import Request
 
@@ -222,7 +223,7 @@ class ResourceRelationship(AbstractResourceProperty):
 
 
 class BaseHiddenFieldsMap:
-    _REMOVED = {
+    _REMOVED: typing.ClassVar[dict] = {
         "is_hidden_field": "hidden_for",
         "is_hidden_field_by_method": "hidden_for_method",
         "visibility_key": "hidden_for",
@@ -407,7 +408,7 @@ class RoleBasedHiddenFieldContainer(BaseHiddenFieldsMap):
         return self._default_hidden_fields.hidden_for_method(method, field_names)
 
 
-class Visibility(object):
+class Visibility:
     """What one request is told about a resource's fields.
 
     Hashable, and equal for two requests told the same thing -- which is
@@ -416,7 +417,7 @@ class Visibility(object):
     describe something other than what the containers say.
     """
 
-    __slots__ = ("_names", "_permissions", "hidden", "shown", "_key", "_by_name")
+    __slots__ = ("_by_name", "_key", "_names", "_permissions", "hidden", "shown")
 
     def __init__(self, names, permissions, hidden, shown):
         # Held against the model's own order rather than sorted, so that

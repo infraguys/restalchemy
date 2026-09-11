@@ -47,7 +47,7 @@ class WideModel(models.ModelWithUUID):
     """Enough fields that a caller can name more projections than are kept."""
 
     for _number in range(8):
-        vars()["field%d" % _number] = properties.property(types.String(), default="v")
+        vars()[f"field{_number}"] = properties.property(types.String(), default="v")
     del _number
 
 

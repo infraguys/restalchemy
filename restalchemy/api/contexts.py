@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from webob import multidict
 
 from restalchemy.common import exceptions
@@ -28,7 +30,7 @@ class RequestContext:
         ("fields", "page_limit", "page_marker", "sort_key", "sort_dir")
     )
 
-    _REMOVED = {"can_be_shown_field": "shown_fields"}
+    _REMOVED: typing.ClassVar[dict] = {"can_be_shown_field": "shown_fields"}
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
