@@ -6,11 +6,37 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
     groups:
-      # One pull request a week for the dependencies, rather than one per
-      # dependency.
-      uv:
+      # What the library itself installs: the [project] dependencies of
+      # pyproject.toml, and what they bring with them. A break here is a
+      # break for everyone who depends on us.
+      base:
+        patterns:
+          - "oslo.config"
+          - "oslo-config"
+          - "webob"
+          - "requests"
+          - "mysql-connector-python"
+          - "pyyaml"
+          - "netaddr"
+          - "psycopg*"
+          - "email-validator"
+          - "orjson"
+      # Everything else: what the tests, the linters, the type checker and
+      # the documentation need, plus everything the two sets pull in.
+      other:
         patterns:
           - "*"
+        exclude-patterns:
+          - "oslo.config"
+          - "oslo-config"
+          - "webob"
+          - "requests"
+          - "mysql-connector-python"
+          - "pyyaml"
+          - "netaddr"
+          - "psycopg*"
+          - "email-validator"
+          - "orjson"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
