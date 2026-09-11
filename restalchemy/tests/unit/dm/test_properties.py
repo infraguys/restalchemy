@@ -336,6 +336,9 @@ class PropertyManagerTestCase(base.BaseTestCase):
                 "instantiate_property.return_value": FAKE_VALUE,
                 # Neither name holds a nested collection.
                 "nested_names": frozenset(),
+                # Its items are doubles, not creators, so a model of it
+                # cannot keep bare values.
+                "values_can_stand_alone": False,
             }
         )
 
@@ -436,3 +439,403 @@ class PropertyFuncTestCase(base.BaseTestCase):
             *self.ARGS,
             **self.KWARGS,
         )
+
+
+class PropertyCreatorBuildsTestCase(base.BaseTestCase):
+    """What a creator builds, on the short path and off it.
+
+    A creator answers everything a declaration settles once, and builds
+    the property from there; the two paths must not disagree about
+    defaults, validation or what counts as dirty.
+    """
+
+    def test_a_value_beats_the_default(self):
+        creator = properties.property(types.String(), default="d")
+
+        self.assertEqual("v", creator("v").value)
+        self.assertEqual("d", creator(None).value)
+
+    def test_a_callable_default_is_called_per_property(self):
+        creator = properties.property(types.TypedList(types.String()), default=list)
+
+        first, second = creator(None), creator(None)
+        first.value.append("x")
+
+        self.assertEqual(["x"], first.value)
+        self.assertEqual([], second.value)
+
+    def test_a_mutable_property_notices_it_was_changed(self):
+        creator = properties.property(
+            types.TypedList(types.String()), default=list, mutable=True
+        )
+
+        prop = creator(None)
+        prop.value.append("x")
+
+        self.assertEqual([], prop.old_value)
+        self.assertTrue(prop.is_dirty())
+
+    def test_a_value_of_the_wrong_type_is_refused(self):
+        creator = properties.property(types.String())
+
+        self.assertRaises(exceptions.TypeError, creator, 1)
+
+    def test_a_required_property_without_a_value_is_refused(self):
+        creator = properties.required_property(types.String())
+
+        self.assertRaises(exceptions.PropertyRequired, creator, None)
+
+    def test_a_read_only_property_keeps_its_flags(self):
+        prop = properties.readonly_property(types.String())("v")
+
+        self.assertTrue(prop.is_read_only())
+        self.assertTrue(prop.is_required())
+        self.assertRaises(exceptions.ReadOnlyProperty, setattr, prop, "value", "o")
+
+    def test_an_id_property_says_so(self):
+        prop = properties.property(types.String(), id_property=True)("v")
+
+        self.assertIsInstance(prop, properties.IDProperty)
+        self.assertTrue(prop.is_id_property())
+
+    def test_a_property_class_of_its_own_is_built_as_before(self):
+        class LocalProperty(properties.Property):
+            pass
+
+        prop = properties.property(
+            types.String(), property_class=LocalProperty, default="d"
+        )(None)
+
+        self.assertIsInstance(prop, LocalProperty)
+        self.assertEqual("d", prop.value)
+
+    def test_the_example_is_carried_over(self):
+        prop = properties.property(types.String(), example="e")(None)
+
+        self.assertEqual("e", prop.example())
+
+    def test_a_type_that_is_not_one_is_refused_at_declaration(self):
+        self.assertRaises(TypeError, properties.property, object())
+
+
+class PropertyCreatorPathsAgreeTestCase(base.BaseTestCase):
+    """The short path must build what the constructor would.
+
+    A creator answers everything a declaration settles and fills the
+    property in itself, which is a second place that knows what a
+    property is made of. This is what keeps the two from drifting: the
+    objects have to come out indistinguishable, down to the attributes
+    they carry.
+    """
+
+    DECLARATIONS = (
+        ("plain", types.String(), {}),
+        ("default", types.String(), {"default": "d"}),
+        ("callable default", types.TypedList(types.String()), {"default": list}),
+        ("required", types.String(), {"required": True}),
+        ("read only", types.String(), {"read_only": True}),
+        (
+            "mutable",
+            types.TypedList(types.String()),
+            {"default": list, "mutable": True},
+        ),
+        ("example", types.String(), {"example": "e"}),
+        ("id", types.String(), {"id_property": True}),
+        (
+            "everything",
+            types.TypedList(types.String()),
+            {
+                "default": list,
+                "required": True,
+                "read_only": True,
+                "mutable": True,
+                "example": ["e"],
+            },
+        ),
+    )
+
+    VALUES = (None, "v", ["v"])
+
+    def test_both_paths_build_the_same_property(self):
+        for label, prop_type, kwargs in self.DECLARATIONS:
+            creator = properties.property(prop_type, **kwargs)
+            constructor_kwargs = dict(kwargs)
+            property_class = (
+                properties.IDProperty
+                if constructor_kwargs.pop("id_property", False)
+                else properties.Property
+            )
+            for value in self.VALUES:
+                fast = self._build(creator, value)
+                slow = self._build(
+                    lambda v: property_class(
+                        property_type=prop_type, value=v, **constructor_kwargs
+                    ),
+                    value,
+                )
+
+                self.assertEqual(
+                    type(fast).__name__,
+                    type(slow).__name__,
+                    "%s / %r" % (label, value),
+                )
+                if isinstance(fast, Exception) or isinstance(slow, Exception):
+                    self.assertEqual(repr(fast), repr(slow), "%s / %r" % (label, value))
+                    continue
+                self.assertEqual(vars(fast), vars(slow), "%s / %r" % (label, value))
+                self.assertEqual(
+                    (
+                        fast.value,
+                        fast.old_value,
+                        fast.is_dirty(),
+                        fast.is_required(),
+                        fast.is_read_only(),
+                        fast.is_id_property(),
+                        fast.example(),
+                    ),
+                    (
+                        slow.value,
+                        slow.old_value,
+                        slow.is_dirty(),
+                        slow.is_required(),
+                        slow.is_read_only(),
+                        slow.is_id_property(),
+                        slow.example(),
+                    ),
+                    "%s / %r" % (label, value),
+                )
+
+    @staticmethod
+    def _build(build, value):
+        try:
+            return build(value)
+        except Exception as error:
+            return error
+
+
+class ValuesStandingAloneTestCase(base.BaseTestCase):
+    """A model keeping values must be the model it would have been.
+
+    Everything a property object answers -- its value, what it held to
+    begin with, whether it may be written, whether it has changed -- has
+    to come out the same whether the object was built when the model was
+    or when something first asked for it.
+    """
+
+    def _collection(self, **declarations):
+        return properties.PropertyCollection(**declarations)
+
+    def test_a_value_given_as_none_is_a_value_nobody_gave(self):
+        # What a stored NULL arrives as, and what the property
+        # constructor has always done with it.
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+
+        manager = properties.PropertyManager(collection, name=None, count=None)
+
+        self.assertEqual({"name": "d", "count": 1}, manager._values)
+
+    def test_a_plain_declaration_keeps_its_values(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+
+        manager = properties.PropertyManager(collection, name="n")
+
+        self.assertEqual({"name": "n", "count": 1}, manager._values)
+        self.assertEqual({}, manager._properties)
+
+    def test_a_property_of_its_own_is_built_as_it_was(self):
+        class LocalProperty(properties.Property):
+            pass
+
+        collection = self._collection(
+            name=properties.property(
+                types.String(), property_class=LocalProperty, default="d"
+            ),
+        )
+
+        manager = properties.PropertyManager(collection)
+
+        self.assertEqual({}, manager._values)
+        self.assertIsInstance(manager._properties["name"], LocalProperty)
+
+    def test_asking_for_one_builds_that_one(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+        manager = properties.PropertyManager(collection)
+
+        prop = manager["name"]
+
+        self.assertIsInstance(prop, properties.Property)
+        self.assertEqual("d", prop.value)
+        self.assertNotIn("name", manager._values)
+        self.assertIn("count", manager._values)
+
+    def test_what_it_answers_does_not_depend_on_when_it_was_built(self):
+        declarations = {
+            "name": properties.property(types.String(), default="d"),
+            "readonly": properties.readonly_property(types.String()),
+            "identifier": properties.property(types.String(), id_property=True),
+            "tags": properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        }
+        values = {"readonly": "r", "identifier": "i"}
+
+        early = properties.PropertyManager(self._collection(**declarations), **values)
+        early.materialise_all()
+        late = properties.PropertyManager(self._collection(**declarations), **values)
+
+        for name in declarations:
+            self.assertEqual(self._facts(early[name]), self._facts(late[name]), name)
+
+    def test_a_value_changed_in_place_is_still_noticed(self):
+        collection = self._collection(
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+        manager = properties.PropertyManager(collection)
+
+        manager.get_value("tags").append("x")
+
+        self.assertEqual([], manager["tags"].old_value)
+        self.assertTrue(manager["tags"].is_dirty())
+
+    def test_walking_the_mapping_hands_over_properties(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+        manager = properties.PropertyManager(collection)
+
+        walked = dict(manager.items())
+
+        self.assertEqual({"name", "count"}, set(walked))
+        for prop in walked.values():
+            self.assertIsInstance(prop, properties.Property)
+        self.assertEqual({}, manager._values)
+
+    def test_the_mapping_answers_the_same_before_and_after(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            count=properties.property(types.Integer(), default=1),
+        )
+        manager = properties.PropertyManager(collection)
+
+        self.assertEqual(2, len(manager))
+        self.assertIn("name", manager)
+        self.assertEqual({"name", "count"}, set(iter(manager)))
+        self.assertEqual({"name": "d", "count": 1}, manager.value)
+        manager.materialise_all()
+        self.assertEqual(2, len(manager))
+        self.assertIn("name", manager)
+        self.assertEqual({"name", "count"}, set(iter(manager)))
+        self.assertEqual({"name": "d", "count": 1}, manager.value)
+
+    @staticmethod
+    def _facts(prop):
+        return (
+            type(prop).__name__,
+            prop.value,
+            prop.old_value,
+            prop.is_dirty(),
+            prop.is_required(),
+            prop.is_read_only(),
+            prop.is_id_property(),
+            prop.get_property_type(),
+        )
+
+    def test_nothing_written_to_is_nothing_changed(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+        manager = properties.PropertyManager(collection)
+
+        # Answered without building a single property object.
+        self.assertFalse(manager.is_dirty())
+        self.assertEqual({}, manager._properties)
+
+    def test_a_write_is_a_change_however_it_arrived(self):
+        collection = self._collection(
+            name=properties.property(types.String(), default="d"),
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+
+        written = properties.PropertyManager(collection)
+        written["name"].value = "other"
+        in_place = properties.PropertyManager(collection)
+        in_place.get_value("tags").append("x")
+
+        self.assertTrue(written.is_dirty())
+        self.assertTrue(in_place.is_dirty())
+
+
+class SharedEmptyMappingsTestCase(base.BaseTestCase):
+    """The mapping a manager stands in with must stay empty.
+
+    It is a class attribute shared by every manager there is, so a write
+    that lands in it instead of in a mapping of the manager's own is
+    every model's first value, not that model's.
+    """
+
+    def setUp(self):
+        super(SharedEmptyMappingsTestCase, self).setUp()
+        self._collection = properties.PropertyCollection(
+            name=properties.property(types.String(), default="d"),
+            tags=properties.property(
+                types.TypedList(types.String()), default=list, mutable=True
+            ),
+        )
+
+    def _assert_shared_are_empty(self):
+        self.assertEqual({}, properties.PropertyManager._first_values)
+
+    def test_pouring_values_writes_neither(self):
+        manager = properties.PropertyManager(self._collection, name="n")
+
+        self.assertEqual("n", manager.get_value("name"))
+        self._assert_shared_are_empty()
+
+    def test_building_a_property_writes_a_mapping_of_its_own(self):
+        manager = properties.PropertyManager(self._collection, name="n")
+
+        self.assertEqual("n", manager["name"].value)
+        self.assertEqual(["name"], list(manager._properties))
+        self._assert_shared_are_empty()
+
+    def test_two_managers_do_not_see_each_other(self):
+        first = properties.PropertyManager(self._collection, name="one")
+        second = properties.PropertyManager(self._collection, name="two")
+
+        first["name"]
+        second["name"]
+
+        self.assertEqual("one", first["name"].value)
+        self.assertEqual("two", second["name"].value)
+        self._assert_shared_are_empty()
+
+    def test_a_declaration_that_cannot_stand_alone_writes_its_own(self):
+        nested = properties.PropertyCollection(
+            inner=properties.property(types.String(), default="d"),
+        )
+        collection = properties.PropertyCollection(
+            name=properties.property(types.String(), default="d"),
+            nested=nested,
+        )
+
+        manager = properties.PropertyManager(collection)
+
+        self.assertEqual(["name", "nested"], sorted(manager._properties))
+        self._assert_shared_are_empty()

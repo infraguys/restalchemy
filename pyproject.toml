@@ -139,6 +139,8 @@ force-single-line = true
 
 [tool.setuptools.packages.find]
 where = ["."]
+# The benchmark is a tool of this repository, not part of the library.
+exclude = ["bench*"]
 
 [project.scripts]
 ra-new-migration = "restalchemy.cmd.new_migration:main"

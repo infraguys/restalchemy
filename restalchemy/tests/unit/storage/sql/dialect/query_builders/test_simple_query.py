@@ -14,7 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import gc
 import unittest
+import weakref
+
+import mock
 
 from restalchemy.dm import filters
 from restalchemy.dm import models
@@ -58,10 +62,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1`",
             result,
@@ -76,10 +80,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
         result_expression = query.compile()
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
@@ -98,10 +102,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
@@ -124,10 +128,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         result_expression = query.compile()
         self.assertEqual(
-            "SELECT `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid` "
+            "SELECT `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid` "
             "FROM `simple_table` AS `t1` "
             "WHERE (`t1`.`field_int` < %s"
             " OR (`t1`.`field_int` >= %s AND `t1`.`field_str` IS NOT %s))",
@@ -144,10 +148,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1`",
             result_expression,
@@ -169,10 +173,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
@@ -199,10 +203,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
@@ -229,10 +233,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
@@ -260,10 +264,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
@@ -292,10 +296,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 
         self.assertEqual(
             "SELECT"
-            " `t1`.`field_bool` AS `t1_field_bool`,"
-            " `t1`.`field_int` AS `t1_field_int`,"
-            " `t1`.`field_str` AS `t1_field_str`,"
-            " `t1`.`uuid` AS `t1_uuid`"
+            " `t1`.`field_bool`,"
+            " `t1`.`field_int`,"
+            " `t1`.`field_str`,"
+            " `t1`.`uuid`"
             " FROM"
             " `simple_table` AS `t1` "
             "WHERE"
@@ -313,10 +317,10 @@ class MySQLQueryBuilderTestCase(unittest.TestCase):
 class MySQLResultParserTestCase(unittest.TestCase):
     def test_simple_model_result_parser(self):
         row_from_db = {
-            "t1_field_bool": "FakeBool",
-            "t1_field_int": "FakeInt",
-            "t1_field_str": "FakeStr",
-            "t1_uuid": "FakeUUID",
+            "field_bool": "FakeBool",
+            "field_int": "FakeInt",
+            "field_str": "FakeStr",
+            "uuid": "FakeUUID",
         }
         select_clause = q.Q.select(
             SimpleModel,
@@ -332,5 +336,113 @@ class MySQLResultParserTestCase(unittest.TestCase):
                 "field_str": "FakeStr",
                 "uuid": "FakeUUID",
             },
+            result,
+        )
+
+
+class SharedModel(models.ModelWithUUID):
+    __tablename__ = "shared_table"
+
+    field_a = properties.property(types.String())
+    field_b = properties.property(types.String())
+
+
+class SelectShapeCacheTestCase(unittest.TestCase):
+    """What a `SELECT` reuses between queries, and what it must not.
+
+    The columns, the aliases and the row parser are the model's and the
+    engine's; the filters, the ordering and the limit are the query's.
+    """
+
+    def setUp(self):
+        super(SelectShapeCacheTestCase, self).setUp()
+        self.engine = fixtures.EngineFixture()
+        self.session = mock.Mock(engine=self.engine)
+
+    def tearDown(self):
+        super(SelectShapeCacheTestCase, self).tearDown()
+        q.clear_shape_cache()
+
+    def _select(self, **kwargs):
+        return q.Q.select(SharedModel, session=self.session, **kwargs)
+
+    def test_two_queries_over_a_model_compile_the_same(self):
+        self.assertEqual(self._select().compile(), self._select().compile())
+
+    def test_a_filter_does_not_leak_into_the_next_query(self):
+        filtered = self._select().where(filters={"field_a": filters.EQ("a")})
+
+        self.assertIn("WHERE", filtered.compile())
+        self.assertNotIn("WHERE", self._select().compile())
+
+    def test_an_order_and_a_limit_do_not_leak_either(self):
+        ordered = self._select()
+        ordered.order_by(property_name="field_a", sort_type="DESC")
+        ordered.limit(3)
+
+        self.assertIn("ORDER BY", ordered.compile())
+        self.assertIn("LIMIT 3", ordered.compile())
+        self.assertNotIn("ORDER BY", self._select().compile())
+        self.assertNotIn("LIMIT", self._select().compile())
+
+    def test_another_engine_escapes_its_own_way(self):
+        class DoubleQuoteEngine(fixtures.EngineFixture):
+            def escape(self, value):
+                return '"%s"' % value
+
+        other = q.Q.select(SharedModel, session=mock.Mock(engine=DoubleQuoteEngine()))
+
+        self.assertIn("`shared_table`", self._select().compile())
+        self.assertIn('"shared_table"', other.compile())
+
+    def test_reordering_the_properties_is_noticed(self):
+        class ReorderedModel(models.ModelWithUUID):
+            __tablename__ = "reordered_table"
+
+            zeta = properties.property(types.String())
+            alpha = properties.property(types.String())
+
+        def columns():
+            statement = q.Q.select(ReorderedModel, session=self.session).compile()
+            return [
+                part.split(".")[-1].strip(" `,")
+                for part in statement.split("FROM")[0].split(",")
+            ]
+
+        before = columns()
+
+        ReorderedModel.properties.sort_properties()
+
+        self.assertEqual(["uuid", "zeta", "alpha"], before)
+        self.assertEqual(["alpha", "uuid", "zeta"], columns())
+
+    def test_what_is_kept_does_not_keep_the_engine(self):
+        # A shape outlives the query it was built for; an engine it held
+        # would outlive its own life, and a pool is closed when its
+        # engine is collected.
+        session = fixtures.SessionFixture()
+        engine = session.engine
+        q.Q.select(SharedModel, session=session).compile()
+        dead = weakref.ref(engine)
+
+        del engine, session
+        gc.collect()
+
+        self.assertIsNone(dead())
+
+    def test_a_row_still_parses_after_a_query_was_built_before_it(self):
+        self._select().compile()
+        select_clause = self._select()
+
+        result = select_clause.parse_row(
+            {
+                "uuid": "FakeUUID",
+                "field_a": "FakeA",
+                "field_b": "FakeB",
+            }
+        )
+
+        self.assertEqual(
+            {"uuid": "FakeUUID", "field_a": "FakeA", "field_b": "FakeB"},
             result,
         )

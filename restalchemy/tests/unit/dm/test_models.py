@@ -56,14 +56,19 @@ class MetaModelTestCase(base.BaseTestCase):
 class ModelTestCase(base.BaseTestCase):
     PM_MOCK = mock.MagicMock(name="PropertyManager object")
 
-    @mock.patch("restalchemy.dm.properties.PropertyManager", return_value=PM_MOCK)
+    @mock.patch(
+        "restalchemy.dm.properties.PropertyManager.poured", return_value=PM_MOCK
+    )
     def setUp(self, pm_mock):
         super(ModelTestCase, self).setUp()
         self.PM_MOCK.__getitem__.side_effect = None
         self.PM_MOCK.reset_mock()
+        self.PM_MOCK._properties.__getitem__.side_effect = None
         # The one name the double stands in for a property of. Everything
         # else a model sets on itself is a plain attribute.
         self.PM_MOCK.__contains__.side_effect = lambda name: name == "fake_prop1"
+        # The double keeps no bare values, so reads go to its properties.
+        self.PM_MOCK._values = {}
         self.pm_mock = pm_mock
         self.kwargs = {"kwarg1": 1, "kwarg2": 2}
         self.test_instance = models.Model(**self.kwargs)
@@ -76,15 +81,18 @@ class ModelTestCase(base.BaseTestCase):
 
     def test_obj(self):
         self.assertEqual(self.test_instance.properties, self.PM_MOCK)
-        self.pm_mock.assert_called_once_with(models.Model.properties, **self.kwargs)
+        self.pm_mock.assert_called_once_with(
+            models.Model.properties, self.kwargs, None, None
+        )
 
     def test_obj_getattr(self):
         self.assertEqual(
-            self.test_instance.fake_prop1, self.PM_MOCK["fake_prop1"].value
+            self.test_instance.fake_prop1,
+            self.PM_MOCK._properties["fake_prop1"].value,
         )
 
     def test_obj_getattr_raise_attribute_error(self):
-        self.PM_MOCK.__getitem__.side_effect = KeyError
+        self.PM_MOCK._properties.__getitem__.side_effect = KeyError
 
         self.assertRaises(AttributeError, lambda: self.test_instance.fake_prop1)
 
@@ -122,6 +130,20 @@ class SimpleViewModel(models.ModelWithUUID, models.SimpleViewMixin):
     int_property = properties.property(types.Integer(), default=1)
     str_property = properties.property(types.String(), default="foo")
     none_property = properties.property(types.AllowNone(types.Integer()), default=None)
+
+
+class SimpleViewModelWithSecret(
+    models.ModelWithUUID,
+    models.CustomPropertiesMixin,
+    models.SimpleViewMixin,
+):
+    """A model that needs a custom property to be built at all."""
+
+    __custom_properties__ = {"secret": types.String(max_length=32)}
+
+    def __init__(self, secret, **kwargs):
+        super().__init__(**kwargs)
+        self.kept = secret
 
 
 class InheritModelTestCase(base.BaseTestCase):
@@ -301,3 +323,113 @@ class SimpleViewMixinTestCase(base.BaseTestCase):
         self.assertEqual(simple_view_model.str_property, "bar")
         self.assertIs(simple_view_model.none_property, None)
         self.assertIs(simple_view_model.uuid.__class__, uuid.UUID)
+
+    def test_restore_skipping_unknown_fields(self):
+        view = {
+            "uuid": "2e39d8df-2662-4834-ad86-c637d1edd504",
+            "int_property": 2,
+            "unknown_property": "whatever",
+        }
+
+        simple_view_model = SimpleViewModel.restore_from_simple_view(
+            skip_unknown_fields=True, **view
+        )
+
+        self.assertEqual(simple_view_model.int_property, 2)
+        self.assertFalse(hasattr(simple_view_model, "unknown_property"))
+
+    def test_restore_skipping_unknown_fields_keeps_a_custom_property(self):
+        """A custom property is a field of the model, not an unknown name.
+
+        Skipping it dropped what the model was built from: one that takes it
+        in `__init__` raised `TypeError: missing 1 required positional
+        argument` instead of being restored.
+        """
+        view = {
+            "uuid": "2e39d8df-2662-4834-ad86-c637d1edd504",
+            "secret": "hunter2",
+            "unknown_property": "whatever",
+        }
+
+        model = SimpleViewModelWithSecret.restore_from_simple_view(
+            skip_unknown_fields=True, **view
+        )
+
+        self.assertEqual(model.kept, "hunter2")
+        self.assertFalse(hasattr(model, "unknown_property"))
+
+
+class ModelBuiltWithoutInitTestCase(base.BaseTestCase):
+    """A model built with `__new__` writes into the class, not into itself.
+
+    Until `pour` runs, `self.properties` is the class's `PropertyCollection` —
+    the declaration every instance shares. Setting a property through it used
+    to succeed quietly and change that property for every live instance in the
+    process, which is a failure at a distance: the object that misbehaves is
+    not the one that was built wrong.
+    """
+
+    class Poured(models.Model):
+        first = properties.property(types.String(), default="")
+        second = properties.property(types.String(), default="")
+
+    def test_setting_a_property_before_pour_is_refused(self):
+        model = self.Poured.__new__(self.Poured)
+
+        self.assertRaises(
+            exceptions.PropertyClassAssignment, setattr, model, "first", "value"
+        )
+
+    def test_unrelated_models_are_left_alone(self):
+        """The write lands on the property *class*, which every model shares:
+        without the guard an assignment on one model changes what a different
+        model reads, including instances built afterwards."""
+
+        class Other(models.Model):
+            only = properties.property(types.String(), default="")
+
+        other = Other(only="other")
+
+        try:
+            setattr(self.Poured.__new__(self.Poured), "first", "poison")
+        except exceptions.PropertyClassAssignment:
+            pass
+
+        self.assertEqual(other.only, "other")
+        self.assertEqual(Other(only="later").only, "later")
+
+    def test_other_instances_are_left_alone(self):
+        one = self.Poured(first="one", second="1")
+        two = self.Poured(first="two", second="2")
+
+        try:
+            setattr(self.Poured.__new__(self.Poured), "first", "poison")
+        except exceptions.PropertyClassAssignment:
+            pass
+
+        self.assertEqual(one.first, "one")
+        self.assertEqual(two.first, "two")
+
+    def test_restore_still_builds_with_new_and_pours(self):
+        """`restore()` is the legitimate user of `__new__` and must keep
+        working: `pour` assigns `properties`, which is not a declared property
+        and so never reaches the guard."""
+        model = self.Poured.restore(first="restored", second="yes")
+
+        self.assertEqual(model.first, "restored")
+        self.assertEqual(model.second, "yes")
+
+    def test_a_poured_model_sets_properties_as_before(self):
+        model = self.Poured(first="a", second="b")
+
+        model.first = "changed"
+
+        self.assertEqual(model.first, "changed")
+        self.assertEqual(model.second, "b")
+
+    def test_a_plain_attribute_is_not_this_guard_s_business(self):
+        model = self.Poured.__new__(self.Poured)
+
+        model.not_a_property = 42
+
+        self.assertEqual(model.not_a_property, 42)

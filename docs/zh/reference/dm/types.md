@@ -98,11 +98,13 @@ status = properties.property(status_type, default="pending")
 
 ## 日期与时间类型
 
-### `UTCDateTime`（已不推荐）与 `UTCDateTimeZ`
+### `UTCDateTimeZ`
 
-- 两者都包装 `datetime.datetime`。
-- `UTCDateTimeZ` 强制 `tzinfo == datetime.timezone.utc`，推荐使用。
+- 包装 `datetime.datetime`，并强制 `tzinfo == datetime.timezone.utc`。
 - 序列化为 MySQL / 类 RFC3339 格式的字符串。
+- 朴素的 `UTCDateTime` 会采用存储字符串所声明的任意时区，已在 16.0.0 中移除。
+  它读写的是同样的两种格式，因此用它声明的属性改为 `UTCDateTimeZ` 即可，
+  已存储的值读回时不变——按 UTC 解释，本来也就是这么假定的。
 
 ### `TimeDelta`
 

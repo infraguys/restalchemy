@@ -126,3 +126,8 @@ docs/source/*.png
 
 # Vagrant
 .vagrant/
+
+# the benchmark's own virtualenv, database and raw samples
+bench/.venv/
+bench/.pgdata/
+bench/results/*.json

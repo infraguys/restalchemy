@@ -29,7 +29,10 @@ def escape(value):
 
 
 @contextlib.contextmanager
-def savepoint(name: str = DEFAULT_SAVEPOINT_NAME):
+def savepoint(
+    name: str = DEFAULT_SAVEPOINT_NAME,
+    defer_release: bool = False,
+):
     """Context manager that creates a savepoint and rolls back to it on error.
 
     The function can be used as a decorator or a context manager. For example:
@@ -40,6 +43,22 @@ def savepoint(name: str = DEFAULT_SAVEPOINT_NAME):
 
     with savepoint() as session:
         pass
+
+    When ``defer_release`` is ``False`` (the default) an explicit ``RELEASE``
+    is issued on both the success and the error paths, matching the historical
+    behavior. When ``defer_release`` is ``True`` the ``RELEASE`` is skipped on
+    the success path and issued only on the error path (after the
+    ``ROLLBACK TO``).
+
+    The deferred mode is safe when several savepoints sharing the same name
+    are created sequentially inside a single enclosing transaction: in both
+    PostgreSQL and MySQL issuing ``SAVEPOINT <name>`` with an already existing
+    name implicitly releases the previous savepoint of that name, and
+    committing or rolling back the enclosing transaction releases every
+    remaining savepoint. Skipping the explicit ``RELEASE`` therefore carries
+    no observable effect while saving one round-trip per decorated call on the
+    hot path. It must not be used with nested savepoints that rely on an
+    explicit release in between.
     """
     if not name.isidentifier():
         raise ValueError(f"Invalid savepoint name: {name}")
@@ -62,11 +81,15 @@ def savepoint(name: str = DEFAULT_SAVEPOINT_NAME):
     session = ctx.get_session()
     session.execute(savepoint_exp, tuple())
 
+    success = False
+
     try:
         yield session
+        success = True
     except Exception:
         LOG.error("Exception occurred, rolling back to savepoint")
         session.execute(rollback_exp, tuple())
         raise
     finally:
-        session.execute(release_exp, tuple())
+        if not success or not defer_release:
+            session.execute(release_exp, tuple())

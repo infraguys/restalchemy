@@ -77,6 +77,10 @@ DEFAULT_DATE_Z = DEFAULT_DATE.replace(tzinfo=datetime.timezone.utc)
 # python's datetime doesn't support nanosecond precision
 # + now without timezone, example "2006-01-02T15:04:05.999999999Z07:00"
 OPENAPI_DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
+# `fromisoformat` reads the trailing `Z` from 3.11 on. Below that the
+# suffix has to be spelled out as the offset it stands for, and the
+# version is settled once here rather than per value read.
+ISO_READER_TAKES_Z = sys.version_info >= (3, 11)
 
 
 def build_prop_kwargs(kwargs, to_simple_type=None):
@@ -117,6 +121,14 @@ def build_prop_kwargs(kwargs, to_simple_type=None):
             else:
                 result[v] = value
     return result
+
+
+class JSONColumnType(object):
+    """Marker for a DM type whose value is stored as one JSON/JSONB column.
+
+    `api.filter_lang` traverses into such fields for `a.b = "x"` queries;
+    a type opts in by listing this among its bases, not by name.
+    """
 
 
 class BaseType(metaclass=abc.ABCMeta):
@@ -214,8 +226,13 @@ class String(BasePythonType):
         self.max_length = int(max_length)
 
     def validate(self, value):
-        result = super(String, self).validate(value)
-        return result and self.min_length <= len(str(value)) <= self.max_length
+        # Inlined: `isinstance` is what the base does, and `str(value)`
+        # hands a string straight back -- both were a call on the path of
+        # every string property of every model built.
+        return (
+            isinstance(value, self._python_type)
+            and self.min_length <= len(value) <= self.max_length
+        )
 
     def from_unicode(self, value):
         return str(value)
@@ -300,8 +317,12 @@ class Integer(BasePythonType):
         self.max_value = max_value if max_value == INFINITY else int(max_value)
 
     def validate(self, value):
-        result = super(Integer, self).validate(value)
-        return result and self.min_value <= value <= self.max_value
+        # Inlined as `String` is: the base call is one `isinstance`, run
+        # per integer property of every model built.
+        return (
+            isinstance(value, self._python_type)
+            and self.min_value <= value <= self.max_value
+        )
 
     def from_unicode(self, value):
         return int(value)
@@ -578,7 +599,7 @@ class TypedList(List):
         return [self._nested_type.example]
 
 
-class Dict(ComplexPythonType):
+class Dict(ComplexPythonType, JSONColumnType):
     def __init__(self):
         super(Dict, self).__init__(dict)
 
@@ -757,16 +778,11 @@ class TypedDict(Dict):
         return {"key": self._nested_type.example}
 
 
-class UTCDateTime(BasePythonType):
-    """Deprecated utc datetime type. Use UTCDateTimeZ instead.
-
-    UTCDateTime should be used only for compatibility,
-    when you use naive datetime objects without datetimes.
-    It's strongly recommended to use UTCDateTimeZ.
-    """
+class UTCDateTimeZ(BasePythonType):
+    """A datetime in UTC, with the timezone it guarantees."""
 
     def __init__(self):
-        super(UTCDateTime, self).__init__(
+        super(UTCDateTimeZ, self).__init__(
             python_type=datetime.datetime,
             openapi_type="string",
             openapi_format="date-time",
@@ -774,19 +790,66 @@ class UTCDateTime(BasePythonType):
 
     def validate(self, value):
         return isinstance(value, datetime.datetime) and (
-            value.tzinfo == datetime.timezone.utc or value.tzinfo is None
+            value.tzinfo == datetime.timezone.utc
         )
 
     def to_simple_type(self, value):
-        return value.strftime(MYSQL_DATETIME_FMT)
+        # `strftime` walks a format string and consults the locale; both
+        # formats this type uses are fixed and ASCII, so the parts are
+        # written out directly. Same bytes, several times cheaper, and a
+        # stored row or an API field is written per property per object.
+        return "%04d-%02d-%02d %02d:%02d:%02d.%06d" % (
+            value.year,
+            value.month,
+            value.day,
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+        )
 
     def dump_value(self, value):
         # Converting value in api response
-        return value.strftime(OPENAPI_DATETIME_FMT)
+        return "%04d-%02d-%02dT%02d:%02d:%02d.%06dZ" % (
+            value.year,
+            value.month,
+            value.day,
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+        )
 
     def from_simple_type(self, value):
-        if isinstance(value, datetime.datetime):
-            return value
+        if not isinstance(value, datetime.datetime):
+            value = self._read(value)
+        if value.tzinfo is not None:
+            return value.astimezone(datetime.timezone.utc)
+        # If datetime is naive, it's assumed that timezone is UTC, add it
+        return value.replace(tzinfo=datetime.timezone.utc)
+
+    @staticmethod
+    def _read(value):
+        """The datetime a stored or an API string names.
+
+        Both formats are ISO 8601, and `fromisoformat` reads them in C,
+        where `strptime` builds a regexp and consults the locale per
+        call. What it refuses falls through to `strptime`, so nothing
+        that parsed before stops parsing.
+
+        A `Z` the reader of the running version does not take is spelled
+        out as the offset it stands for, so that a whole second -- which
+        RFC 3339 lets a peer write without a fractional part, and Go
+        does -- is read the same on every version this package supports.
+        """
+        if type(value) is str:
+            iso = value
+            if not ISO_READER_TAKES_Z and value.endswith("Z"):
+                iso = value[:-1] + "+00:00"
+            try:
+                return datetime.datetime.fromisoformat(iso)
+            except ValueError:
+                pass
         try:
             return datetime.datetime.strptime(value, MYSQL_DATETIME_FMT)
         except ValueError:
@@ -810,26 +873,6 @@ class UTCDateTime(BasePythonType):
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.dump_value)
         )
         return spec
-
-    @property
-    def example(self):
-        return self.dump_value(DEFAULT_DATE_Z)
-
-
-class UTCDateTimeZ(UTCDateTime):
-    """Appropriate datetime UTC type with guarantees for tzinfo existence."""
-
-    def validate(self, value):
-        return isinstance(value, datetime.datetime) and (
-            value.tzinfo == datetime.timezone.utc
-        )
-
-    def from_simple_type(self, value):
-        result = super(UTCDateTimeZ, self).from_simple_type(value)
-        if result.tzinfo is not None:
-            return result.astimezone(datetime.timezone.utc)
-        # If datetime is naive, it's assumed that timezone is UTC, add it
-        return result.replace(tzinfo=datetime.timezone.utc)
 
     @property
     def example(self):

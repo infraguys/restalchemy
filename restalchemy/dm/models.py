@@ -68,6 +68,9 @@ class MetaModel(abc.ABCMeta):
         for key, prop in attrs["properties"].items():
             if prop.is_id_property():
                 attrs["id_properties"][key] = attrs["properties"].properties[key]
+        # Which names they are is the class's answer; the mapping over a
+        # model's own is built by whoever asks it for one.
+        attrs["id_properties"] = _IdPropertiesAccess(attrs["id_properties"])
         dm_class = super(MetaModel, cls).__new__(cls, name, bases, attrs)
         dm_class.__operational_storage__ = DmOperationalStorage()
         return dm_class
@@ -86,6 +89,55 @@ class MetaModel(abc.ABCMeta):
         return spec
 
 
+class _IdPropertiesAccess(object):
+    """The declaration's answer to a class, a model's own to a model.
+
+    Read off the class -- `cls.id_properties` -- these are the names, as
+    `MetaModel` worked them out. Read off a model, they are that model's
+    properties, built here the first time and kept on the model itself,
+    where every later read finds them without passing through this.
+    """
+
+    def __init__(self, names):
+        self._names = names
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self._names
+        id_properties = IdProperties(obj.properties, self._names)
+        # Straight past `__setattr__`: it exists to tell a property name
+        # from a plain attribute, and this one is known not to be one.
+        object.__setattr__(obj, "id_properties", id_properties)
+        return id_properties
+
+
+class IdProperties(collections_abc.Mapping):
+    """A model's id properties, fetched when something wants them.
+
+    Which names they are the declaration settles; the property objects
+    behind them are wanted only when the model is written, and building
+    them per model built was one property object per row read.
+    """
+
+    def __init__(self, manager, names):
+        self._manager = manager
+        self._names = names
+
+    def __getitem__(self, name):
+        if name not in self._names:
+            raise KeyError(name)
+        return self._manager[name]
+
+    def __iter__(self):
+        return iter(self._names)
+
+    def __len__(self):
+        return len(self._names)
+
+    def copy(self):
+        return {name: self._manager[name] for name in self._names}
+
+
 class Model(collections_abc.Mapping, metaclass=MetaModel):
     _python_simple_types = (type(None), str, int, float, complex, bool)
 
@@ -95,7 +147,15 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
 
     def __getattr__(self, name):
         try:
-            return self.properties[name].value
+            # Straight at what the mapping is keeping: this runs for
+            # every model attribute read there is. A value the model
+            # kept unwrapped is the answer already; anything else is a
+            # property and answers for itself.
+            properties = self.properties
+            values = properties._values
+            if name in values:
+                return values[name]
+            return properties._properties[name].value
         except KeyError:
             raise AttributeError(
                 "%s object has no attribute %s" % (type(self).__name__, name)
@@ -119,25 +179,44 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
             raise exc.ReadOnlyProperty(name=name, model=type(self))
 
     def pour(self, **kwargs):
+        self.pour_values(kwargs)
+
+    def pour_values(self, values, plan=None, convert=None):
+        """Fill the model in from a mapping, without spelling it out.
+
+        `pour(**kwargs)` rebuilds the mapping it was handed, and reading
+        a row rebuilt it three times over on the way here. What every one
+        of them wanted was this. `convert` turns a stored value into a
+        model one, by name, so that a row is walked once; `plan` is
+        the same conversion folded into what the declaration answered
+        about filling a model in.
+        """
         try:
-            self.properties = properties.PropertyManager(self.properties, **kwargs)
+            manager = properties.PropertyManager.poured(
+                self.properties, values, plan, convert
+            )
+        except exc.PropertyRequired as e:
+            raise exc.PropertyRequired(name=e.name, model=self.__class__)
+
+        # Straight past `__setattr__`: it exists to tell a property name
+        # from a plain attribute, and these two are known not to be one.
+        object.__setattr__(self, "properties", manager)
+        try:
             self.validate()
         except exc.PropertyRequired as e:
             raise exc.PropertyRequired(name=e.name, model=self.__class__)
 
-        # Which names are id properties is decided by the declaration, and
-        # `MetaModel` already worked it out for the class; asking every
-        # property again per model built was the same answer each time.
-        props = self.properties
-        self.id_properties = {name: props[name] for name in type(self).id_properties}
-
     @classmethod
     def restore(cls, **kwargs):
+        return cls.restore_values(kwargs)
+
+    @classmethod
+    def restore_values(cls, values, plan=None, convert=None):
         obj = cls.__new__(cls)
 
         # NOTE(aostapenko): We can't invoke 'pour' from __new__ because of
         #                   copy.copy of object becomes imposible
-        obj.pour(**kwargs)
+        obj.pour_values(values, plan, convert)
         return obj
 
     def validate(self):
@@ -174,10 +253,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         return result
 
     def is_dirty(self):
-        for prop in self.properties.values():
-            if prop.is_dirty():
-                return True
-        return False
+        return self.properties.is_dirty()
 
     @classmethod
     def get_model_type(cls):
@@ -188,7 +264,7 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         props = self.properties
 
         for name in props:
-            val = props[name].value
+            val = props.get_value(name)
             if isinstance(val, Model):
                 plain_dict[name] = val.get_id()
             elif isinstance(val, self._python_simple_types):
@@ -357,11 +433,20 @@ class RestoreFromSimpleViewMixin:
     @classmethod
     def restore_from_simple_view(cls, skip_unknown_fields: bool = False, **kwargs):
         model_format = {}
+        # A custom property is one of this model's fields, declared somewhere
+        # else. Reading below falls back to it; skipping has to know about it
+        # too, or `skip_unknown_fields` drops a field the model has -- and a
+        # model whose `__init__` requires one is then not built at all.
+        custom_properties = getattr(cls, "__custom_properties__", ())
         for name, value in kwargs.items():
             name = name.replace("-", "_")
 
             # Ignore unknown fields
-            if skip_unknown_fields and name not in cls.properties.properties:
+            if (
+                skip_unknown_fields
+                and name not in cls.properties.properties
+                and name not in custom_properties
+            ):
                 continue
 
             try:

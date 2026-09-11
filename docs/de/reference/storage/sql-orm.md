@@ -51,6 +51,22 @@ Wichtigste Methoden:
 - Den SQL-Dialekt über `engine.dialect`.
 - Die Methode `restore_from_storage()` des Modells, um Zeilen in DM-Modelle zu überführen.
 
+### Laden von Beziehungen
+
+Eine Beziehung, die die Abfrage nicht vorab geladen hat (`prefetch`), kommt als
+Bezeichner an, und das Modell, das er benennt, wird separat gelesen.
+`get_all()` und `query()` sammeln die Bezeichner der gesamten Seite und lesen
+sie mit einer Abfrage pro Beziehung statt mit einer Abfrage pro Zeile; mit dem,
+worauf diese Objekte ihrerseits zeigen, verfahren sie ebenso.
+
+- Zeilen der Seite, die dasselbe Objekt benennen, erhalten dieselbe Instanz.
+- Ein Bezeichner, den die Seite nicht findet, bleibt unverändert, sodass eine
+  Zeile, die auf einen fehlenden Datensatz zeigt, genauso scheitert wie zuvor.
+- Eine mit `prefetch=True` deklarierte Beziehung wird von der Abfrage gelesen,
+  die die Seite liest (ein `LEFT JOIN`), und ist hiervon nicht betroffen.
+- `SQLStorableMixin.RELATIONSHIP_BATCH_SIZE` (standardmäßig 1000) begrenzt, wie
+  viele Bezeichner eine einzelne Abfrage anfordert.
+
 ---
 
 ## SQLStorableMixin

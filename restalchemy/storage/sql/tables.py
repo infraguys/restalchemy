@@ -14,56 +14,100 @@
 #    under the License.
 
 
+import weakref
+
 OPERATIONAL_STORAGE_SIMPLE_TABLE_KEY = "table"
 
 
 class SQLTable(object):
+    """The columns of a model, as a statement names them.
+
+    Which columns there are, in which order, and how the engine escapes
+    them, a model's declaration and the engine settle between them. Every
+    statement built asked again -- a walk over the properties and a sort,
+    then an escape per column -- so the answers are kept: by shape for the
+    names, by engine for the escaped ones, since a model can be read
+    through one engine and written through another.
+    """
+
     def __init__(self, engine, table_name, model):
         super(SQLTable, self).__init__()
         self._table_name = table_name
         self._model = model
+        self._column_names = {}
+        # Weak on the engine: a table is kept for the life of the model
+        # it belongs to, and holding an engine here would outlive the
+        # engine's own life -- and with it, its open connections.
+        self._escaped_names = weakref.WeakKeyDictionary()
 
     @property
     def model(self):
         return self._model
 
     def get_column_names(self, session, with_pk=True, do_sort=True):
-        result = []
-        for name, prop in self._model.properties.items():
-            if not with_pk and prop.is_id_property():
-                continue
-            result.append(name)
-        if do_sort:
-            result.sort()
+        key = (with_pk, do_sort)
+        result = self._column_names.get(key)
+        if result is None:
+            result = []
+            for name, prop in self._model.properties.items():
+                if not with_pk and prop.is_id_property():
+                    continue
+                result.append(name)
+            if do_sort:
+                result.sort()
+            self._column_names[key] = result
         return result
 
     def get_escaped_column_names(self, session, with_pk=True, do_sort=True):
-        return [
-            session.engine.escape(column_name)
-            for column_name in self.get_column_names(
-                session=session,
-                with_pk=with_pk,
-                do_sort=do_sort,
-            )
-        ]
+        by_shape = self._escaped_for(session.engine)
+        key = ("columns", with_pk, do_sort)
+        result = by_shape.get(key)
+        if result is None:
+            result = [
+                session.engine.escape(column_name)
+                for column_name in self.get_column_names(
+                    session=session,
+                    with_pk=with_pk,
+                    do_sort=do_sort,
+                )
+            ]
+            by_shape[key] = result
+        return result
+
+    def _escaped_for(self, engine):
+        by_shape = self._escaped_names.get(engine)
+        if by_shape is None:
+            by_shape = {}
+            self._escaped_names[engine] = by_shape
+        return by_shape
 
     def get_pk_names(self, session, do_sort=True):
-        result = []
-        for name, prop in self._model.properties.items():
-            if prop.is_id_property():
-                result.append(name)
-        if do_sort:
-            result.sort()
+        key = ("pk", do_sort)
+        result = self._column_names.get(key)
+        if result is None:
+            result = []
+            for name, prop in self._model.properties.items():
+                if prop.is_id_property():
+                    result.append(name)
+            if do_sort:
+                result.sort()
+            self._column_names[key] = result
         return result
 
     def get_escaped_pk_names(self, session, do_sort=True):
-        return [
-            session.engine.escape(column_name)
-            for column_name in self.get_pk_names(
-                session=session,
-                do_sort=do_sort,
-            )
-        ]
+        by_shape = self._escaped_for(session.engine)
+        key = ("pk", do_sort)
+        result = by_shape.get(key)
+        if result is None:
+            result = [
+                session.engine.escape(column_name)
+                for column_name in self.get_pk_names(
+                    session=session,
+                    do_sort=do_sort,
+                )
+            ]
+            by_shape[key] = result
+        return result
 
     @property
     def name(self):

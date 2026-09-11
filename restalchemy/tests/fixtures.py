@@ -35,7 +35,15 @@ class EngineFixture(mock.Mock):
 class SessionFixture(mock.Mock):
     @property
     def engine(self):
-        return EngineFixture()
+        # One engine for the life of the session. An engine whose
+        # identity changed on every access is not something a caller
+        # could hold on to, and anything keyed by it would miss every
+        # time.
+        engine = self.__dict__.get("_engine_fixture")
+        if engine is None:
+            engine = EngineFixture()
+            self.__dict__["_engine_fixture"] = engine
+        return engine
 
     @engine.setter
     def engine(self, value):

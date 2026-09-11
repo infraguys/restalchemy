@@ -116,6 +116,10 @@ RESTAlchemy 中的 API 层负责在 HTTP 请求与 DM 模型以及存储层之�
 - `MultipartPacker`：
   - 处理 `multipart/form-data` 请求（例如文件上传）。
 
+时间戳按 RFC 3339 以 UTC 写出：`2026-08-16T12:34:56.123456Z`。正好落在整秒上的
+时间戳不再带小数部分——`2026-08-16T12:34:56Z`，此前是 `.000000`。嵌套在值内部
+（`Dict`、`TypedList`）的时间戳同样以 `Z` 结尾，此前是 `+00:00`。
+
 ### 6. Context 与字段权限
 
 - `contexts.RequestContext`：
@@ -126,6 +130,11 @@ RESTAlchemy 中的 API 层负责在 HTTP 请求与 DM 模型以及存储层之�
 - 模块 `field_permissions`：
   - `UniversalPermissions`、`FieldsPermissions`、`FieldsPermissionsByRole`；
   - 控制字段是否隐藏（`HIDDEN`）、只读（`RO`）或可读写（`RW`），并可以按方法与角色区分。
+
+一次请求能看到哪些字段，会为所有「会被告知相同结果」的请求计算一次，并保存在
+资源上。影响它的是 RA 方法、调用方的角色和 `fields` 参数；带 `fields` 的请求
+自行计算，隐藏字段或权限由你自己的类（而非这里提供的类）决定的资源同样如此
+——这样的类仍会按每个请求询问。
 
 ### 7. Actions
 

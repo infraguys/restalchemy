@@ -21,11 +21,37 @@ import orjson
 from restalchemy.common import exceptions as common_exc
 from restalchemy.dm import filters as dm_filters
 from restalchemy.dm import models
+from restalchemy.dm import properties as ra_properties
+from restalchemy.dm import relationships as ra_relationships
+from restalchemy.dm import types as ra_types
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import tables
 from restalchemy.storage.sql.dialect import exceptions as exc
+
+
+# The `from_simple_type` implementations that hand the stored value
+# straight back: a column of such a type needs no converting at all.
+_VALUES_AS_STORED = frozenset(
+    (
+        ra_types.BasePythonType.from_simple_type,
+        ra_types.BaseRegExpType.from_simple_type,
+        ra_types.Enum.from_simple_type,
+    )
+)
+# The types that can only build a value of their own type, so that
+# checking what one of them just built against the type that built it
+# answers the same every time. These are the exact classes and not what
+# inherits them: a subclass keeps the conversion but may have a check of
+# its own to make, and that one still has to run.
+_TYPES_THAT_CHECK_THEMSELVES = frozenset(
+    (
+        ra_types.UUID,
+        ra_types.Boolean,
+        ra_types.UTCDateTimeZ,
+    )
+)
 
 
 class ObjectCollection(
@@ -78,7 +104,10 @@ class ObjectCollection(
             session=session,
             locked=locked,
         )
-        return [self.model_cls.restore_from_storage(**params) for params in result.rows]
+        return self.model_cls.restore_many_from_storage(
+            result.rows,
+            session=session,
+        )
 
     @base.error_catcher
     def get_one(self, filters=None, session=None, cache=False, locked=False):
@@ -115,10 +144,10 @@ class ObjectCollection(
             order_by=order_by,
             locked=locked,
         )
-        return [
-            self.model_cls.restore_from_storage(**params)
-            for params in list(result.fetchall())
-        ]
+        return self.model_cls.restore_many_from_storage(
+            result.fetchall(),
+            session=session,
+        )
 
     @base.error_catcher
     def query(
@@ -201,16 +230,228 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
     def _get_engine(cls):
         return engines.engine_factory.get_engine()
 
+    # Per class: the callable that turns a stored column into a model
+    # value, per property name. Which one it is a declaration decides, and
+    # it was looked up again -- a mapping lookup and two calls -- per
+    # column per row read.
+    OPERATIONAL_STORAGE_LOADERS_KEY = "storage_loaders"
+
+    #: what filling a model in from a row needs to know, per column
+    OPERATIONAL_STORAGE_PLAN_KEY = "storage_plan"
+
+    @classmethod
+    def _get_storage_plan(cls):
+        """The declaration's plan, with the stored form folded in.
+
+        The plan says what to check and what to fall back on; this adds
+        what turns the stored value into a model one -- and leaves out
+        both where the type answers them itself, so a column that needs
+        nothing costs nothing. A declaration that cannot stand on its
+        values has no plan, and reads a row the long way.
+        """
+        stored = cls.__operational_storage__
+        try:
+            plan, version = stored.get(cls.OPERATIONAL_STORAGE_PLAN_KEY)
+        except common_exc.NotFoundOperationalStorageError:
+            pass
+        else:
+            if version == ra_properties.declaration_version:
+                return plan
+        declared_plan = cls.properties.pour_plan
+        if declared_plan is None:
+            return None
+        loaders = cls._get_storage_loaders()
+        declared = cls.properties.properties
+        plan = []
+        for name, _, validate, *rest in declared_plan:
+            declared_type = type(declared[name].get_property_type())
+            plan.append(
+                (
+                    name,
+                    (
+                        None
+                        if declared_type.from_simple_type in _VALUES_AS_STORED
+                        else loaders[name]
+                    ),
+                    (
+                        None
+                        if declared_type in _TYPES_THAT_CHECK_THEMSELVES
+                        else validate
+                    ),
+                    *rest,
+                )
+            )
+        plan = tuple(plan)
+        stored.store(
+            cls.OPERATIONAL_STORAGE_PLAN_KEY,
+            (plan, ra_properties.declaration_version),
+        )
+        return plan
+
+    @classmethod
+    def _get_pour(cls):
+        """What filling a model in from a row takes, as one answer.
+
+        A plan where the declaration can stand on its values, and the
+        converters by name where it cannot -- never both, and the pair
+        is what `pour_values` is spelled with.
+        """
+        plan = cls._get_storage_plan()
+        return plan, (None if plan is not None else cls._get_storage_loaders())
+
+    @classmethod
+    def _get_storage_loaders(cls):
+        try:
+            return cls.__operational_storage__.get(
+                cls.OPERATIONAL_STORAGE_LOADERS_KEY,
+            )
+        except common_exc.NotFoundOperationalStorageError:
+            loaders = {
+                name: prop.get_property_type().from_simple_type
+                for name, prop in cls.properties.properties.items()
+            }
+            cls.__operational_storage__.store(
+                cls.OPERATIONAL_STORAGE_LOADERS_KEY,
+                loaders,
+            )
+            return loaders
+
+    # Per class: the relationships a row carries as an identifier, and the
+    # model each points at. A query that prefetched a relationship brings
+    # the row of it along, and those are not among these.
+    OPERATIONAL_STORAGE_DEFERRED_KEY = "deferred_relationships"
+
+    # How many identifiers one query asks for. There is no reason to
+    # split a hundred, and a reason not to hand a driver a hundred
+    # thousand at once.
+    RELATIONSHIP_BATCH_SIZE = 1000
+
+    @classmethod
+    def _get_deferred_relationships(cls):
+        try:
+            return cls.__operational_storage__.get(
+                cls.OPERATIONAL_STORAGE_DEFERRED_KEY,
+            )
+        except common_exc.NotFoundOperationalStorageError:
+            deferred = {}
+            for name, prop in cls.properties.properties.items():
+                prop_class = prop.get_property_class()
+                if not (
+                    isinstance(prop_class, type)
+                    and issubclass(prop_class, ra_relationships.BaseRelationship)
+                ):
+                    continue
+                if prop.is_prefetch():
+                    continue
+                target = prop.get_property_type()
+                if isinstance(target, type) and issubclass(target, SQLStorableMixin):
+                    deferred[name] = target
+            cls.__operational_storage__.store(
+                cls.OPERATIONAL_STORAGE_DEFERRED_KEY,
+                deferred,
+            )
+            return deferred
+
+    @classmethod
+    def restore_many_from_storage(cls, rows, session=None):
+        """Restore rows, asking for a relationship once, not once per row.
+
+        A relationship the query did not prefetch reaches the model as an
+        identifier, and turning it into the object it names is a query --
+        per row, and per relationship. Sixty rows of a model with two
+        relationships were a hundred and twenty round trips behind the one
+        that read them.
+
+        The identifiers of a whole page are asked for together instead,
+        which is one query per relationship. What that does not find is
+        left as it arrived, so a row pointing at something that is not
+        there fails where it always did.
+        """
+        rows = list(rows)
+        if len(rows) > 1:
+            cls._preload_relationships(rows, session)
+        # What filling a model in needs to know is the class's answer,
+        # not the row's, so a page asks for it once.
+        pour = cls._get_pour()
+        return [cls.restore_row(row, pour) for row in rows]
+
+    @classmethod
+    def _preload_relationships(cls, rows, session):
+        for name, target in cls._get_deferred_relationships().items():
+            try:
+                id_name = target.get_id_property_name()
+            except TypeError:
+                # A model that does not answer with one identifier cannot
+                # be asked for a page of them. The per-row path takes it,
+                # as it always did.
+                continue
+            id_type = target.properties.properties[id_name].get_property_type()
+
+            found = {}
+            wanted = []
+            for row in rows:
+                value = row.get(name)
+                if value is None or isinstance(value, (models.Model, dict)):
+                    # Already an object, or a prefetched row of one.
+                    continue
+                try:
+                    key = id_type.from_simple_type(value)
+                except (ValueError, TypeError):
+                    # Not an identifier this model can read. Leave it to
+                    # the per-row path to fail the way it would have.
+                    continue
+                found.setdefault(key, None)
+                wanted.append((row, key))
+
+            if not wanted:
+                continue
+
+            keys = list(found)
+            batch = cls.RELATIONSHIP_BATCH_SIZE
+            for start in range(0, len(keys), batch):
+                for obj in target.objects.get_all(
+                    filters={id_name: dm_filters.In(keys[start : start + batch])},
+                    session=session,
+                ):
+                    found[obj.get_id()] = obj
+
+            for row, key in wanted:
+                obj = found.get(key)
+                if obj is not None:
+                    row[name] = obj
+
     @classmethod
     def restore_from_storage(cls, **kwargs):
-        model_format = {}
-        model_properties = cls.properties.properties
-        for name, value in kwargs.items():
-            model_format[name] = (
-                model_properties[name].get_property_type().from_simple_type(value)
-            )
-        obj = cls.restore(**model_format)
-        obj._saved = True
+        """The model a row spelled out as keywords stands for.
+
+        A way in, not a way to change what reading a row does: it hands
+        what it was given to `restore_row`, and a page of rows does not
+        come through here at all.
+        """
+        return cls.restore_row(kwargs)
+
+    @classmethod
+    def restore_row(cls, row, pour=None):
+        """The model a stored row stands for.
+
+        Takes the row as it is rather than spelled out as keywords: a
+        page of rows is a page of mappings, and every `**` between here
+        and the model builds another one. Every read arrives here -- one
+        model and a whole page alike -- so this is what a model overrides
+        to have something done on every read.
+
+        `pour` is what the class answered about filling a model in; a
+        page asks once and hands the same answer to every row. A model
+        that overrides this passes it along without reading it.
+        """
+        plan, convert = cls._get_pour() if pour is None else pour
+        # `restore_values`, spelled out: a page of rows runs this per row,
+        # and the two lines are worth the frame. Keep them in step.
+        obj = cls.__new__(cls)
+        obj.pour_values(row, plan, convert)
+        # Past `__setattr__`, which is there to tell a property name from
+        # a plain attribute, and this one is known not to be one.
+        object.__setattr__(obj, "_saved", True)
         return obj
 
     @base.error_catcher
@@ -286,6 +527,11 @@ class SQLStorableMixin(base.AbstractStorableMixin, metaclass=abc.ABCMeta):
     def from_simple_type(cls, value):
         if value is None:
             return None
+        if isinstance(value, cls):
+            # Already the object it names: a collection resolves the
+            # relationships of a whole page at once and leaves what it
+            # found in the rows.
+            return value
         if isinstance(value, base.PrefetchResult):
             for name in cls.id_properties.keys():
                 if value[name]:
@@ -311,15 +557,21 @@ class SQLStorableWithJSONFieldsMixin(SQLStorableMixin, metaclass=abc.ABCMeta):
     __jsonfields__ = None
 
     @classmethod
-    def restore_from_storage(cls, **kwargs):
+    def restore_row(cls, row, pour=None):
+        """The model a stored row stands for, its JSON fields read back.
+
+        The decoding sits on the row, which is what every read carries: a
+        single model, and a page of rows handed over as they were read.
+        """
         if cls.__jsonfields__ is None:
             raise UndefinedAttribute(attr_name="__jsonfields__")
-        kwargs = kwargs.copy()
+        row = dict(row)
         for field in cls.__jsonfields__:
             # Some databases' clients support JSON fields natively.
-            if isinstance(kwargs[field], str):
-                kwargs[field] = orjson.loads(kwargs[field])
-        return super(SQLStorableWithJSONFieldsMixin, cls).restore_from_storage(**kwargs)
+            value = row[field]
+            if isinstance(value, str):
+                row[field] = orjson.loads(value)
+        return super(SQLStorableWithJSONFieldsMixin, cls).restore_row(row, pour)
 
     def _get_prepared_data(self, properties=None):
         if self.__jsonfields__ is None:
