@@ -14,6 +14,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from restalchemy.api import batch
 from restalchemy.api import routes
 from restalchemy.openapi import structures
 from restalchemy.tests.functional.restapi.ra_based.microservice import controllers
@@ -166,3 +167,4 @@ class V1Route(routes.Route):
 
 class Root(routes.RootRoute):
     v1 = routes.route(V1Route)
+    batch = routes.route(batch.BatchRoute)

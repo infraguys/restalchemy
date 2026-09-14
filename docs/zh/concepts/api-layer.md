@@ -146,6 +146,16 @@ RESTAlchemy 中的 API 层负责在 HTTP 请求与 DM 模型以及存储层之�
 
 配合 `routes.Action` 与 `routes.action`，可以非常自然地表达诸如 `/v1/files/<id>/actions/download` 这类操作端点。
 
+### 8. Batch requests（批量请求）
+
+模块：`restalchemy.api.batch`
+
+- `BatchController` / `BatchRoute`：
+  - 提供单一的 `POST /batch/` 端点，将一组 `{method, path, body}` 元素原样重放到现有的路由树中；
+  - 每个元素都以 best-effort 方式独立处理，并经过完整的中间件栈（鉴权、策略、限流、重试均按元素生效，与直接调用一致）。
+
+完整指南见：[Batch requests](../how-to/api-batch-requests.md)。
+
 ---
 
 ## 请求/响应流程概览
