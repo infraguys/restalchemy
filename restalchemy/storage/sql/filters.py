@@ -17,14 +17,11 @@
 import abc
 from collections import abc as collections_abc
 import decimal
-import logging
 import typing
 
 from restalchemy.dm import filters
 from restalchemy.dm import types
 from restalchemy.storage.sql.dialect.query_builder import common
-
-LOG = logging.getLogger(__name__)
 
 
 class AbstractClause(metaclass=abc.ABCMeta):
@@ -528,10 +525,6 @@ def iterate_filters(model, filter_list, session):
                 column = session.engine.escape(name)
             # Make API compatible with previous versions.
             if not isinstance(filt, filters.AbstractClause):
-                LOG.warning(
-                    "DEPRECATED: pleases use %s wrapper for filter value",
-                    filters.EQ,
-                )
                 clauses.append(EQ(column, value_type, filt, session=session))
                 continue
 
