@@ -35,11 +35,23 @@ class CorsMiddleware(middlewares.Middleware):
     ``Access-Control-Allow-Credentials`` and ``Access-Control-Expose-Headers``
     are deliberately left out: emitting the former next to a ``*`` allowlist
     would let any site read authenticated responses.
+
+    :param allowed_origins: origins a browser may call the API from. ``*``
+        allows any origin.
+    :param preflight_max_age: how many seconds a browser may cache a preflight
+        answer, sent as ``Access-Control-Max-Age``. Pass ``None`` to omit the
+        header and leave the browser on its own short default.
     """
 
-    def __init__(self, application, allowed_origins):
+    def __init__(
+        self,
+        application,
+        allowed_origins,
+        preflight_max_age=PREFLIGHT_MAX_AGE,
+    ):
         super().__init__(application)
         self._allowed_origins = set(allowed_origins)
+        self._preflight_max_age = preflight_max_age
 
     @dec.wsgify
     def __call__(self, req):
@@ -65,8 +77,7 @@ class CorsMiddleware(middlewares.Middleware):
             req.method == "OPTIONS" and "Access-Control-Request-Method" in req.headers
         )
 
-    @staticmethod
-    def _build_preflight_response(req):
+    def _build_preflight_response(self, req):
         # A preflight carries no credentials, so it is answered here instead
         # of being rejected by the authentication middleware below.
         response = req.ResponseClass(status=http_client.NO_CONTENT)
@@ -76,5 +87,6 @@ class CorsMiddleware(middlewares.Middleware):
         requested_headers = req.headers.get("Access-Control-Request-Headers")
         if requested_headers:
             response.headers["Access-Control-Allow-Headers"] = requested_headers
-        response.headers["Access-Control-Max-Age"] = str(PREFLIGHT_MAX_AGE)
+        if self._preflight_max_age is not None:
+            response.headers["Access-Control-Max-Age"] = str(self._preflight_max_age)
         return response

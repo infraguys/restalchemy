@@ -28,11 +28,18 @@ def fake_application(environ, start_response):
 class CorsMiddlewareTestCase(base.BaseTestCase):
     ALLOWED_ORIGIN = "https://example.com"
 
-    def get_middlew(self, allowed_origins=None):
+    def get_middlew(self, allowed_origins=None, **kwargs):
         return cors.CorsMiddleware(
             application=fake_application,
             allowed_origins=allowed_origins or [self.ALLOWED_ORIGIN],
+            **kwargs,
         )
+
+    def get_preflight(self, method="POST"):
+        req = request.Request.blank("/v1/", method="OPTIONS")
+        req.headers["Origin"] = self.ALLOWED_ORIGIN
+        req.headers["Access-Control-Request-Method"] = method
+        return req
 
     def test_request_without_origin_is_untouched(self):
         req = request.Request.blank("/v1/")
@@ -94,14 +101,27 @@ class CorsMiddlewareTestCase(base.BaseTestCase):
         )
 
     def test_preflight_without_requested_headers(self):
-        req = request.Request.blank("/v1/", method="OPTIONS")
-        req.headers["Origin"] = self.ALLOWED_ORIGIN
-        req.headers["Access-Control-Request-Method"] = "GET"
+        req = self.get_preflight(method="GET")
 
         res = req.get_response(self.get_middlew())
 
         self.assertEqual(204, res.status_code)
         self.assertNotIn("Access-Control-Allow-Headers", res.headers)
+
+    def test_configured_max_age_is_sent(self):
+        req = self.get_preflight()
+
+        res = req.get_response(self.get_middlew(preflight_max_age=3600))
+
+        self.assertEqual("3600", res.headers["Access-Control-Max-Age"])
+
+    def test_max_age_none_omits_the_header(self):
+        req = self.get_preflight()
+
+        res = req.get_response(self.get_middlew(preflight_max_age=None))
+
+        self.assertEqual(204, res.status_code)
+        self.assertNotIn("Access-Control-Max-Age", res.headers)
 
     def test_plain_options_request_reaches_the_application(self):
         req = request.Request.blank("/v1/", method="OPTIONS")
