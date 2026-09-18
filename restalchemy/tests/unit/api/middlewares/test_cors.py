@@ -58,6 +58,19 @@ class CorsMiddlewareTestCase(base.BaseTestCase):
         self.assertEqual(b"payload", res.body)
         self.assertNotIn("Access-Control-Allow-Origin", res.headers)
 
+    def test_every_answer_varies_by_origin(self):
+        # A cache must not hand an answer built for one origin, or for no
+        # origin at all, to a request that carried another.
+        for origin in (None, "https://evil.com", self.ALLOWED_ORIGIN):
+            with self.subTest(origin=origin):
+                req = request.Request.blank("/v1/")
+                if origin is not None:
+                    req.headers["Origin"] = origin
+
+                res = req.get_response(self.get_middlew())
+
+                self.assertIn("Origin", res.headers["Vary"])
+
     def test_allowed_origin_gets_cors_headers(self):
         req = request.Request.blank("/v1/")
         req.headers["Origin"] = self.ALLOWED_ORIGIN
@@ -80,6 +93,60 @@ class CorsMiddlewareTestCase(base.BaseTestCase):
             "https://anywhere.example.net",
             res.headers["Access-Control-Allow-Origin"],
         )
+
+    def test_pagination_and_location_are_exposed_by_default(self):
+        req = request.Request.blank("/v1/")
+        req.headers["Origin"] = self.ALLOWED_ORIGIN
+
+        res = req.get_response(self.get_middlew())
+
+        exposed = res.headers["Access-Control-Expose-Headers"]
+        self.assertIn("Location", exposed)
+        self.assertIn("X-Pagination-Marker", exposed)
+
+    def test_exposed_headers_are_configurable(self):
+        req = request.Request.blank("/v1/")
+        req.headers["Origin"] = self.ALLOWED_ORIGIN
+
+        res = req.get_response(self.get_middlew(exposed_headers=["X-Request-Id"]))
+
+        self.assertEqual("X-Request-Id", res.headers["Access-Control-Expose-Headers"])
+
+    def test_no_exposed_headers_omits_the_header(self):
+        req = request.Request.blank("/v1/")
+        req.headers["Origin"] = self.ALLOWED_ORIGIN
+
+        res = req.get_response(self.get_middlew(exposed_headers=None))
+
+        self.assertNotIn("Access-Control-Expose-Headers", res.headers)
+
+    def test_nothing_is_exposed_to_a_disallowed_origin(self):
+        req = request.Request.blank("/v1/")
+        req.headers["Origin"] = "https://evil.com"
+
+        res = req.get_response(self.get_middlew())
+
+        self.assertNotIn("Access-Control-Expose-Headers", res.headers)
+
+    def test_a_configured_origin_is_normalized(self):
+        # A browser sends "https://example.com"; the config was written by
+        # hand with a trailing slash and a capitalised host.
+        req = request.Request.blank("/v1/")
+        req.headers["Origin"] = self.ALLOWED_ORIGIN
+
+        res = req.get_response(self.get_middlew(["https://Example.com/"]))
+
+        self.assertEqual(
+            self.ALLOWED_ORIGIN, res.headers["Access-Control-Allow-Origin"]
+        )
+
+    def test_normalization_does_not_widen_the_allowlist(self):
+        req = request.Request.blank("/v1/")
+        req.headers["Origin"] = "https://example.com.evil.com"
+
+        res = req.get_response(self.get_middlew(["https://Example.com/"]))
+
+        self.assertNotIn("Access-Control-Allow-Origin", res.headers)
 
     def test_preflight_is_answered_without_calling_the_application(self):
         req = request.Request.blank("/v1/", method="OPTIONS")
