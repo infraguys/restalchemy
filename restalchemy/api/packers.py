@@ -380,7 +380,10 @@ packer_mapping = {
 
 def parse_content_type(value):
     # Cleanup: application/json;charset=UTF-8
-    return value.split(";")[0].strip() if value else None
+    # The media type is case-insensitive (RFC 9110), and every packer is
+    # registered under a lower-case name, so `Application/JSON` has to
+    # arrive at the same place `application/json` does.
+    return value.split(";")[0].strip().lower() if value else None
 
 
 def get_packer(content_type):
