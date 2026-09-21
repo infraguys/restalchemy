@@ -20,6 +20,7 @@ import webob
 
 from restalchemy.api import constants
 from restalchemy.api import contexts
+from restalchemy.api import field_permissions
 from restalchemy.api import resources
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -125,6 +126,24 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
         create = resource.generate_schema_object(constants.CREATE, "3.0.3")
 
         self.assertTrue(create["properties"]["uuid"]["readOnly"])
+
+    def test_permission_read_only_property_stays_read_only_on_create(self):
+        resource = resources.ResourceByRAModel(
+            FakeProjectModel,
+            convert_underscore=False,
+            fields_permissions=field_permissions.FieldsPermissions(
+                fields={
+                    "project_id": {
+                        constants.ALL: field_permissions.Permissions.RO,
+                    },
+                },
+            ),
+        )
+
+        create = resource.generate_schema_object(constants.CREATE, "3.0.3")
+
+        self.assertTrue(create["properties"]["project_id"]["readOnly"])
+        self.assertNotIn("project_id", create.get("required", []))
 
     def test_route_schema_generation_does_not_mutate_property_kwargs(self):
         resource = resources.ResourceByRAModel(FakeModel)
