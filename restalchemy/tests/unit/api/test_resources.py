@@ -44,6 +44,10 @@ class FakeWideNameModel(models.ModelWithUUID):
     name = properties.property(types.String(max_length=200))
 
 
+class FakeProjectModel(models.ModelWithUUID, models.ModelWithProject):
+    pass
+
+
 class FakeCollided(models.ModelWithUUID):
     """A model whose id property is `uuid`."""
 
@@ -100,6 +104,27 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
 
         self.assertEqual(original_kwargs, property_creator.get_kwargs())
         FakeModel()
+
+    def test_required_read_only_property_is_writable_on_create(self):
+        resource = resources.ResourceByRAModel(
+            FakeProjectModel, convert_underscore=False
+        )
+
+        create = resource.generate_schema_object(constants.CREATE, "3.0.3")
+        get = resource.generate_schema_object(constants.GET, "3.0.3")
+
+        self.assertNotIn("readOnly", create["properties"]["project_id"])
+        self.assertIn("project_id", create["required"])
+        self.assertTrue(get["properties"]["project_id"]["readOnly"])
+
+    def test_defaulted_read_only_property_stays_read_only_on_create(self):
+        resource = resources.ResourceByRAModel(
+            FakeProjectModel, convert_underscore=False
+        )
+
+        create = resource.generate_schema_object(constants.CREATE, "3.0.3")
+
+        self.assertTrue(create["properties"]["uuid"]["readOnly"])
 
     def test_route_schema_generation_does_not_mutate_property_kwargs(self):
         resource = resources.ResourceByRAModel(FakeModel)

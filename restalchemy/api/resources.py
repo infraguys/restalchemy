@@ -748,6 +748,15 @@ class AbstractResource(metaclass=abc.ABCMeta):
             if prop.is_public() and not is_hidden:
                 if is_readonly:
                     prop_kwargs["read_only"] = True
+                elif (
+                    method == constants.CREATE
+                    and prop_kwargs.get("required")
+                    and "default" not in prop_kwargs
+                ):
+                    # A read-only model property only can't change once the
+                    # object exists; one without a default has to come in
+                    # the create body.
+                    prop_kwargs.pop("read_only", None)
                 properties[prop.api_name] = prop.get_type().to_openapi_spec(prop_kwargs)
                 if (
                     prop_kwargs.get("required")
