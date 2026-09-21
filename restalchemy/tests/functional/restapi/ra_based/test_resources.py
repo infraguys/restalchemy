@@ -38,6 +38,7 @@ from restalchemy.storage import exceptions
 from restalchemy.storage.sql.dialect import exceptions as dialect_exc
 from restalchemy.storage.sql.tables import SQLTable
 from restalchemy.tests.functional import base
+from restalchemy.tests.functional.restapi.ra_based.microservice import controllers
 from restalchemy.tests.functional.restapi.ra_based.microservice import routes
 from restalchemy.tests.functional.restapi.ra_based.microservice import service
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
@@ -76,6 +77,9 @@ TEMPL_POWEROFF_ACTION_ENDPOINT = parse.urljoin(
 )
 TEMPL_POWER_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "actions/power/invoke"
+)
+TEMPL_UPLOAD_ACTION_ENDPOINT = parse.urljoin(
+    utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "actions/upload/invoke"
 )
 TEMPL_IP_ADDRESSES_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), "actions/ip_addresses"
@@ -1701,6 +1705,97 @@ class TestRetryOnErrorMiddlewareBaseResourceTestCase(BaseResourceTestCase):
             headers=headers,
         )
         self.assertEqual(500, response.status_code)
+
+    def test_vm_upload_action_receives_multipart_parts(self):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+
+        response = requests.post(
+            self.get_endpoint(TEMPL_UPLOAD_ACTION_ENDPOINT, UUID1),
+            files={"data": ("data.txt", b"file content", "text/plain")},
+            data={"note": "hello"},
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            {
+                "multipart": True,
+                "parts": {"data": "file content", "note": "hello"},
+                "note": "hello",
+                # A plain form field keeps the top-level name it has
+                # always had; a file arrives under `parts` only, since
+                # its field name is the client's to choose.
+                "kwargs": ["multipart", "note", "parts"],
+            },
+            response.json(),
+        )
+
+    def test_vm_power_off_with_an_odd_cased_content_type(self):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        # The media type is case-insensitive (RFC 9110).
+        headers = {"Content-Type": "Application/JSON; charset=UTF-8"}
+
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWER_ACTION_ENDPOINT, UUID1),
+            headers=headers,
+            data=b'{"state": "off"}',
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertIsNotNone(
+            models.VM.objects.get_one(
+                filters={"uuid": UUID1, "name": "old", "state": "off"}
+            )
+        )
+
+    def test_vm_upload_action_ignores_a_controller_packer(self):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        # A controller may name a packer for its own resource; it was
+        # not chosen to read a multipart body and cannot.
+        with mock.patch.object(
+            controllers.VMController, "__packer__", packers.JSONPacker
+        ):
+            response = requests.post(
+                self.get_endpoint(TEMPL_UPLOAD_ACTION_ENDPOINT, UUID1),
+                files={"data": ("data.txt", b"file content", "text/plain")},
+            )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"data": "file content"}, response.json()["parts"])
+
+    def test_vm_action_without_multipart_support_survives_empty_body(self):
+        models.VM(uuid=UUID1, name="old", state="off").save()
+        # poweron() takes no **kwargs: a body with no parts must not
+        # start handing it ones it never declared.
+        headers = {"Content-Type": "multipart/form-data; boundary=X"}
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWERON_ACTION_ENDPOINT, UUID1),
+            headers=headers,
+            data=b"--X--\r\n",
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertIsNotNone(
+            models.VM.objects.get_one(
+                filters={"uuid": UUID1, "name": "old", "state": "on"}
+            )
+        )
+
+    def test_vm_power_off_with_json_content_type_parameters(self):
+        models.VM(uuid=UUID1, name="old", state="on").save()
+        # the media type carries a charset: the body is still JSON
+        headers = {"Content-Type": "application/json; charset=UTF-8"}
+        response = requests.post(
+            self.get_endpoint(TEMPL_POWER_ACTION_ENDPOINT, UUID1),
+            headers=headers,
+            data=b'{"state": "off"}',
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertIsNotNone(
+            models.VM.objects.get_one(
+                filters={"uuid": UUID1, "name": "old", "state": "off"}
+            )
+        )
 
 
 class TestRetryOnErrorMiddlewareNestedResourceTestCase(BaseResourceTestCase):

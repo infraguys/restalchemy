@@ -99,6 +99,10 @@ class VMPowerOffAction(routes.Action):
     __controller__ = controllers.VMController
 
 
+class VMUploadAction(routes.Action):
+    __controller__ = controllers.VMController
+
+
 class VMIPAddressesAction(routes.Action):
     __controller__ = controllers.VMIpAddressesController
 
@@ -118,6 +122,7 @@ class VMRoute(routes.Route):
     power_state = routes.action(VMPowerStateAction, invoke=False)
     poweron = routes.action(VMPowerOnAction, invoke=True)
     poweroff = routes.action(VMPowerOffAction, invoke=True)
+    upload = routes.action(VMUploadAction, invoke=True)
     none_ports = routes.route(PortRouteNone, resource_route=True)
     ports = routes.route(PortRoute, resource_route=True)
     tags = routes.route(TagRoute, resource_route=True)

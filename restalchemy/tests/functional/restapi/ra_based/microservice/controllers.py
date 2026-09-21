@@ -155,6 +155,24 @@ class VMController(controllers.BaseResourceControllerPaginated):
     def power_state(self, resource, *args, **kwargs):
         return {"state": resource.state}
 
+    @actions.post
+    def upload(self, resource, *args, **kwargs):
+        """Report what a multipart body delivered to an action.
+
+        A part is a file when it carries one; a plain form field
+        arrives as the string it was sent as.
+        """
+        parts = kwargs.get("parts") or {}
+        return {
+            "multipart": kwargs.get("multipart", False),
+            "parts": {
+                name: (part.file.read().decode() if hasattr(part, "file") else part)
+                for name, part in parts.items()
+            },
+            "note": kwargs.get("note"),
+            "kwargs": sorted(kwargs),
+        }
+
 
 class VMIpAddressesController(controllers.BaseResourceControllerPaginated):
     __resource__ = IpAddressController.__resource__

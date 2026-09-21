@@ -24,6 +24,7 @@ import re
 from restalchemy.api import actions
 from restalchemy.api import constants
 from restalchemy.api import controllers
+from restalchemy.api import packers
 from restalchemy.common import exceptions as exc
 from restalchemy.openapi import constants as oa_c
 from restalchemy.openapi import parse
@@ -667,7 +668,11 @@ class Action(BaseRoute):
             raise exc.UnsupportedMethod(method=invoke_info, object_name=action_name)
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
-        content_type = self._req.headers.get("Content-Type")
+        # The header carries parameters as well --
+        # "application/json; charset=UTF-8", "multipart/form-data;
+        # boundary=..." -- so the media type has to be taken apart before
+        # it is compared with anything.
+        content_type = packers.parse_content_type(self._req.headers.get("Content-Type"))
         if content_type == constants.DEFAULT_CONTENT_TYPE:
             body = self._req.body
             if body:
@@ -676,6 +681,27 @@ class Action(BaseRoute):
                 # set packer _rt None for sending any fields to action method
                 packer._rt = None
                 kwargs.update(**packer.unpack(value=body))
+        elif content_type == constants.CONTENT_TYPE_MULTIPART:
+            # The plain form fields stay where every other content type
+            # puts them. A file does not: its field name is the client's
+            # to choose, so an action could never declare it, and the
+            # packer is about to hand it over under `parts` anyway.
+            kwargs.update(
+                {
+                    name: value
+                    for name, value in self._req.api_context.params.items()
+                    if not hasattr(value, "file")
+                }
+            )
+            # A multipart body is the packer's own business: it reads the
+            # parts off the request, so a controller's `__packer__`,
+            # chosen for a content type it does not handle, cannot.
+            packer = packers.get_packer(content_type)(None, request=self._req)
+            # A body with no parts says nothing, exactly as an empty
+            # JSON body does: an action that never asked about
+            # multipart is left with the arguments it always had.
+            if self._req.POST:
+                kwargs.update(**packer.unpack(value=None))
         else:
             kwargs.update(**self._req.api_context.params)
         if (method in [GET, POST, PUT] and self.is_invoke() and invoke) or (
