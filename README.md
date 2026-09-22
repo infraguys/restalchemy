@@ -15,12 +15,13 @@
 | restalchemy/api/filter\_lang.py                                |      398 |       12 |      142 |       10 |     96% |196, 199, 270, 291, 394, 474, 537, 600, 602, 604, 619, 682 |
 | restalchemy/api/middlewares/\_\_init\_\_.py                    |       29 |       11 |        4 |        1 |     58% |26-28, 33-36, 57, 61, 68-69, 74 |
 | restalchemy/api/middlewares/contexts.py                        |       41 |        0 |       16 |        0 |    100% |           |
+| restalchemy/api/middlewares/cors.py                            |       48 |        0 |       12 |        0 |    100% |           |
 | restalchemy/api/middlewares/errors.py                          |       34 |        0 |       10 |        0 |    100% |           |
 | restalchemy/api/middlewares/logging.py                         |       70 |        7 |       20 |        3 |     89% |38-\>40, 60, 74-87, 135 |
 | restalchemy/api/middlewares/metrics.py                         |       27 |       27 |        4 |        0 |      0% |     18-64 |
 | restalchemy/api/middlewares/retry\_on\_error.py                |       18 |        0 |        2 |        0 |    100% |           |
 | restalchemy/api/packers.py                                     |      185 |        8 |       68 |        6 |     94% |141-\>149, 206, 259, 292-294, 367, 372, 389-391 |
-| restalchemy/api/resources.py                                   |      373 |       19 |       72 |       11 |     93% |42, 50, 96, 106-107, 213, 216, 305, 321, 522, 533, 598, 649, 701, 799, 828, 836, 860-861 |
+| restalchemy/api/resources.py                                   |      375 |       19 |       74 |       11 |     93% |42, 50, 96, 106-107, 213, 216, 305, 321, 522, 533, 598, 649, 701, 808, 837, 845, 869-870 |
 | restalchemy/api/routes.py                                      |      427 |       19 |      164 |       13 |     95% |80-\>92, 94-\>106, 101-\>95, 125, 131-132, 141, 191, 207-208, 278, 358, 423-424, 530, 537, 603, 624, 630, 654, 667, 688 |
 | restalchemy/cmd/\_\_init\_\_.py                                |        0 |        0 |        0 |        0 |    100% |           |
 | restalchemy/cmd/apply\_migration.py                            |       18 |       18 |        0 |        0 |      0% |     17-66 |
@@ -76,7 +77,7 @@
 | restalchemy/storage/sql/tables.py                              |       87 |        3 |       28 |        3 |     95% |56-\>58, 92-\>94, 158, 177-186 |
 | restalchemy/storage/sql/utils.py                               |       36 |        1 |        8 |        0 |     98% |        28 |
 | restalchemy/version.py                                         |        2 |        2 |        0 |        0 |      0% |     15-17 |
-| **TOTAL**                                                      | **7003** |  **749** | **1554** |  **153** | **88%** |           |
+| **TOTAL**                                                      | **7053** |  **749** | **1568** |  **153** | **88%** |           |
 
 
 ## Setup coverage badge
