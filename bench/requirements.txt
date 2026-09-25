@@ -35,9 +35,9 @@ oslo-config==10.7.0
 oslo-i18n==6.9.0
 pbr==7.0.3
 polyfactory==3.3.0
-psycopg==3.3.5
-psycopg-binary==3.3.5
-psycopg-pool==3.3.1
+psycopg==3.3.6
+psycopg-binary==3.3.6
+psycopg-pool==3.3.2
 pydantic==2.13.5
 pydantic-core==2.49.0
 pygments==2.21.0
