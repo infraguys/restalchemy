@@ -20,7 +20,10 @@ import json
 import logging
 import typing
 
+import webob
+
 from restalchemy.api import constants as c
+from restalchemy.api import contexts
 
 LOG = logging.getLogger(__name__)
 
@@ -77,6 +80,31 @@ The keywords are uppercase, and `OR` binds tighter than `AND`. Values
 carrying `:`, `.` or spaces must be quoted."""
 
 
+def filter_visibility(resource, req):
+    """What a FILTER by the caller of this document would be told.
+
+    A document is built from one request for every method, and its
+    visibility is kept per resource, not per method; switching the method
+    on it would leave FILTER's answer where GET's is read. So FILTER is
+    asked on a request of its own, carrying the caller's context.
+    """
+    filter_req = webob.Request.blank("/")
+    filter_req.context = getattr(req, "context", None)
+    filter_req.api_context = contexts.RequestContext(filter_req)
+    filter_req.api_context.set_active_method(c.FILTER)
+    return resource.resolve_visibility(filter_req)
+
+
+def filter_fields(resource, req):
+    """The fields the caller of this document may filter `resource` by."""
+    visibility = filter_visibility(resource, req)
+    return [
+        (name, prop)
+        for name, prop in resource.get_fields_by_visibility(visibility)
+        if visibility.is_queryable(name)
+    ]
+
+
 def filter_lang_parameter(name, field_names=()):
     """The query parameter that carries a filter expression."""
     parameter = {
@@ -125,7 +153,7 @@ class ResourceSchemaGenerator:
     def generate_parameter_object(self, request):
         parameters = {}
         has_id_property = False
-        filter_fields = {name for name, _ in self._resource.get_filter_fields()}
+        queryable = {name for name, _ in filter_fields(self._resource, request)}
         for name, prop in self._resource.get_fields_by_request(request):
             prop_kwargs = self.get_prop_kwargs(name)
             schema = prop.get_type().to_openapi_spec(prop_kwargs)
@@ -138,7 +166,7 @@ class ResourceSchemaGenerator:
             # "name" or "status" means something different on every model.
             # A field the collection cannot be filtered by gets no query
             # parameter; an id hidden from filters still gets its path one.
-            if name in filter_fields:
+            if name in queryable:
                 parameters[self.resource_field_prop_name(prop.api_name)] = {
                     "name": prop.api_name,
                     "in": "query",
