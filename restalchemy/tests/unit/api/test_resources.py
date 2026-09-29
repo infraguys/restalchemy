@@ -185,6 +185,66 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
         self.assertEqual(10, narrow["schema"]["maxLength"])
         self.assertEqual(200, wide["schema"]["maxLength"])
 
+    def test_a_field_hidden_from_filters_gets_no_query_parameter(self):
+        # Hidden by the map and by permission, for FILTER alone or for every
+        # method: the API refuses each of them in a query.
+        resource = resources.ResourceByRAModel(
+            FakeModel,
+            convert_underscore=False,
+            hidden_fields=resources.HiddenFieldMap(
+                filter=["standard_field1"],
+                get=["standard_field2"],
+            ),
+            fields_permissions=field_permissions.FieldsPermissions(
+                fields={
+                    "standard_field3": {
+                        constants.FILTER: field_permissions.Permissions.HIDDEN,
+                    },
+                    "standard_field4": {
+                        constants.ALL: field_permissions.Permissions.HIDDEN,
+                    },
+                    "standard_field5": {
+                        constants.ALL: field_permissions.Permissions.RO,
+                    },
+                },
+            ),
+        )
+        request = webob.Request.blank("/")
+        request.context = FakeAdminContext()
+        request.api_context = contexts.RequestContext(request)
+        request.api_context.set_active_method(constants.GET)
+        generator = openapi_utils.ResourceSchemaGenerator(
+            resource, route=None, openapi_version="3.0.3"
+        )
+
+        parameters = generator.generate_parameter_object(request)
+
+        for hidden in ("standard_field1", "standard_field3", "standard_field4"):
+            self.assertNotIn(f"FakeModel_{hidden}", parameters)
+        # Hidden from another method, or read-only: still a filter.
+        self.assertIn("FakeModel_standard_field2", parameters)
+        self.assertIn("FakeModel_standard_field5", parameters)
+        self.assertIn("FakeModel_uuid", parameters)
+        self.assertEqual("path", parameters["FakeModelUuid"]["in"])
+
+    def test_an_id_hidden_from_filters_keeps_its_path_parameter(self):
+        resource = resources.ResourceByRAModel(
+            FakeModel,
+            hidden_fields=resources.HiddenFieldMap(filter=["uuid"]),
+        )
+        request = webob.Request.blank("/")
+        request.context = FakeAdminContext()
+        request.api_context = contexts.RequestContext(request)
+        request.api_context.set_active_method(constants.GET)
+        generator = openapi_utils.ResourceSchemaGenerator(
+            resource, route=None, openapi_version="3.0.3"
+        )
+
+        parameters = generator.generate_parameter_object(request)
+
+        self.assertNotIn("FakeModel_uuid", parameters)
+        self.assertEqual("path", parameters["FakeModelUuid"]["in"])
+
     def test_a_field_does_not_overwrite_a_same_named_models_id(self):
         # Two models can carry one class name, and what is the id property of
         # the one can be a plain field of the other. The path parameter must

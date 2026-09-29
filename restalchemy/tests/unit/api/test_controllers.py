@@ -1218,6 +1218,38 @@ class FilterLangOpenApiTestCase(unittest.TestCase):
         # The language needs fields to resolve against.
         self.assertNotIn("q", self._parameters(UnfilteredController))
 
+    def test_a_hidden_field_is_not_offered_to_the_expression(self):
+        # The controller refuses these in a query; a document listing them
+        # would describe filters the API does not take.
+        for controller, hidden in (
+            (HiddenFieldController, "password_hash"),
+            (UnfilterableFieldController, "token"),
+        ):
+            fields = self._parameters(controller)["q"]["x-ra-filter-fields"]
+
+            self.assertNotIn(hidden, fields)
+            self.assertIn("name", fields)
+
+    def test_a_hidden_field_gets_no_parameter(self):
+        class _Route(routes.Route):
+            __controller__ = UnfilterableFieldController
+            __allow_methods__: typing.ClassVar = [routes.FILTER]
+
+        # Every field has a component, as if one were built for it.
+        components = {
+            f"SecretModel_{name}": {"name": name, "schema": {"type": "string"}}
+            for name in ("uuid", "name", "password_hash", "token")
+        }
+        specification = _Route(_request(""))._build_openapi_method_specification(
+            routes.FILTER,
+            parameters={"components": {"parameters": components}},
+            current_path="/",
+        )
+
+        refs = [param.get("$ref", "") for param in specification["parameters"]]
+        self.assertIn("#/components/parameters/SecretModel_name", refs)
+        self.assertNotIn("#/components/parameters/SecretModel_token", refs)
+
     def test_a_field_of_the_same_name_is_not_described_twice(self):
         # Two parameters called `name` would collide.
         class NameFilterController(StorableTaggedController):
