@@ -245,6 +245,63 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
         self.assertNotIn("FakeModel_uuid", parameters)
         self.assertEqual("path", parameters["FakeModelUuid"]["in"])
 
+    def _parameters_for(self, resource, context):
+        request = webob.Request.blank("/")
+        request.context = context
+        request.api_context = contexts.RequestContext(request)
+        request.api_context.set_active_method(constants.GET)
+        generator = openapi_utils.ResourceSchemaGenerator(
+            resource, route=None, openapi_version="3.0.3"
+        )
+        return request, generator.generate_parameter_object(request)
+
+    def test_filters_are_decided_for_the_caller_of_the_document(self):
+        # Permissions by role read the caller's roles; the FILTER question
+        # has to carry them, or it is answered for someone else.
+        hidden = field_permissions.FieldsPermissions(
+            fields={
+                "standard_field1": {
+                    constants.FILTER: field_permissions.Permissions.HIDDEN,
+                },
+            },
+        )
+        resource = resources.ResourceByRAModel(
+            FakeModel,
+            convert_underscore=False,
+            fields_permissions=field_permissions.FieldsPermissionsByRole(
+                default=hidden,
+                admin=field_permissions.UniversalPermissions(),
+            ),
+        )
+
+        _, admin = self._parameters_for(resource, FakeAdminContext())
+        _, anyone = self._parameters_for(resource, FakeEmptyContext())
+
+        self.assertIn("FakeModel_standard_field1", admin)
+        self.assertNotIn("FakeModel_standard_field1", anyone)
+
+    def test_the_callers_own_visibility_is_left_alone(self):
+        # Visibility is kept per resource on the request, not per method;
+        # FILTER's answer must not land where GET's is read.
+        resource = resources.ResourceByRAModel(
+            FakeModel,
+            convert_underscore=False,
+            fields_permissions=field_permissions.FieldsPermissions(
+                fields={
+                    "standard_field1": {
+                        constants.FILTER: field_permissions.Permissions.HIDDEN,
+                    },
+                },
+            ),
+        )
+
+        request, parameters = self._parameters_for(resource, FakeAdminContext())
+
+        self.assertNotIn("FakeModel_standard_field1", parameters)
+        self.assertFalse(
+            resource.resolve_visibility(request).is_hidden("standard_field1")
+        )
+
     def test_a_field_does_not_overwrite_a_same_named_models_id(self):
         # Two models can carry one class name, and what is the id property of
         # the one can be a plain field of the other. The path parameter must

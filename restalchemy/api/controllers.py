@@ -243,9 +243,7 @@ class Controller:
         and the safer one to let win.
         """
         visibility = self.__resource__.resolve_visibility(self._req)
-        return not (
-            model_field_name.startswith("_") or visibility.is_hidden(model_field_name)
-        )
+        return visibility.is_queryable(model_field_name)
 
     def _resolve_filter_field(self, param_name):
         """The resource field a filter parameter names.
