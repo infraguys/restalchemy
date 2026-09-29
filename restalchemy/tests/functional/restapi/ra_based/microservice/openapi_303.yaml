@@ -38,12 +38,6 @@ components:
         format: uuid
         readOnly: true
         type: string
-    Port_-hidden-field:
-      in: query
-      name: -hidden-field
-      schema:
-        example: any_string
-        type: string
     Port_mac:
       in: query
       name: mac
@@ -69,12 +63,6 @@ components:
         - type: array
         - type: boolean
         - type: object
-    Port_never-call:
-      in: query
-      name: never-call
-      schema:
-        example: any_string
-        type: string
     Port_permission-field:
       in: query
       name: permission-field
@@ -84,12 +72,6 @@ components:
     Port_some-field1:
       in: query
       name: some-field1
-      schema:
-        example: any_string
-        type: string
-    Port_some-field2:
-      in: query
-      name: some-field2
       schema:
         example: any_string
         type: string

@@ -658,6 +658,23 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
         return self.get_fields(override_is_public_field_func=is_public_field)
 
+    def get_filter_fields(self):
+        """The fields a collection of this resource may be filtered by.
+
+        What a FILTER request is refused is a field hidden from it, by the
+        hidden-fields map or by permission (see the controller's
+        `_is_queryable_field`); a document offering one as a parameter
+        offers what the API will not take. There is no caller here -- this
+        is what an OpenAPI document is built from -- so, as for a body
+        schema, the method is all there is to go on.
+        """
+        req = Request(environ={})
+        req.api_context = contexts.RequestContext(req)
+        req.api_context.set_active_method(constants.FILTER)
+        for name, prop in self.get_fields_by_method(constants.FILTER):
+            if prop.is_public() and not self._fields_permissions.is_hidden(name, req):
+                yield name, prop
+
     @abc.abstractmethod
     def get_resource_id(self, model):
         raise NotImplementedError()

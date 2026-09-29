@@ -125,6 +125,7 @@ class ResourceSchemaGenerator:
     def generate_parameter_object(self, request):
         parameters = {}
         has_id_property = False
+        filter_fields = {name for name, _ in self._resource.get_filter_fields()}
         for name, prop in self._resource.get_fields_by_request(request):
             prop_kwargs = self.get_prop_kwargs(name)
             schema = prop.get_type().to_openapi_spec(prop_kwargs)
@@ -135,11 +136,14 @@ class ResourceSchemaGenerator:
             # components/parameters is one flat namespace for the whole
             # document, so the key has to name the resource too: plain
             # "name" or "status" means something different on every model.
-            parameters[self.resource_field_prop_name(prop.api_name)] = {
-                "name": prop.api_name,
-                "in": "query",
-                "schema": schema,
-            }
+            # A field the collection cannot be filtered by gets no query
+            # parameter; an id hidden from filters still gets its path one.
+            if name in filter_fields:
+                parameters[self.resource_field_prop_name(prop.api_name)] = {
+                    "name": prop.api_name,
+                    "in": "query",
+                    "schema": schema,
+                }
             if is_id:
                 has_id_property = True
                 # A collection can be filtered by the id as well as by any
