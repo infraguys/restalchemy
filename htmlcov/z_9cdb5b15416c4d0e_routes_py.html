@@ -67,7 +67,7 @@
             <a id="nextFileLink" class="nav" href="z_5a273d92ba770017_apply_migration_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.1">coverage.py v7.16.1</a>,
-            created at 2026-09-29 11:31 +0000
+            created at 2026-09-30 05:08 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -393,7 +393,7 @@
     <p class="run"><span class="n"><a id="t309" href="#t309">309</a></span><span class="t">                <span class="nam">filter_param</span> <span class="op">=</span> <span class="nam">getattr</span><span class="op">(</span><span class="nam">controller</span><span class="op">,</span> <span class="str">&quot;__filter_param__&quot;</span><span class="op">,</span> <span class="key">None</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t310" href="#t310">310</a></span><span class="t">                <span class="key">if</span> <span class="key">not</span> <span class="nam">res</span><span class="op">.</span><span class="nam">is_process_filters</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t311" href="#t311">311</a></span><span class="t">                    <span class="nam">filter_param</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t312" href="#t312">312</a></span><span class="t">                <span class="nam">fields</span> <span class="op">=</span> <span class="nam">list</span><span class="op">(</span><span class="nam">res</span><span class="op">.</span><span class="nam">get_fields_by_request</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">_req</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t312" href="#t312">312</a></span><span class="t">                <span class="nam">fields</span> <span class="op">=</span> <span class="nam">oa_utils</span><span class="op">.</span><span class="nam">filter_fields</span><span class="op">(</span><span class="nam">res</span><span class="op">,</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_req</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t313" href="#t313">313</a></span><span class="t">                <span class="key">if</span> <span class="nam">filter_param</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t314" href="#t314">314</a></span><span class="t">                    <span class="nam">params</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t315" href="#t315">315</a></span><span class="t">                        <span class="nam">oa_utils</span><span class="op">.</span><span class="nam">filter_lang_parameter</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
@@ -826,7 +826,7 @@
             <a class="nav" href="z_5a273d92ba770017_apply_migration_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.1">coverage.py v7.16.1</a>,
-            created at 2026-09-29 11:31 +0000
+            created at 2026-09-30 05:08 +0000
         </p>
     </div>
 </footer>
