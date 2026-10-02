@@ -108,6 +108,7 @@ RESTAlchemy полезен, если:
    - Базовый CRUD
    - Фильтрация, сортировка, пагинация
    - Связи между моделями
+   - [Batch requests](how-to/api-batch-requests.md)
 5. Reference:
    - `restalchemy.api.*`
    - `restalchemy.dm.*`

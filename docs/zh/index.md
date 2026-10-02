@@ -108,6 +108,7 @@ OpenAPI 集成可以：
    - 基本 CRUD
    - 过滤、排序与分页
    - 模型关系
+   - [Batch requests（批量请求）](how-to/api-batch-requests.md)
 5. 参考文档：
    - `restalchemy.api.*`
    - `restalchemy.dm.*`
