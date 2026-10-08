@@ -148,6 +148,20 @@ class SimpleViewModelWithSecret(
         self.kept = secret
 
 
+class InheritedFieldsParent(models.Model):
+    project_id = properties.property(types.UUID(), required=True)
+
+
+class InheritedFieldsChild(models.InheritFieldsMixin, models.ModelWithProject):
+    __inherited_fields__: typing.ClassVar[dict] = {
+        "project_id": "load_balancer.project_id"
+    }
+
+    load_balancer = relationships.relationship(
+        InheritedFieldsParent
+    )
+
+
 class InheritModelTestCase(base.BaseTestCase):
     def test_correct_type_in_base_model(self):
         props = BaseModel.properties.properties
@@ -182,6 +196,52 @@ class InheritModelTestCase(base.BaseTestCase):
         )
 
         assert model.property3 is m3
+
+
+class InheritedFieldsMixinTestCase(base.BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.project_id = uuid.uuid4()
+        self.load_balancer = InheritedFieldsParent(project_id=self.project_id)
+
+    def test_pour_inherits_from_named_relationship(self):
+        child = InheritedFieldsChild(load_balancer=self.load_balancer)
+
+        self.assertEqual(child.project_id, self.project_id)
+
+    def test_restore_values_keep_stored_values(self):
+        load_balancer_converter = mock.Mock(return_value=self.load_balancer)
+        project_id_converter = mock.Mock(wraps=types.UUID().from_simple_type)
+        stored_project_id = uuid.uuid4()
+        child = InheritedFieldsChild.restore_values(
+            {
+                "load_balancer": "lb-uuid",
+                "project_id": str(stored_project_id),
+            },
+            convert={
+                "load_balancer": load_balancer_converter,
+                "project_id": project_id_converter,
+            },
+        )
+
+        self.assertEqual(child.project_id, stored_project_id)
+        self.assertIs(child.load_balancer, self.load_balancer)
+        load_balancer_converter.assert_called_once_with("lb-uuid")
+        project_id_converter.assert_called_once_with(str(stored_project_id))
+
+    def test_explicit_inherited_value_takes_precedence(self):
+        explicit_project_id = uuid.uuid4()
+        child = InheritedFieldsChild(
+            load_balancer=self.load_balancer,
+            project_id=explicit_project_id,
+        )
+
+        self.assertEqual(child.project_id, explicit_project_id)
+
+    def test_explicit_inherited_value_does_not_require_source(self):
+        child = InheritedFieldsChild(project_id=self.project_id)
+
+        self.assertEqual(child.project_id, self.project_id)
 
 
 class DirtyModelTestCase(base.BaseTestCase):

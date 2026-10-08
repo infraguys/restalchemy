@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
 import unittest
 import uuid
 
@@ -47,6 +48,13 @@ class FakeWideNameModel(models.ModelWithUUID):
 
 class FakeProjectModel(models.ModelWithUUID, models.ModelWithProject):
     pass
+
+
+class FakeInheritedProjectModel(models.InheritFieldsMixin, models.ModelWithUUID):
+    __inherited_fields__: typing.ClassVar[dict] = {
+        "project_id": "load_balancer.project_id"
+    }
+    project_id = properties.property(types.UUID(), required=True)
 
 
 class FakeCollided(models.ModelWithUUID):
@@ -117,6 +125,20 @@ class ResourceSchemaGenerationTestCase(unittest.TestCase):
         self.assertNotIn("readOnly", create["properties"]["project_id"])
         self.assertIn("project_id", create["required"])
         self.assertTrue(get["properties"]["project_id"]["readOnly"])
+
+    def test_inherited_property_is_optional_on_create(self):
+        resource = resources.ResourceByRAModel(
+            FakeInheritedProjectModel, convert_underscore=False
+        )
+
+        create = resource.generate_schema_object(constants.CREATE, "3.0.3")
+        update = resource.generate_schema_object(constants.UPDATE, "3.0.3")
+        get = resource.generate_schema_object(constants.GET, "3.0.3")
+
+        self.assertNotIn("readOnly", create["properties"]["project_id"])
+        self.assertNotIn("project_id", create.get("required", []))
+        self.assertIn("project_id", update["required"])
+        self.assertIn("project_id", get["required"])
 
     def test_defaulted_read_only_property_stays_read_only_on_create(self):
         resource = resources.ResourceByRAModel(
