@@ -745,6 +745,9 @@ class AbstractResource(metaclass=abc.ABCMeta):
     def generate_schema_object(self, method, openapi_version):
         properties = {}
         required = []
+        inherited_fields = getattr(
+            self.get_model(), "get_inherited_fields", dict
+        )()
 
         req = Request(environ={})
         req.api_context = contexts.RequestContext(req)
@@ -755,6 +758,7 @@ class AbstractResource(metaclass=abc.ABCMeta):
 
             is_readonly = self._fields_permissions.is_readonly(name, req)
             is_hidden = self._fields_permissions.is_hidden(name, req)
+            is_inherited = name in inherited_fields
             if prop.is_public() and not is_hidden:
                 if is_readonly:
                     prop_kwargs["read_only"] = True
@@ -773,7 +777,10 @@ class AbstractResource(metaclass=abc.ABCMeta):
                     and "default" not in prop_kwargs
                     and (
                         method not in [constants.CREATE, constants.UPDATE]
-                        or not is_readonly
+                        or (
+                            not is_readonly
+                            and not (method == constants.CREATE and is_inherited)
+                        )
                     )
                 ):
                     required.append(prop.api_name)
