@@ -881,13 +881,20 @@ class UTCDateTimeZ(BasePythonType):
 class TimeDelta(BasePythonType):
     """Appropriate timedelta type."""
 
-    def __init__(self, min_value=-TIMEDELTA_INFINITY, max_value=TIMEDELTA_INFINITY):
+    def __init__(
+        self,
+        min_value=-TIMEDELTA_INFINITY,
+        max_value=TIMEDELTA_INFINITY,
+        *,
+        integer_seconds=False,
+    ):
+        self._integer_seconds = integer_seconds
         self._min_value = min_value
         self._max_value = max_value
         super().__init__(
             python_type=datetime.timedelta,
-            openapi_type="number",
-            openapi_format="float",
+            openapi_type="integer" if integer_seconds else "number",
+            openapi_format=None if integer_seconds else "float",
         )
 
     @property
@@ -900,15 +907,27 @@ class TimeDelta(BasePythonType):
 
     def validate(self, value):
         result = super().validate(value)
-        return result and self.min_value <= self.to_simple_type(value) <= self.max_value
+        return (
+            result
+            and (not self._integer_seconds or value.microseconds == 0)
+            and self.min_value <= self.to_simple_type(value) <= self.max_value
+        )
 
     def to_simple_type(self, value):
+        if self._integer_seconds:
+            if value.microseconds:
+                raise ValueError("TimeDelta requires whole seconds")
+            return value.days * 86400 + value.seconds
         return value.total_seconds()
 
     def from_simple_type(self, value):
-        if isinstance(value, datetime.timedelta):
-            return value
-        return datetime.timedelta(seconds=value)
+        if not isinstance(value, datetime.timedelta):
+            if self._integer_seconds and value != int(value):
+                raise ValueError("TimeDelta requires whole seconds")
+            value = datetime.timedelta(seconds=value)
+        if self._integer_seconds:
+            self.to_simple_type(value)
+        return value
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
@@ -930,11 +949,12 @@ class TimeDelta(BasePythonType):
     def to_openapi_spec(self, prop_kwargs):
         spec = {
             "type": self.openapi_type,
-            "format": self.openapi_format,
             "minimum": self.min_openapi_value,
             "maximum": self.max_openapi_value,
             "example": self.example,
         }
+        if self.openapi_format is not None:
+            spec["format"] = self.openapi_format
         spec.update(
             build_prop_kwargs(kwargs=prop_kwargs, to_simple_type=self.to_simple_type)
         )

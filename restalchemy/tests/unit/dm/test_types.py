@@ -1223,3 +1223,70 @@ class TimeDeltaTestCase(base.BaseTestCase):
                 datetime.timedelta(seconds=-types.TIMEDELTA_INFINITY)
             )
         )
+
+
+class IntegerSecondsTimeDeltaTestCase(base.BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.test_instance = types.TimeDelta(-10, 50, integer_seconds=True)
+
+    def test_serialize_whole_seconds(self):
+        for seconds in (-10, 0, 50):
+            value = datetime.timedelta(seconds=seconds)
+            result = self.test_instance.to_simple_type(value)
+            self.assertEqual(seconds, result)
+            self.assertIs(type(result), int)
+            self.assertEqual(value, self.test_instance.from_simple_type(result))
+            self.assertTrue(self.test_instance.validate(value))
+
+    def test_reject_fractional_seconds(self):
+        for seconds in (-0.5, 0.5, 50.1):
+            value = datetime.timedelta(seconds=seconds)
+            self.assertFalse(self.test_instance.validate(value))
+            with self.assertRaises(ValueError):
+                self.test_instance.to_simple_type(value)
+            for simple_value in (seconds, value):
+                with self.assertRaises(ValueError):
+                    self.test_instance.from_simple_type(simple_value)
+
+    def test_reject_fractions_before_microsecond_rounding(self):
+        for seconds in (-0.0000001, 0.0000001, 1.0000001):
+            with self.assertRaises(ValueError):
+                self.test_instance.from_simple_type(seconds)
+
+    def test_validate_bounds_and_type(self):
+        for value in (
+            datetime.timedelta(seconds=-11),
+            datetime.timedelta(seconds=51),
+            "TEST",
+        ):
+            self.assertFalse(self.test_instance.validate(value))
+
+    def test_serialize_large_whole_seconds_exactly(self):
+        value = datetime.timedelta(days=999999999, seconds=1)
+        self.assertEqual(
+            999999999 * 86400 + 1, self.test_instance.to_simple_type(value)
+        )
+
+    def test_openapi_schema(self):
+        schema = self.test_instance.to_openapi_spec(
+            {"default": datetime.timedelta(seconds=10)}
+        )
+        self.assertEqual("integer", schema["type"])
+        self.assertNotIn("format", schema)
+        self.assertEqual(-10, schema["minimum"])
+        self.assertEqual(50, schema["maximum"])
+        self.assertIs(type(schema["example"]), int)
+        self.assertEqual(10, schema["default"])
+        self.assertIs(type(schema["default"]), int)
+
+    def test_default_mode_preserves_fractional_seconds(self):
+        instance = types.TimeDelta()
+        value = datetime.timedelta(seconds=0.5)
+        self.assertTrue(instance.validate(value))
+        self.assertEqual(value, instance.from_simple_type(0.5))
+        self.assertIs(type(instance.to_simple_type(value)), float)
+        self.assertEqual(0.5, instance.to_simple_type(value))
+        schema = instance.to_openapi_spec({})
+        self.assertEqual("number", schema["type"])
+        self.assertEqual("float", schema["format"])
