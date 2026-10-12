@@ -111,7 +111,17 @@ status = properties.property(status_type, default="pending")
 ### `TimeDelta`
 
 - Wraps `datetime.timedelta`.
-- Serializes to seconds as float.
+- Serializes to seconds as float by default.
+- Set `integer_seconds=True` to serialize whole seconds as integers and emit an
+  OpenAPI `integer` schema. Values with fractional seconds are rejected.
+- `min_value` and `max_value` are bounds in seconds in both modes.
+
+```python
+expiration_delta = properties.property(
+    types.TimeDelta(min_value=60, integer_seconds=True),
+    default=lambda: datetime.timedelta(hours=1),
+)
+```
 
 ### `DateTime`
 

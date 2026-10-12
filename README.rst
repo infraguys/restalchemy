@@ -27,6 +27,7 @@ Features
 
 - Clear separation between domain models, storage implementation details, and HTTP API.
 - Strongly typed, validated data model with reusable properties.
+- Optional whole-second duration serialization with ``TimeDelta(integer_seconds=True)``.
 - Minimal boilerplate to expose models as REST resources.
 - Built-in migration tooling for evolving database schemas.
 
