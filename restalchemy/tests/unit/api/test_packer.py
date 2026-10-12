@@ -27,6 +27,7 @@ from restalchemy.api import contexts
 from restalchemy.api import field_permissions
 from restalchemy.api import packers
 from restalchemy.api import resources
+from restalchemy.api.middlewares import errors
 from restalchemy.common import exceptions
 from restalchemy.dm import models
 from restalchemy.dm import properties
@@ -529,3 +530,37 @@ class TimestampFormatTestCase(base.BaseTestCase):
         )
 
         self.assertEqual("2026-08-16T01:02:03.000004Z", packed["payload"]["seen"])
+
+
+class IntegerSecondsTimeDeltaPackerTestCase(base.BaseTestCase):
+    def setUp(self):
+        super().setUp()
+
+        class DurationModel(models.ModelWithUUID):
+            duration = properties.property(types.TimeDelta(integer_seconds=True))
+
+        self.packer = packers.JSONPacker(
+            resources.ResourceByRAModel(DurationModel), api_base.request_mock()
+        )
+
+    def tearDown(self):
+        resources.ResourceMap.model_type_to_resource = {}
+        super().tearDown()
+
+    def test_unpack_whole_seconds(self):
+        result = self.packer.unpack(b'{"duration": 60}')
+        self.assertEqual(datetime.timedelta(seconds=60), result["duration"])
+
+    def test_malformed_durations_return_bad_request(self):
+        for value in (True, False, 0.5, 0.0000001, "invalid", [], {}, 1e100):
+            with self.subTest(value=value):
+                body = orjson.dumps({"duration": value})
+                req = webob.Request.blank("/", method="POST", body=body)
+
+                def application(environ, start_response):
+                    self.packer.unpack(webob.Request(environ).body)
+                    return webob.Response(status=204)(environ, start_response)
+
+                response = req.get_response(errors.ErrorsHandlerMiddleware(application))
+                self.assertEqual(400, response.status_int)
+                self.assertEqual("ParseError", response.json["type"])
