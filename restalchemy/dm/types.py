@@ -922,9 +922,16 @@ class TimeDelta(BasePythonType):
 
     def from_simple_type(self, value):
         if not isinstance(value, datetime.timedelta):
-            if self._integer_seconds and value != int(value):
-                raise ValueError("TimeDelta requires whole seconds")
-            value = datetime.timedelta(seconds=value)
+            try:
+                if self._integer_seconds and (
+                    isinstance(value, bool) or value != int(value)
+                ):
+                    raise ValueError("TimeDelta requires whole seconds")
+                value = datetime.timedelta(seconds=value)
+            except OverflowError as e:
+                if self._integer_seconds:
+                    raise ValueError("TimeDelta seconds are out of range") from e
+                raise
         if self._integer_seconds:
             self.to_simple_type(value)
         return value

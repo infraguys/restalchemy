@@ -1249,6 +1249,16 @@ class IntegerSecondsTimeDeltaTestCase(base.BaseTestCase):
                 with self.assertRaises(ValueError):
                     self.test_instance.from_simple_type(simple_value)
 
+    def test_reject_booleans(self):
+        for value in (True, False):
+            with self.assertRaises(ValueError):
+                self.test_instance.from_simple_type(value)
+
+    def test_reject_out_of_range_seconds(self):
+        for value in (10**100, float("inf"), float("-inf")):
+            with self.assertRaises(ValueError):
+                self.test_instance.from_simple_type(value)
+
     def test_reject_fractions_before_microsecond_rounding(self):
         for seconds in (-0.0000001, 0.0000001, 1.0000001):
             with self.assertRaises(ValueError):
