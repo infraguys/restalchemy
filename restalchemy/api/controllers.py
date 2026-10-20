@@ -97,6 +97,9 @@ class Controller:
     # List of fields that can be used for user sorting. If '__all__', any field is allowed.
     __sortable_fields__ = "__all__"
 
+    # Disable Python-side custom-property filters and query only stored fields.
+    __filter_custom_properties__ = True
+
     # Default sorting, leave empty for no default sorting.
     __default_sort__: typing.ClassVar[dict] = {}
 
@@ -242,6 +245,11 @@ class Controller:
         not get an exception: hiding is the narrower statement of the two,
         and the safer one to let win.
         """
+        if (
+            not self.__filter_custom_properties__
+            and model_field_name not in self.model.properties
+        ):
+            return False
         visibility = self.__resource__.resolve_visibility(self._req)
         return visibility.is_queryable(model_field_name)
 
@@ -581,7 +589,9 @@ class BaseResourceController(Controller):
         return self.model.objects.get_one(filters=filters)
 
     def _split_filters(self, filters):
-        if hasattr(self.model, "get_custom_properties"):
+        if self.__filter_custom_properties__ and hasattr(
+            self.model, "get_custom_properties"
+        ):
             custom_filters = {}
             storage_filters = {}
             custom_properties = dict(self.model.get_custom_properties())
@@ -759,11 +769,11 @@ class PaginationFilterBuilder:
         if self.sort_col in (None, self.id_name):
             return self.marker_id
 
-        if self.marker_filters:
-            marker_filters = self.marker_filters.copy()
+        marker_filters = {self.id_name: dm_filters.EQ(self.marker_id)}
+        if isinstance(self.marker_filters, dm_filters.AbstractExpression):
+            marker_filters = dm_filters.AND(self.marker_filters, marker_filters)
         else:
-            marker_filters = {}
-        marker_filters[self.id_name] = dm_filters.EQ(self.marker_id)
+            marker_filters = {**(self.marker_filters or {}), **marker_filters}
 
         marker_row = model.objects.get_one(filters=marker_filters)
         return getattr(marker_row, self.sort_col)

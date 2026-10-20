@@ -309,7 +309,9 @@ class Route(BaseRoute):
                 filter_param = getattr(controller, "__filter_param__", None)
                 if not res.is_process_filters():
                     filter_param = None
-                fields = oa_utils.filter_fields(res, self._req)
+                fields = oa_utils.filter_fields(
+                    res, self._req, controller.__filter_custom_properties__
+                )
                 if filter_param:
                     params.append(
                         oa_utils.filter_lang_parameter(
