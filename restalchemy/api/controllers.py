@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import itertools
 import logging
+import types
 import typing
 
 import webob
@@ -86,6 +87,9 @@ class Controller:
     # Holds the packer class, not an instance: get_packer() instantiates it.
     __packer__: type[packers.BaseResourcePacker] | None = None
 
+    # Optional callable(rows), enriching model instances in place before packing.
+    __prepare_response__ = None
+
     # You can also generate location header for GET and UPDATE methods,
     # just expand the list with the following constants:
     #  * constants.GET
@@ -135,6 +139,12 @@ class Controller:
         return packer(rt, request=self._req)
 
     def _create_response(self, body, status, headers, charset="utf-8"):
+        if self.__prepare_response__ is not None and body is not None:
+            if isinstance(body, types.GeneratorType):
+                body = list(body)
+            rows = body if isinstance(body, list) else [body]
+            if rows and all(isinstance(row, self.model) for row in rows):
+                self.__prepare_response__(rows)
         if body is not None:
             headers["Content-Type"] = packers.get_content_type(headers)
             packer = self.get_packer(headers["Content-Type"])
