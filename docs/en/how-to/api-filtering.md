@@ -33,6 +33,11 @@ class TaggedController(controllers.BaseResourceController):
 Without `process_filters=True` the parameters are passed through as raw
 strings and are not parsed or validated at all.
 
+Set `__filter_custom_properties__ = False` on a controller to restrict filters
+and sorting to stored model fields. Custom properties remain in responses,
+but are rejected in queries and omitted from OpenAPI query parameters.
+The default `True` preserves Python-side custom-property filtering.
+
 ---
 
 ## Scalar fields

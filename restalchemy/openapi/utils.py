@@ -95,13 +95,14 @@ def filter_visibility(resource, req):
     return resource.resolve_visibility(filter_req)
 
 
-def filter_fields(resource, req):
+def filter_fields(resource, req, filter_custom_properties=True):
     """The fields the caller of this document may filter `resource` by."""
     visibility = filter_visibility(resource, req)
     return [
         (name, prop)
         for name, prop in resource.get_fields_by_visibility(visibility)
         if visibility.is_queryable(name)
+        and (filter_custom_properties or name in resource.get_model().properties)
     ]
 
 

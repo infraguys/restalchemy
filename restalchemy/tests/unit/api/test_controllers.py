@@ -632,6 +632,14 @@ class CustomPropertyController(controllers.BaseResourceController):
     )
 
 
+class StoredFieldsController(controllers.BaseResourceControllerPaginated):
+    __resource__ = CustomPropertyController.__resource__
+    __filter_custom_properties__ = False
+
+    def _apply_autofilters(self, filters):
+        return dm_filters.AND(filters, {"name": dm_filters.NE("hidden")})
+
+
 def _clauses_of(filters):
     """Every clause in a filter tree, whatever its shape."""
     if isinstance(filters, dict):
@@ -1164,6 +1172,53 @@ class FilterLangPaginationTestCase(unittest.TestCase):
             self.assertIn(dm_filters.EQ("vm1"), _clauses_of(call.kwargs["filters"]))
 
 
+class StoredFieldsQueryTestCase(unittest.TestCase):
+    def test_custom_fields_cannot_filter_or_sort(self):
+        for query in ("computed=x", "q=computed = x", "sort_key=computed"):
+            with self.subTest(query=query):
+                controller = StoredFieldsController(_request(query))
+                with mock.patch.object(controller.model, "objects") as objects:
+                    with self.assertRaises(ra_exc.ValidationErrorException):
+                        controller.do_collection()
+                    objects.get_all.assert_not_called()
+
+    def test_scopes_and_expressions_survive_pagination(self):
+        marker = str(uuid.uuid4())
+        for pagination in ("", f"&page_limit=5&page_marker={marker}"):
+            with self.subTest(pagination=pagination):
+                controller = StoredFieldsController(
+                    _request("q=name = vm1&sort_key=uuid" + pagination)
+                )
+                with mock.patch.object(controller.model, "objects") as objects:
+                    objects.get_all.return_value = []
+                    controller.do_collection()
+                clauses = _clauses_of(objects.get_all.call_args.kwargs["filters"])
+                self.assertIn(dm_filters.NE("hidden"), clauses)
+                self.assertIn(dm_filters.EQ("vm1"), clauses)
+                if pagination:
+                    self.assertIn(dm_filters.GT(uuid.UUID(marker)), clauses)
+
+    def test_custom_fields_remain_in_responses(self):
+        controller = StoredFieldsController(_request("name=vm1"))
+        with mock.patch.object(controller.model, "objects") as objects:
+            objects.get_all.return_value = [CustomPropertyModel(name="vm1")]
+            response = controller.do_collection()
+        self.assertEqual("computed", response.json[0]["computed"])
+
+    def test_marker_lookup_keeps_expression_scope_with_non_id_sort(self):
+        marker = uuid.uuid4()
+        controller = StoredFieldsController(
+            _request(f"sort_key=name&page_limit=5&page_marker={marker}")
+        )
+        with mock.patch.object(controller.model, "objects") as objects:
+            objects.get_all.return_value = []
+            objects.get_one.return_value = CustomPropertyModel(name="vm1")
+            controller.do_collection()
+        clauses = _clauses_of(objects.get_one.call_args.kwargs["filters"])
+        self.assertIn(dm_filters.EQ(marker), clauses)
+        self.assertIn(dm_filters.NE("hidden"), clauses)
+
+
 class UnfilteredController(controllers.BaseResourceController):
     __resource__ = resources.ResourceByRAModel(StorableTaggedModel)
 
@@ -1249,6 +1304,28 @@ class FilterLangOpenApiTestCase(unittest.TestCase):
         refs = [param.get("$ref", "") for param in specification["parameters"]]
         self.assertIn("#/components/parameters/SecretModel_name", refs)
         self.assertNotIn("#/components/parameters/SecretModel_token", refs)
+
+    def test_stored_only_queries_do_not_advertise_custom_fields(self):
+        class _Route(routes.Route):
+            __controller__ = StoredFieldsController
+            __allow_methods__: typing.ClassVar = [routes.FILTER]
+
+        components = {
+            f"CustomPropertyModel_{name}": {"schema": {"type": "string"}}
+            for name in ("name", "computed")
+        }
+        specification = _Route(_request(""))._build_openapi_method_specification(
+            routes.FILTER,
+            parameters={"components": {"parameters": components}},
+            current_path="/",
+        )
+        refs = [param.get("$ref", "") for param in specification["parameters"]]
+        self.assertIn("#/components/parameters/CustomPropertyModel_name", refs)
+        self.assertNotIn("#/components/parameters/CustomPropertyModel_computed", refs)
+        expression = next(
+            p for p in specification["parameters"] if p.get("name") == "q"
+        )
+        self.assertNotIn("computed", expression["x-ra-filter-fields"])
 
     def test_a_field_of_the_same_name_is_not_described_twice(self):
         # Two parameters called `name` would collide.
