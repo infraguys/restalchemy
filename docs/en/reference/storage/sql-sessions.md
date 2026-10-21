@@ -67,6 +67,21 @@ It also supports:
 
 ---
 
+## SQL logging
+
+At `DEBUG`, the `restalchemy.storage.sql.sessions` logger records the SQL statement,
+database name, and whether execution is a batch. Bound parameter values, including
+JSON/JSONB payloads, are omitted from both formatted messages and log record
+arguments. There is no option to enable bound-value logging. The statement is
+logged before execution, so failed operations remain identifiable; exception
+propagation and translation are unchanged.
+
+Use bound parameters for sensitive data: SQL text supplied directly is logged
+as provided. Driver exception messages and database server logs are separate
+outputs and may contain values; applications must handle those separately.
+
+---
+
 ## session_manager
 
 There are two related mechanisms for session management:
