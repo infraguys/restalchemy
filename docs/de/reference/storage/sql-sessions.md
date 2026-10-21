@@ -67,6 +67,23 @@ Zusätzlich unterstützt sie:
 
 ---
 
+## SQL-Protokollierung
+
+Auf der Stufe `DEBUG` protokolliert `restalchemy.storage.sql.sessions` das
+SQL-Statement, den Datenbanknamen und ob es sich um eine Stapelausführung handelt.
+Gebundene Parameterwerte, einschließlich JSON/JSONB, werden weder im formatierten
+Text noch in den Argumenten des Log-Eintrags gespeichert. Es gibt keine Option,
+die Protokollierung dieser Werte einzuschalten. Das Statement wird vor der
+Ausführung protokolliert, sodass auch fehlgeschlagene Operationen erkennbar
+bleiben; Weitergabe und Übersetzung von Exceptions ändern sich nicht.
+
+Verwenden Sie gebundene Parameter für vertrauliche Daten: Direkt übergebener
+SQL-Text wird unverändert protokolliert. Treiber-Exceptions und Datenbankserver-Logs
+sind separate Ausgaben und können Werte enthalten; Anwendungen müssen diese
+gesondert behandeln.
+
+---
+
 ## session_manager
 
 Für die Session-Verwaltung gibt es zwei verwandte Mechanismen:

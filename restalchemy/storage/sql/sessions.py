@@ -193,9 +193,8 @@ class PgSQLSession:
 
     def execute(self, statement, values=None):
         self._log.debug(
-            "Execute statement %s with values %s within %s database",
+            "Execute statement %s within %s database",
             statement,
-            values,
             self._engine.db_name,
         )
         self._cursor.execute(statement, values)
@@ -203,9 +202,8 @@ class PgSQLSession:
 
     def execute_many(self, statement, values):
         self._log.debug(
-            "Execute batch statement %s with values %s within %s database",
+            "Execute batch statement %s within %s database",
             statement,
-            values,
             self._engine.db_name,
         )
         self._cursor.executemany(statement, values)
@@ -301,9 +299,8 @@ class MySQLSession:
     def execute(self, statement, values=None):
         try:
             self._log.debug(
-                ("Execute statement %s with values %s within %s database"),
+                "Execute statement %s within %s database",
                 statement,
-                values,
                 self._engine.db_name,
             )
             self._cursor.execute(statement, values)
@@ -315,9 +312,8 @@ class MySQLSession:
 
     def execute_many(self, statement, values):
         self._log.debug(
-            ("Execute batch statement %s with values %s within %s database"),
+            "Execute batch statement %s within %s database",
             statement,
-            values,
             self._engine.db_name,
         )
         self._cursor.executemany(statement, values)
