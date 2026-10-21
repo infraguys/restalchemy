@@ -20,6 +20,26 @@ import netaddr
 from restalchemy.dm import types_network
 
 
+class InvalidNetaddrValueTestCase(unittest.TestCase):
+    """Invalid input must raise ValueError, not netaddr.AddrFormatError."""
+
+    def test_ip_address(self):
+        with self.assertRaises(ValueError):
+            types_network.IPAddress().from_simple_type("exordos.tech")
+
+    def test_network(self):
+        with self.assertRaises(ValueError):
+            types_network.Network().from_simple_type("exordos.tech")
+
+    def test_ip_with_mask(self):
+        with self.assertRaises(ValueError):
+            types_network.IpWithMask().from_simple_type("exordos.tech")
+
+    def test_ip_range(self):
+        with self.assertRaises(ValueError):
+            types_network.IPRange().from_simple_type("foo-bar")
+
+
 class RecordNameTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()

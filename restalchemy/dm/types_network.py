@@ -34,6 +34,19 @@ HOSTNAME_TEMPLATE = (
 )
 
 
+def _parse_netaddr(factory, *args):
+    """Call a netaddr constructor and convert its errors to ValueError.
+
+    netaddr.AddrFormatError is not a ValueError subclass, so callers that
+    expect ValueError for invalid input (e.g. dynamic types) would let it
+    escape as an unhandled exception.
+    """
+    try:
+        return factory(*args)
+    except netaddr.AddrFormatError as e:
+        raise ValueError(str(e)) from e
+
+
 class IPAddress(types.BaseType):
     def __init__(self, **kwargs):
         super().__init__(openapi_type="string", **kwargs)
@@ -45,7 +58,7 @@ class IPAddress(types.BaseType):
         return str(value)
 
     def from_simple_type(self, value):
-        return netaddr.IPAddress(value)
+        return _parse_netaddr(netaddr.IPAddress, value)
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
@@ -79,7 +92,7 @@ class Network(types.BaseType):
         return str(value)
 
     def from_simple_type(self, value):
-        return netaddr.IPNetwork(value).cidr
+        return _parse_netaddr(netaddr.IPNetwork, value).cidr
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
@@ -115,7 +128,7 @@ class IpWithMask(types.BaseType):
         return str(value)
 
     def from_simple_type(self, value):
-        return netaddr.IPNetwork(value)
+        return _parse_netaddr(netaddr.IPNetwork, value)
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
@@ -267,7 +280,7 @@ class IPRange(types.BaseType):
         return str(value)
 
     def from_simple_type(self, value):
-        return netaddr.IPRange(*value.split(self.SEPARATOR))
+        return _parse_netaddr(netaddr.IPRange, *value.split(self.SEPARATOR))
 
     def from_unicode(self, value):
         return self.from_simple_type(value)
