@@ -69,7 +69,7 @@
 | restalchemy/storage/sql/dialect/query\_builder/\_\_init\_\_.py |        0 |        0 |        0 |        0 |    100% |           |
 | restalchemy/storage/sql/dialect/query\_builder/common.py       |       69 |        2 |        0 |        0 |     97% |   29, 105 |
 | restalchemy/storage/sql/dialect/query\_builder/q.py            |      254 |        4 |       38 |        2 |     98% |35, 360-\>363, 412-417, 459 |
-| restalchemy/storage/sql/engines.py                             |      195 |       12 |       32 |        4 |     93% |133, 393-\>396, 514-\>516, 533-538, 550-\>exit, 662, 708-709, 743-744 |
+| restalchemy/storage/sql/engines.py                             |      200 |       10 |       36 |        4 |     94% |135, 398-\>401, 509-\>511, 528-533, 545-\>exit, 657, 703-704 |
 | restalchemy/storage/sql/filters.py                             |      201 |        8 |       40 |        2 |     96% |167, 236, 469, 472, 475, 478, 541, 547 |
 | restalchemy/storage/sql/migrations.py                          |      237 |       26 |       70 |        7 |     87% |68, 72, 88, 94, 132-133, 216-\>214, 219, 220-\>214, 224, 249-250, 297, 339-356, 359 |
 | restalchemy/storage/sql/orm.py                                 |      260 |       15 |       76 |        8 |     93% |126, 129-134, 137-146, 167-180, 257-\>259, 346-\>336, 395, 406, 499, 541-\>exit, 582 |
@@ -77,7 +77,7 @@
 | restalchemy/storage/sql/tables.py                              |       87 |        3 |       28 |        3 |     95% |56-\>58, 92-\>94, 158, 177-186 |
 | restalchemy/storage/sql/utils.py                               |       36 |        1 |        8 |        0 |     98% |        28 |
 | restalchemy/version.py                                         |        2 |        2 |        0 |        0 |      0% |     15-17 |
-| **TOTAL**                                                      | **7095** |  **735** | **1586** |  **156** | **88%** |           |
+| **TOTAL**                                                      | **7100** |  **733** | **1590** |  **156** | **88%** |           |
 
 
 ## Setup coverage badge
