@@ -270,6 +270,23 @@ curl -X DELETE "http://127.0.0.1:8000/v1/bars/<uuid>"
 
 ---
 
+## Preparing related response fields
+
+A model controller can prepare related fields in one batch before serialization:
+
+```python
+class PortController(controllers.BaseResourceControllerPaginated):
+    __resource__ = resources.ResourceByRAModel(Port)
+    __prepare_response__ = staticmethod(load_related_fields)
+```
+
+The callback receives a non-empty list of the resource's model instances after
+CRUD and pagination. Enrich those instances in place; the return value is ignored.
+Keep stored values and list membership unchanged. For example, fetch unique
+Subnet UUIDs with one query and assign their Network UUIDs to the Ports.
+Generator results are collected once for the callback. Empty and non-model
+responses are skipped. The default `None` disables preparation.
+
 ## Summary
 
 - DM models define your data.

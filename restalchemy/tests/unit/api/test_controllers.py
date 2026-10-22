@@ -632,6 +632,82 @@ class CustomPropertyController(controllers.BaseResourceController):
     )
 
 
+class PreparedResponseModel(CustomPropertyModel):
+    @property
+    def computed(self):
+        return getattr(self, "_computed", "unloaded")
+
+    @classmethod
+    def prepare_response(cls, rows):
+        for row in rows:
+            row._computed = "ready"
+
+
+class PreparedResponseController(controllers.BaseResourceControllerPaginated):
+    __resource__ = resources.ResourceByModelWithCustomProps(PreparedResponseModel)
+    __prepare_response__ = PreparedResponseModel.prepare_response
+
+
+class ResponsePreparationTestCase(unittest.TestCase):
+    def test_single_result_is_prepared_without_changing_stored_values(self):
+        controller = PreparedResponseController(_request(""))
+        row = PreparedResponseModel(name="original")
+        with mock.patch.object(
+            controller, "__prepare_response__", wraps=controller.__prepare_response__
+        ) as prepare:
+            response = controller.process_result((row, 201, {"X-Test": "kept"}))
+        prepare.assert_called_once_with([row])
+        self.assertEqual("ready", response.json["computed"])
+        self.assertEqual("original", row.name)
+        self.assertEqual(201, response.status_code)
+        self.assertEqual("kept", response.headers["X-Test"])
+
+    def test_only_the_selected_page_is_prepared_once(self):
+        controller = PreparedResponseController(
+            _request("page_limit=2&fields=uuid&fields=computed")
+        )
+        rows = [PreparedResponseModel(name=str(i)) for i in range(3)]
+        with mock.patch.object(controller.model, "objects") as objects:
+            objects.get_all.return_value = rows
+            with mock.patch.object(
+                controller,
+                "__prepare_response__",
+                wraps=controller.__prepare_response__,
+            ) as prepare:
+                response = controller.do_collection()
+        prepare.assert_called_once_with(rows[:2])
+        self.assertEqual(["ready", "ready"], [r["computed"] for r in response.json])
+        self.assertEqual("unloaded", rows[2].computed)
+        self.assertNotIn("name", response.json[0])
+        self.assertEqual(str(rows[1].uuid), response.headers["X-Pagination-Marker"])
+
+    def test_generator_results_are_prepared_as_one_batch(self):
+        controller = PreparedResponseController(_request(""))
+        rows = [PreparedResponseModel() for _ in range(3)]
+        with mock.patch.object(
+            controller, "__prepare_response__", wraps=controller.__prepare_response__
+        ) as prepare:
+            response = controller.process_result(row for row in rows)
+        prepare.assert_called_once_with(rows)
+        self.assertEqual(["ready"] * 3, [row["computed"] for row in response.json])
+
+    def test_plain_and_empty_responses_do_not_call_the_loader(self):
+        controller = PreparedResponseController(_request(""))
+        for body in (None, [], {"ok": True}, [{"ok": True}], "raw"):
+            with self.subTest(body=body), mock.patch.object(
+                controller, "__prepare_response__"
+            ) as prepare:
+                controller.process_result(body)
+                prepare.assert_not_called()
+
+    def test_preparation_is_disabled_by_default(self):
+        class PlainController(PreparedResponseController):
+            __prepare_response__ = None
+
+        response = PlainController(_request("")).process_result(PreparedResponseModel())
+        self.assertEqual("unloaded", response.json["computed"])
+
+
 def _clauses_of(filters):
     """Every clause in a filter tree, whatever its shape."""
     if isinstance(filters, dict):
