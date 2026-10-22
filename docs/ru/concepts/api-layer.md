@@ -148,6 +148,16 @@ RA-метод, роли вызывающего и параметр `fields`; з�
 
 В сочетании с `routes.Action` и `routes.action` дают паттерн для эндпоинтов вида `/v1/files/<id>/actions/download`.
 
+### 8. Batch requests
+
+Модуль: `restalchemy.api.batch`
+
+- `BatchController` / `BatchRoute`:
+  - Открывают единственный эндпоинт `POST /batch/`, который проигрывает список элементов `{method, path, body}` через существующее дерево маршрутов без изменений.
+  - Каждый элемент best-effort и проходит через весь стек middleware (auth, policy, rate limiting, retry применяются к каждому элементу, как при прямом вызове).
+
+Полное руководство: [Batch requests](../how-to/api-batch-requests.md).
+
 ---
 
 ## Поток обработки запроса
