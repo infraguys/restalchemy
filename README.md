@@ -10,7 +10,7 @@
 | restalchemy/api/applications.py                                |       38 |        0 |        2 |        1 |     98% | 54-\>exit |
 | restalchemy/api/constants.py                                   |       17 |        0 |        0 |        0 |    100% |           |
 | restalchemy/api/contexts.py                                    |       41 |        3 |        4 |        1 |     91% |55, 78, 87 |
-| restalchemy/api/controllers.py                                 |      499 |       25 |      140 |       12 |     94% |208-212, 257, 291, 407, 410, 428, 474, 487, 537, 551, 554, 560, 563-566, 650-653, 883, 932, 1019, 1091 |
+| restalchemy/api/controllers.py                                 |      502 |       25 |      142 |       12 |     94% |211-215, 265, 299, 415, 418, 436, 482, 495, 545, 559, 562, 568, 571-574, 660-663, 893, 942, 1029, 1101 |
 | restalchemy/api/field\_permissions.py                          |       68 |        3 |       20 |        3 |     93% |151, 155, 218 |
 | restalchemy/api/filter\_lang.py                                |      398 |       12 |      142 |       10 |     96% |196, 199, 270, 291, 394, 474, 537, 600, 602, 604, 619, 682 |
 | restalchemy/api/middlewares/\_\_init\_\_.py                    |       29 |       11 |        4 |        1 |     58% |26-28, 33-36, 57, 61, 68-69, 74 |
@@ -22,7 +22,7 @@
 | restalchemy/api/middlewares/retry\_on\_error.py                |       18 |        0 |        2 |        0 |    100% |           |
 | restalchemy/api/packers.py                                     |      185 |        8 |       68 |        6 |     94% |141-\>149, 206, 259, 292-294, 367, 372, 392-394 |
 | restalchemy/api/resources.py                                   |      377 |       19 |       74 |       11 |     93% |42, 50, 96, 106-107, 213, 216, 305, 321, 532, 543, 608, 659, 711, 818, 847, 855, 879-880 |
-| restalchemy/api/routes.py                                      |      433 |       19 |      168 |       13 |     95% |81-\>93, 95-\>107, 102-\>96, 126, 132-133, 142, 192, 208-209, 279, 359, 424-425, 531, 538, 604, 625, 631, 655, 668, 714 |
+| restalchemy/api/routes.py                                      |      433 |       19 |      168 |       13 |     95% |81-\>93, 95-\>107, 102-\>96, 126, 132-133, 142, 192, 208-209, 279, 361, 426-427, 533, 540, 606, 627, 633, 657, 670, 716 |
 | restalchemy/cmd/\_\_init\_\_.py                                |        0 |        0 |        0 |        0 |    100% |           |
 | restalchemy/cmd/apply\_migration.py                            |       18 |       18 |        0 |        0 |      0% |     17-66 |
 | restalchemy/cmd/new\_migration.py                              |       16 |       16 |        2 |        0 |      0% |     17-68 |
@@ -54,7 +54,7 @@
 | restalchemy/openapi/impl310.py                                 |       24 |        0 |        0 |        0 |    100% |           |
 | restalchemy/openapi/parse.py                                   |       48 |        3 |       26 |        5 |     89% |32, 44-\>48, 56-\>60, 64, 88-\>115, 113 |
 | restalchemy/openapi/structures.py                              |      182 |        0 |       44 |        7 |     97% |79-\>82, 143-\>146, 146-\>149, 149-\>151, 151-\>154, 344-\>342, 357-\>356 |
-| restalchemy/openapi/utils.py                                   |      118 |       22 |       20 |        5 |     78% |118-\>120, 189-205, 231-241, 253, 255, 257 |
+| restalchemy/openapi/utils.py                                   |      118 |       22 |       20 |        5 |     78% |119-\>121, 190-206, 232-242, 254, 256, 258 |
 | restalchemy/storage/\_\_init\_\_.py                            |        0 |        0 |        0 |        0 |    100% |           |
 | restalchemy/storage/base.py                                    |       49 |        4 |        2 |        0 |     92% |     40-43 |
 | restalchemy/storage/exceptions.py                              |       53 |        3 |        6 |        2 |     92% |54, 84, 104 |
@@ -77,7 +77,7 @@
 | restalchemy/storage/sql/tables.py                              |       87 |        3 |       28 |        3 |     95% |56-\>58, 92-\>94, 158, 177-186 |
 | restalchemy/storage/sql/utils.py                               |       36 |        1 |        8 |        0 |     98% |        28 |
 | restalchemy/version.py                                         |        2 |        2 |        0 |        0 |      0% |     15-17 |
-| **TOTAL**                                                      | **7100** |  **733** | **1590** |  **156** | **88%** |           |
+| **TOTAL**                                                      | **7103** |  **733** | **1592** |  **156** | **88%** |           |
 
 
 ## Setup coverage badge
