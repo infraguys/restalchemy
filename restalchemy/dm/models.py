@@ -299,6 +299,59 @@ class Model(collections_abc.Mapping, metaclass=MetaModel):
         return f"<{self.__class__.__name__} {{{result}}}>"
 
 
+class InheritFieldsMixin:
+    """Fill in missing model fields from related models during creation.
+
+    ``__inherited_fields__`` maps a model property to a dotted path through
+    one of its relationships. The value is copied only when the property is
+    absent from constructor arguments. For example, ``{"project_id":
+    "load_balancer.project_id"}`` fills a missing ``project_id`` from the
+    model's ``load_balancer`` relationship.
+    """
+
+    __inherited_fields__: tp.ClassVar[tp.Mapping[str, str]] = {}
+
+    @classmethod
+    def get_inherited_fields(cls) -> tp.Mapping[str, str]:
+        """Return properties that may be initialized from related models."""
+        return cls.__inherited_fields__
+
+    def __init__(self, **kwargs):
+        inherited_fields = self.get_inherited_fields()
+        if inherited_fields:
+            kwargs = dict(kwargs)
+            model_properties = type(self).properties.properties
+            for property_name, source_path in inherited_fields.items():
+                source_parts = source_path.split(".")
+                if len(source_parts) < 2 or any(
+                    not part for part in source_parts
+                ):
+                    raise ValueError(
+                        f"Invalid source path {source_path!r} for inherited "
+                        f"property {property_name!r}."
+                    )
+
+                relationship_name = source_parts[0]
+                source = kwargs.get(relationship_name)
+                if source is None:
+                    continue
+
+                if not isinstance(source, Model):
+                    relationship_type = model_properties[
+                        relationship_name
+                    ].get_property_type()
+                    if hasattr(relationship_type, "from_simple_type"):
+                        source = relationship_type.from_simple_type(source)
+                        kwargs[relationship_name] = source
+
+                if property_name not in kwargs:
+                    for name in source_parts[1:]:
+                        source = getattr(source, name)
+                    kwargs[property_name] = source
+
+        super().__init__(**kwargs)
+
+
 class ModelWithID(Model):
     def get_id(self):
         return getattr(self, self.get_id_property_name())
