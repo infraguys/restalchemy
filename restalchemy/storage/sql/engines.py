@@ -18,9 +18,11 @@ from __future__ import annotations
 
 import abc
 import contextlib
+import functools
 import logging
 import typing as tp
 from urllib import parse
+import weakref
 
 from mysql.connector import pooling
 from psycopg.types.json import Jsonb
@@ -249,6 +251,9 @@ class AbstractEngine(metaclass=abc.ABCMeta):
         """
         return self._query_cache
 
+    def close(self) -> None:
+        """Release resources owned by the engine, if any."""
+
     def get_connection(self):
         """
         Establishes and returns a connection to the database from a pool.
@@ -395,14 +400,20 @@ class PgSQLEngine(AbstractEngine):
 
         self._pool = psycopg_pool.ConnectionPool(
             conninfo=db_url,
-            configure=self._conn_configure_callback,
+            configure=functools.partial(
+                self._conn_configure_callback, readonly=self.readonly
+            ),
             **self._config,
         )
+        # Close before late interpreter finalization, while threads can be joined.
+        # The callback must not retain this engine through the pool.
+        self._close_pool = weakref.finalize(self, self._pool.close)
         self._pool.wait()
 
-    def _conn_configure_callback(self, conn):
+    @staticmethod
+    def _conn_configure_callback(conn, readonly=False):
         conn.adapters.register_dumper(dict, PgDictJsonbDumper)
-        if self.readonly:
+        if readonly:
             conn.read_only = True
 
     def escape(self, value):
@@ -423,25 +434,9 @@ class PgSQLEngine(AbstractEngine):
 
         return '"' + value + '"'
 
-    def __del__(self):
-        """
-        Closes the connection pool to the PostgreSQL database before the
-        engine instance is garbage collected.
-
-        This method is called when the engine instance is garbage collected
-        to ensure that the connection pool is closed and any resources
-        acquired by the pool are released.
-
-        Note that the connection pool is not closed until the engine instance
-        is garbage collected, which may not happen immediately. Therefore,
-        this method is not suitable for use in applications where it is
-        important to release resources immediately after they are no longer
-        needed.
-
-        :raises psycopg2.Error: If an error occurs while closing the pool.
-        """
-
-        self._pool.close()
+    def close(self) -> None:
+        """Close the pool once; borrowed connections close when returned."""
+        self._close_pool()
 
     def get_session(self):
         """
@@ -731,29 +726,28 @@ class EngineFactory(singletons.InheritSingleton):
         Removes and destroys the engine instance associated with the specified
         name from the factory's internal engines dictionary.
 
-        This method attempts to delete the engine instance identified by the
-        given name. If the engine instance does not exist, the method silently
-        handles the KeyError exception.
+        The engine is closed even if callers still hold a reference to it.
+        If the engine instance does not exist, this method does nothing.
 
         :param name: The name of the engine to destroy. Defaults to 'default'.
         """
 
-        try:
-            del self._engines[name]
-        except KeyError:
-            pass
+        engine = self._engines.pop(name, None)
+        if engine is not None:
+            engine.close()
 
     def destroy_all_engines(self):
         """
         Removes and destroys all engine instances from the factory's internal
         engines dictionary.
 
-        This method resets the factory to its initial state, removing all
+        This method closes the engines and resets the factory, removing all
         configured engines. Subsequent calls to get_engine() will raise a
         ValueError until at least one engine is configured using
         configure_factory().
         """
-        self._engines = {}
+        for name in list(self._engines):
+            self.destroy_engine(name)
 
 
 class DBConnectionUrl:

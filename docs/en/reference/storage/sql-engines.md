@@ -79,8 +79,12 @@ Methods:
 - `get_session()`: returns `PgSQLSession(engine=self)`.
 - `get_connection()`: gets a connection from the pool.
 - `close_connection(conn)`: returns the connection back to the pool.
+- `close()`: closes the pool and stops its workers. Repeated calls are safe.
+  Checked-out connections remain usable until returned with `close_connection()`.
 
-The engine is created internally by `EngineFactory`.
+The engine is created internally by `EngineFactory`. Close a directly created
+engine when finished. Garbage collection and normal interpreter exit also close
+its pool, before late Python finalization.
 
 ### Connection timeouts
 
@@ -164,7 +168,8 @@ Important methods:
 - `get_engine(name="default")`
   - Returns the configured engine instance.
 - `destroy_engine(name="default")` / `destroy_all_engines()`
-  - Remove engines from the factory.
+  - Close and remove engines from the factory, even if callers retain references.
+    PostgreSQL engines cannot serve new connections after destruction.
 
 At module level:
 
