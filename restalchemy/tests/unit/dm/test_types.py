@@ -287,6 +287,32 @@ class FloatTestCase(base.BaseTestCase):
 
         self.assertTrue(test_instance.validate(float(-sys.maxsize)))
 
+    def test_from_simple_type_integer_becomes_float(self):
+        value = self.test_instance.from_simple_type(4)
+
+        self.assertEqual(4.0, value)
+        self.assertIs(type(value), float)
+        self.assertTrue(self.test_instance.validate(value))
+
+    def test_from_simple_type_fraction_stays_float(self):
+        self.assertEqual(1.2, self.test_instance.from_simple_type(1.2))
+
+    def test_from_simple_type_preserves_invalid_values_for_validation(self):
+        for value in (True, False, "4", None, [], {}):
+            with self.subTest(value=value):
+                parsed = self.test_instance.from_simple_type(value)
+                self.assertIs(parsed, value)
+                self.assertFalse(self.test_instance.validate(parsed))
+
+    def test_from_simple_type_keeps_range_validation(self):
+        for value in (-1, 56):
+            with self.subTest(value=value):
+                self.assertFalse(
+                    self.test_instance.validate(
+                        self.test_instance.from_simple_type(value)
+                    )
+                )
+
 
 class DecimalTestCase(base.BaseTestCase):
     def setUp(self):

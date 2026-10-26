@@ -132,5 +132,28 @@ class UnknownKindTestCase(unittest.TestCase):
         self.assertEqual(400, response.json["code"])
 
 
+class JsonFloatKindTestCase(unittest.TestCase):
+    """Integer JSON numbers must survive nested float model parsing."""
+
+    def test_storage_pool_ratio_round_trips_through_json(self):
+        class StoragePool(types_dynamic.AbstractKindModel):
+            KIND = "thin_storage_pool"
+            oversubscription_ratio = properties.property(
+                types.Float(min_value=0.0), default=1.0
+            )
+
+        pool_type = types.TypedList(
+            types_dynamic.KindModelSelectorType(
+                types_dynamic.KindModelType(StoragePool)
+            )
+        )
+        payload = [{"kind": "thin_storage_pool", "oversubscription_ratio": 4}]
+        pools = pool_type.from_simple_type(payload)
+
+        self.assertEqual(4.0, pools[0].oversubscription_ratio)
+        self.assertIs(type(pools[0].oversubscription_ratio), float)
+        self.assertEqual(payload, pool_type.to_simple_type(pools))
+
+
 if __name__ == "__main__":
     unittest.main()
