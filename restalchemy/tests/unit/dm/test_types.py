@@ -304,6 +304,13 @@ class FloatTestCase(base.BaseTestCase):
                 self.assertIs(parsed, value)
                 self.assertFalse(self.test_instance.validate(parsed))
 
+    def test_from_simple_type_overflow_is_rejected_by_validation(self):
+        for value in (10**400, -(10**400)):
+            with self.subTest(value=value):
+                parsed = self.test_instance.from_simple_type(value)
+                self.assertIs(parsed, value)
+                self.assertFalse(self.test_instance.validate(parsed))
+
     def test_from_simple_type_keeps_range_validation(self):
         for value in (-1, 56):
             with self.subTest(value=value):
