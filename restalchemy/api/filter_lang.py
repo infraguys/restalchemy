@@ -55,7 +55,7 @@ What the operators mean here::
     name != "vm1"             NE("vm1")
     size > 10                 GT(10)
     name = null               Is(None)          # and != null -> IsNot(None)
-    name:"*vm*"              ILike("*vm*")        # wildcard, case-insensitive
+    name:"*vm*"               ILike("*vm*")               # wildcard, case-insensitive
     tags:"env:prod"           ContainsAll(["env:prod"])   # array column
     description:*             IsNot(None)                 # field is set
     spec.kind = "totp"        JSONFields({"kind": EQ("totp")})
