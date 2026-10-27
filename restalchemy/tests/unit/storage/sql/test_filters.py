@@ -471,6 +471,42 @@ class LikeTestCase(base.BaseTestCase):
         self.assertEqual(self._expr.value, TEST_VALUE)
 
 
+class ILikeTestCase(base.BaseTestCase):
+    def test_star_is_translated_and_sql_wildcards_are_escaped(self):
+        for dialect, expression in (
+            ("mysql", "LOWER(name) LIKE LOWER(%s) ESCAPE '!'"),
+            ("postgresql", "name ILIKE %s ESCAPE '!'"),
+        ):
+            with self.subTest(dialect=dialect):
+                clause = filters.FILTER_MAPPING[dialect][dm_filters.ILike](
+                    column="name",
+                    value_type=common.AsIsType(),
+                    value=r"*50%_!\' OR 1=1 --*",
+                    session=fixtures.SessionFixture(),
+                )
+                self.assertEqual(expression, clause.construct_expression())
+                self.assertEqual(r"%50!%!_!!\' OR 1=1 --%", clause.value)
+
+    def test_only_stars_are_wildcards(self):
+        for pattern, expected in (
+            ("demo", "demo"),
+            ("*demo*", "%demo%"),
+            ("demo*", "demo%"),
+            ("*demo", "%demo"),
+            ("de*mo", "de%mo"),
+            ("*", "%"),
+            ("", ""),
+        ):
+            with self.subTest(pattern=pattern):
+                clause = filters.PostgreSqlILike(
+                    column="name",
+                    value_type=common.AsIsType(),
+                    value=pattern,
+                    session=fixtures.SessionFixture(),
+                )
+                self.assertEqual(expected, clause.value)
+
+
 class NotLikeTestCase(base.BaseTestCase):
     def setUp(self):
         self._expr = filters.NotLike(

@@ -24,6 +24,7 @@ is a case asserting that MySQL says so rather than failing deeper down.
 """
 
 import contextlib
+import json
 import socket
 import typing
 import unittest
@@ -173,6 +174,42 @@ class FilterLangTestCase(BaseFilterLangTestCase):
     def test_equality(self):
         self.assertEqual({UUID1, UUID4}, self._uuids(self._get('?q=name = "web-1"')))
 
+    def test_case_insensitive_substring(self):
+        self.assertEqual(
+            {UUID1, UUID2, UUID4}, self._uuids(self._get('?q=name:"*EB-*"'))
+        )
+
+    def test_wildcards_control_where_the_pattern_matches(self):
+        for pattern, expected in (
+            ("WEB*", {UUID1, UUID2, UUID4}),
+            ("*-1", {UUID1, UUID3, UUID4}),
+            ("w*b-2", {UUID2}),
+            ("web-1", {UUID1, UUID4}),
+            ("web", set()),
+            ("*", {UUID1, UUID2, UUID3, UUID4}),
+        ):
+            with self.subTest(pattern=pattern):
+                response = requests.get(
+                    f"http://127.0.0.1:{self._port}/things/",
+                    params={"q": "name:" + json.dumps(pattern)},
+                )
+                self.assertEqual(expected, self._uuids(response))
+
+    def test_negated_substring(self):
+        self.assertEqual({UUID3}, self._uuids(self._get('?q=NOT name:"*WEB*"')))
+
+    def test_substring_escapes_sql_pattern_characters(self):
+        literal = r"50%_!\'quote"
+        record = FilterLangModel(project_id=PROJECT1, name=literal)
+        record.save()
+        for fragment in ("%", "_", "!", "\\", "'", literal):
+            with self.subTest(fragment=fragment):
+                response = requests.get(
+                    f"http://127.0.0.1:{self._port}/things/",
+                    params={"q": "name:" + json.dumps("*" + fragment + "*")},
+                )
+                self.assertEqual({record.uuid}, self._uuids(response))
+
     def test_inequality(self):
         self.assertEqual(
             {UUID1, UUID2, UUID4}, self._uuids(self._get('?q=name != "db-1"'))
@@ -307,6 +344,17 @@ class FilterLangPaginationTestCase(BaseFilterLangTestCase):
         self.assertEqual(200, response.status_code, response.text)
         return response
 
+    def test_substring_filters_before_pagination(self):
+        response = self._page('?q=name:"*EB-*"&page_limit=2')
+        seen = set()
+        while True:
+            seen.update(self._uuids(response))
+            marker = response.headers.get("x-pagination-marker")
+            if not marker:
+                break
+            response = self._page('?q=name:"*EB-*"&page_limit=2', marker)
+        self.assertEqual({UUID1, UUID2, UUID4}, seen)
+
     def test_an_expression_walks_every_page_exactly_once(self):
         seen = []
         marker = None
@@ -399,8 +447,8 @@ class FilterLangArrayTestCase(BaseFilterLangTestCase):
             self._uuids(self._get('?q=tags:"env:prod" AND name = "a"')),
         )
 
-    def test_the_operator_needs_an_array_field(self):
-        self.assertEqual(400, self._get('?q=name:"a"').status_code)
+    def test_the_operator_also_searches_string_fields(self):
+        self.assertEqual({UUID1}, self._uuids(self._get('?q=name:"a"')))
 
     def test_json_traversal_reaches_the_key(self):
         self.assertEqual({UUID1}, self._uuids(self._get('?q=spec.kind = "totp"')))

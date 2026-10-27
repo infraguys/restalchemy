@@ -55,6 +55,7 @@ What the operators mean here::
     name != "vm1"             NE("vm1")
     size > 10                 GT(10)
     name = null               Is(None)          # and != null -> IsNot(None)
+    name:"*vm*"              ILike("*vm*")        # wildcard, case-insensitive
     tags:"env:prod"           ContainsAll(["env:prod"])   # array column
     description:*             IsNot(None)                 # field is set
     spec.kind = "totp"        JSONFields({"kind": EQ("totp")})
@@ -640,11 +641,17 @@ def _bind_has(restriction, resolver, storage_name, field_type):
     if literal.text == PRESENCE and not literal.quoted:
         # `field:*` -- the field is set. Distinct from `field = null`.
         return {storage_name: dm_filters.IsNot(None)}
+    string_type = field_type
+    while isinstance(string_type, dm_types.AllowNone):
+        string_type = string_type.nested_type
+    if isinstance(string_type, dm_types.String):
+        if not resolver.supports(dm_filters.ILike):
+            raise _unsupported(restriction, "wildcard matching is not supported here")
+        # A fragment need not be a valid whole value (an Email, for example).
+        # The SQL clause translates `*` and escapes SQL pattern characters.
+        return {storage_name: dm_filters.ILike(literal.text)}
     if not isinstance(field_type, dm_types.List):
-        # For a scalar AIP-160 leaves `:` to the service; substring
-        # matching (Like) is the usual reading, and is left out until the
-        # escaping question below is settled.
-        raise _unsupported(restriction, "':' needs an array field")
+        raise _unsupported(restriction, "':' needs a string or array field")
     if not resolver.supports(dm_filters.ContainsAll):
         raise _unsupported(restriction, "array containment needs PostgreSQL")
     # An array type parses one query value into a one-element list, which
