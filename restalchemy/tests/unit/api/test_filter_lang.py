@@ -280,16 +280,46 @@ class BinderTestCase(base.BaseTestCase):
     def test_has_a_star_asks_whether_the_field_is_set(self):
         self.assertEqual({"name": dm_filters.IsNot(None)}, self._build("name:*"))
 
-    def test_a_quoted_star_is_an_asterisk(self):
-        # ...and so needs an array field, like any other element.
-        self.assertRaises(
-            ra_exc.ValidationFilterIncompatibleError, self._build, 'name:"*"'
+    def test_a_quoted_star_is_a_wildcard_pattern(self):
+        self.assertEqual({"name": dm_filters.ILike("*")}, self._build('name:"*"'))
+
+    def test_has_on_a_string_is_a_case_insensitive_wildcard_pattern(self):
+        self.assertEqual(
+            {"name": dm_filters.ILike("*Vm1*")}, self._build('name:"*Vm1*"')
         )
 
-    def test_has_needs_an_array_field(self):
-        self.assertRaises(
-            ra_exc.ValidationFilterIncompatibleError, self._build, "name:vm1"
+    def test_wildcard_pattern_keeps_sql_pattern_characters_literal(self):
+        self.assertEqual(
+            {"name": dm_filters.ILike("50%_!")}, self._build('name:"50%_!"')
         )
+
+    def test_wildcard_pattern_accepts_an_email_fragment(self):
+        class EmailModel(dm_models.ModelWithUUID):
+            email = properties.property(types.AllowNone(types.Email()), default=None)
+
+        resolver = filter_lang.ModelFieldResolver(EmailModel, dialect="postgresql")
+        self.assertEqual(
+            {"email": dm_filters.ILike("*example*")},
+            filter_lang.compile_filter('email:"*example*"', resolver),
+        )
+
+    def test_star_is_literal_in_array_containment(self):
+        self.assertEqual(
+            {"tags": dm_filters.ContainsAll(["*"])}, self._build('tags:"*"')
+        )
+
+    def test_has_rejects_non_text_scalars(self):
+        for query in ("size:10", "uuid:1234", "spec:abc"):
+            with self.subTest(query=query):
+                self.assertRaises(
+                    ra_exc.ValidationFilterIncompatibleError, self._build, query
+                )
+
+    def test_wildcard_pattern_obeys_the_dialect_gate(self):
+        with mock.patch.object(self._resolver, "supports", return_value=False):
+            self.assertRaises(
+                ra_exc.ValidationFilterIncompatibleError, self._build, 'name:"vm"'
+            )
 
     def test_traversal_becomes_a_json_filter(self):
         built = self._build("spec.kind = totp")

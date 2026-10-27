@@ -135,6 +135,23 @@ class Like(AbstractClause):
         return (f"{self.column} LIKE ") + "%s"
 
 
+class ILike(AbstractClause):
+    """Match a '*' wildcard pattern while escaping SQL pattern characters."""
+
+    def _convert_value(self, value_type, value):
+        value = super()._convert_value(value_type, value)
+        escaped = value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+        return escaped.replace("*", "%")
+
+    def construct_expression(self):
+        return f"LOWER({self.column}) LIKE LOWER(%s) ESCAPE '!'"
+
+
+class PostgreSqlILike(ILike):
+    def construct_expression(self):
+        return f"{self.column} ILIKE %s ESCAPE '!'"
+
+
 class NotLike(AbstractClause):
     def construct_expression(self):
         return (f"{self.column} NOT LIKE ") + "%s"
@@ -437,6 +454,7 @@ FILTER_MAPPING = {
         filters.NotIn: MySqlNotIn,
         filters.Like: Like,
         filters.NotLike: NotLike,
+        filters.ILike: ILike,
     },
     "postgresql": {
         filters.EQ: EQ,
@@ -451,6 +469,7 @@ FILTER_MAPPING = {
         filters.NotIn: PostgreSqlNotIn,
         filters.Like: Like,
         filters.NotLike: NotLike,
+        filters.ILike: PostgreSqlILike,
         filters.ContainsAll: PostgreSqlContainsAll,
         filters.ContainsAny: PostgreSqlContainsAny,
         filters.JSONFields: PostgreSqlJSONFields,

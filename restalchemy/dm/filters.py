@@ -80,6 +80,10 @@ class Like(AbstractClause):
     pass
 
 
+class ILike(AbstractClause):
+    """Case-insensitive '*' wildcard pattern; SQL wildcards are literal."""
+
+
 class NotLike(AbstractClause):
     pass
 
