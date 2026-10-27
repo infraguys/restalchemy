@@ -644,7 +644,7 @@ def _bind_has(restriction, resolver, storage_name, field_type):
     string_type = field_type
     while isinstance(string_type, dm_types.AllowNone):
         string_type = string_type.nested_type
-    if isinstance(string_type, dm_types.String):
+    if isinstance(string_type, (dm_types.String, dm_types.BaseRegExpType)):
         if not resolver.supports(dm_filters.ILike):
             raise _unsupported(restriction, "wildcard matching is not supported here")
         # A fragment need not be a valid whole value (an Email, for example).

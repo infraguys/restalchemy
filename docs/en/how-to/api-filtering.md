@@ -119,7 +119,8 @@ ends with it. Without `*`, `name:"web"` matches the whole value.
 `%`, `_`, `!`, and backslashes are literal characters, not wildcards.
 Quoted `name:"*"` matches every non-null string, while unquoted `name:*`
 keeps its presence-check meaning. Array `:` still matches literal elements.
-String subtypes such as email accept patterns; UUIDs and numbers do not.
+Email and regexp-backed string types such as usernames accept patterns;
+UUIDs and numbers do not.
 Use `=` for the existing equality comparison. Case folding follows the database locale.
 This wildcard use of `:` is a RESTAlchemy extension: AIP-160 describes `*`
 with `=`, whose existing exact-match behavior remains unchanged here.

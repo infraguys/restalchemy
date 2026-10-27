@@ -308,6 +308,16 @@ class BinderTestCase(base.BaseTestCase):
             {"tags": dm_filters.ContainsAll(["*"])}, self._build('tags:"*"')
         )
 
+    def test_wildcard_pattern_accepts_regexp_string_types(self):
+        class UserModel(dm_models.ModelWithUUID):
+            username = properties.property(types.BaseRegExpType(r"^[a-z]+$"))
+
+        resolver = filter_lang.ModelFieldResolver(UserModel, dialect="postgresql")
+        self.assertEqual(
+            {"username": dm_filters.ILike("*ali*")},
+            filter_lang.compile_filter('username:"*ali*"', resolver),
+        )
+
     def test_has_rejects_non_text_scalars(self):
         for query in ("size:10", "uuid:1234", "spec:abc"):
             with self.subTest(query=query):
