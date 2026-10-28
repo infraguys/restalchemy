@@ -107,23 +107,22 @@ class VmController(controllers.BaseResourceController):
 | `name != "web-1"` | `NE` | |
 | `size > 10`, `>=`, `<`, `<=` | `GT`, `GE`, `LT`, `LE` | |
 | `name = null` | `Is(None)` | `!= null` gives `IsNot(None)` |
-| `name:"*web*"` | `ILike` | `*` wildcard pattern, case-insensitive |
+| `name = "*web*"` | `ILike` | `*` wildcard pattern, case-insensitive |
 | `tags:"env:prod"` | `ContainsAll` | an array holds the element |
 | `description:*` | `IsNot(None)` | the field is set |
 | `spec.kind = "totp"` | `JSONFields` | one key inside a `jsonb` column |
 | `AND` `OR` `NOT` `(...)` | `AND` `OR` `NOT` | the keywords are uppercase |
 
-For strings, `:` matches the whole value against a case-insensitive pattern:
-`name:"*web*"` contains `web`, `name:"web*"` starts with it, and `name:"*web"`
-ends with it. Without `*`, `name:"web"` matches the whole value.
+String equality supports `*` wildcards as described in AIP-160:
+`name = "*web*"` contains `web`, `name = "web*"` starts with it, and
+`name = "*web"` ends with it. Patterns containing `*` match without regard
+to case; case folding follows the database locale. Without `*`, ordinary
+exact equality is preserved, including the field's normal value validation.
 `%`, `_`, `!`, and backslashes are literal characters, not wildcards.
-Quoted `name:"*"` matches every non-null string, while unquoted `name:*`
-keeps its presence-check meaning. Array `:` still matches literal elements.
+`name = "*"` matches every non-null string, including empty strings.
 Email and regexp-backed string types such as usernames accept patterns;
-UUIDs and numbers do not.
-Use `=` for the existing equality comparison. Case folding follows the database locale.
-This wildcard use of `:` is a RESTAlchemy extension: AIP-160 describes `*`
-with `=`, whose existing exact-match behavior remains unchanged here.
+UUIDs and numbers do not. Array `:` still matches literal elements, while
+`field:*` keeps its presence-check meaning. `:` does not search strings.
 
 Two things regularly surprise people, both inherited from AIP-160.
 
@@ -206,7 +205,7 @@ Each of these is a `400`, never a filter that quietly does something else:
   the whole string.
 
 Left out deliberately: functions (`f(x)`), a bare literal as a fuzzy
-search across fields, `-` as a synonym for `NOT`, wildcards in `=`,
+search across fields, `-` as a synonym for `NOT`,
 field-to-field comparison, and traversal deeper than one key.
 
 ---

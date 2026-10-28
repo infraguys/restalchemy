@@ -55,7 +55,7 @@ What the operators mean here::
     name != "vm1"             NE("vm1")
     size > 10                 GT(10)
     name = null               Is(None)          # and != null -> IsNot(None)
-    name:"*vm*"               ILike("*vm*")               # wildcard, case-insensitive
+    name = "*vm*"             ILike("*vm*")               # wildcard, case-insensitive
     tags:"env:prod"           ContainsAll(["env:prod"])   # array column
     description:*             IsNot(None)                 # field is set
     spec.kind = "totp"        JSONFields({"kind": EQ("totp")})
@@ -88,9 +88,6 @@ Not implemented, deliberately:
   resource does not say which fields such a search should cover;
 * `-` as a synonym for NOT -- it collides with negative numbers and with
   hyphens inside unquoted values; `NOT` is unambiguous;
-* wildcards in `=` (`name = "*.foo"`) -- they would compile to LIKE, and
-  escaping the `%` and `_` already inside the value needs an ESCAPE clause
-  that `filters.Like` does not emit;
 * field-to-field comparison (`a = b`): the right side is always a literal;
 * traversal deeper than one key (`spec.a.b`) -- `JSONFields` maps a single
   key to a clause.
@@ -641,17 +638,8 @@ def _bind_has(restriction, resolver, storage_name, field_type):
     if literal.text == PRESENCE and not literal.quoted:
         # `field:*` -- the field is set. Distinct from `field = null`.
         return {storage_name: dm_filters.IsNot(None)}
-    string_type = field_type
-    while isinstance(string_type, dm_types.AllowNone):
-        string_type = string_type.nested_type
-    if isinstance(string_type, (dm_types.String, dm_types.BaseRegExpType)):
-        if not resolver.supports(dm_filters.ILike):
-            raise _unsupported(restriction, "wildcard matching is not supported here")
-        # A fragment need not be a valid whole value (an Email, for example).
-        # The SQL clause translates `*` and escapes SQL pattern characters.
-        return {storage_name: dm_filters.ILike(literal.text)}
     if not isinstance(field_type, dm_types.List):
-        raise _unsupported(restriction, "':' needs a string or array field")
+        raise _unsupported(restriction, "':' needs an array field")
     if not resolver.supports(dm_filters.ContainsAll):
         raise _unsupported(restriction, "array containment needs PostgreSQL")
     # An array type parses one query value into a one-element list, which
@@ -683,6 +671,19 @@ def _bind_restriction(restriction, resolver):
             dm_filters.Is if restriction.comparator == "=" else dm_filters.IsNot
         )
         return {storage_name: clause_class(None)}
+
+    if restriction.comparator == "=" and "*" in literal.text:
+        string_type = field_type
+        while isinstance(string_type, dm_types.AllowNone):
+            string_type = string_type.nested_type
+        if isinstance(string_type, (dm_types.String, dm_types.BaseRegExpType)):
+            if not resolver.supports(dm_filters.ILike):
+                raise _unsupported(
+                    restriction, "wildcard matching is not supported here"
+                )
+            # A pattern need not be a valid whole value (an Email, for example).
+            # The SQL clause translates `*` and escapes SQL pattern characters.
+            return {storage_name: dm_filters.ILike(literal.text)}
 
     clause_class = _COMPARATOR_CLAUSES[restriction.comparator]
     if not resolver.supports(clause_class):

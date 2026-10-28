@@ -280,17 +280,17 @@ class BinderTestCase(base.BaseTestCase):
     def test_has_a_star_asks_whether_the_field_is_set(self):
         self.assertEqual({"name": dm_filters.IsNot(None)}, self._build("name:*"))
 
-    def test_a_quoted_star_is_a_wildcard_pattern(self):
-        self.assertEqual({"name": dm_filters.ILike("*")}, self._build('name:"*"'))
+    def test_an_equality_star_is_a_wildcard_pattern(self):
+        self.assertEqual({"name": dm_filters.ILike("*")}, self._build('name = "*"'))
 
-    def test_has_on_a_string_is_a_case_insensitive_wildcard_pattern(self):
+    def test_equality_on_a_string_accepts_a_case_insensitive_wildcard_pattern(self):
         self.assertEqual(
-            {"name": dm_filters.ILike("*Vm1*")}, self._build('name:"*Vm1*"')
+            {"name": dm_filters.ILike("*Vm1*")}, self._build('name = "*Vm1*"')
         )
 
     def test_wildcard_pattern_keeps_sql_pattern_characters_literal(self):
         self.assertEqual(
-            {"name": dm_filters.ILike("50%_!")}, self._build('name:"50%_!"')
+            {"name": dm_filters.ILike("*50%_!*")}, self._build('name = "*50%_!*"')
         )
 
     def test_wildcard_pattern_accepts_an_email_fragment(self):
@@ -300,7 +300,7 @@ class BinderTestCase(base.BaseTestCase):
         resolver = filter_lang.ModelFieldResolver(EmailModel, dialect="postgresql")
         self.assertEqual(
             {"email": dm_filters.ILike("*example*")},
-            filter_lang.compile_filter('email:"*example*"', resolver),
+            filter_lang.compile_filter('email = "*example*"', resolver),
         )
 
     def test_star_is_literal_in_array_containment(self):
@@ -315,20 +315,30 @@ class BinderTestCase(base.BaseTestCase):
         resolver = filter_lang.ModelFieldResolver(UserModel, dialect="postgresql")
         self.assertEqual(
             {"username": dm_filters.ILike("*ali*")},
-            filter_lang.compile_filter('username:"*ali*"', resolver),
+            filter_lang.compile_filter('username = "*ali*"', resolver),
         )
 
-    def test_has_rejects_non_text_scalars(self):
-        for query in ("size:10", "uuid:1234", "spec:abc"):
+    def test_has_rejects_non_array_fields(self):
+        for query in ("size:10", "uuid:1234", "spec:abc", 'name:"*vm*"', 'name:"*"'):
             with self.subTest(query=query):
                 self.assertRaises(
                     ra_exc.ValidationFilterIncompatibleError, self._build, query
                 )
 
+    def test_equality_without_a_star_remains_exact(self):
+        for text in ("Vm1", "50%_!", ""):
+            with self.subTest(text=text):
+                self.assertEqual(
+                    {"name": dm_filters.EQ(text)}, self._build(f'name = "{text}"')
+                )
+
+    def test_stars_in_array_equality_are_literal(self):
+        self.assertEqual({"tags": dm_filters.EQ(["*"])}, self._build('tags = "*"'))
+
     def test_wildcard_pattern_obeys_the_dialect_gate(self):
         with mock.patch.object(self._resolver, "supports", return_value=False):
             self.assertRaises(
-                ra_exc.ValidationFilterIncompatibleError, self._build, 'name:"vm"'
+                ra_exc.ValidationFilterIncompatibleError, self._build, 'name = "*vm*"'
             )
 
     def test_traversal_becomes_a_json_filter(self):
