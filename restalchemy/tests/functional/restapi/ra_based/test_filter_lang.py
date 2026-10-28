@@ -176,7 +176,7 @@ class FilterLangTestCase(BaseFilterLangTestCase):
 
     def test_case_insensitive_substring(self):
         self.assertEqual(
-            {UUID1, UUID2, UUID4}, self._uuids(self._get('?q=name:"*EB-*"'))
+            {UUID1, UUID2, UUID4}, self._uuids(self._get('?q=name = "*EB-*"'))
         )
 
     def test_wildcards_control_where_the_pattern_matches(self):
@@ -191,12 +191,12 @@ class FilterLangTestCase(BaseFilterLangTestCase):
             with self.subTest(pattern=pattern):
                 response = requests.get(
                     f"http://127.0.0.1:{self._port}/things/",
-                    params={"q": "name:" + json.dumps(pattern)},
+                    params={"q": "name = " + json.dumps(pattern)},
                 )
                 self.assertEqual(expected, self._uuids(response))
 
     def test_negated_substring(self):
-        self.assertEqual({UUID3}, self._uuids(self._get('?q=NOT name:"*WEB*"')))
+        self.assertEqual({UUID3}, self._uuids(self._get('?q=NOT name = "*WEB*"')))
 
     def test_substring_escapes_sql_pattern_characters(self):
         literal = r"50%_!\'quote"
@@ -206,7 +206,7 @@ class FilterLangTestCase(BaseFilterLangTestCase):
             with self.subTest(fragment=fragment):
                 response = requests.get(
                     f"http://127.0.0.1:{self._port}/things/",
-                    params={"q": "name:" + json.dumps("*" + fragment + "*")},
+                    params={"q": "name = " + json.dumps("*" + fragment + "*")},
                 )
                 self.assertEqual({record.uuid}, self._uuids(response))
 
@@ -345,14 +345,14 @@ class FilterLangPaginationTestCase(BaseFilterLangTestCase):
         return response
 
     def test_substring_filters_before_pagination(self):
-        response = self._page('?q=name:"*EB-*"&page_limit=2')
+        response = self._page('?q=name = "*EB-*"&page_limit=2')
         seen = set()
         while True:
             seen.update(self._uuids(response))
             marker = response.headers.get("x-pagination-marker")
             if not marker:
                 break
-            response = self._page('?q=name:"*EB-*"&page_limit=2', marker)
+            response = self._page('?q=name = "*EB-*"&page_limit=2', marker)
         self.assertEqual({UUID1, UUID2, UUID4}, seen)
 
     def test_an_expression_walks_every_page_exactly_once(self):
@@ -447,8 +447,8 @@ class FilterLangArrayTestCase(BaseFilterLangTestCase):
             self._uuids(self._get('?q=tags:"env:prod" AND name = "a"')),
         )
 
-    def test_the_operator_also_searches_string_fields(self):
-        self.assertEqual({UUID1}, self._uuids(self._get('?q=name:"a"')))
+    def test_has_on_a_string_is_refused(self):
+        self.assertEqual(400, self._get('?q=name:"a"').status_code)
 
     def test_json_traversal_reaches_the_key(self):
         self.assertEqual({UUID1}, self._uuids(self._get('?q=spec.kind = "totp"')))
