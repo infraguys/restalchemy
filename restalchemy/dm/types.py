@@ -382,6 +382,16 @@ class Float(BasePythonType):
         result = super().validate(value)
         return result and self.min_value <= value <= self.max_value
 
+    def from_simple_type(self, value):
+        # JSON has one number type; JavaScript serializes 4.0 as 4.
+        # Keep booleans and other invalid values for normal validation.
+        if type(value) is int:
+            try:
+                value = float(value)
+            except OverflowError:
+                pass
+        return super().from_simple_type(value)
+
     @property
     def max_openapi_value(self):
         if self.max_value == INFINITI:
