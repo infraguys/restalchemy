@@ -108,6 +108,7 @@ Empfohlene Reihenfolge für neue Nutzer:
    - Basis-CRUD
    - Filtering, Sorting, Pagination
    - Beziehungen zwischen Modellen
+   - [Batch requests](how-to/api-batch-requests.md)
 5. Referenz:
    - `restalchemy.api.*`
    - `restalchemy.dm.*`
